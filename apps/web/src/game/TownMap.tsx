@@ -1,7 +1,7 @@
 import Phaser from "phaser";
 import { useEffect, useRef } from "react";
-import type { AgentState, World } from "@lethetown/shared";
-import { gameTimeNow } from "../net/store";
+import type { AgentState, Weather, World } from "@lethetown/shared";
+import { gameTimeNow, getState, onMemoryEffect } from "../net/store";
 import { TownScene } from "./TownScene";
 
 interface Props {
@@ -9,15 +9,19 @@ interface Props {
   agents: AgentState[];
   selectedId: string | null;
   followId: string | null;
+  weather: Weather;
+  minimap: boolean;
   onSelect: (id: string) => void;
   onFollowChange: (id: string | null) => void;
 }
 
-function sync(scene: TownScene, { world, agents, selectedId }: Props) {
+function sync(scene: TownScene, { world, agents, selectedId, weather, minimap }: Props) {
   if (!scene.ready || !world) return;
   scene.setWorld(world);
   scene.updateAgents(agents);
   scene.setSelected(selectedId);
+  scene.setWeather(weather);
+  scene.setMinimapVisible(minimap);
 }
 
 export function TownMap(props: Props) {
@@ -33,6 +37,8 @@ export function TownMap(props: Props) {
       townScene.setFollow(latest.current.followId);
     };
     townScene.gameTime = gameTimeNow;
+    townScene.isThinking = (id) => (getState().thinking[id]?.count ?? 0) > 0;
+    const offEffects = onMemoryEffect((e) => townScene.memoryEffect(e.agentId, e.kind));
     scene.current = townScene;
     // Solo en desarrollo: acceso desde la consola / scripts de captura.
     if (import.meta.env.DEV) (window as unknown as { __town: TownScene }).__town = townScene;
@@ -47,6 +53,7 @@ export function TownMap(props: Props) {
       scale: { mode: Phaser.Scale.RESIZE, width: "100%", height: "100%" },
     });
     return () => {
+      offEffects();
       scene.current = null;
       game.destroy(true);
     };

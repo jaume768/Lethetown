@@ -21,6 +21,8 @@ export function App() {
           agents={game.agents}
           selectedId={selectedId}
           followId={followId}
+          weather={game.weather}
+          minimap={true}
           onSelect={onSelect}
           onFollowChange={setFollowId}
         />

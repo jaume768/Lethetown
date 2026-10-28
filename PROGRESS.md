@@ -94,6 +94,10 @@ retomar desde el primer elemento sin marcar.
 
 ## Bloqueos / pendientes
 
+- **Sesión cortada por límite de uso.** Último paso hecho: escena con emotes, "pensando", bocadillos nine-slice letra a letra, efectos de memoria, día/noche, luces, lluvia y minimapa (`AgentView.ts`, `Ambience.ts`, `pixelArt.ts`). Compila y pasan los tests, pero NO se ha verificado visualmente.
+- Siguiente: `@font-face` de Pixelify Sans en styles.css (la fuente está en `apps/web/public/assets/fonts/`), UI pixel, inspector "jardín de recuerdos" (la API ya devuelve audit y fichas sociales), modal Rashomon (`/api/rashomon/:id`), barra de línea de tiempo (`/api/events?day=`), panel de crónicas (store ya las recibe) y panel de intervención (endpoints thought/spots/weather).
+- Después: placeholder `pnpm assets:placeholder`, README/CLAUDE.md, push y PR (gh no tiene sesión: `gh auth login`).
+
 - Placeholder generado por código (`pnpm assets:placeholder`) aplazado: el usuario pidió priorizar lo que no dependía de assets y después aportó los packs vendor. Sigue pendiente para que el proyecto funcione sin ellos (ahora cae a formas simples).
 - A* no prefiere los caminos (coste uniforme): los agentes cruzan el césped en diagonal escalonada.
 - Etiquetas de nombre se solapan cuando hay varios agentes juntos (fase E).

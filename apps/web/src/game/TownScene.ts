@@ -2,58 +2,52 @@ import {
   AssetManifest,
   activePack,
   characterFor,
-  pickFrame,
   positionAt,
   type AgentState,
   type AssetPack,
+  type Weather,
   type World,
 } from "@lethetown/shared";
 import Phaser from "phaser";
+import { AgentView, PIXEL_FONT } from "./AgentView";
+import { Ambience } from "./Ambience";
+import { createPixelTextures } from "./pixelArt";
 
 const TS = 16;
 const ZOOM_MIN = 1;
 const ZOOM_MAX = 4;
 /** Opacidad de un tejado con alguien dentro (o con el ratón encima). */
 const ROOF_HIDDEN_ALPHA = 0;
-const OUTLINE_OFFSETS = [
-  [-1, 0],
-  [1, 0],
-  [0, -1],
-  [0, 1],
-] as const;
-
-interface AgentSprite {
-  container: Phaser.GameObjects.Container;
-  body: Phaser.GameObjects.Sprite;
-  outline: Phaser.GameObjects.Sprite[];
-  label: Phaser.GameObjects.Text;
-  bubble: Phaser.GameObjects.Text;
-  characterKey: string;
-  state: AgentState;
-}
+const MINIMAP_WIDTH = 192;
 
 /**
- * Pueblo en pixel art: tilemap del .tmj con los tilesets del manifest y personajes animados.
+ * Pueblo en pixel art: tilemap del .tmj con los tilesets del manifest, personajes animados,
+ * emotes, bocadillos, efectos de memoria, ciclo día/noche y minimapa.
  * Si los assets no cargan (p. ej. falta la carpeta vendor), pinta formas simples con la misma geometría.
  */
 export class TownScene extends Phaser.Scene {
-  private sprites = new Map<string, AgentSprite>();
+  private views = new Map<string, AgentView>();
   private world: World | null = null;
   private pack: AssetPack | null = null;
   private roofs: Phaser.Tilemaps.TilemapLayer | null = null;
   private roofAlpha = new Map<string, number>();
+  private ambience: Ambience | null = null;
+  private minimap: Phaser.Cameras.Scene2D.Camera | null = null;
   private selectedId: string | null = null;
   private followId: string | null = null;
   private following = false;
-  /** Avisa a React cuando el usuario deja de seguir (arrastrando el mapa). */
-  onFollowChange: (id: string | null) => void = () => {};
   private assetsOk = false;
   private built = false;
   private pendingAgents: AgentState[] = [];
+  private weather: Weather = "sunny";
   onSelect: (id: string) => void = () => {};
+  /** Avisa a React cuando el usuario deja de seguir (arrastrando el mapa). */
+  onFollowChange: (id: string | null) => void = () => {};
   onReady: () => void = () => {};
   /** Devuelve el tiempo de juego estimado ahora. */
   gameTime: () => number = () => 0;
+  /** Agentes con una llamada al LLM en curso. */
+  isThinking: (id: string) => boolean = () => false;
   ready = false;
 
   constructor() {
@@ -66,6 +60,7 @@ export class TownScene extends Phaser.Scene {
   }
 
   create() {
+    createPixelTextures(this);
     let pack: AssetPack | null = null;
     try {
       pack = activePack(AssetManifest.parse(this.cache.json.get("manifest"))).pack;
@@ -73,8 +68,11 @@ export class TownScene extends Phaser.Scene {
       console.warn("Manifest de assets inválido; uso formas simples", error);
     }
     this.pack = pack;
-    if (!pack) return this.finishLoading(false);
-
+    const fontReady = document.fonts.load(`8px ${PIXEL_FONT}`).catch(() => undefined);
+    if (!pack) {
+      void fontReady.then(() => this.finishLoading(false));
+      return;
+    }
     let failed = false;
     this.load.on(Phaser.Loader.Events.FILE_LOAD_ERROR, (file: Phaser.Loader.File) => {
       failed = true;
@@ -87,7 +85,9 @@ export class TownScene extends Phaser.Scene {
         frameHeight: c.frameHeight,
       });
     }
-    this.load.once(Phaser.Loader.Events.COMPLETE, () => this.finishLoading(!failed));
+    this.load.once(Phaser.Loader.Events.COMPLETE, () => {
+      void fontReady.then(() => this.finishLoading(!failed));
+    });
     this.load.start();
   }
 
@@ -104,27 +104,42 @@ export class TownScene extends Phaser.Scene {
     this.world = world;
     if (this.assetsOk && this.pack) this.buildTilemap();
     else this.buildShapes(world);
+    this.ambience = new Ambience(this, world);
+    this.ambience.weather = this.weather;
     const cam = this.cameras.main;
     cam.setBounds(0, 0, world.width * TS, world.height * TS);
     cam.centerOn((world.width * TS) / 2, (world.height * TS) / 2);
+    this.setupMinimap(world);
     if (this.pendingAgents.length) this.updateAgents(this.pendingAgents);
+  }
+
+  setWeather(weather: Weather) {
+    this.weather = weather;
+    if (this.ambience) this.ambience.weather = weather;
   }
 
   setSelected(id: string | null) {
     this.selectedId = id;
-    for (const [agentId, s] of this.sprites) {
-      for (const o of s.outline) o.setVisible(agentId === id);
-    }
+    for (const [agentId, v] of this.views) v.setSelected(agentId === id);
   }
 
   /** Seguir con la cámara a un agente (null = cámara libre). */
   setFollow(id: string | null) {
     this.followId = id;
     const cam = this.cameras.main;
-    const target = id ? this.sprites.get(id) : undefined;
+    const target = id ? this.views.get(id) : undefined;
     this.following = Boolean(target);
     if (target) cam.startFollow(target.container, true, 0.15, 0.15);
     else cam.stopFollow();
+  }
+
+  setMinimapVisible(visible: boolean) {
+    this.minimap?.setVisible(visible);
+  }
+
+  /** Efecto visual de memoria sobre un agente. */
+  memoryEffect(agentId: string, kind: string) {
+    this.views.get(agentId)?.playEffect(kind);
   }
 
   updateAgents(agents: AgentState[]) {
@@ -133,38 +148,25 @@ export class TownScene extends Phaser.Scene {
       return;
     }
     for (const agent of agents) {
-      const sprite = this.sprites.get(agent.id) ?? this.createSprite(agent);
-      sprite.state = agent;
-      sprite.bubble.setText(agent.lastUtterance ?? "");
-      sprite.bubble.setVisible(Boolean(agent.lastUtterance));
+      const view = this.views.get(agent.id) ?? this.createView(agent);
+      view.setState(agent);
     }
     if (this.followId && !this.following) this.setFollow(this.followId);
   }
 
-  override update() {
+  override update(_time: number, delta: number) {
     if (!this.world) return;
     const now = this.gameTime();
     const realSeconds = this.time.now / 1000;
-    for (const s of this.sprites.values()) {
-      const p = positionAt(s.state, now);
-      s.container.setPosition(Math.round(p.x * TS + TS / 2), Math.round(p.y * TS + TS));
-      s.container.setDepth(10 + p.y / this.world.height);
-      const sheet = this.pack?.characters[s.characterKey];
-      if (this.assetsOk && sheet) {
-        const choice = pickFrame(sheet, {
-          moving: p.moving,
-          distance: p.distance,
-          facing: p.facing,
-          activityKind: s.state.activityKind,
-          realSeconds,
-        });
-        for (const spr of [s.body, ...s.outline]) {
-          spr.setFrame(choice.frame);
-          spr.setAngle(choice.lying ? -90 : 0);
-        }
-      }
+    const dtSeconds = delta / 1000;
+    for (const v of this.views.values()) {
+      const p = positionAt(v.state, now);
+      v.container.setPosition(Math.round(p.x * TS + TS / 2), Math.round(p.y * TS + TS));
+      v.container.setDepth(10 + p.y / this.world.height);
+      v.update(p, { thinking: this.isThinking(v.state.id), realSeconds, dtSeconds });
     }
-    this.updateRoofs();
+    this.updateRoofs(now);
+    this.ambience?.update(now, dtSeconds);
   }
 
   // --- Construcción -----------------------------------------------------------------------
@@ -204,7 +206,13 @@ export class TownScene extends Phaser.Scene {
     for (const place of world.places) {
       const { x, y, w, h } = place.area;
       g.fillStyle(colors[place.kind] ?? 0xcccccc, 0.9).fillRect(x * TS, y * TS, w * TS, h * TS);
-      this.add.text(x * TS + 4, y * TS + 2, place.name, { fontSize: "10px", color: "#1d1d1d" });
+      this.add
+        .text(x * TS + 4, y * TS + 2, place.name, {
+          fontFamily: PIXEL_FONT,
+          fontSize: "10px",
+          color: "#1d1d1d",
+        })
+        .setResolution(4);
     }
     g.fillStyle(0x3b3b3b, 0.85);
     world.collision.forEach((c, i) => {
@@ -212,78 +220,31 @@ export class TownScene extends Phaser.Scene {
     });
   }
 
-  private createSprite(agent: AgentState): AgentSprite {
-    const characterKey = this.pack
-      ? characterFor(this.pack, agent.id, agent.appearance.sheet)
-      : "default";
-    const texture = this.assetsOk ? `char:${characterKey}` : "__WHITE";
-    const makeBody = () => this.add.sprite(0, 0, texture).setOrigin(0.5, 1);
-    const outline = OUTLINE_OFFSETS.map(([dx, dy]) =>
-      makeBody()
-        .setPosition(dx, dy)
-        .setTint(0xffffff)
-        .setTintMode(Phaser.TintModes.FILL)
-        .setVisible(false),
+  private createView(agent: AgentState): AgentView {
+    const key = this.pack ? characterFor(this.pack, agent.id, agent.appearance.sheet) : null;
+    const sheet = this.assetsOk && key ? (this.pack!.characters[key] ?? null) : null;
+    const view = new AgentView(this, agent, sheet, sheet ? `char:${key}` : "pixel", (id) =>
+      this.onSelect(id),
     );
-    const body = makeBody();
-    if (!this.assetsOk) {
-      body
-        .setDisplaySize(10, 18)
-        .setTint(Phaser.Display.Color.HexStringToColor(agent.appearance.shirt).color);
-    }
-    const label = this.add
-      .text(0, 2, agent.name.split(" ")[0] ?? agent.name, {
-        fontFamily: "monospace",
-        fontSize: "8px",
-        color: "#ffffff",
-        stroke: "#1d1d1d",
-        strokeThickness: 2,
-      })
-      .setOrigin(0.5, 0)
-      .setResolution(4);
-    const bubble = this.add
-      .text(0, -34, "", {
-        fontFamily: "monospace",
-        fontSize: "8px",
-        color: "#111111",
-        backgroundColor: "#ffffffee",
-        padding: { x: 3, y: 2 },
-        wordWrap: { width: 110 },
-      })
-      .setOrigin(0.5, 1)
-      .setResolution(4)
-      .setVisible(false);
-    const container = this.add.container(0, 0, [...outline, body, label, bubble]);
-    body.setInteractive({ useHandCursor: true }).on("pointerdown", () => this.onSelect(agent.id));
-    const sprite: AgentSprite = {
-      container,
-      body,
-      outline,
-      label,
-      bubble,
-      characterKey,
-      state: agent,
-    };
-    this.sprites.set(agent.id, sprite);
-    if (agent.id === this.selectedId) this.setSelected(agent.id);
-    return sprite;
+    this.views.set(agent.id, view);
+    if (agent.id === this.selectedId) view.setSelected(true);
+    return view;
   }
 
-  // --- Tejados y cámara ---------------------------------------------------------------------
+  // --- Tejados, cámara y minimapa -------------------------------------------------------------
 
-  private updateRoofs() {
+  private updateRoofs(now: number) {
     if (!this.roofs || !this.world) return;
     const pointer = this.input.activePointer;
     const worldPoint = pointer.positionToCamera(this.cameras.main) as Phaser.Math.Vector2;
     const px = worldPoint.x / TS;
     const py = worldPoint.y / TS;
-    const now = this.gameTime();
     for (const place of this.world.places) {
       if (!place.indoor) continue;
       const { x, y, w, h } = place.area;
       const contains = (tx: number, ty: number) => tx >= x && tx < x + w && ty >= y && ty < y + h;
-      const occupied = [...this.sprites.values()].some((s) => {
-        const p = positionAt(s.state, now);
+      const occupied = [...this.views.values()].some((v) => {
+        const p = positionAt(v.state, now);
         return contains(p.x, p.y);
       });
       const target = occupied || contains(px, py) ? ROOF_HIDDEN_ALPHA : 1;
@@ -315,5 +276,18 @@ export class TownScene extends Phaser.Scene {
       cam.scrollX -= (p.x - p.prevPosition.x) / cam.zoom;
       cam.scrollY -= (p.y - p.prevPosition.y) / cam.zoom;
     });
+  }
+
+  private setupMinimap(world: World) {
+    const w = world.width * TS;
+    const h = world.height * TS;
+    const zoom = MINIMAP_WIDTH / w;
+    const mm = this.cameras.add(8, 8, MINIMAP_WIDTH, Math.round(h * zoom), false, "minimap");
+    mm.setZoom(zoom)
+      .setBounds(0, 0, w, h)
+      .centerOn(w / 2, h / 2);
+    mm.setBackgroundColor(0x1d2330);
+    // El minimapa no necesita lluvia ni bocadillos legibles: solo el pueblo y los agentes.
+    this.minimap = mm;
   }
 }

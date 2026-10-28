@@ -8,3 +8,5 @@ export * from "./map/pathfinding";
 export * from "./map/movement";
 export * from "./assets/manifest";
 export * from "./assets/animation";
+export * from "./assets/emotes";
+export * from "./assets/ambient";
