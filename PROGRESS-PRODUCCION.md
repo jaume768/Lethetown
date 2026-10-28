@@ -36,16 +36,16 @@ pnpm test` y comprobar que `pnpm dev` arranca en modo mock.
 
 ### Paso 3 — Escalabilidad y robustez
 
-- [ ] Procesos `api` y `sim-worker` con leases en Postgres
-- [ ] Pausa/LOD sin espectadores
-- [ ] Deltas por WS
-- [ ] pgvector filtrado (iterative scans) + inspector paginado sin embedding
-- [ ] Refuerzos en lote + transacciones
-- [ ] LLM: timeouts, reintentos, circuit breaker, Batch API
-- [ ] Embeddings en worker_threads
-- [ ] Observabilidad: pino, Sentry opcional, métricas Prometheus
-- [ ] Refactor de simulation.ts + test dorado de 3 días
-- [ ] Dockerfiles, docker-compose.prod.yml con Caddy, guía de despliegue
+- [x] Procesos `api` y `sim-worker` con leases en Postgres
+- [x] Pausa/LOD sin espectadores
+- [x] Deltas por WS
+- [x] pgvector filtrado (iterative scans) + inspector paginado sin embedding
+- [x] Refuerzos en lote + transacciones
+- [x] LLM: timeouts, reintentos, circuit breaker, Batch API
+- [x] Embeddings en worker_threads
+- [x] Observabilidad: pino, Sentry opcional, métricas Prometheus
+- [x] Refactor de simulation.ts + test dorado de 3 días
+- [x] Dockerfiles, docker-compose.prod.yml con Caddy, guía de despliegue
 
 ### Paso 4 — Interfaz
 
@@ -118,3 +118,28 @@ pnpm test` y comprobar que `pnpm dev` arranca en modo mock.
   `pnpm.neverBuiltDependencies`. Si aun así no cargan, el servidor cae solo a `EMBEDDINGS=hash`.
 - **`DEV_ADMIN_PASSWORD`**: en RAM (sin Postgres) no hay `user:create`; esta variable crea un
   admin en memoria, y se ignora en producción.
+- **Bus = LISTEN/NOTIFY de Postgres** (no pg-boss): no añade dependencias ni procesos, y los
+  mensajes son efímeros (estado vivo, señales, órdenes con respuesta y timeout). pg-boss aporta
+  colas persistentes y reintentos que aquí no hacen falta. Los mensajes de más de ~7 KB van a
+  `bus_messages` y se notifica el id (NOTIFY admite ~8000 bytes).
+- **Leases en tabla** (`world_leases`, TTL 20 s renovado cada 5 s) en vez de advisory locks:
+  se ven en `/api/admin/worlds` y sobreviven a reconexiones del pool. Reclamar es un
+  `INSERT … ON CONFLICT … DO UPDATE … WHERE expires_at < now()`, atómico.
+- **El api no ejecuta simulación**: lee memoria/eventos/crónicas de Postgres, calcula el
+  inspector con su propio embedder y recibe el estado vivo por el bus. Sin Postgres, `pnpm dev`
+  arranca el api en modo todo en uno y el worker sale (no hay leases sin BD).
+- **Presupuesto global con varios workers**: cada worker suma lo suyo en memoria y recarga los
+  totales de `llm_calls` cada 30 s, así que el exceso posible es ~30 s de gasto de los demás.
+- **LOD sin espectadores** (por defecto): los agentes piensan cada `SIM_TICK_MINUTES ×
+LOD_TICK_FACTOR`; `NO_VIEWERS_MODE=pause` los detiene del todo (recomendado en producción).
+- **Deltas por WS**: reloj + agentes cambiados respecto al último envío del canal; al conectar
+  un cliente, primero se manda un delta a los demás para que todos compartan la base del
+  snapshot.
+- **Batch API solo para Anthropic** (OpenAI pide subir un JSONL a Files): se usa para
+  `consolidate` y `chronicle` si ningún mundo va más rápido que `LLM_BATCH_MAX_SPEED` (a x10
+  una noche de juego dura ~54 min reales); si tarda más de `LLM_BATCH_MAX_WAIT_MINUTES`, se
+  repite por la vía normal.
+- **tsx en producción**: los paquetes del monorepo se consumen como TypeScript; compilar a JS
+  obligaría a cambiar `main` de shared/agent-core. El coste es ~1 s más de arranque.
+- **Iterative scans**: `SET LOCAL hnsw.iterative_scan = relaxed_order` en una transacción
+  corta por consulta. pgvector 0.8.7 en la imagen `pgvector/pgvector:pg16`.
