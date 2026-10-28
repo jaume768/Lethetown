@@ -21,7 +21,8 @@
     "db:migrate": "pnpm --filter @lethetown/server db:migrate",
     "seed": "pnpm --filter @lethetown/server seed",
     "map:generate": "tsx tools/generate-map.ts",
-    "interview": "pnpm --filter @lethetown/server interview --"
+    "interview": "pnpm --filter @lethetown/server interview --",
+    "assets:placeholder": "tsx tools/generate-placeholder-assets.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -34,6 +35,8 @@
     "typescript-eslint": "^8.72.1",
     "vitest": "^5.0.5",
     "tsx": "^4.23.15",
-    "@lethetown/shared": "workspace:*"
+    "@lethetown/shared": "workspace:*",
+    "pngjs": "^7.0.0",
+    "@types/pngjs": "^6.0.5"
   }
 }

@@ -7,7 +7,7 @@ retomar desde el primer elemento sin marcar.
 
 ### Assets
 
-- [ ] `pnpm assets:placeholder`: tileset 16×16, hoja de personaje (4 dir × idle/walk4/sit/sleep), emotes, bocadillo nine-slice
+- [x] `pnpm assets:placeholder`: tileset 16×16 y hoja de personaje (4 dir × idle/walk4/sit/sleep) recoloreable (emotes y bocadillo se dibujan por código en el cliente)
 - [x] Manifest de assets tipado (zod) con packs `placeholder` / `vendor`
 - [x] `apps/web/public/assets/vendor/` en .gitignore; README con instrucciones y crédito a LimeZu
 
@@ -95,6 +95,6 @@ retomar desde el primer elemento sin marcar.
 ## Bloqueos / pendientes
 
 - Pixelify Sans dibuja «¿» parecido a «ó» (limitación de la fuente).
-- Placeholder generado por código (`pnpm assets:placeholder`) aplazado: el usuario pidió priorizar lo que no dependía de assets y después aportó los packs vendor. Sigue pendiente para que el proyecto funcione sin ellos (ahora cae a formas simples).
+- El .tmj del repo usa el pack `limezu`; sin la carpeta vendor el cliente cae a formas simples. Para usar el placeholder: `pnpm assets:placeholder && pnpm map:generate --pack placeholder` (el cliente elige el pack por la propiedad `assetPack` del mapa).
 - A* no prefiere los caminos (coste uniforme): los agentes cruzan el césped en diagonal escalonada.
 - Etiquetas de nombre se solapan cuando hay varios agentes juntos (fase E).

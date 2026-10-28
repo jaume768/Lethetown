@@ -1,6 +1,456 @@
 {
   "activePack": "limezu",
   "packs": {
+    "placeholder": {
+      "description": "Set propio generado por `pnpm assets:placeholder` (se commitea). Funciona sin los packs de terceros.",
+      "credits": "Pixel art placeholder de Lethetown (generado por código).",
+      "tilesets": [
+        {
+          "name": "placeholder",
+          "image": "assets/placeholder/tileset.png",
+          "tileWidth": 16,
+          "tileHeight": 16,
+          "imageWidth": 128,
+          "imageHeight": 128
+        }
+      ],
+      "stamps": {
+        "grass": {
+          "tileset": "placeholder",
+          "x": 0,
+          "y": 0,
+          "w": 1,
+          "h": 1,
+          "mode": "pattern",
+          "anchor": [0, 0],
+          "blocks": []
+        },
+        "path": {
+          "tileset": "placeholder",
+          "x": 1,
+          "y": 0,
+          "w": 1,
+          "h": 1,
+          "mode": "pattern",
+          "anchor": [0, 0],
+          "blocks": []
+        },
+        "water": {
+          "tileset": "placeholder",
+          "x": 0,
+          "y": 2,
+          "w": 3,
+          "h": 3,
+          "mode": "nineslice",
+          "anchor": [0, 0],
+          "blocks": []
+        },
+        "tree": {
+          "tileset": "placeholder",
+          "x": 6,
+          "y": 2,
+          "w": 1,
+          "h": 2,
+          "mode": "fixed",
+          "anchor": [0, 1],
+          "blocks": [[0, 1]]
+        },
+        "bush": {
+          "tileset": "placeholder",
+          "x": 7,
+          "y": 1,
+          "w": 1,
+          "h": 1,
+          "mode": "fixed",
+          "anchor": [0, 0],
+          "blocks": [[0, 0]]
+        },
+        "lamp": {
+          "tileset": "placeholder",
+          "x": 7,
+          "y": 2,
+          "w": 1,
+          "h": 2,
+          "mode": "fixed",
+          "anchor": [0, 1],
+          "blocks": [[0, 1]]
+        },
+        "bench": {
+          "tileset": "placeholder",
+          "x": 5,
+          "y": 7,
+          "w": 1,
+          "h": 1,
+          "mode": "fixed",
+          "anchor": [0, 0],
+          "blocks": []
+        },
+        "fountain": {
+          "tileset": "placeholder",
+          "x": 6,
+          "y": 7,
+          "w": 1,
+          "h": 1,
+          "mode": "fixed",
+          "anchor": [0, -1],
+          "blocks": [[0, 0]]
+        },
+        "roof": {
+          "tileset": "placeholder",
+          "x": 3,
+          "y": 2,
+          "w": 3,
+          "h": 3,
+          "mode": "nineslice",
+          "anchor": [0, 0],
+          "blocks": []
+        },
+        "facade": {
+          "tileset": "placeholder",
+          "x": 3,
+          "y": 5,
+          "w": 5,
+          "h": 1,
+          "mode": "fixed",
+          "anchor": [0, 0],
+          "blocks": []
+        },
+        "ceiling": {
+          "tileset": "placeholder",
+          "x": 2,
+          "y": 0,
+          "w": 1,
+          "h": 1,
+          "mode": "pattern",
+          "anchor": [0, 0],
+          "blocks": []
+        },
+        "wall_blue": {
+          "tileset": "placeholder",
+          "x": 3,
+          "y": 0,
+          "w": 1,
+          "h": 2,
+          "mode": "pattern",
+          "anchor": [0, 0],
+          "blocks": []
+        },
+        "wall_red": {
+          "tileset": "placeholder",
+          "x": 4,
+          "y": 0,
+          "w": 1,
+          "h": 2,
+          "mode": "pattern",
+          "anchor": [0, 0],
+          "blocks": []
+        },
+        "wall_wood": {
+          "tileset": "placeholder",
+          "x": 5,
+          "y": 0,
+          "w": 1,
+          "h": 2,
+          "mode": "pattern",
+          "anchor": [0, 0],
+          "blocks": []
+        },
+        "wall_grey": {
+          "tileset": "placeholder",
+          "x": 6,
+          "y": 0,
+          "w": 1,
+          "h": 2,
+          "mode": "pattern",
+          "anchor": [0, 0],
+          "blocks": []
+        },
+        "floor_home": {
+          "tileset": "placeholder",
+          "x": 0,
+          "y": 1,
+          "w": 1,
+          "h": 1,
+          "mode": "pattern",
+          "anchor": [0, 0],
+          "blocks": []
+        },
+        "floor_cafe": {
+          "tileset": "placeholder",
+          "x": 1,
+          "y": 1,
+          "w": 1,
+          "h": 1,
+          "mode": "pattern",
+          "anchor": [0, 0],
+          "blocks": []
+        },
+        "floor_shop": {
+          "tileset": "placeholder",
+          "x": 2,
+          "y": 1,
+          "w": 1,
+          "h": 1,
+          "mode": "pattern",
+          "anchor": [0, 0],
+          "blocks": []
+        },
+        "bed": {
+          "tileset": "placeholder",
+          "x": 0,
+          "y": 6,
+          "w": 1,
+          "h": 1,
+          "mode": "fixed",
+          "anchor": [0, 0],
+          "blocks": []
+        },
+        "desk": {
+          "tileset": "placeholder",
+          "x": 1,
+          "y": 6,
+          "w": 1,
+          "h": 1,
+          "mode": "fixed",
+          "anchor": [0, -1],
+          "blocks": []
+        },
+        "chair": {
+          "tileset": "placeholder",
+          "x": 2,
+          "y": 6,
+          "w": 1,
+          "h": 1,
+          "mode": "fixed",
+          "anchor": [0, 0],
+          "blocks": []
+        },
+        "stool": {
+          "tileset": "placeholder",
+          "x": 3,
+          "y": 6,
+          "w": 1,
+          "h": 1,
+          "mode": "fixed",
+          "anchor": [0, 0],
+          "blocks": []
+        },
+        "table": {
+          "tileset": "placeholder",
+          "x": 4,
+          "y": 6,
+          "w": 1,
+          "h": 1,
+          "mode": "fixed",
+          "anchor": [0, 0],
+          "blocks": []
+        },
+        "counter": {
+          "tileset": "placeholder",
+          "x": 5,
+          "y": 6,
+          "w": 1,
+          "h": 1,
+          "mode": "fixed",
+          "anchor": [0, -1],
+          "blocks": []
+        },
+        "stove": {
+          "tileset": "placeholder",
+          "x": 6,
+          "y": 6,
+          "w": 1,
+          "h": 1,
+          "mode": "fixed",
+          "anchor": [0, -1],
+          "blocks": []
+        },
+        "fridge_shelf": {
+          "tileset": "placeholder",
+          "x": 7,
+          "y": 6,
+          "w": 1,
+          "h": 1,
+          "mode": "fixed",
+          "anchor": [0, -1],
+          "blocks": []
+        },
+        "bookshelf": {
+          "tileset": "placeholder",
+          "x": 0,
+          "y": 7,
+          "w": 1,
+          "h": 1,
+          "mode": "fixed",
+          "anchor": [0, 0],
+          "blocks": []
+        },
+        "rug": {
+          "tileset": "placeholder",
+          "x": 1,
+          "y": 7,
+          "w": 1,
+          "h": 1,
+          "mode": "fixed",
+          "anchor": [0, 0],
+          "blocks": []
+        },
+        "plant": {
+          "tileset": "placeholder",
+          "x": 2,
+          "y": 7,
+          "w": 1,
+          "h": 1,
+          "mode": "fixed",
+          "anchor": [0, 0],
+          "blocks": []
+        },
+        "sofa": {
+          "tileset": "placeholder",
+          "x": 3,
+          "y": 7,
+          "w": 1,
+          "h": 1,
+          "mode": "fixed",
+          "anchor": [0, 0],
+          "blocks": []
+        },
+        "coffee_machine": {
+          "tileset": "placeholder",
+          "x": 4,
+          "y": 7,
+          "w": 1,
+          "h": 1,
+          "mode": "fixed",
+          "anchor": [0, -1],
+          "blocks": []
+        },
+        "collision": {
+          "tileset": "placeholder",
+          "x": 7,
+          "y": 0,
+          "w": 1,
+          "h": 1,
+          "mode": "fixed",
+          "anchor": [0, 0],
+          "blocks": []
+        }
+      },
+      "characters": {
+        "default": {
+          "image": "assets/placeholder/character.png",
+          "frameWidth": 16,
+          "frameHeight": 16,
+          "columns": 7,
+          "recolor": true,
+          "animations": {
+            "idle_down": {
+              "row": 0,
+              "start": 0,
+              "count": 1,
+              "frameRate": 1
+            },
+            "walk_down": {
+              "row": 0,
+              "start": 1,
+              "count": 4,
+              "frameRate": 8
+            },
+            "sit_down": {
+              "row": 0,
+              "start": 5,
+              "count": 1,
+              "frameRate": 1
+            },
+            "sleep_down": {
+              "row": 0,
+              "start": 6,
+              "count": 1,
+              "frameRate": 1
+            },
+            "idle_left": {
+              "row": 1,
+              "start": 0,
+              "count": 1,
+              "frameRate": 1
+            },
+            "walk_left": {
+              "row": 1,
+              "start": 1,
+              "count": 4,
+              "frameRate": 8
+            },
+            "sit_left": {
+              "row": 1,
+              "start": 5,
+              "count": 1,
+              "frameRate": 1
+            },
+            "sleep_left": {
+              "row": 1,
+              "start": 6,
+              "count": 1,
+              "frameRate": 1
+            },
+            "idle_right": {
+              "row": 2,
+              "start": 0,
+              "count": 1,
+              "frameRate": 1
+            },
+            "walk_right": {
+              "row": 2,
+              "start": 1,
+              "count": 4,
+              "frameRate": 8
+            },
+            "sit_right": {
+              "row": 2,
+              "start": 5,
+              "count": 1,
+              "frameRate": 1
+            },
+            "sleep_right": {
+              "row": 2,
+              "start": 6,
+              "count": 1,
+              "frameRate": 1
+            },
+            "idle_up": {
+              "row": 3,
+              "start": 0,
+              "count": 1,
+              "frameRate": 1
+            },
+            "walk_up": {
+              "row": 3,
+              "start": 1,
+              "count": 4,
+              "frameRate": 8
+            },
+            "sit_up": {
+              "row": 3,
+              "start": 5,
+              "count": 1,
+              "frameRate": 1
+            },
+            "sleep_up": {
+              "row": 3,
+              "start": 6,
+              "count": 1,
+              "frameRate": 1
+            }
+          },
+          "markers": {
+            "skin": "#ff00ff",
+            "hair": "#ff0000",
+            "shirt": "#00ff00",
+            "pants": "#0000ff"
+          }
+        }
+      },
+      "agentCharacters": {}
+    },
     "limezu": {
       "description": "LimeZu Modern Exteriors + Modern Interiors (Free) + Modern UI, 16x16. No redistribuible: va en assets/vendor (gitignored).",
       "credits": "Pixel art de LimeZu — https://limezu.itch.io/",

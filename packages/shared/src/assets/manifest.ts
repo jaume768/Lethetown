@@ -63,6 +63,10 @@ export const CharacterSheet = z.object({
   columns: z.number().int().positive(),
   /** Si true, el cliente recolorea la hoja con los colores de `appearance` (placeholder). */
   recolor: z.boolean().default(false),
+  /** Colores marcador de la hoja que se sustituyen por los de `appearance`. */
+  markers: z
+    .object({ skin: z.string(), hair: z.string(), shirt: z.string(), pants: z.string() })
+    .optional(),
   /**
    * Animaciones por clave (`walk_down`, `sit_left`...). Las que falten caen en otras:
    * sit_up/down → idle, sleep → primer frame de idle_down tumbado, read → idle.
@@ -102,6 +106,13 @@ export function activePack(
     }
   }
   return { name, pack };
+}
+
+/** Pack con el que se generó un .tmj (propiedad `assetPack`), si la tiene. */
+export function mapAssetPack(tmj: unknown): string | undefined {
+  const props = (tmj as { properties?: { name: string; value: unknown }[] } | null)?.properties;
+  const v = props?.find((p) => p.name === "assetPack")?.value;
+  return typeof v === "string" ? v : undefined;
 }
 
 /** Elige la hoja de personaje de un agente dentro de un pack. */

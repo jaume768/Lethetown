@@ -2,6 +2,8 @@ import {
   AssetManifest,
   activePack,
   characterFor,
+  mapAssetPack,
+  recolorPixels,
   positionAt,
   type AgentState,
   type AssetPack,
@@ -63,7 +65,9 @@ export class TownScene extends Phaser.Scene {
     createPixelTextures(this);
     let pack: AssetPack | null = null;
     try {
-      pack = activePack(AssetManifest.parse(this.cache.json.get("manifest"))).pack;
+      // El pack es el que se usó para generar el mapa (propiedad assetPack del .tmj).
+      const manifest = AssetManifest.parse(this.cache.json.get("manifest"));
+      pack = activePack(manifest, mapAssetPack(this.cache.json.get("tmj"))).pack;
     } catch (error) {
       console.warn("Manifest de assets inválido; uso formas simples", error);
     }
@@ -223,12 +227,35 @@ export class TownScene extends Phaser.Scene {
   private createView(agent: AgentState): AgentView {
     const key = this.pack ? characterFor(this.pack, agent.id, agent.appearance.sheet) : null;
     const sheet = this.assetsOk && key ? (this.pack!.characters[key] ?? null) : null;
-    const view = new AgentView(this, agent, sheet, sheet ? `char:${key}` : "pixel", (id) =>
-      this.onSelect(id),
-    );
+    const texture = sheet && key ? this.textureFor(agent, key) : "pixel";
+    const view = new AgentView(this, agent, sheet, texture, (id) => this.onSelect(id));
     this.views.set(agent.id, view);
     if (agent.id === this.selectedId) view.setSelected(true);
     return view;
+  }
+
+  /** Textura del personaje; si la hoja es recoloreable, crea una copia con los colores del agente. */
+  private textureFor(agent: AgentState, key: string): string {
+    const base = `char:${key}`;
+    const sheet = this.pack!.characters[key]!;
+    if (!sheet.recolor || !sheet.markers) return base;
+    const own = `${base}:${agent.id}`;
+    if (this.textures.exists(own)) return own;
+    const src = this.textures.get(base).getSourceImage() as HTMLImageElement;
+    const canvas = document.createElement("canvas");
+    canvas.width = src.width;
+    canvas.height = src.height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return base;
+    ctx.drawImage(src, 0, 0);
+    const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    recolorPixels(img.data, sheet.markers, agent.appearance);
+    ctx.putImageData(img, 0, 0);
+    this.textures.addSpriteSheet(own, canvas as unknown as HTMLImageElement, {
+      frameWidth: sheet.frameWidth,
+      frameHeight: sheet.frameHeight,
+    });
+    return own;
   }
 
   // --- Tejados, cámara y minimapa -------------------------------------------------------------

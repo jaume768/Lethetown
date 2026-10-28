@@ -5,6 +5,7 @@ import {
   REQUIRED_STAMPS,
   activePack,
   characterFor,
+  mapAssetPack,
   findPath,
   parseTiledMap,
   pathLength,
@@ -108,7 +109,7 @@ describe("manifest de assets", () => {
       ),
     ),
   );
-  const { pack } = activePack(manifest);
+  const { pack } = activePack(manifest, mapAssetPack(tmj));
 
   it("el pack activo tiene todos los sellos que necesita el generador", () => {
     for (const s of REQUIRED_STAMPS) expect(pack.stamps[s], s).toBeDefined();
