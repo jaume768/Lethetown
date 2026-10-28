@@ -19,6 +19,8 @@ interface Client {
 class WorldChannel {
   readonly clients = new Set<Client>();
   private lastCalls = -1;
+  /** Último estado enviado de cada agente (JSON), para mandar solo lo que cambia. */
+  private sent = new Map<string, string>();
   private readonly unsubscribe: () => void;
 
   constructor(
@@ -43,18 +45,38 @@ class WorldChannel {
     }
   }
 
+  /**
+   * Estado completo para un cliente nuevo. Antes se manda un delta a los demás para que todos
+   * partan de la misma base que el snapshot.
+   */
   sendSnapshot(c: Client) {
-    this.send(c, { type: "snapshot", snapshot: snapshot(this.world, this.provider) });
+    this.clients.delete(c);
+    this.tick();
+    this.clients.add(c);
+    const snap = snapshot(this.world, this.provider);
+    this.sent = new Map(snap.agents.map((a) => [a.id, JSON.stringify(a)]));
+    this.send(c, { type: "snapshot", snapshot: snap });
     if (hasRole(c.user, "admin")) this.send(c, { type: "cost", summary: this.world.costs() });
   }
 
+  /** Delta: reloj + agentes cuyo estado ha cambiado desde el último envío. */
   tick() {
     if (!this.clients.size) return;
     const live = this.world.live();
+    const changed = live.agents.filter((a) => {
+      const json = JSON.stringify(a);
+      if (this.sent.get(a.id) === json) return false;
+      this.sent.set(a.id, json);
+      return true;
+    });
+    const ids = new Set(live.agents.map((a) => a.id));
+    const removed = [...this.sent.keys()].filter((id) => !ids.has(id));
+    for (const id of removed) this.sent.delete(id);
     this.broadcast({
-      type: "tick",
+      type: "delta",
       clock: { time: live.time, speed: live.speed },
-      agents: live.agents,
+      agents: changed,
+      removed,
     });
     const summary = this.world.costs();
     if (summary.total.calls !== this.lastCalls) {
@@ -110,7 +132,6 @@ export function registerWs(server: FastifyInstance, ctx: ApiContext) {
       }
       const client: Client = { ws: socket, user: req.user, ip: clientIp(req), alive: true };
       perIp.set(client.ip, (perIp.get(client.ip) ?? 0) + 1);
-      channel.clients.add(client);
       channel.sendSnapshot(client);
 
       socket.on("pong", () => (client.alive = true));

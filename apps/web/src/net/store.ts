@@ -66,6 +66,20 @@ function handle(msg: ServerMessage) {
       });
     case "tick":
       return set({ clock: msg.clock, clockReceivedAt: performance.now(), agents: msg.agents });
+    case "delta": {
+      // Mezcla los agentes que cambiaron con los que ya teníamos.
+      const changed = new Map(msg.agents.map((a) => [a.id, a]));
+      const removed = new Set(msg.removed);
+      const agents = state.agents
+        .filter((a) => !removed.has(a.id))
+        .map((a) => changed.get(a.id) ?? a);
+      for (const a of msg.agents) if (!state.agents.some((x) => x.id === a.id)) agents.push(a);
+      return set({
+        clock: msg.clock,
+        clockReceivedAt: performance.now(),
+        ...(msg.agents.length || removed.size ? { agents } : {}),
+      });
+    }
     case "event":
       return set({ events: [...state.events, msg.event].slice(-MAX_EVENTS) });
     case "cost":

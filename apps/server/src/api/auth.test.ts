@@ -143,6 +143,24 @@ describe("autorización", () => {
     expect(res.body).toContain('lethetown_world_game_minutes{world="default"');
   });
 
+  it("por WebSocket llega el snapshot al conectar y luego solo los agentes que cambian", async () => {
+    const msgs: { type: string; agents?: { id: string }[] }[] = [];
+    const sock = await api.server.injectWS(
+      "/ws",
+      { headers: { origin: ORIGIN } },
+      { onInit: (ws) => ws.on("message", (d) => msgs.push(JSON.parse(String(d)))) },
+    );
+    await new Promise((r) => setTimeout(r, 650));
+    app.defaultWorld.sim.agents.get("carmen")!.state.action = "regar las plantas";
+    await new Promise((r) => setTimeout(r, 650));
+    sock.terminate();
+    expect(msgs[0]?.type).toBe("snapshot");
+    const deltas = msgs.filter((m) => m.type === "delta");
+    expect(deltas.length).toBeGreaterThanOrEqual(2);
+    expect(deltas.some((d) => d.agents?.length === 0)).toBe(true);
+    expect(deltas.flatMap((d) => d.agents ?? []).map((a) => a.id)).toEqual(["carmen"]);
+  });
+
   it("el WebSocket rechaza orígenes no permitidos", async () => {
     await expect(
       api.server.injectWS("/ws", { headers: { origin: "https://evil.example" } }),
