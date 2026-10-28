@@ -97,6 +97,7 @@ export class MemoryMaintenance {
       agentId: owner.agentId,
       memoryId: m.id,
       text: m.text,
+      importance: m.importance,
     });
     report.forgotten.push(m.id);
   }
@@ -318,6 +319,7 @@ export class MemoryMaintenance {
       agentId: owner.agentId,
       memoryId: m.id,
       text: m.text,
+      importance: m.importance,
     });
     report.deleted.push(m.id);
   }

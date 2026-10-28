@@ -6,6 +6,7 @@ import type {
   MemoryMaintenance,
   MemorySystem,
   Perception,
+  PromptLanguage,
   Rng,
   SocialProfileStore,
 } from "@lethetown/agent-core";
@@ -100,12 +101,14 @@ export interface SimulationDeps {
   consolidator?: Consolidator;
   maintenance?: MemoryMaintenance;
   rng: Rng;
+  /** Idioma de los agentes y del cronista. */
+  language?: PromptLanguage;
 }
 
 /** Señales que la simulación emite hacia los clientes (además de los eventos del log). */
 export type SimSignal = Extract<
   ServerMessage,
-  { type: "event" | "thinking" | "memory_effect" | "chronicle" | "world" | "status" }
+  { type: "event" | "thinking" | "memory_effect" | "chronicle" | "world" | "status" | "drama" }
 >;
 
 /**

@@ -10,7 +10,7 @@ import {
 } from "@lethetown/shared";
 import { z } from "zod";
 import type { WorldRuntime } from "../bootstrap";
-import type { ChronicleStore, EventStore } from "../db/stores";
+import type { ChronicleStore, DramaStore, EventStore } from "../db/stores";
 import type { SimSignal } from "../sim/simulation";
 
 /** Órdenes que cambian un mundo. Las ejecuta quien tenga la simulación (este proceso o el worker). */
@@ -62,6 +62,7 @@ export interface WorldGateway {
   social: SocialProfileStore;
   events: EventStore;
   chronicles: ChronicleStore;
+  dramas: DramaStore;
   costs(): CostSummary & { unpricedModels: string[] };
   command(cmd: WorldCommand): Promise<CommandResult>;
   onSignal(listener: (s: SimSignal | { type: "cost"; summary: CostSummary }) => void): () => void;
@@ -154,6 +155,9 @@ export class LocalWorldGateway implements WorldGateway {
   }
   get chronicles() {
     return this.w.chronicles;
+  }
+  get dramas() {
+    return this.w.dramas;
   }
 
   live() {

@@ -17,7 +17,7 @@ import { loadKillSwitch, refreshBudget } from "./worker/shared";
 import { LeaseManager } from "./worker/leases";
 import { liveState, runCommand } from "./worlds/gateway";
 import { ViewerPolicy } from "./worlds/viewers";
-import { eq, inArray } from "drizzle-orm";
+import { inArray } from "drizzle-orm";
 
 const LIVE_WITH_VIEWERS_MS = 500;
 const LIVE_IDLE_MS = 10_000;
@@ -58,12 +58,9 @@ const publish = (msg: unknown) =>
   void bus.publish(CHANNELS.world, msg).catch((e: unknown) => log(`⚠ Bus: ${String(e)}`));
 
 async function start(id: string): Promise<void> {
-  const [row] = await db.db.select().from(worldsTable).where(eq(worldsTable.id, id));
+  const row = await services.worldRepo.get(id);
   if (!row) return;
-  const w = await openWorld(services, {
-    ...row,
-    status: row.status === "paused" ? "paused" : "running",
-  });
+  const w = await openWorld(services, row);
   w.sim.onSignal((signal) => publish({ kind: "signal", w: id, signal }));
   w.sim.onEvent((e) => {
     if (isProduction(config)) logger.debug({ world: id, event: e }, "evento");

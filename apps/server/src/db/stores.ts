@@ -1,8 +1,15 @@
 import type { SocialProfileStore } from "@lethetown/agent-core";
-import { SimEventKind, type Chronicle, type SimEvent, type SocialProfile } from "@lethetown/shared";
+import {
+  DramaKind,
+  SimEventKind,
+  type Chronicle,
+  type Drama,
+  type SimEvent,
+  type SocialProfile,
+} from "@lethetown/shared";
 import { and, asc, desc, eq, gte, lt } from "drizzle-orm";
 import type { Db } from "./client";
-import { chronicles, moderationLog, simEvents, socialProfiles } from "./schema";
+import { chronicles, dramas, moderationLog, simEvents, socialProfiles } from "./schema";
 
 /** Línea de tiempo de eventos. */
 export interface EventStore {
@@ -216,5 +223,46 @@ export class PgModerationLog implements ModerationLog {
       .orderBy(desc(moderationLog.at))
       .limit(limit);
     return rows.map(({ id: _id, ...r }) => r);
+  }
+}
+
+// --- Dramas --------------------------------------------------------------------------------
+
+export interface DramaStore {
+  add(d: Drama): Promise<void>;
+  /** Los más recientes primero. */
+  recent(limit?: number): Promise<Drama[]>;
+}
+
+export class InMemoryDramaStore implements DramaStore {
+  private readonly items: Drama[] = [];
+  async add(d: Drama) {
+    this.items.push(d);
+    if (this.items.length > 500) this.items.shift();
+  }
+  async recent(limit = 50) {
+    return this.items.slice(-limit).reverse();
+  }
+}
+
+export class PgDramaStore implements DramaStore {
+  constructor(
+    private readonly db: Db,
+    readonly worldId: string,
+  ) {}
+  async add(d: Drama) {
+    await this.db
+      .insert(dramas)
+      .values({ ...d, worldId: this.worldId })
+      .onConflictDoNothing();
+  }
+  async recent(limit = 50) {
+    const rows = await this.db
+      .select()
+      .from(dramas)
+      .where(eq(dramas.worldId, this.worldId))
+      .orderBy(desc(dramas.time))
+      .limit(limit);
+    return rows.map(({ worldId: _w, ...d }) => ({ ...d, kind: DramaKind.parse(d.kind) }));
   }
 }

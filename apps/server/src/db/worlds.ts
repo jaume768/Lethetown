@@ -12,6 +12,8 @@ export interface WorldRow {
   map: string;
   seed: number | null;
   status: WorldStatus;
+  /** Idioma de los prompts (es | en). */
+  language: "es" | "en";
   createdAt: Date;
 }
 
@@ -20,10 +22,15 @@ export const WorldId = z
   .string()
   .regex(/^[a-z0-9][a-z0-9-]{0,39}$/, "id: minúsculas, números y guiones (máx. 40)");
 
+export type NewWorldRow = Omit<WorldRow, "createdAt" | "status" | "language"> & {
+  status?: WorldStatus;
+  language?: "es" | "en";
+};
+
 export interface WorldRepo {
   list(): Promise<WorldRow[]>;
   get(id: string): Promise<WorldRow | undefined>;
-  create(w: Omit<WorldRow, "createdAt" | "status"> & { status?: WorldStatus }): Promise<WorldRow>;
+  create(w: NewWorldRow): Promise<WorldRow>;
   setStatus(id: string, status: WorldStatus): Promise<void>;
   /** Crea el mundo por defecto si no existe (instalación nueva o modo RAM). */
   ensureDefault(map: string, seed: number | null): Promise<WorldRow>;
@@ -40,6 +47,7 @@ const KEEP_SNAPSHOTS = 48;
 const toRow = (r: typeof worlds.$inferSelect): WorldRow => ({
   ...r,
   status: WorldStatus.catch("running").parse(r.status),
+  language: r.language === "en" ? "en" : "es",
 });
 
 export class PgWorldRepo implements WorldRepo {
@@ -54,7 +62,7 @@ export class PgWorldRepo implements WorldRepo {
     return row && toRow(row);
   }
 
-  async create(w: Omit<WorldRow, "createdAt" | "status"> & { status?: WorldStatus }) {
+  async create(w: NewWorldRow) {
     const [row] = await this.db.insert(worlds).values(w).returning();
     return toRow(row!);
   }
@@ -81,9 +89,9 @@ export class InMemoryWorldRepo implements WorldRepo {
   async get(id: string) {
     return this.rows.get(id);
   }
-  async create(w: Omit<WorldRow, "createdAt" | "status"> & { status?: WorldStatus }) {
+  async create(w: NewWorldRow) {
     if (this.rows.has(w.id)) throw new Error(`El mundo ${w.id} ya existe`);
-    const row: WorldRow = { status: "running", ...w, createdAt: new Date() };
+    const row: WorldRow = { status: "running", language: "es", ...w, createdAt: new Date() };
     this.rows.set(w.id, row);
     return row;
   }

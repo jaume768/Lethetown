@@ -61,7 +61,7 @@ export async function writeChronicle(ctx: SimContext, day: number): Promise<Chro
     const lines = events
       .filter((e) => ["speech", "action", "world", "thought", "memory"].includes(e.kind))
       .map((e) => e.text);
-    const chronicle = await composeChronicle(ctx.deps.llm, day, lines);
+    const chronicle = await composeChronicle(ctx.deps.llm, day, lines, 120, ctx.deps.language);
     await ctx.deps.chronicles.add(chronicle);
     ctx.emit("chronicle", null, `📜 Crónica del día ${day}: ${chronicle.title}`);
     ctx.signal({ type: "chronicle", chronicle });

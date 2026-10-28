@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { AgentState } from "./agent";
 import { Chronicle, ClockState, CostSummary, SimEvent, WorldRunStatus, WorldSnapshot } from "./api";
+import { Drama } from "./drama";
 import { SimSpeed, Weather } from "./world";
 
 /** Mensajes servidor → cliente por WebSocket. */
@@ -33,7 +34,10 @@ export const ServerMessage = z.discriminatedUnion("type", [
     memoryId: z.string(),
     kind: z.enum(["recall", "vague", "forget", "gist", "reconsolidate", "consolidate", "archive"]),
     text: z.string(),
+    importance: z.number().optional(),
   }),
+  /** Algo de alto interés (rumor, discusión, olvido importante…) para el feed de dramas. */
+  z.object({ type: z.literal("drama"), drama: Drama }),
   z.object({ type: z.literal("chronicle"), chronicle: Chronicle }),
   /** El mundo se pausó o se reanudó (presupuesto, kill switch, sin espectadores, manual). */
   z.object({ type: z.literal("status"), status: WorldRunStatus }),

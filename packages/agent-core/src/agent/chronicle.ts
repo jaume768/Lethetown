@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { LLMClient } from "../llm/client";
 import { parseWith } from "./parse";
+import { languageRule, type PromptLanguage } from "./prompts";
 
 /** Prefijo fijo del narrador (cacheable). */
 export const NARRATOR_SYSTEM = `Eres el cronista de Lethetown, un pequeño pueblo. Escribes breves crónicas del día,
@@ -16,12 +17,13 @@ export async function writeChronicle(
   day: number,
   events: string[],
   maxEvents = 120,
+  language: PromptLanguage = "es",
 ): Promise<Chronicle> {
   const lines = events.slice(-maxEvents);
   const res = await llm.run({
     kind: "reflection",
     task: "chronicle",
-    system: NARRATOR_SYSTEM,
+    system: NARRATOR_SYSTEM + languageRule(language),
     maxTokens: 1500,
     prompt: `TAREA: chronicle
 Día ${day}. Eventos del pueblo (en orden):

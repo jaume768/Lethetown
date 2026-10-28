@@ -26,6 +26,8 @@ export const worlds = pgTable("worlds", {
   seed: integer("seed"),
   /** running | paused | stopped. */
   status: text("status").notNull().default("running"),
+  /** Idioma en el que hablan y escriben los agentes y el cronista (es | en). */
+  language: text("language").notNull().default("es"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -260,3 +262,20 @@ export const settings = pgTable("settings", {
   value: jsonb("value").notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+/** Feed de "dramas": eventos de alto interés con dónde y cuándo ocurrieron. */
+export const dramas = pgTable(
+  "dramas",
+  {
+    id: text("id").primaryKey(),
+    worldId: worldId(),
+    time: doublePrecision("time").notNull(),
+    kind: text("kind").notNull(),
+    score: real("score").notNull(),
+    title: text("title").notNull(),
+    agents: text("agents").array().notNull().default([]),
+    placeId: text("place_id"),
+    eventId: text("event_id"),
+  },
+  (t) => [index("dramas_world_time_idx").on(t.worldId, t.time)],
+);

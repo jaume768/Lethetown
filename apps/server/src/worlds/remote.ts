@@ -12,7 +12,7 @@ import type { Services } from "../bootstrap";
 import { CHANNELS, type Bus } from "../bus/pg-bus";
 import { WorldBusMessage } from "../bus/protocol";
 import { PgMemoryStore } from "../db/pg-memory-store";
-import { PgChronicleStore, PgEventStore, PgSocialProfileStore } from "../db/stores";
+import { PgChronicleStore, PgDramaStore, PgEventStore, PgSocialProfileStore } from "../db/stores";
 import type { WorldRow } from "../db/worlds";
 import { parseSnapshot } from "../sim/snapshot";
 import type { SimSignal } from "../sim/simulation";
@@ -49,6 +49,7 @@ export class RemoteWorldGateway implements WorldGateway {
   readonly social: PgSocialProfileStore;
   readonly events: PgEventStore;
   readonly chronicles: PgChronicleStore;
+  readonly dramas: PgDramaStore;
   private readonly map: WorldMap;
   private state: LiveState;
   private costSummary = emptyCosts();
@@ -74,6 +75,7 @@ export class RemoteWorldGateway implements WorldGateway {
     this.social = new PgSocialProfileStore(db, row.id);
     this.events = new PgEventStore(db, row.id);
     this.chronicles = new PgChronicleStore(db, row.id);
+    this.dramas = new PgDramaStore(db, row.id);
     this.state = initial;
     this.applySpots(initial.spots);
   }
@@ -172,7 +174,8 @@ export class RemoteWorldGateway implements WorldGateway {
       signal.type === "memory_effect" ||
       signal.type === "chronicle" ||
       signal.type === "world" ||
-      signal.type === "status"
+      signal.type === "status" ||
+      signal.type === "drama"
     ) {
       for (const l of this.listeners) l(signal);
     }

@@ -1,5 +1,12 @@
 import { Agent, type Decision, type MemoryEffect } from "@lethetown/agent-core";
-import type { AgentState, Chronicle, SimEvent, Weather, WorldRunStatus } from "@lethetown/shared";
+import type {
+  AgentState,
+  Chronicle,
+  Drama,
+  SimEvent,
+  Weather,
+  WorldRunStatus,
+} from "@lethetown/shared";
 import type { GameClock } from "./clock";
 import {
   SimContext,
@@ -47,6 +54,7 @@ export class Simulation {
         places: deps.world.places,
         social: deps.social,
         names,
+        language: deps.language,
         onError: (agentId, task, error) =>
           ctx.emit("system", agentId, `⚠ Error en "${task}": ${errorMessage(error)}`),
       });
@@ -211,6 +219,11 @@ export class Simulation {
 
   notifyStatus(status: WorldRunStatus): void {
     intervention.notifyStatus(this.ctx, status);
+  }
+
+  /** Publica un drama (rumor, discusión…) a los clientes. */
+  notifyDrama(drama: Drama): void {
+    this.ctx.signal({ type: "drama", drama });
   }
 
   injectThought(agentId: string, text: string): void {

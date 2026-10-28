@@ -20,6 +20,7 @@ import {
   decidePrompt,
   identityPrompt,
   importancePrompt,
+  type PromptLanguage,
   parseClock,
   planPrompt,
   type DecideContext,
@@ -63,6 +64,8 @@ export interface AgentDeps {
   llm: LLMClient;
   memory: MemorySystem;
   places: Place[];
+  /** Idioma en el que habla y escribe (por mundo). Por defecto, español. */
+  language?: PromptLanguage;
   /** Fichas sociales (lo que piensa de los demás). */
   social?: SocialProfileStore;
   /** Nombres de los demás agentes, para las notas sociales. */
@@ -112,7 +115,7 @@ export class Agent {
     private readonly deps: AgentDeps,
   ) {
     this.id = seed.id;
-    this.system = identityPrompt(seed, deps.places);
+    this.system = identityPrompt(seed, deps.places, deps.language);
     this.spots = new Map(deps.places.flatMap((p) => p.objects.map((o) => [o.id, o] as const)));
     const home = deps.places.find((p) => p.id === seed.homeId);
     if (!home) throw new Error(`${seed.id}: casa desconocida ${seed.homeId}`);

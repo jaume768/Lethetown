@@ -267,6 +267,16 @@ export function registerWorldRest(server: FastifyInstance, ctx: ApiContext): voi
     return w.events.range(from, to, q.limit);
   });
 
+  /** Feed de dramas (lo más interesante que ha pasado), los más recientes primero. */
+  server.get("/dramas", async (req, reply) => {
+    const w = worldOf(ctx, req, reply);
+    if (!w) return reply;
+    const { limit } = z
+      .object({ limit: z.coerce.number().int().positive().max(200).default(50) })
+      .parse(req.query);
+    return w.dramas.recent(limit);
+  });
+
   server.get("/chronicles", async (req, reply) => {
     const w = worldOf(ctx, req, reply);
     return w ? w.chronicles.list() : reply;

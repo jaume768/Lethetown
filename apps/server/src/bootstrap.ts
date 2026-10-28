@@ -54,8 +54,11 @@ import { PgMemoryStore } from "./db/pg-memory-store";
 import {
   InMemoryChronicleStore,
   InMemoryEventStore,
+  InMemoryDramaStore,
   InMemoryModerationLog,
+  PgDramaStore,
   PgModerationLog,
+  type DramaStore,
   type ModerationLog,
   PgChronicleStore,
   PgEventStore,
@@ -78,6 +81,7 @@ import { fromRoot } from "./paths";
 import { Metrics } from "./observability";
 import { GameClock } from "./sim/clock";
 import { LimitedProvider } from "./sim/llm-queue";
+import { DramaDetector } from "./sim/dramas";
 import { Simulation } from "./sim/simulation";
 import { parseSnapshot } from "./sim/snapshot";
 import { BudgetGuard, BudgetedProvider, describeBreach } from "./security/budget";
@@ -138,6 +142,7 @@ export interface WorldRuntime {
   social: SocialProfileStore;
   events: EventStore;
   chronicles: ChronicleStore;
+  dramas: DramaStore;
   costs: CostTracker;
   /** Instante de juego de la instantánea restaurada (null = arranque limpio). */
   restoredFrom: number | null;
@@ -384,9 +389,20 @@ export async function openWorld(services: Services, row: WorldRow): Promise<Worl
     reconsolidator: new LLMReconsolidator(llm),
     rng,
   });
-  const social: SocialProfileStore = db
-    ? new PgSocialProfileStore(db.db, row.id)
-    : new InMemorySocialProfileStore();
+  const seedNames = new Map(services.seeds.map((s) => [s.id, s.name]));
+  // El reloj y la simulación se crean más abajo; el detector los consulta al ocurrir algo.
+  let clockRef: GameClock | null = null;
+  let placeOf: (agentId: string) => string | null = () => null;
+  const detector = new DramaDetector({
+    now: () => clockRef?.now() ?? 0,
+    name: (id) => seedNames.get(id) ?? id,
+    placeOf: (id) => placeOf(id),
+  });
+  // La ficha social se observa para detectar discusiones y amistades.
+  const social: SocialProfileStore = detector.observe(
+    db ? new PgSocialProfileStore(db.db, row.id) : new InMemorySocialProfileStore(),
+  );
+  const dramas: DramaStore = db ? new PgDramaStore(db.db, row.id) : new InMemoryDramaStore();
   const events: EventStore = db ? new PgEventStore(db.db, row.id) : new InMemoryEventStore();
   const chronicles: ChronicleStore = db
     ? new PgChronicleStore(db.db, row.id)
@@ -409,6 +425,7 @@ export async function openWorld(services: Services, row: WorldRow): Promise<Worl
     (SIM_SPEEDS.includes(config.SIM_SPEED as SimSpeed) ? (config.SIM_SPEED as SimSpeed) : 10);
   const startTime = snapshot?.time ?? (await resumeTime(store));
   const clock = new GameClock(startTime, speed, (e) => worldLog(`⚠ Error en evento: ${String(e)}`));
+  clockRef = clock;
   const sim = new Simulation({
     world: worldMap,
     seeds,
@@ -423,6 +440,16 @@ export async function openWorld(services: Services, row: WorldRow): Promise<Worl
     consolidator: new LLMConsolidator(llm, memory, social, names),
     maintenance,
     rng,
+    language: row.language,
+  });
+  placeOf = (id) => sim.agents.get(id)?.state.locationId ?? null;
+  sim.onEvent((e) => detector.onEvent(e));
+  memory.onEffect((e) => detector.onEffect(e));
+  detector.onDrama((d) => {
+    services.track(
+      dramas.add(d).catch((e: unknown) => worldLog(`⚠ No se pudo guardar el drama: ${String(e)}`)),
+    );
+    sim.notifyDrama(d);
   });
   sim.onEvent((e) =>
     services.track(
@@ -482,6 +509,7 @@ export async function openWorld(services: Services, row: WorldRow): Promise<Worl
     social,
     events,
     chronicles,
+    dramas,
     costs,
     restoredFrom: snapshot?.time ?? null,
     status: () => status,

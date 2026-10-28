@@ -19,6 +19,8 @@ export interface MemoryEffect {
   agentId: string;
   memoryId: string;
   text: string;
+  /** Importancia del recuerdo (1-10), para puntuar el "drama" de un olvido o una reescritura. */
+  importance?: number;
 }
 
 export interface MemorySystemDeps {
@@ -214,6 +216,7 @@ export class MemorySystem {
       agentId: m.agentId,
       memoryId: m.id,
       text: rewritten.text,
+      importance: m.importance,
     });
   }
 }
