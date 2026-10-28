@@ -133,7 +133,11 @@ describe("umbrales de olvido y vaguedad", () => {
   });
 
   it("un recuerdo vago solo devuelve la esencia", () => {
-    const scored = scoreMemory(mem({ strength: 0.2 }), { embedding: [1, 0, 0], now: 0, moodValence: 0 });
+    const scored = scoreMemory(mem({ strength: 0.2 }), {
+      embedding: [1, 0, 0],
+      now: 0,
+      moodValence: 0,
+    });
     expect(scored.scores.clarity).toBe("vague");
     expect(recallText(scored)).toMatch(/^\(vagamente\)/);
     const withGist = scoreMemory(mem({ strength: 0.2, gist: "un café con alguien" }), {
@@ -153,7 +157,12 @@ describe("umbrales de olvido y vaguedad", () => {
       idGenerator: () => `m${++n}`,
     });
     const fresh = await memory.remember(
-      { agentId: "a", text: "Lucía me regaló un libro de poesía", type: "observation", importance: 6 },
+      {
+        agentId: "a",
+        text: "Lucía me regaló un libro de poesía",
+        type: "observation",
+        importance: 6,
+      },
       100 * HOUR,
     );
     const old = await memory.remember(
@@ -161,7 +170,12 @@ describe("umbrales de olvido y vaguedad", () => {
       0,
     );
     const now = 100 * HOUR;
-    const got = await memory.retrieve({ agentId: "a", query: "libro de Lucía", now, moodValence: 0 });
+    const got = await memory.retrieve({
+      agentId: "a",
+      query: "libro de Lucía",
+      now,
+      moodValence: 0,
+    });
     expect(got.map((s) => s.memory.id)).toEqual([fresh.id]);
 
     const inspected = await memory.inspect({ agentId: "a", query: "libro", now, moodValence: 0 });
