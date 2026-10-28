@@ -1,7 +1,9 @@
 import { useCallback, useState } from "react";
 import { TownMap } from "../game/TownMap";
 import { useGame } from "../net/store";
+import { useAssets } from "../net/assets";
 import { ChroniclePanel } from "./ChroniclePanel";
+import { CreditsModal } from "./Credits";
 import { CostCounter } from "./CostCounter";
 import { EventLog } from "./EventLog";
 import { MemoryGarden } from "./MemoryGarden";
@@ -15,6 +17,8 @@ export function App() {
   const [followId, setFollowId] = useState<string | null>(null);
   const [minimap, setMinimap] = useState(true);
   const [rashomonId, setRashomonId] = useState<string | null>(null);
+  const [credits, setCredits] = useState(false);
+  const assets = useAssets();
   const onSelect = useCallback((id: string) => setSelectedId(id), []);
   const selected = game.agents.find((a) => a.id === selectedId);
   const today = Math.floor(game.clock.time / 1440);
@@ -64,7 +68,11 @@ export function App() {
         />
         <WorldPanel world={game.world} weather={game.weather} />
         <ChroniclePanel chronicles={game.chronicles} day={today} />
+        <button className="btn small link" onClick={() => setCredits(true)}>
+          Créditos
+        </button>
       </aside>
+      {credits && <CreditsModal credits={assets.credits} onClose={() => setCredits(false)} />}
       {rashomonId && <RashomonModal eventId={rashomonId} onClose={() => setRashomonId(null)} />}
     </div>
   );

@@ -379,3 +379,27 @@ textarea.field {
     animation: none;
   }
 }
+
+/* --- Créditos y avisos ------------------------------------------------------------------ */
+.credits {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 8px;
+}
+.credits a {
+  color: var(--accent-2);
+}
+.tag.warn {
+  background: #5a3a20;
+  color: #ffd59a;
+  margin-left: 6px;
+}
+.notice {
+  border: 1px dashed #b07a3a;
+  color: #ffd59a;
+  padding: 4px 8px;
+}
+.row.gap {
+  gap: 6px;
+}

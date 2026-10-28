@@ -9,12 +9,12 @@ pnpm test` y comprobar que `pnpm dev` arranca en modo mock.
 ### Paso 0 — Assets y licencias
 
 - [x] Inventario de zips y `apps/web/public/assets/vendor/LICENSES.md` (ignorado)
-- [ ] `license` en el manifest + `pnpm assets:check` + aviso en modo Director
+- [x] `license` en el manifest + `pnpm assets:check` + aviso en modo Director
 - [x] Personajes de Modern Exteriors documentados (no se cambian)
 - [ ] Modern User Interface en el manifest (con fallback)
-- [ ] Portrait Generator: `tools/compose-portraits.ts`, recetas en `seeds/agents.json`, retrato en inspector y bocadillos
-- [ ] Créditos en la UI
-- [ ] Confirmar `git check-ignore` / `git status`
+- [x] Portrait Generator: `tools/compose-portraits.ts`, recetas en `seeds/agents.json`, retrato en inspector y bocadillos
+- [x] Créditos en la UI
+- [x] Confirmar `git check-ignore` / `git status`
 
 ### Paso 1 — Multi-mundo y persistencia
 
@@ -71,3 +71,11 @@ pnpm test` y comprobar que `pnpm dev` arranca en modo mock.
 
 - **Portrait Generator**: viene incluido con Modern User Interface y se rige por su licencia
   (uso comercial sí, crédito obligatorio). Solo se extraen las capas PNG, no el ejecutable.
+- **Piel de UI recortada en el cliente**: la hoja de Modern UI se recorta en un canvas a data
+  URLs y se publica como variables CSS (`--ui-panel`…) bajo `html.ui-skin`. Así no hay que
+  generar ni desplegar archivos derivados de vendor; sin la hoja, la UI usa su CSS propio.
+- **Retratos por código**: el Portrait Generator trae las capas en PNG, así que
+  `pnpm portraits:compose` las apila según la receta de `seeds/agents.json` (dos tamaños:
+  64 px para la UI y 32 px para el mapa). El resultado se queda en vendor (ignorado).
+- **El aviso de assets no comerciales** se calcula en el cliente con `assetsInUse` (los mismos
+  datos que `pnpm assets:check`), y solo se mostrará en modo Director.
