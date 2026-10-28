@@ -1,0 +1,13 @@
+# Nunca en las imágenes: secretos, dependencias locales y assets de terceros (licencia LimeZu:
+# se montan como volumen en el servidor).
+.env
+.env.*
+!.env.example
+**/node_modules
+**/dist
+.cache
+interviews
+apps/web/public/assets/vendor
+.git
+.github
+*.log

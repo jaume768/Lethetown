@@ -1,0 +1,40 @@
+# DOMAIN y ACME_EMAIL vienen del entorno (docker-compose.prod.yml / .env).
+{
+	email {$ACME_EMAIL}
+}
+
+{$DOMAIN} {
+	encode zstd gzip
+
+	# Las métricas solo se leen desde la red interna (Prometheus → api:3001/metrics).
+	handle /metrics {
+		respond 404
+	}
+
+	handle /api/* {
+		reverse_proxy api:3001
+	}
+	handle /ws {
+		reverse_proxy api:3001
+	}
+
+	handle {
+		root * /srv
+		# Los assets con hash se pueden cachear para siempre.
+		@hashed path /assets/index-*
+		header @hashed Cache-Control "public, max-age=31536000, immutable"
+		try_files {path} /index.html
+		file_server
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		# Phaser pinta en canvas/WebGL; los clips usan blob: (MediaRecorder). El overlay de OBS
+		# se carga en una fuente de navegador, no en un iframe de terceros.
+		Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; font-src 'self'; connect-src 'self' wss://{$DOMAIN}; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+		-Server
+	}
+}
