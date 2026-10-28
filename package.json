@@ -41,5 +41,10 @@
     "@lethetown/shared": "workspace:*",
     "pngjs": "^7.0.0",
     "@types/pngjs": "^6.0.5"
+  },
+  "pnpm": {
+    "neverBuiltDependencies": [
+      "onnxruntime-node"
+    ]
   }
 }

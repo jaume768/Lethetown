@@ -24,15 +24,15 @@ pnpm test` y comprobar que `pnpm dev` arranca en modo mock.
 
 ### Paso 2 — Seguridad
 
-- [ ] Usuarios, roles (viewer/director/admin), sesiones con cookie, argon2, `pnpm user:create`
-- [ ] Autorización en REST y WS + tests
-- [ ] Rate limiting
-- [ ] Presupuesto diario/mensual por mundo y global, pausa automática, kill switch + tests
-- [ ] Moderación y anti-inyección del texto del usuario
-- [ ] WebSocket: Origin, maxPayload, heartbeat, límite por IP
-- [ ] helmet, CORS, límites de body, errores sin detalles
-- [ ] docker-compose en 127.0.0.1 con credenciales de .env; `.env.example`
-- [ ] CodeQL, Dependabot, fallback de onnxruntime sin red
+- [x] Usuarios, roles (viewer/director/admin), sesiones con cookie, argon2, `pnpm user:create`
+- [x] Autorización en REST y WS + tests
+- [x] Rate limiting
+- [x] Presupuesto diario/mensual por mundo y global, pausa automática, kill switch + tests
+- [x] Moderación y anti-inyección del texto del usuario
+- [x] WebSocket: Origin, maxPayload, heartbeat, límite por IP
+- [x] helmet, CORS, límites de body, errores sin detalles
+- [x] docker-compose en 127.0.0.1 con credenciales de .env; `.env.example`
+- [x] CodeQL, Dependabot, fallback de onnxruntime sin red
 
 ### Paso 3 — Escalabilidad y robustez
 
@@ -94,3 +94,27 @@ pnpm test` y comprobar que `pnpm dev` arranca en modo mock.
   reprograman al restaurar. Una instantánea de otra versión se ignora (arranque limpio).
 - **Test dorado antes del refactor**: `apps/server/src/sim/golden.test.ts` fija la línea de
   tiempo de 3 días en mock (SIM_SEED=7). Se creó antes de tocar la simulación.
+- **Sesiones propias con cookie** (no JWT): token aleatorio de 32 bytes en una cookie
+  httpOnly + SameSite=Lax (+ Secure en producción); en la BD solo su SHA-256. Se pueden revocar
+  borrando la fila. Contraseñas con argon2id (parámetros OWASP) vía `@node-rs/argon2`
+  (binarios precompilados, sin node-gyp). La tabla `users` ya tiene `provider` +
+  `provider_subject` para OAuth (`UserStore.findOrCreateOAuth`).
+- **CSRF**: SameSite=Lax y, además, toda petición que no es GET exige un `Origin` de la lista
+  `ALLOWED_ORIGINS` (si lo trae; sin Origin = cliente no navegador).
+- **Costes = admin**: `/costs` y los mensajes `cost` del WS solo para admin (el director ve la
+  intervención; el espectador nada de costes).
+- **Presupuesto**: `BudgetGuard` suma lo de hoy/este mes (UTC) desde `llm_calls` al arrancar y
+  cada `CostTracker.record` después. Bloquea en dos sitios: pausa el mundo (velocidad 0, evento
+  y mensaje `status`) y `BudgetedProvider` rechaza cualquier llamada al LLM del mundo
+  bloqueado. Reanudar falla (409) mientras siga superado. Kill switch global para admin.
+- **Moderación dentro de la orden**: sanear + moderar ocurre en `vetUserText` del mundo (quien
+  tiene el LLM y el presupuesto), no en la ruta. Si la moderación falla o no hay presupuesto,
+  el texto se rechaza (fail-closed). Los rechazos van a `moderation_log`.
+- **Anti-inyección**: el texto del usuario va entre `⟦ ⟧` (se eliminan de la entrada para que
+  no pueda cerrar el bloque) y el prompt fijo del agente dice que es un dato, no una orden.
+  Esto cambió el prompt de sistema, así que el test dorado se regeneró a propósito.
+- **onnxruntime-node**: en linux/x64 su postinstall descarga de NuGet los binarios CUDA (y
+  sin red falla la instalación). Los de CPU vienen en el paquete, así que se excluye con
+  `pnpm.neverBuiltDependencies`. Si aun así no cargan, el servidor cae solo a `EMBEDDINGS=hash`.
+- **`DEV_ADMIN_PASSWORD`**: en RAM (sin Postgres) no hay `user:create`; esta variable crea un
+  admin en memoria, y se ignora en producción.
