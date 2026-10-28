@@ -96,10 +96,22 @@ function handle(msg: ServerMessage) {
   }
 }
 
+/** Mundo que se está viendo (`?world=…`); sin parámetro, el mundo por defecto. */
+export const WORLD_ID = new URLSearchParams(location.search).get("world") ?? "default";
+
+/** Rutas de la API que no pertenecen a un mundo. */
+const GLOBAL_API = ["/api/health", "/api/worlds", "/api/auth", "/api/admin"];
+
+/** `/api/x` → `/api/worlds/<mundo>/x` (salvo las rutas generales). */
+export function apiPath(path: string): string {
+  if (!path.startsWith("/api/") || GLOBAL_API.some((g) => path.startsWith(g))) return path;
+  return `/api/worlds/${encodeURIComponent(WORLD_ID)}/${path.slice("/api/".length)}`;
+}
+
 /** Conecta al WebSocket del servidor y reconecta si se cae. */
 export function connect() {
   if (socket) return;
-  const url = `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws`;
+  const url = `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws?world=${encodeURIComponent(WORLD_ID)}`;
   const ws = new WebSocket(url);
   socket = ws;
   ws.onopen = () => {
@@ -124,7 +136,7 @@ export function send(msg: ClientMessage) {
 
 /** Pequeño helper de fetch JSON contra la API del servidor. */
 export async function api<T>(path: string, body?: unknown): Promise<T> {
-  const res = await fetch(path, {
+  const res = await fetch(apiPath(path), {
     method: body === undefined ? "GET" : "POST",
     headers: body === undefined ? undefined : { "content-type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body),

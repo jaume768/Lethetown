@@ -9,6 +9,7 @@ import {
   type Credit,
 } from "@lethetown/shared";
 import { useEffect, useState } from "react";
+import { apiPath } from "./store";
 
 export interface LoadedAssets {
   packName: string;
@@ -69,12 +70,14 @@ async function applyUiSkin(pack: AssetPack): Promise<boolean> {
 async function load(): Promise<LoadedAssets> {
   const [manifestJson, tmj] = await Promise.all([
     fetch("/assets/manifest.json").then((r) => r.json()),
-    fetch("/api/map").then((r) => r.json()),
+    fetch(apiPath("/api/map")).then((r) => r.json()),
   ]);
   const manifest = AssetManifest.parse(manifestJson);
   const { name, pack } = activePack(manifest, mapAssetPack(tmj));
   const tilesets = (tmj as { tilesets: { name: string }[] }).tilesets.map((t) => t.name);
-  const state = (await fetch("/api/state").then((r) => (r.ok ? r.json() : { agents: [] }))) as {
+  const state = (await fetch(apiPath("/api/state")).then((r) =>
+    r.ok ? r.json() : { agents: [] },
+  )) as {
     agents: { id: string; appearance?: { sheet?: string } }[];
   };
   const agents = state.agents.map((a) => ({ id: a.id, sheet: a.appearance?.sheet }));

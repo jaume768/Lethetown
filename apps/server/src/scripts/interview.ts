@@ -14,21 +14,22 @@ const advanceArg = process.argv.indexOf("--advance");
 const hours = advanceArg > -1 ? Number(process.argv[advanceArg + 1]) : 0;
 const config = loadConfig();
 const app = await bootstrap(config, (m) => console.log(`[interview] ${m}`));
+const w = app.defaultWorld;
 
 if (hours > 0) {
-  app.sim.start();
-  await app.clock.runUntil(app.clock.now() + hours * 60);
+  w.start();
+  await w.clock.runUntil(w.clock.now() + hours * 60);
 }
-const now = app.clock.now();
+const now = w.clock.now();
 const result = {
   provider: app.provider.name,
   gameTime: formatGameTime(now),
   createdAt: new Date().toISOString(),
   agents: [] as { id: string; name: string; answers: Awaited<ReturnType<typeof interviewAgent>> }[],
 };
-for (const agent of app.sim.agents.values()) {
+for (const agent of w.sim.agents.values()) {
   console.log(`\n=== ${agent.seed.name} ===`);
-  const answers = await interviewAgent(agent, app.memory, app.llm, now);
+  const answers = await interviewAgent(agent, w.memory, w.llm, now);
   for (const a of answers) console.log(`[${a.category}] ${a.question}\n  → ${a.answer}`);
   result.agents.push({ id: agent.id, name: agent.seed.name, answers });
 }

@@ -24,10 +24,12 @@ import {
   type ServerMessage,
   type SimEvent,
   type SimEventKind,
+  type TilePoint,
   type Weather,
 } from "@lethetown/shared";
 import type { ChronicleStore, EventStore } from "../db/stores";
 import type { GameClock } from "./clock";
+import { SIM_SNAPSHOT_VERSION, type SimSnapshot } from "./snapshot";
 import { tileKey, type WorldMap } from "./world";
 
 interface Heard {
@@ -37,8 +39,18 @@ interface Heard {
   eventId: string;
 }
 
+/** Llegada pendiente de un viaje (se reprograma al restaurar una instantánea). */
+interface Arrival {
+  destId: string;
+  goal: TilePoint;
+  thenAction: string;
+  thenKind: ActivityKind;
+  at: number;
+}
+
 interface Runtime {
   travelling: boolean;
+  arrival: Arrival | null;
   plannedDay: number;
   /** Quién estaba en el mismo lugar en el último tick (para detectar llegadas). */
   seenHere: Set<string>;
@@ -106,6 +118,7 @@ export class Simulation {
   private readonly signalListeners: ((s: SimSignal) => void)[] = [];
   /** Llamadas al LLM en curso por agente (para el snapshot). */
   private readonly thinking = new Map<string, number>();
+  private restored = false;
 
   constructor(private readonly deps: SimulationDeps) {
     const names = Object.fromEntries(deps.seeds.map((s) => [s.id, s.name]));
@@ -122,6 +135,7 @@ export class Simulation {
       this.agents.set(seed.id, agent);
       this.runtime.set(seed.id, {
         travelling: false,
+        arrival: null,
         plannedDay: -1,
         seenHere: new Set(),
         inbox: [],
@@ -164,23 +178,91 @@ export class Simulation {
     return seeded;
   }
 
-  /** Programa el primer tick de cada agente (escalonados) y la crónica diaria. */
+  /**
+   * Programa el primer tick de cada agente (escalonados), las llegadas pendientes (si se
+   * restauró una instantánea) y la crónica diaria.
+   */
   start(): void {
     const now = this.clock.now();
     [...this.agents.values()].forEach((agent, i) => {
-      this.runtime.get(agent.id)!.lastConsolidation = now;
+      const rt = this.runtime.get(agent.id)!;
+      if (!this.restored) rt.lastConsolidation = now;
+      if (rt.arrival) this.scheduleArrival(agent, rt.arrival);
       this.clock.schedule(now + i, () => this.agentTick(agent));
     });
     this.scheduleChronicle(now);
     this.emit("system", null, `Simulación iniciada con ${this.agents.size} agentes`);
   }
 
-  onEvent(listener: (e: SimEvent) => void): void {
+  onEvent(listener: (e: SimEvent) => void): () => void {
     this.eventListeners.push(listener);
+    return () => remove(this.eventListeners, listener);
   }
 
-  onSignal(listener: (s: SimSignal) => void): void {
+  onSignal(listener: (s: SimSignal) => void): () => void {
     this.signalListeners.push(listener);
+    return () => remove(this.signalListeners, listener);
+  }
+
+  // --- Instantáneas ----------------------------------------------------------------------
+
+  /** Estado serializable (JSON) del runtime de agentes, conversaciones, objetos, clima y reloj. */
+  snapshot(): SimSnapshot {
+    return {
+      version: SIM_SNAPSHOT_VERSION,
+      time: this.clock.now(),
+      speed: this.clock.speed,
+      weather: this.deps.world.weather,
+      spots: this.deps.world.places.flatMap((p) =>
+        p.objects.map((o) => ({ id: o.id, state: o.state })),
+      ),
+      agents: [...this.agents.values()].map((a) => {
+        const rt = this.runtime.get(a.id)!;
+        return {
+          id: a.id,
+          state: structuredClone(a.state),
+          workingMemory: structuredClone([...a.workingMemory.contents]),
+          runtime: {
+            ...structuredClone({ ...rt, seenHere: [], knownStates: [] }),
+            seenHere: [...rt.seenHere],
+            knownStates: [...rt.knownStates],
+            utteredAt: finiteOrNull(rt.utteredAt),
+            lastMaintenance: finiteOrNull(rt.lastMaintenance),
+          },
+        };
+      }),
+      conversations: [...this.conversations.entries()].map(([key, c]) => ({
+        key,
+        ...structuredClone(c),
+      })),
+    };
+  }
+
+  /** Restaura una instantánea antes de `start()`. El reloj ya debe estar en `snapshot.time`. */
+  restore(s: SimSnapshot): void {
+    for (const spot of s.spots) {
+      if (this.deps.world.spot(spot.id)) this.deps.world.setSpotState(spot.id, spot.state);
+    }
+    this.deps.world.weather = s.weather;
+    for (const saved of s.agents) {
+      const agent = this.agents.get(saved.id);
+      if (!agent) continue;
+      agent.state = saved.state;
+      agent.workingMemory.replace(saved.workingMemory);
+      const r = saved.runtime;
+      this.runtime.set(saved.id, {
+        ...r,
+        seenHere: new Set(r.seenHere),
+        knownStates: new Map(r.knownStates),
+        utteredAt: r.utteredAt ?? -Infinity,
+        lastMaintenance: r.lastMaintenance ?? -Infinity,
+      });
+    }
+    this.conversations.clear();
+    for (const { key, ...c } of s.conversations) {
+      if (this.agents.has(c.a) && this.agents.has(c.b)) this.conversations.set(key, c);
+    }
+    this.restored = true;
   }
 
   thinkingAgents(): string[] {
@@ -610,15 +692,22 @@ export class Simulation {
     agent.state.movement = { waypoints, startTime: now, endTime: now + minutes };
     if (waypoints.length > 1) agent.state.facing = facingOf(waypoints[0]!, waypoints[1]!);
     this.setAction(agent, `caminando a ${dest.name}`, "walk");
-    this.clock.schedule(now + minutes, () => {
-      const prev = waypoints.at(-2);
-      if (prev) agent.state.facing = facingOf(prev, goal);
-      agent.state.tile = goal;
-      agent.state.locationId = destId;
+    rt.arrival = { destId, goal, thenAction, thenKind, at: now + minutes };
+    this.scheduleArrival(agent, rt.arrival);
+  }
+
+  private scheduleArrival(agent: Agent, arrival: Arrival): void {
+    const rt = this.runtime.get(agent.id)!;
+    this.clock.schedule(arrival.at, () => {
+      const prev = agent.state.movement?.waypoints.at(-2);
+      if (prev) agent.state.facing = facingOf(prev, arrival.goal);
+      agent.state.tile = arrival.goal;
+      agent.state.locationId = arrival.destId;
       agent.state.targetId = null;
       agent.state.movement = null;
       rt.travelling = false;
-      this.setAction(agent, thenAction, thenKind);
+      rt.arrival = null;
+      this.setAction(agent, arrival.thenAction, arrival.thenKind);
     });
   }
 
@@ -685,6 +774,15 @@ export class Simulation {
     for (const l of this.eventListeners) l(event);
     this.signal({ type: "event", event });
   }
+}
+
+function remove<T>(list: T[], item: T): void {
+  const i = list.indexOf(item);
+  if (i >= 0) list.splice(i, 1);
+}
+
+function finiteOrNull(x: number): number | null {
+  return Number.isFinite(x) ? x : null;
 }
 
 function convKey(a: string, b: string): string {

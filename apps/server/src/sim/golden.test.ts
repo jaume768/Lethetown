@@ -21,13 +21,14 @@ const GOLDEN_ENV = {
 describe("simulación (dorado)", () => {
   it("3 días en mock con SIM_SEED=7 reproducen la misma línea de tiempo", async () => {
     const app = await bootstrap(loadConfig(GOLDEN_ENV), () => {});
+    const w = app.defaultWorld;
     const lines: string[] = [];
-    app.sim.onEvent((e) =>
+    w.sim.onEvent((e) =>
       lines.push(`[${formatGameTime(e.time)}] ${e.kind} ${e.agentId ?? "-"} ${e.text}`),
     );
-    app.sim.start();
-    await app.clock.runUntil(app.clock.now() + 72 * 60);
-    const costs = app.costs.summary();
+    w.start();
+    await w.clock.runUntil(w.clock.now() + 72 * 60);
+    const costs = w.costs.summary();
     lines.push(`llamadas: ${costs.total.calls}`);
     await app.close();
     await expect(lines.join("\n") + "\n").toMatchFileSnapshot("__golden__/three-days.txt");

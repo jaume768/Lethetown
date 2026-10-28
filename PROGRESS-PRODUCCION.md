@@ -18,9 +18,9 @@ pnpm test` y comprobar que `pnpm dev` arranca en modo mock.
 
 ### Paso 1 — Multi-mundo y persistencia
 
-- [ ] Tabla `worlds` + `world_id` en todas las tablas (migración con mundo por defecto)
-- [ ] Claves de agente únicas por mundo; API `/api/worlds/:worldId/...` (+ alias)
-- [ ] `world_snapshots`: instantáneas periódicas y al apagar; restaurar al arrancar; test de ida y vuelta
+- [x] Tabla `worlds` + `world_id` en todas las tablas (migración con mundo por defecto)
+- [x] Claves de agente únicas por mundo; API `/api/worlds/:worldId/...` (+ alias)
+- [x] `world_snapshots`: instantáneas periódicas y al apagar; restaurar al arrancar; test de ida y vuelta
 
 ### Paso 2 — Seguridad
 
@@ -79,3 +79,18 @@ pnpm test` y comprobar que `pnpm dev` arranca en modo mock.
   64 px para la UI y 32 px para el mapa). El resultado se queda en vendor (ignorado).
 - **El aviso de assets no comerciales** se calcula en el cliente con `assetsInUse` (los mismos
   datos que `pnpm assets:check`), y solo se mostrará en modo Director.
+- **Mundos sin cambiar agent-core**: cada mundo tiene sus propias instancias de los stores con
+  su `worldId` (Pg filtra todas las consultas por `world_id`), así que las interfaces de
+  agent-core no cambian. Los ids de agente (`lucia`…) se repiten entre mundos: la unicidad es
+  (world_id, agent_id), y las claves primarias de `social_profiles` y `chronicles` la incluyen.
+- **La API habla con un `WorldGateway`**, no con la simulación: hoy `LocalWorldGateway` (mismo
+  proceso). En el Paso 3 el proceso `api` usará una implementación remota (BD + bus) con las
+  mismas rutas. Las mutaciones son `WorldCommand` (thought, spot, weather, speed, chronicle).
+- **Alias**: `/api/...` y `/ws` sin `?world=` apuntan al mundo `default`. El cliente usa ya
+  `/api/worlds/<id>/...` (parámetro `?world=` de la URL).
+- **Instantáneas**: la foto es síncrona (no frena el reloj ni cambia el orden de eventos: el
+  test dorado no cambió) y la escritura va en segundo plano. Se guardan cada hora de juego y al
+  apagar; se conservan 48 por mundo. Las llegadas de los viajes se guardan (`arrival`) y se
+  reprograman al restaurar. Una instantánea de otra versión se ignora (arranque limpio).
+- **Test dorado antes del refactor**: `apps/server/src/sim/golden.test.ts` fija la línea de
+  tiempo de 3 días en mock (SIM_SEED=7). Se creó antes de tocar la simulación.

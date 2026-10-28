@@ -13,6 +13,7 @@ import {
 import Phaser from "phaser";
 import { AgentView, PIXEL_FONT } from "./AgentView";
 import { Ambience } from "./Ambience";
+import { apiPath } from "../net/store";
 import { createPixelTextures } from "./pixelArt";
 
 const TS = 16;
@@ -60,7 +61,7 @@ export class TownScene extends Phaser.Scene {
 
   preload() {
     this.load.json("manifest", "/assets/manifest.json");
-    this.load.json("tmj", "/api/map");
+    this.load.json("tmj", apiPath("/api/map"));
   }
 
   create() {
