@@ -15,6 +15,13 @@
       "when": 1793184324200,
       "tag": "0001_init",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793188340295,
+      "tag": "0002_memory_links",
+      "breakpoints": true
     }
   ]
 }

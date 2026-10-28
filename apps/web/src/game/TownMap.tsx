@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { useEffect, useRef } from "react";
 import type { AgentState, World } from "@lethetown/shared";
+import { gameTimeNow } from "../net/store";
 import { TownScene } from "./TownScene";
 
 interface Props {
@@ -26,18 +27,20 @@ export function TownMap(props: Props) {
   useEffect(() => {
     const townScene = new TownScene();
     townScene.onReady = () => sync(townScene, latest.current);
+    townScene.gameTime = gameTimeNow;
     scene.current = townScene;
     const game = new Phaser.Game({
       type: Phaser.AUTO,
       parent: host.current!,
-      width: 800,
-      height: 610,
+      width: 960,
+      height: 640,
       backgroundColor: "#e8e2d0",
       // Pixel art: sin suavizado y con posiciones enteras (en Phaser 4 roundPixels es false por defecto).
       pixelArt: true,
       roundPixels: true,
       scene: townScene,
       scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_HORIZONTALLY },
+      zoom: 1,
     });
     return () => {
       scene.current = null;

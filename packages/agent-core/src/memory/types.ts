@@ -24,10 +24,24 @@ export interface NewMemory {
   emotionalValence?: number;
   people?: string[];
   placeId?: string | null;
+  eventId?: string | null;
+  links?: string[];
 }
 
 export type MemoryPatch = Partial<
-  Pick<MemoryRecord, "strength" | "stability" | "lastAccessedAt" | "accessCount" | "gist" | "text">
+  Pick<
+    MemoryRecord,
+    | "strength"
+    | "stability"
+    | "lastAccessedAt"
+    | "accessCount"
+    | "gist"
+    | "text"
+    | "emotionalValence"
+    | "source"
+    | "status"
+    | "forgottenAt"
+  >
 >;
 
 /** Almacén de recuerdos inyectable (en memoria para tests, Postgres+pgvector en el servidor). */

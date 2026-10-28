@@ -19,7 +19,8 @@
     "db:up": "docker compose up -d",
     "db:generate": "pnpm --filter @lethetown/server db:generate",
     "db:migrate": "pnpm --filter @lethetown/server db:migrate",
-    "seed": "pnpm --filter @lethetown/server seed"
+    "seed": "pnpm --filter @lethetown/server seed",
+    "map:generate": "tsx tools/generate-map.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -30,6 +31,8 @@
     "prettier": "^3.9.10",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.72.1",
-    "vitest": "^5.0.5"
+    "vitest": "^5.0.5",
+    "tsx": "^4.23.15",
+    "@lethetown/shared": "workspace:*"
   }
 }

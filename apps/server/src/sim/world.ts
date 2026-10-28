@@ -1,13 +1,25 @@
-import type { Place, World } from "@lethetown/shared";
+import {
+  findPath,
+  isWalkable,
+  toWaypoints,
+  type Place,
+  type Spot,
+  type TilePoint,
+  type Weather,
+  type World,
+} from "@lethetown/shared";
 
-/** Metros de mapa (píxeles) que se recorren por minuto de juego andando. */
-const WALK_SPEED = 40;
+const key = (p: TilePoint) => `${p.x},${p.y}`;
 
+/** Mundo en ejecución: geometría inmutable del .tmj + estado mutable (objetos, tiempo). */
 export class WorldMap {
-  private readonly byId: Map<string, Place>;
+  private readonly placesById: Map<string, Place>;
+  private readonly spotsById: Map<string, Spot>;
+  weather: Weather = "sunny";
 
   constructor(readonly world: World) {
-    this.byId = new Map(world.places.map((p) => [p.id, p]));
+    this.placesById = new Map(world.places.map((p) => [p.id, p]));
+    this.spotsById = new Map(world.places.flatMap((p) => p.objects.map((o) => [o.id, o] as const)));
   }
 
   get places(): Place[] {
@@ -15,21 +27,76 @@ export class WorldMap {
   }
 
   place(id: string): Place {
-    const p = this.byId.get(id);
+    const p = this.placesById.get(id);
     if (!p) throw new Error(`Lugar desconocido: ${id}`);
     return p;
   }
 
   has(id: string): boolean {
-    return this.byId.has(id);
+    return this.placesById.has(id);
   }
 
-  /** Minutos de juego para ir andando de un lugar a otro (rutina trivial, sin LLM). */
-  travelMinutes(fromId: string, toId: string): number {
-    if (fromId === toId) return 0;
-    const a = this.place(fromId).rect;
-    const b = this.place(toId).rect;
-    const d = Math.hypot(a.x + a.w / 2 - (b.x + b.w / 2), a.y + a.h / 2 - (b.y + b.h / 2));
-    return Math.max(3, Math.round(d / WALK_SPEED));
+  spot(id: string): Spot | undefined {
+    return this.spotsById.get(id);
+  }
+
+  /** Cambia el estado de un objeto (intervención del jugador o de la simulación). */
+  setSpotState(id: string, state: string): Spot {
+    const spot = this.spotsById.get(id);
+    if (!spot) throw new Error(`Objeto desconocido: ${id}`);
+    spot.state = state;
+    return spot;
+  }
+
+  /** Lugar al que pertenece una baldosa (el primero cuyo área la contiene). */
+  placeAt(tile: TilePoint): Place | undefined {
+    return this.places.find(
+      (p) =>
+        tile.x >= p.area.x &&
+        tile.x < p.area.x + p.area.w &&
+        tile.y >= p.area.y &&
+        tile.y < p.area.y + p.area.h,
+    );
+  }
+
+  /**
+   * Baldosa libre para quedarse en un lugar: el spot pedido si está libre; si no, la baldosa
+   * transitable libre más cercana a él (o al ancla del lugar) dentro del área. BFS determinista.
+   */
+  restingTile(placeId: string, preferred: TilePoint | null, occupied: Set<string>): TilePoint {
+    const place = this.place(placeId);
+    const start = preferred ?? place.anchor;
+    if (!occupied.has(key(start)) && isWalkable(this.world, start)) return start;
+    const seen = new Set([key(start)]);
+    const queue: TilePoint[] = [start];
+    const inArea = (p: TilePoint) =>
+      p.x >= place.area.x &&
+      p.x < place.area.x + place.area.w &&
+      p.y >= place.area.y &&
+      p.y < place.area.y + place.area.h;
+    while (queue.length) {
+      const cur = queue.shift()!;
+      for (const d of [
+        { x: 0, y: 1 },
+        { x: 1, y: 0 },
+        { x: -1, y: 0 },
+        { x: 0, y: -1 },
+      ]) {
+        const n = { x: cur.x + d.x, y: cur.y + d.y };
+        if (seen.has(key(n)) || !inArea(n) || !isWalkable(this.world, n)) continue;
+        if (!occupied.has(key(n))) return n;
+        seen.add(key(n));
+        queue.push(n);
+      }
+    }
+    return place.anchor;
+  }
+
+  /** Ruta en waypoints entre dos baldosas, o null si no hay camino. */
+  route(from: TilePoint, to: TilePoint): TilePoint[] | null {
+    const path = findPath(this.world, from, to);
+    return path ? toWaypoints(path) : null;
   }
 }
+
+export const tileKey = key;

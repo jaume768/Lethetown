@@ -30,9 +30,14 @@ export const memories = pgTable(
     type: text("type").notNull(),
     people: text("people").array().notNull().default([]),
     placeId: text("place_id"),
+    eventId: text("event_id"),
+    links: text("links").array().notNull().default([]),
+    status: text("status").notNull().default("active"),
+    forgottenAt: doublePrecision("forgotten_at"),
   },
   (t) => [
     index("memories_agent_idx").on(t.agentId),
+    index("memories_event_idx").on(t.eventId),
     index("memories_embedding_idx").using("hnsw", t.embedding.op("vector_cosine_ops")),
   ],
 );

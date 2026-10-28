@@ -65,6 +65,10 @@ export class MemorySystem {
       type: input.type,
       people: input.people ?? [],
       placeId: input.placeId ?? null,
+      eventId: input.eventId ?? null,
+      links: input.links ?? [],
+      status: "active",
+      forgottenAt: null,
     };
     await this.store.add(record);
     return record;
@@ -97,7 +101,9 @@ export class MemorySystem {
       { embedding: embedding ?? [], now: opts.now, moodValence: opts.moodValence },
       this.retrievalConfig,
     );
-    const picked = ranked.filter((s) => s.scores.clarity !== "forgotten").slice(0, opts.k ?? 5);
+    const picked = ranked
+      .filter((s) => s.memory.status === "active" && s.scores.clarity !== "forgotten")
+      .slice(0, opts.k ?? 5);
     await Promise.all(
       picked.map((s) =>
         this.store.update(s.memory.id, reinforce(s.memory, opts.now, this.decayConfig)),

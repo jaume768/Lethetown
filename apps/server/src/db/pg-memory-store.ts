@@ -1,6 +1,6 @@
 import type { MemoryPatch, MemoryRecord, MemoryStore } from "@lethetown/agent-core";
 import type { MemorySource, MemoryType } from "@lethetown/shared";
-import { cosineDistance, desc, eq, sql } from "drizzle-orm";
+import { and, cosineDistance, desc, eq, sql } from "drizzle-orm";
 import type { Db } from "./client";
 import { memories } from "./schema";
 
@@ -10,6 +10,7 @@ const toRecord = (r: Row): MemoryRecord => ({
   ...r,
   source: r.source as MemorySource,
   type: r.type as MemoryType,
+  status: r.status === "archived" ? "archived" : "active",
 });
 
 /** MemoryStore sobre Postgres + pgvector. */
@@ -44,7 +45,11 @@ export class PgMemoryStore implements MemoryStore {
     limit: number,
   ): Promise<MemoryRecord[]> {
     const third = Math.max(1, Math.floor(limit / 3));
-    const base = () => this.db.select().from(memories).where(eq(memories.agentId, agentId));
+    const base = () =>
+      this.db
+        .select()
+        .from(memories)
+        .where(and(eq(memories.agentId, agentId), eq(memories.status, "active")));
     const [similar, recent, important] = await Promise.all([
       base().orderBy(cosineDistance(memories.embedding, queryEmbedding)).limit(third),
       base().orderBy(desc(memories.lastAccessedAt)).limit(third),

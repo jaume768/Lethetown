@@ -21,6 +21,8 @@ const Env = z.object({
   PORT: z.coerce.number().int().default(3001),
   SIM_TICK_MINUTES: z.coerce.number().positive().default(10),
   SIM_SPEED: z.coerce.number().default(10),
+  /** Velocidad de paseo de los agentes, en baldosas por minuto de juego. */
+  SIM_WALK_TILES_PER_MINUTE: z.coerce.number().positive().default(6),
 });
 
 export type AppConfig = z.infer<typeof Env>;

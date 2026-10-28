@@ -27,6 +27,14 @@ export const MemoryView = z.object({
   type: MemoryType,
   people: z.array(z.string()),
   placeId: z.string().nullable(),
+  /** Evento de la simulación del que procede (conversación...), para la vista Rashomon. */
+  eventId: z.string().nullable(),
+  /** Recuerdos de los que deriva (citas de una reflexión, episodios resumidos). */
+  links: z.array(z.string()),
+  /** "archived": resumido en otro recuerdo; ya no se recupera ni cuenta para el presupuesto. */
+  status: z.enum(["active", "archived"]),
+  /** Instante en que cruzó el umbral de olvido (null si no se ha olvidado). */
+  forgottenAt: z.number().nullable(),
 });
 export type MemoryView = z.infer<typeof MemoryView>;
 

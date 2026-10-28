@@ -13,7 +13,7 @@ import {
   type MemoryStore,
   type PricingTable,
 } from "@lethetown/agent-core";
-import { AgentSeed, SIM_SPEEDS, World, type SimSpeed } from "@lethetown/shared";
+import { AgentSeed, SIM_SPEEDS, parseTiledMap, type SimSpeed } from "@lethetown/shared";
 import { z } from "zod";
 import { modelsFor, type AppConfig } from "./config";
 import { checkDb, createDb, type DbHandle } from "./db/client";
@@ -26,11 +26,16 @@ import { LimitedProvider } from "./sim/llm-queue";
 import { Simulation } from "./sim/simulation";
 import { WorldMap } from "./sim/world";
 
+/** Mapa Tiled: fuente única de verdad del mundo (lo genera `pnpm map:generate`). */
+export const MAP_FILE = "seeds/town.tmj";
+
 /** La simulación arranca a las 06:50 del día 0 (o al día siguiente del último recuerdo guardado). */
 const START_MINUTE_OF_DAY = 6 * 60 + 50;
 
 export interface App {
   config: AppConfig;
+  /** El .tmj tal cual, para que el cliente lo pinte. */
+  tmj: unknown;
   sim: Simulation;
   clock: GameClock;
   world: WorldMap;
@@ -93,12 +98,12 @@ export async function connectStore(
 }
 
 export async function bootstrap(config: AppConfig, log: (msg: string) => void): Promise<App> {
-  const [world, seeds, pricing] = await Promise.all([
-    readJson(World, "seeds/world.json"),
+  const [tmj, seeds, pricing] = await Promise.all([
+    readJson(z.unknown(), MAP_FILE),
     readJson(z.array(AgentSeed), "seeds/agents.json"),
     loadPricing(),
   ]);
-  const worldMap = new WorldMap(world);
+  const worldMap = new WorldMap(parseTiledMap(tmj));
 
   const provider = new LimitedProvider(createProvider(config), config.LLM_CONCURRENCY);
   const models = modelsFor(config);
@@ -140,12 +145,14 @@ export async function bootstrap(config: AppConfig, log: (msg: string) => void): 
     memory,
     clock,
     tickMinutes: config.SIM_TICK_MINUTES,
+    walkSpeed: config.SIM_WALK_TILES_PER_MINUTE,
   });
   const seeded = await sim.seedMemoriesIfEmpty(startTime);
   if (seeded) log(`Sembrados los recuerdos iniciales de ${seeded} agentes.`);
 
   return {
     config,
+    tmj,
     sim,
     clock,
     world: worldMap,

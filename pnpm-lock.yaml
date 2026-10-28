@@ -11,6 +11,9 @@ importers:
       '@eslint/js':
         specifier: ^10.0.1
         version: 10.0.1(eslint@10.13.0)
+      '@lethetown/shared':
+        specifier: workspace:*
+        version: link:packages/shared
       '@types/node':
         specifier: ^22.0.0
         version: 22.20.5
@@ -26,6 +29,9 @@ importers:
       prettier:
         specifier: ^3.9.10
         version: 3.9.10
+      tsx:
+        specifier: ^4.23.15
+        version: 4.23.15
       typescript:
         specifier: ~5.9.3
         version: 5.9.3

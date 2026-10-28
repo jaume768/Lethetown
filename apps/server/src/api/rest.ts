@@ -28,6 +28,9 @@ export function registerRest(server: FastifyInstance, app: App, onSpeedChange: (
 
   server.get("/api/state", async () => snapshot(app));
 
+  /** Mapa Tiled (.tmj) que pinta el cliente; el mismo del que sale el `World`. */
+  server.get("/api/map", async () => app.tmj);
+
   /** Recuerdos del agente puntuados contra `q` (por defecto, su acción actual). Incluye olvidados. */
   server.get<{ Params: { id: string } }>("/api/agents/:id/memory", async (req, reply) => {
     const agent = app.sim.agents.get(req.params.id);

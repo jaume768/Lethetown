@@ -11,6 +11,8 @@ import { useSyncExternalStore } from "react";
 
 export interface GameState {
   connected: boolean;
+  /** performance.now() al recibir el último reloj, para extrapolar el tiempo de juego. */
+  clockReceivedAt: number;
   world: World | null;
   provider: string;
   clock: ClockState;
@@ -23,6 +25,7 @@ const MAX_EVENTS = 300;
 
 let state: GameState = {
   connected: false,
+  clockReceivedAt: 0,
   world: null,
   provider: "",
   clock: { time: 0, speed: 0 },
@@ -45,10 +48,11 @@ function handle(msg: ServerMessage) {
         world: msg.snapshot.world,
         provider: msg.snapshot.provider,
         clock: msg.snapshot.clock,
+        clockReceivedAt: performance.now(),
         agents: msg.snapshot.agents,
       });
     case "tick":
-      return set({ clock: msg.clock, agents: msg.agents });
+      return set({ clock: msg.clock, clockReceivedAt: performance.now(), agents: msg.agents });
     case "event":
       return set({ events: [...state.events, msg.event].slice(-MAX_EVENTS) });
     case "cost":
@@ -77,6 +81,16 @@ export function connect() {
 
 export function send(msg: ClientMessage) {
   if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify(msg));
+}
+
+/** Tiempo de juego estimado ahora mismo (entre ticks del servidor). */
+export function gameTimeNow(): number {
+  const elapsedMin = (performance.now() - state.clockReceivedAt) / 60_000;
+  return state.clock.time + elapsedMin * state.clock.speed;
+}
+
+export function getState(): GameState {
+  return state;
 }
 
 export function useGame(): GameState {

@@ -19,3 +19,4 @@ export * from "./agent/agent";
 export * from "./agent/prompts";
 export * from "./agent/parse";
 export * from "./agent/mock-responder";
+export * from "./agent/activity";

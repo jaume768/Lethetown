@@ -33,6 +33,10 @@ function mem(overrides: Partial<MemoryRecord> = {}): MemoryRecord {
     type: "observation",
     people: [],
     placeId: null,
+    eventId: null,
+    links: [],
+    status: "active",
+    forgottenAt: null,
     ...overrides,
   };
 }

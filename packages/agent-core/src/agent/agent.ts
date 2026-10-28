@@ -1,19 +1,60 @@
-import type { AgentSeed, AgentState, Mood, Place, PlanItem } from "@lethetown/shared";
+import type {
+  ActivityKind,
+  AgentSeed,
+  AgentState,
+  Mood,
+  Place,
+  PlanItem,
+  Spot,
+} from "@lethetown/shared";
 import type { LLMClient } from "../llm/client";
 import type { MemorySystem } from "../memory/memory-system";
 import { recallText } from "../memory/retrieval";
+import type { MemorySource } from "@lethetown/shared";
 import { WorkingMemory } from "../memory/working-memory";
+import { inferActivityKind } from "./activity";
 import { DecideResponse, ImportanceResponse, PlanResponse, parseWith } from "./parse";
-import { decidePrompt, identityPrompt, importancePrompt, parseClock, planPrompt } from "./prompts";
+import {
+  decidePrompt,
+  identityPrompt,
+  importancePrompt,
+  parseClock,
+  planPrompt,
+  type DecideContext,
+} from "./prompts";
 
 export type Perception =
   | { kind: "arrived"; agentId: string; name: string; action: string; placeId: string }
-  | { kind: "left"; agentId: string; name: string; placeId: string }
-  | { kind: "speech"; fromId: string; fromName: string; text: string; placeId: string };
+  | {
+      kind: "speech";
+      fromId: string;
+      fromName: string;
+      text: string;
+      placeId: string;
+      eventId?: string;
+    }
+  | {
+      kind: "overheard";
+      /** Quién habló, si el agente lo distingue. */
+      fromId: string | null;
+      fromName: string;
+      toName: string;
+      fragment: string;
+      placeId: string;
+      eventId?: string;
+    }
+  | { kind: "thought"; text: string }
+  | { kind: "world"; text: string; placeId: string | null; eventId?: string };
 
 export type Decision =
   | { kind: "follow_plan" }
-  | { kind: "react"; action: string; placeId: string }
+  | {
+      kind: "react";
+      action: string;
+      activityKind: ActivityKind;
+      placeId: string;
+      spotId: string | null;
+    }
   | { kind: "talk"; to: string; utterance: string };
 
 export interface AgentDeps {
@@ -22,6 +63,11 @@ export interface AgentDeps {
   places: Place[];
   onError?: (agentId: string, task: string, error: unknown) => void;
 }
+
+export type DecideInput = Omit<
+  DecideContext,
+  "now" | "locationId" | "action" | "moodLabel" | "needs" | "planItem" | "workingMemory"
+> & { salient: boolean };
 
 const SLEEP_START = 22 * 60;
 const DAY_START = 7 * 60;
@@ -41,7 +87,9 @@ export function fallbackPlan(homeId: string): PlanItem[] {
       startMinute: DAY_START,
       durationMin: SLEEP_START - DAY_START,
       activity: "estar en casa",
+      activityKind: "idle",
       placeId: homeId,
+      spotId: null,
     },
   ];
 }
@@ -51,6 +99,7 @@ export class Agent {
   readonly system: string;
   readonly workingMemory = new WorkingMemory();
   state: AgentState;
+  private readonly spots: Map<string, Spot>;
 
   constructor(
     readonly seed: AgentSeed,
@@ -58,18 +107,38 @@ export class Agent {
   ) {
     this.id = seed.id;
     this.system = identityPrompt(seed, deps.places);
+    this.spots = new Map(deps.places.flatMap((p) => p.objects.map((o) => [o.id, o] as const)));
+    const home = deps.places.find((p) => p.id === seed.homeId);
+    if (!home) throw new Error(`${seed.id}: casa desconocida ${seed.homeId}`);
+    const bed = this.bedSpot();
     const mood: Mood = { valence: 0.1, label: moodLabel(0.1) };
     this.state = {
       id: seed.id,
       name: seed.name,
       locationId: seed.homeId,
       targetId: null,
+      spotId: bed?.id ?? null,
+      tile: bed?.tile ?? home.anchor,
+      facing: "down",
+      movement: null,
       action: "durmiendo",
+      activityKind: "sleep",
       mood,
       needs: { energy: 0.8, hunger: 0.4, social: 0.5 },
       plan: fallbackPlan(seed.homeId),
       lastUtterance: null,
     };
+  }
+
+  /** Su cama: un spot "sleep" de su casa con su id como dueño (o cualquiera de su casa). */
+  bedSpot(): Spot | undefined {
+    const home = this.deps.places.find((p) => p.id === this.seed.homeId);
+    const beds = home?.objects.filter((o) => o.pose === "sleep") ?? [];
+    return beds.find((b) => b.owner === this.id) ?? beds.find((b) => !b.owner);
+  }
+
+  spot(id: string | null): Spot | undefined {
+    return id ? this.spots.get(id) : undefined;
   }
 
   /** Guarda los recuerdos semánticos iniciales del archivo de semillas. */
@@ -115,16 +184,20 @@ export class Agent {
           recalled: recalled.map((s) => `- ${recallText(s)}`).join("\n") || "- (nada en especial)",
         }),
       });
-      const validIds = new Set(this.deps.places.map((p) => p.id));
       const plan = parseWith(PlanResponse, res.text)
         .plan.map((p): PlanItem | null => {
           const startMinute = parseClock(p.start);
           if (startMinute === null) return null;
+          const placeId = this.validPlace(p.placeId) ?? this.seed.homeId;
+          const spot = this.spot(p.spotId);
+          const spotId = spot && spot.placeId === placeId ? spot.id : null;
           return {
             startMinute,
             durationMin: p.durationMin,
             activity: p.activity,
-            placeId: validIds.has(p.placeId) ? p.placeId : this.seed.homeId,
+            activityKind: p.activityKind ?? inferActivityKind(p.activity, spot?.pose),
+            placeId,
+            spotId,
           };
         })
         .filter((p): p is PlanItem => p !== null)
@@ -160,10 +233,12 @@ export class Agent {
           agentId: this.id,
           text: texts[i]!,
           type: "observation",
-          importance: rating.importance,
+          importance: p.kind === "thought" ? Math.max(rating.importance, 6) : rating.importance,
           emotionalValence: rating.valence,
-          people: [p.kind === "speech" ? p.fromId : p.agentId],
-          placeId: p.placeId,
+          source: sourceOf(p),
+          people: peopleOf(p),
+          placeId: "placeId" in p ? p.placeId : this.state.locationId,
+          eventId: "eventId" in p ? (p.eventId ?? null) : null,
         },
         now,
       );
@@ -174,19 +249,13 @@ export class Agent {
   }
 
   /** Decidir: seguir el plan, reaccionar o hablar. Solo llama al LLM si hay algo saliente. */
-  async decide(
-    now: number,
-    context: {
-      present: { id: string; name: string; action: string }[];
-      heard: { fromId: string; fromName: string; text: string }[];
-      salient: boolean;
-    },
-  ): Promise<Decision> {
-    if (!context.salient) return { kind: "follow_plan" };
+  async decide(now: number, input: DecideInput): Promise<Decision> {
+    if (!input.salient) return { kind: "follow_plan" };
 
     const cue = [
-      ...context.heard.map((h) => `${h.fromName} dice: ${h.text}`),
-      ...context.present.map((p) => p.name),
+      ...input.heard.map((h) => `${h.fromName} dice: ${h.text}`),
+      ...input.present.map((p) => p.name),
+      ...input.objectStates.map((o) => `${o.id} ${o.state}`),
     ].join(". ");
     const recalled = await this.deps.memory.retrieve({
       agentId: this.id,
@@ -200,24 +269,24 @@ export class Agent {
     }
 
     try {
+      const { salient: _salient, ...context } = input;
       const res = await this.deps.llm.run({
         kind: "fast",
         task: "decide",
         agentId: this.id,
         system: this.system,
         prompt: decidePrompt({
+          ...context,
           now,
           locationId: this.state.locationId,
           action: this.state.action,
           moodLabel: this.state.mood.label,
           needs: this.state.needs,
           planItem: this.currentPlanItem(now),
-          present: context.present,
-          heard: context.heard,
           workingMemory: this.workingMemory.render(),
         }),
       });
-      return this.toDecision(parseWith(DecideResponse, res.text), context.present);
+      return this.toDecision(parseWith(DecideResponse, res.text), input.present);
     } catch (error) {
       this.deps.onError?.(this.id, "decide", error);
       return { kind: "follow_plan" };
@@ -225,7 +294,13 @@ export class Agent {
   }
 
   /** Guarda lo que el propio agente ha dicho. */
-  async rememberOwnSpeech(to: string, toName: string, utterance: string, now: number) {
+  async rememberOwnSpeech(
+    to: string,
+    toName: string,
+    utterance: string,
+    now: number,
+    eventId?: string,
+  ) {
     await this.deps.memory.remember(
       {
         agentId: this.id,
@@ -234,9 +309,14 @@ export class Agent {
         importance: 3,
         people: [to],
         placeId: this.state.locationId,
+        eventId: eventId ?? null,
       },
       now,
     );
+  }
+
+  private validPlace(id: string | undefined): string | undefined {
+    return id && this.deps.places.some((p) => p.id === id) ? id : undefined;
   }
 
   private toDecision(r: DecideResponse, present: { id: string }[]): Decision {
@@ -244,11 +324,14 @@ export class Agent {
       return { kind: "talk", to: r.to, utterance: r.say };
     }
     if (r.choice === "react" && r.action) {
-      const placeOk = r.placeId && this.deps.places.some((p) => p.id === r.placeId);
+      const placeId = this.validPlace(r.placeId) ?? this.state.locationId;
+      const spot = this.spot(r.spotId);
       return {
         kind: "react",
         action: r.action,
-        placeId: placeOk ? r.placeId! : this.state.locationId,
+        placeId,
+        spotId: spot && spot.placeId === placeId ? spot.id : null,
+        activityKind: r.activityKind ?? inferActivityKind(r.action, spot?.pose),
       };
     }
     return { kind: "follow_plan" };
@@ -279,10 +362,40 @@ export function describePerception(p: Perception): string {
   switch (p.kind) {
     case "arrived":
       return `Vi a ${p.name} llegar a ${p.placeId} (${p.action})`;
-    case "left":
-      return `${p.name} se fue de ${p.placeId}`;
     case "speech":
       return `${p.fromName} me dijo: "${p.text}"`;
+    case "overheard":
+      return `Oí a ${p.fromName} decirle a ${p.toName} algo como: "${p.fragment}"`;
+    case "thought":
+      return `Pensé: ${p.text}`;
+    case "world":
+      return p.text;
+  }
+}
+
+function sourceOf(p: Perception): MemorySource {
+  switch (p.kind) {
+    case "speech":
+      return `contado por ${p.fromId}`;
+    case "overheard":
+      return `contado por ${p.fromId ?? "alguien"}`;
+    case "thought":
+      return "inferido";
+    default:
+      return "vivido";
+  }
+}
+
+function peopleOf(p: Perception): string[] {
+  switch (p.kind) {
+    case "arrived":
+      return [p.agentId];
+    case "speech":
+      return [p.fromId];
+    case "overheard":
+      return p.fromId ? [p.fromId] : [];
+    default:
+      return [];
   }
 }
 

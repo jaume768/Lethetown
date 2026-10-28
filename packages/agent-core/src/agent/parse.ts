@@ -1,3 +1,4 @@
+import { ActivityKind } from "@lethetown/shared";
 import { z } from "zod";
 
 /** Extrae el primer objeto JSON del texto (tolera ```json ... ``` y texto alrededor). */
@@ -12,6 +13,17 @@ export function parseWith<T>(schema: z.ZodType<T>, text: string): T {
   return schema.parse(extractJson(text));
 }
 
+/** activityKind desconocido → undefined (se deduce del texto). */
+const LooseActivityKind = z
+  .string()
+  .optional()
+  .transform((v) => (ActivityKind.safeParse(v).success ? (v as ActivityKind) : undefined));
+
+const NullableId = z
+  .string()
+  .nullish()
+  .transform((v) => (v && v !== "null" ? v : null));
+
 export const PlanResponse = z.object({
   plan: z
     .array(
@@ -19,7 +31,9 @@ export const PlanResponse = z.object({
         start: z.string(),
         durationMin: z.coerce.number().int().positive(),
         activity: z.string().min(1),
+        activityKind: LooseActivityKind,
         placeId: z.string(),
+        spotId: NullableId,
       }),
     )
     .min(1),
@@ -37,7 +51,9 @@ export const ImportanceResponse = z.object({
 export const DecideResponse = z.object({
   choice: z.enum(["continue", "react", "talk"]),
   action: z.string().optional(),
+  activityKind: LooseActivityKind,
   placeId: z.string().optional(),
+  spotId: NullableId,
   to: z.string().optional(),
   say: z.string().optional(),
 });
