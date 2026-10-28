@@ -60,6 +60,8 @@ export const World = z.object({
   places: z.array(Place).min(1),
   /** 1 = bloqueado, fila a fila (índice = y * width + x). */
   collision: z.array(z.number().int().min(0).max(1)),
+  /** 1 = camino (capa `paths`): los agentes lo prefieren al andar. */
+  paths: z.array(z.number().int().min(0).max(1)).default([]),
   /** Farolas (para la iluminación nocturna). */
   lights: z.array(TilePoint),
   /** Ventanas (se iluminan de noche). */

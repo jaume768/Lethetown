@@ -6,7 +6,12 @@ export interface Grid {
   height: number;
   /** 1 = bloqueado. Índice = y * width + x. */
   collision: readonly number[];
+  /** 1 = camino (coste 1); el resto cuesta OFF_PATH_COST. Opcional. */
+  paths?: readonly number[];
 }
+
+/** Coste de pisar una baldosa que no es camino: los agentes prefieren ir por los caminos. */
+export const OFF_PATH_COST = 2;
 
 export function isWalkable(grid: Grid, p: TilePoint): boolean {
   return (
@@ -80,7 +85,7 @@ function less(a: Node, b: Node): boolean {
 }
 
 /**
- * A* en 4 direcciones con heurística Manhattan. Devuelve el camino incluyendo inicio y meta,
+ * A* en 4 direcciones con heurística Manhattan (admisible: el coste mínimo por paso es 1). Devuelve el camino incluyendo inicio y meta,
  * o null si no hay camino. Determinista: misma entrada → mismo camino.
  */
 export function findPath(grid: Grid, start: TilePoint, goal: TilePoint): TilePoint[] | null {
@@ -112,7 +117,7 @@ export function findPath(grid: Grid, start: TilePoint, goal: TilePoint): TilePoi
       if (!isWalkable(grid, n)) continue;
       const ni = n.y * width + n.x;
       if (closed.has(ni)) continue;
-      const tentative = gc + 1;
+      const tentative = gc + (grid.paths && !grid.paths[ni] ? OFF_PATH_COST : 1);
       if (tentative < (g.get(ni) ?? Infinity)) {
         g.set(ni, tentative);
         cameFrom.set(ni, current.index);

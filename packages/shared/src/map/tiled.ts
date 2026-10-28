@@ -161,6 +161,7 @@ export function parseTiledMap(input: unknown): World {
   for (const name of TILE_LAYERS) tileLayer(map, name);
 
   const collision = tileLayer(map, "collision").data.map((gid) => (gid ? 1 : 0));
+  const paths = tileLayer(map, "paths").data.map((gid) => (gid ? 1 : 0));
   const toTile = (px: number) => Math.floor(px / ts);
 
   const placesLayer = objectLayer(map, "places");
@@ -235,6 +236,7 @@ export function parseTiledMap(input: unknown): World {
     tileSize: ts,
     places,
     collision,
+    paths,
     lights,
     windows,
   });
