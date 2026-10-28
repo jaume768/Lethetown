@@ -1,0 +1,11 @@
+{
+  "$comment": "USD por millón de tokens. Verificado el 2026-10-28 en la documentación oficial de Anthropic y OpenAI. cacheWrite = escritura en caché (Anthropic: 1.25x input con TTL 5 min).",
+  "models": {
+    "claude-haiku-5-5": { "input": 0.1, "output": 0.5, "cacheRead": 0.01, "cacheWrite": 0.125 },
+    "claude-sonnet-5-5": { "input": 2, "output": 10, "cacheRead": 0.2, "cacheWrite": 2.5 },
+    "gpt-6-luna": { "input": 0.1, "output": 0.5, "cacheRead": 0.01, "cacheWrite": 0.125 },
+    "gpt-6-sol": { "input": 2, "output": 10, "cacheRead": 0.2, "cacheWrite": 2.5 },
+    "mock-fast": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 },
+    "mock-reflection": { "input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0 }
+  }
+}

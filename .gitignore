@@ -1,0 +1,11 @@
+node_modules/
+dist/
+coverage/
+.cache/
+*.log
+.DS_Store
+
+# Secretos: nunca subir .env
+.env
+.env.*
+!.env.example
