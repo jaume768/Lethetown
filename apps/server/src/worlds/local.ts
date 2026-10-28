@@ -9,6 +9,7 @@ export function localContext(app: App): ApiContext {
     worlds: new Map([...app.worlds].map(([id, w]) => [id, new LocalWorldGateway(w)])),
     defaultWorldId: app.defaultWorld.id,
     provider: app.provider.name,
+    metrics: app.metrics,
     admin: {
       async health() {
         return {

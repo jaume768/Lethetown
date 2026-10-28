@@ -1,16 +1,23 @@
 import { buildApi } from "./api/server";
 import { bootstrap } from "./bootstrap";
-import { loadConfig } from "./config";
+import { isProduction, loadConfig } from "./config";
 import { formatEvent } from "./log";
+import { createLogger, initSentry } from "./observability";
 import { localContext } from "./worlds/local";
 
 const config = loadConfig();
-const log = (msg: string) => console.log(`\x1b[35m[lethetown]\x1b[0m ${msg}`);
+await initSentry(config, "all-in-one");
+const logger = createLogger(config, "all-in-one");
+const log = (msg: string) => logger.info(msg);
 
-const app = await bootstrap(config, log);
+const app = await bootstrap(config, log, { processName: "all-in-one" });
 const multi = app.worlds.size > 1;
 for (const w of app.worlds.values()) {
-  w.sim.onEvent((e) => console.log(`${multi ? `[${w.id}] ` : ""}${formatEvent(e)}`));
+  w.sim.onEvent((e) => {
+    // En desarrollo, el log de la simulación legible en la consola; en producción, estructurado.
+    if (isProduction(config)) logger.debug({ world: w.id, event: e }, "evento");
+    else console.log(`${multi ? `[${w.id}] ` : ""}${formatEvent(e)}`);
+  });
 }
 
 const { server, ws } = await buildApi(localContext(app), app);

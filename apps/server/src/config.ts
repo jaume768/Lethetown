@@ -48,6 +48,12 @@ const Env = z.object({
   SIM_SEED: z.preprocess(emptyToUndefined, z.coerce.number().int().optional()),
   SIM_WALK_TILES_PER_MINUTE: z.coerce.number().positive().default(6),
 
+  // --- Observabilidad -----------------------------------------------------------------------
+  LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"]).default("info"),
+  SENTRY_DSN: z.preprocess(emptyToUndefined, z.string().url().optional()),
+  /** Token para /metrics (Authorization: Bearer …). Vacío = solo admin con sesión. */
+  METRICS_TOKEN: z.preprocess(emptyToUndefined, z.string().min(16).optional()),
+
   // --- Servidor y seguridad -----------------------------------------------------------------
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   /** Interfaz en la que escucha la API (0.0.0.0 dentro de Docker). */

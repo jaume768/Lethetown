@@ -32,6 +32,7 @@ export class Simulation {
   /** Llamadas al LLM en curso por agente (para el snapshot). */
   private readonly thinking = new Map<string, number>();
   private restored = false;
+  private readonly tickListeners: (() => void)[] = [];
 
   constructor(deps: SimulationDeps) {
     const ctx = new SimContext(deps);
@@ -106,6 +107,11 @@ export class Simulation {
 
   onSignal(listener: (s: SimSignal) => void): () => void {
     return this.ctx.onSignal(listener);
+  }
+
+  /** Cada tick de agente ejecutado (para métricas de ticks/s). */
+  onTick(listener: () => void): void {
+    this.tickListeners.push(listener);
   }
 
   // --- Instantáneas ----------------------------------------------------------------------
@@ -215,6 +221,7 @@ export class Simulation {
   // --- Bucle del agente --------------------------------------------------------------
 
   private async agentTick(agent: Agent): Promise<void> {
+    for (const l of this.tickListeners) l();
     try {
       await this.step(agent);
     } catch (error) {

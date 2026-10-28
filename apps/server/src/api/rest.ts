@@ -16,6 +16,7 @@ import {
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import type { AppConfig } from "../config";
+import type { Metrics } from "../observability";
 import { requireRole } from "../security/http";
 import type { CommandResult, WorldCommand, WorldGateway } from "../worlds/gateway";
 
@@ -35,6 +36,7 @@ export interface ApiContext {
   defaultWorldId: string;
   provider: string;
   admin: AdminOps;
+  metrics: Metrics;
 }
 
 export function snapshot(w: WorldGateway, provider: string): WorldSnapshot {

@@ -134,6 +134,15 @@ describe("autorización", () => {
     dir.terminate();
   });
 
+  it("/metrics solo para admin y con las métricas de LLM y simulación", async () => {
+    expect((await get("/metrics", null)).statusCode).toBe(401);
+    expect((await get("/metrics", "director")).statusCode).toBe(403);
+    const res = await get("/metrics", "admin");
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toContain("lethetown_llm_calls_total");
+    expect(res.body).toContain('lethetown_world_game_minutes{world="default"');
+  });
+
   it("el WebSocket rechaza orígenes no permitidos", async () => {
     await expect(
       api.server.injectWS("/ws", { headers: { origin: "https://evil.example" } }),

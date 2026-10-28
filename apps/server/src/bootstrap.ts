@@ -76,6 +76,7 @@ import {
 } from "./db/worlds";
 import { createEmbedder } from "./embeddings";
 import { fromRoot } from "./paths";
+import { Metrics } from "./observability";
 import { GameClock } from "./sim/clock";
 import { LimitedProvider } from "./sim/llm-queue";
 import { Simulation } from "./sim/simulation";
@@ -120,6 +121,7 @@ export interface Services {
   snapshots: SnapshotStore;
   budget: BudgetGuard;
   moderationLog: ModerationLog;
+  metrics: Metrics;
   users: UserStore;
   sessions: SessionStore;
   log: (msg: string) => void;
@@ -233,6 +235,7 @@ async function connectDb(
 export async function createServices(
   config: AppConfig,
   log: (msg: string) => void,
+  processName = "lethetown",
 ): Promise<Services> {
   const [seeds, pricing] = await Promise.all([
     readJson(z.array(AgentSeed), "seeds/agents.json"),
@@ -302,6 +305,7 @@ export async function createServices(
     snapshots: db ? new PgSnapshotStore(db.db) : new InMemorySnapshotStore(),
     budget: await createBudget(config, db),
     moderationLog: db ? new PgModerationLog(db.db) : new InMemoryModerationLog(),
+    metrics: new Metrics(processName),
     users: db ? new PgUserStore(db.db) : await devUsers(config, log),
     sessions: db ? new PgSessionStore(db.db) : new InMemorySessionStore(),
     log,
@@ -371,7 +375,11 @@ export async function openWorld(services: Services, row: WorldRow): Promise<Worl
   const costs = new CostTracker(services.pricing);
   const provider = new BudgetedProvider(services.provider, services.budget, row.id);
   const llm = new LLMClient(provider, new ModelRouter(services.models), costs);
-  costs.onRecord((r) => services.budget.record(row.id, r.usd));
+  costs.onRecord((r) => {
+    services.budget.record(row.id, r.usd);
+    services.metrics.recordCost(row.id, r);
+  });
+  llm.onCall((e) => services.metrics.recordCall(row.id, e));
   if (db) {
     costs.onRecord((r) =>
       services.track(
@@ -446,6 +454,8 @@ export async function openWorld(services: Services, row: WorldRow): Promise<Worl
         .catch((err: unknown) => worldLog(`⚠ No se pudo guardar el evento: ${String(err)}`)),
     ),
   );
+  sim.onEvent((e) => services.metrics.simEvents.inc({ world: row.id, kind: e.kind }));
+  sim.onTick(() => services.metrics.simTicks.inc({ world: row.id }));
   const seeded = await sim.seedMemoriesIfEmpty(startTime);
   if (seeded) worldLog(`Sembrados los recuerdos iniciales de ${seeded} agentes.`);
   if (snapshot) {
@@ -559,9 +569,9 @@ export async function openWorld(services: Services, row: WorldRow): Promise<Worl
 export async function bootstrap(
   config: AppConfig,
   log: (msg: string) => void,
-  opts: { worldIds?: string[] } = {},
+  opts: { worldIds?: string[]; processName?: string } = {},
 ): Promise<App> {
-  const services = await createServices(config, log);
+  const services = await createServices(config, log, opts.processName);
   const defaultRow = await services.worldRepo.ensureDefault(MAP_FILE, config.SIM_SEED ?? null);
   const rows = (await services.worldRepo.list()).filter((w) =>
     opts.worldIds ? opts.worldIds.includes(w.id) : w.status !== "stopped",
