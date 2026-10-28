@@ -1,5 +1,6 @@
 import type { SimEvent } from "@lethetown/shared";
 import { useEffect, useRef, useState } from "react";
+import { useI18n } from "../i18n";
 import { api } from "../net/store";
 import { formatGameTime } from "./format";
 
@@ -13,6 +14,7 @@ interface Props {
 
 /** Log en vivo y línea de tiempo (eventos guardados por día y hora). */
 export function EventLog({ events, today, onOpenEvent }: Props) {
+  const { t } = useI18n();
   const end = useRef<HTMLDivElement>(null);
   const [mode, setMode] = useState<"live" | "history">("live");
   const [day, setDay] = useState(today);
@@ -37,62 +39,74 @@ export function EventLog({ events, today, onOpenEvent }: Props) {
   const shown = mode === "live" ? events : history.filter((e) => e.time % 1440 < hour * 60);
 
   return (
-    <section className="panel log">
+    <section className="panel log" aria-label={t("events.title")}>
       <div className="row">
-        <h3>{mode === "live" ? "Eventos" : "Línea de tiempo"}</h3>
+        <h3>{mode === "live" ? t("events.title") : t("events.timeline")}</h3>
         <div className="wrap">
           <button
             className={`btn small ${mode === "live" ? "active" : ""}`}
+            aria-pressed={mode === "live"}
             onClick={() => setMode("live")}
           >
-            En vivo
+            {t("events.live")}
           </button>
           <button
             className={`btn small ${mode === "history" ? "active" : ""}`}
+            aria-pressed={mode === "history"}
             onClick={() => {
               setDay(today);
               setMode("history");
             }}
           >
-            Historial
+            {t("events.history")}
           </button>
         </div>
       </div>
       {mode === "history" && (
         <div className="timeline small">
-          <button className="btn" onClick={() => setDay(Math.max(0, day - 1))}>
+          <button className="btn" aria-label="−1" onClick={() => setDay(Math.max(0, day - 1))}>
             ◀
           </button>
-          <span>Día {day}</span>
-          <button className="btn" onClick={() => setDay(Math.min(today, day + 1))}>
+          <span>{t("events.day", { day })}</span>
+          <button className="btn" aria-label="+1" onClick={() => setDay(Math.min(today, day + 1))}>
             ▶
           </button>
           <input
+            aria-label={t("events.until", { hour: String(hour).padStart(2, "0") })}
             type="range"
             min={1}
             max={24}
             value={hour}
             onChange={(e) => setHour(Number(e.target.value))}
           />
-          <span>hasta las {String(hour).padStart(2, "0")}:00</span>
+          <span>{t("events.until", { hour: String(hour).padStart(2, "0") })}</span>
         </div>
       )}
-      <div className="log-body">
+      <div className="log-body readable" role="log" aria-live="off">
         {shown.map((e) => {
           const clickable = RASHOMON_KINDS.has(e.kind);
-          return (
-            <div
-              key={e.id}
-              className={`ev ev-${e.kind} ${clickable ? "clickable" : ""}`}
-              title={clickable ? "Ver cómo lo recuerda cada uno (Rashomon)" : undefined}
-              onClick={clickable ? () => onOpenEvent(e.id) : undefined}
-            >
+          const content = (
+            <>
               <span className="muted">{formatGameTime(e.time)}</span> {e.text}
+            </>
+          );
+          return clickable ? (
+            <button
+              key={e.id}
+              className={`ev ev-${e.kind} clickable`}
+              title={t("events.rashomon")}
+              onClick={() => onOpenEvent(e.id)}
+            >
+              {content}
+            </button>
+          ) : (
+            <div key={e.id} className={`ev ev-${e.kind}`}>
+              {content}
             </div>
           );
         })}
         {mode === "history" && shown.length === 0 && (
-          <div className="muted">Sin eventos guardados.</div>
+          <div className="muted">{t("events.none")}</div>
         )}
         <div ref={end} />
       </div>

@@ -1,10 +1,12 @@
 import type { AssetInUse, Credit } from "@lethetown/shared";
+import { useI18n } from "../i18n";
 import { Modal } from "./Modal";
 
 /** Créditos que exigen las licencias de los assets (manifest → `credits`). */
 export function CreditsModal({ credits, onClose }: { credits: Credit[]; onClose: () => void }) {
+  const { t } = useI18n();
   return (
-    <Modal title="Créditos" onClose={onClose}>
+    <Modal title={t("credits.title")} onClose={onClose}>
       <ul className="credits">
         {credits.map((c) => (
           <li key={c.id}>
@@ -12,7 +14,9 @@ export function CreditsModal({ credits, onClose }: { credits: Credit[]; onClose:
               <b>{c.name}</b>
             </a>{" "}
             — {c.author}
-            {c.license === "non-commercial" && <span className="tag warn">no comercial</span>}
+            {c.license === "non-commercial" && (
+              <span className="tag warn">{t("credits.nonCommercial")}</span>
+            )}
             {c.notice && <div className="muted small">{c.notice}</div>}
           </li>
         ))}
@@ -22,7 +26,7 @@ export function CreditsModal({ credits, onClose }: { credits: Credit[]; onClose:
 }
 
 /** Aviso discreto (modo Director) si hay assets no comerciales en uso. */
-export function NonCommercialNotice({ assets }: { assets: AssetInUse[] }) {
+export function NonCommercialNotice({ assets, label }: { assets: AssetInUse[]; label: string }) {
   if (assets.length === 0) return null;
   return (
     <div
@@ -30,7 +34,7 @@ export function NonCommercialNotice({ assets }: { assets: AssetInUse[] }) {
       role="note"
       title={assets.map((a) => `${a.kind}: ${a.name}`).join("\n")}
     >
-      Assets no comerciales en uso ({assets.length}) · <code>pnpm assets:check</code>
+      {label}
     </div>
   );
 }

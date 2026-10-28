@@ -2,7 +2,16 @@ import Phaser from "phaser";
 import { useEffect, useRef } from "react";
 import type { AgentState, Weather, World } from "@lethetown/shared";
 import { gameTimeNow, getState, onMemoryEffect } from "../net/store";
+import { t } from "../i18n";
 import { TownScene } from "./TownScene";
+
+/** Lo que la UI puede pedirle al mapa (botones, teclado, clips). */
+export interface MapController {
+  focusPlace(placeId: string): void;
+  nudge(dx: number, dy: number): void;
+  zoom(step: number): void;
+  canvas(): HTMLCanvasElement | null;
+}
 
 interface Props {
   world: World | null;
@@ -13,6 +22,9 @@ interface Props {
   minimap: boolean;
   onSelect: (id: string) => void;
   onFollowChange: (id: string | null) => void;
+  /** Overlay para OBS: fondo transparente y sin minimapa. */
+  transparent?: boolean;
+  controller?: { current: MapController | null };
 }
 
 function sync(scene: TownScene, { world, agents, selectedId, weather, minimap }: Props) {
@@ -40,12 +52,24 @@ export function TownMap(props: Props) {
     townScene.isThinking = (id) => (getState().thinking[id]?.count ?? 0) > 0;
     const offEffects = onMemoryEffect((e) => townScene.memoryEffect(e.agentId, e.kind));
     scene.current = townScene;
+    if (latest.current.controller) {
+      latest.current.controller.current = {
+        focusPlace: (id) => townScene.focusPlace(id),
+        nudge: (dx, dy) => townScene.nudgeCamera(dx, dy),
+        zoom: (step) => townScene.zoomBy(step),
+        canvas: () => (townScene.ready ? townScene.canvas : null),
+      };
+    }
     // Solo en desarrollo: acceso desde la consola / scripts de captura.
     if (import.meta.env.DEV) (window as unknown as { __town: TownScene }).__town = townScene;
+    const transparent = latest.current.transparent ?? false;
     const game = new Phaser.Game({
       type: Phaser.AUTO,
       parent: host.current!,
-      backgroundColor: "#1d2330",
+      backgroundColor: transparent ? "rgba(0,0,0,0)" : "#1d2330",
+      transparent,
+      // Para poder grabar el lienzo (clips) tras pintar cada frame.
+      render: { preserveDrawingBuffer: true },
       // Pixel art: sin suavizado y con posiciones enteras (en Phaser 4 roundPixels es false por defecto).
       pixelArt: true,
       roundPixels: true,
@@ -73,5 +97,34 @@ export function TownMap(props: Props) {
     if (scene.current?.ready) scene.current.setFollow(props.followId);
   }, [props.followId]);
 
-  return <div ref={host} className="map" />;
+  return (
+    <div
+      ref={host}
+      className="map"
+      role="application"
+      aria-label={t("map.label")}
+      aria-describedby="map-keys"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        const c = props.controller?.current;
+        if (!c) return;
+        const moves: Record<string, [number, number]> = {
+          ArrowLeft: [-1, 0],
+          ArrowRight: [1, 0],
+          ArrowUp: [0, -1],
+          ArrowDown: [0, 1],
+        };
+        const m = moves[e.key];
+        if (m) c.nudge(m[0], m[1]);
+        else if (e.key === "+" || e.key === "=") c.zoom(1);
+        else if (e.key === "-") c.zoom(-1);
+        else return;
+        e.preventDefault();
+      }}
+    >
+      <span id="map-keys" className="sr-only">
+        {t("map.keys")}
+      </span>
+    </div>
+  );
 }

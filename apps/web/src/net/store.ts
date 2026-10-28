@@ -1,7 +1,10 @@
 import {
+  RUNNING,
   ServerMessage,
   type AgentState,
   type Chronicle,
+  type Drama,
+  type WorldRunStatus,
   type ClientMessage,
   type ClockState,
   type CostSummary,
@@ -15,6 +18,12 @@ export type MemoryEffectMessage = Extract<ServerMessage, { type: "memory_effect"
 
 export interface GameState {
   connected: boolean;
+  /** Ya se recibió el primer snapshot (para la pantalla de carga). */
+  loaded: boolean;
+  /** Intentos de reconexión seguidos (0 = conectado o primer intento). */
+  retries: number;
+  status: WorldRunStatus;
+  dramas: Drama[];
   /** performance.now() al recibir el último reloj, para extrapolar el tiempo de juego. */
   clockReceivedAt: number;
   world: World | null;
@@ -30,9 +39,14 @@ export interface GameState {
 }
 
 const MAX_EVENTS = 400;
+const MAX_DRAMAS = 100;
 
 let state: GameState = {
   connected: false,
+  loaded: false,
+  retries: 0,
+  status: RUNNING,
+  dramas: [],
   clockReceivedAt: 0,
   world: null,
   provider: "",
@@ -63,6 +77,8 @@ function handle(msg: ServerMessage) {
         clockReceivedAt: performance.now(),
         agents: msg.snapshot.agents,
         weather: msg.snapshot.weather,
+        status: msg.snapshot.status,
+        loaded: true,
       });
     case "tick":
       return set({ clock: msg.clock, clockReceivedAt: performance.now(), agents: msg.agents });
@@ -92,6 +108,15 @@ function handle(msg: ServerMessage) {
     case "memory_effect":
       for (const l of effectListeners) l(msg);
       return;
+    case "status":
+      return set({ status: msg.status });
+    case "drama":
+      return set({
+        dramas: [msg.drama, ...state.dramas.filter((d) => d.id !== msg.drama.id)].slice(
+          0,
+          MAX_DRAMAS,
+        ),
+      });
     case "chronicle":
       return set({
         chronicles: [...state.chronicles.filter((c) => c.day !== msg.chronicle.day), msg.chronicle],
@@ -129,8 +154,9 @@ export function connect() {
   const ws = new WebSocket(url);
   socket = ws;
   ws.onopen = () => {
-    set({ connected: true, thinking: {} });
+    set({ connected: true, retries: 0, thinking: {} });
     void api<Chronicle[]>("/api/chronicles").then((chronicles) => set({ chronicles }));
+    void api<Drama[]>("/api/dramas?limit=50").then((dramas) => set({ dramas }));
   };
   ws.onmessage = (e) => {
     const parsed = ServerMessage.safeParse(JSON.parse(String(e.data)));
@@ -139,8 +165,9 @@ export function connect() {
   };
   ws.onclose = () => {
     socket = null;
-    set({ connected: false });
-    setTimeout(connect, 1500);
+    set({ connected: false, retries: state.retries + 1 });
+    // Backoff suave: 1,5 s, 3 s, 4,5 s… hasta 15 s.
+    setTimeout(connect, Math.min(15_000, 1500 * (state.retries || 1)));
   };
 }
 

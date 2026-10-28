@@ -1,37 +1,27 @@
 import type { AgentMemoryResponse, AgentState, World } from "@lethetown/shared";
 import { useEffect, useMemo, useState } from "react";
+import { useI18n, type MessageKey } from "../i18n";
 import { useAssets } from "../net/assets";
 import { api } from "../net/store";
-import { Portrait } from "./Portrait";
 import { formatGameTime, formatMinuteOfDay } from "./format";
+import { Portrait } from "./Portrait";
 
 const REFRESH_MS = 3000;
 /** Recuerdos por página del jardín. */
 const PAGE = 40;
-const SOURCE_LABEL: Record<string, string> = { vivido: "vivido", inferido: "inferido" };
-const TYPE_LABEL: Record<string, string> = {
-  observation: "observación",
-  reflection: "reflexión",
-  plan: "plan",
-  semantic: "conocimiento",
-};
-const AUDIT_LABEL: Record<string, string> = {
-  forgotten: "olvidó",
-  deleted: "borró",
-  archived: "resumió",
-  summarized: "resumió",
-  gist: "solo recuerda la esencia de",
-  reconsolidated: "reescribió",
-  source_changed: "confundió la fuente de",
-  weakened: "debilitó",
-  reinforced: "reforzó",
-};
 
 function Bar({ value, label }: { value: number; label: string }) {
   return (
     <div className="bar" title={`${label}: ${value.toFixed(2)}`}>
       <span>{label}</span>
-      <div className="bar-track">
+      <div
+        className="bar-track"
+        role="meter"
+        aria-label={label}
+        aria-valuemin={0}
+        aria-valuemax={1}
+        aria-valuenow={Number(value.toFixed(2))}
+      >
         <div className="bar-fill" style={{ width: `${Math.round(value * 100)}%` }} />
       </div>
     </div>
@@ -43,19 +33,24 @@ interface Props {
   agents: AgentState[];
   world: World | null;
   thinkingTask: string | null;
+  /** Modo Director: puede susurrar a la voz interior. */
+  canIntervene: boolean;
 }
 
 /** Inspector del agente: estado, plan, fichas sociales y "jardín de recuerdos" con filtros. */
-export function MemoryGarden({ agent, agents, world, thinkingTask }: Props) {
+export function MemoryGarden({ agent, agents, world, thinkingTask, canIntervene }: Props) {
+  const { t } = useI18n();
   const [data, setData] = useState<AgentMemoryResponse | null>(null);
   const [person, setPerson] = useState("");
   const [place, setPlace] = useState("");
   const [showForgotten, setShowForgotten] = useState(false);
   const [thought, setThought] = useState("");
+  const [voiceMsg, setVoiceMsg] = useState<string | null>(null);
   const [pages, setPages] = useState(1);
   const agentId = agent?.id;
   const { pack } = useAssets();
 
+  useEffect(() => setPages(1), [agentId]);
   useEffect(() => {
     if (!agentId) return;
     let cancelled = false;
@@ -76,7 +71,6 @@ export function MemoryGarden({ agent, agents, world, thinkingTask }: Props) {
       clearInterval(timer);
     };
   }, [agentId, pages]);
-  useEffect(() => setPages(1), [agentId]);
 
   const names = useMemo(() => Object.fromEntries(agents.map((a) => [a.id, a.name])), [agents]);
   const memories = useMemo(
@@ -91,20 +85,22 @@ export function MemoryGarden({ agent, agents, world, thinkingTask }: Props) {
     [data, agentId, person, place, showForgotten],
   );
 
-  if (!agent) {
-    return (
-      <section className="panel muted">Haz clic en un agente del mapa para inspeccionarlo.</section>
-    );
-  }
+  if (!agent) return <p className="muted readable">{t("agent.pick")}</p>;
 
   const sendThought = async () => {
     if (!thought.trim()) return;
-    await api(`/api/agents/${agent.id}/thought`, { text: thought.trim() });
-    setThought("");
+    setVoiceMsg(null);
+    try {
+      await api(`/api/agents/${agent.id}/thought`, { text: thought.trim() });
+      setThought("");
+      setVoiceMsg(t("agent.voiceSent"));
+    } catch (e) {
+      setVoiceMsg(t("director.error", { error: e instanceof Error ? e.message : String(e) }));
+    }
   };
 
   return (
-    <section className="panel inspector">
+    <div className="inspector">
       <div className="row inspector-head">
         <Portrait
           pack={pack}
@@ -114,7 +110,11 @@ export function MemoryGarden({ agent, agents, world, thinkingTask }: Props) {
         />
         <div>
           <h3>{agent.name}</h3>
-          {thinkingTask && <span className="thinking small">pensando… ({thinkingTask})</span>}
+          {thinkingTask && (
+            <span className="thinking small" role="status">
+              {t("agent.thinking", { task: thinkingTask })}
+            </span>
+          )}
         </div>
       </div>
       <div className="small">
@@ -122,29 +122,45 @@ export function MemoryGarden({ agent, agents, world, thinkingTask }: Props) {
         {agent.targetId ? ` → ${agent.targetId}` : ""} · {agent.action}{" "}
         <span className="tag">{agent.activityKind}</span>
       </div>
+      {agent.lastUtterance && (
+        <blockquote className="readable says">«{agent.lastUtterance}»</blockquote>
+      )}
       <div className="muted small">
-        Ánimo: {agent.mood.label} ({agent.mood.valence.toFixed(2)})
+        {t("agent.mood", { label: agent.mood.label, value: agent.mood.valence.toFixed(2) })}
       </div>
-      <Bar label="energía" value={agent.needs.energy} />
-      <Bar label="hambre" value={agent.needs.hunger} />
-      <Bar label="social" value={agent.needs.social} />
+      <Bar label={t("agent.energy")} value={agent.needs.energy} />
+      <Bar label={t("agent.hunger")} value={agent.needs.hunger} />
+      <Bar label={t("agent.social")} value={agent.needs.social} />
 
-      <h4>Voz interior</h4>
-      <div className="row">
-        <input
-          className="field"
-          placeholder="Susúrrale un pensamiento…"
-          value={thought}
-          onChange={(e) => setThought(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && void sendThought()}
-        />
-        <button className="btn" onClick={() => void sendThought()}>
-          Enviar
-        </button>
-      </div>
+      {canIntervene && (
+        <>
+          <h4>
+            <label htmlFor="voice">{t("agent.voice")}</label>
+          </h4>
+          <div className="row">
+            <input
+              id="voice"
+              className="field"
+              maxLength={280}
+              placeholder={t("agent.voicePlaceholder")}
+              value={thought}
+              onChange={(e) => setThought(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && void sendThought()}
+            />
+            <button className="btn" onClick={() => void sendThought()}>
+              {t("agent.voiceSend")}
+            </button>
+          </div>
+          {voiceMsg && (
+            <p className="small muted" role="status">
+              {voiceMsg}
+            </p>
+          )}
+        </>
+      )}
 
-      <h4>Plan</h4>
-      <ul className="plan">
+      <h4>{t("agent.plan")}</h4>
+      <ul className="plan readable">
         {agent.plan.map((p) => (
           <li key={p.startMinute}>
             {formatMinuteOfDay(p.startMinute)} · {p.activity}{" "}
@@ -156,22 +172,29 @@ export function MemoryGarden({ agent, agents, world, thinkingTask }: Props) {
         ))}
       </ul>
 
-      <h4>Lo que piensa de los demás</h4>
+      <h4>{t("agent.social.title")}</h4>
       <div className="social small">
-        {(data?.social ?? []).length === 0 && <span className="muted">Aún nada.</span>}
+        {(data?.social ?? []).length === 0 && (
+          <span className="muted">{t("agent.social.none")}</span>
+        )}
         {(data?.social ?? []).map((s) => (
           <div key={s.aboutId} className="card">
-            <b>{names[s.aboutId] ?? s.aboutId}</b> · afinidad {s.affinity.toFixed(2)} · confianza{" "}
-            {s.trust.toFixed(2)}
-            <div className="muted">{s.summary}</div>
+            <b>{names[s.aboutId] ?? s.aboutId}</b> ·{" "}
+            {t("agent.social.line", { affinity: s.affinity.toFixed(2), trust: s.trust.toFixed(2) })}
+            <div className="muted readable">{s.summary}</div>
           </div>
         ))}
       </div>
 
-      <h4>Jardín de recuerdos</h4>
+      <h4>{t("agent.garden")}</h4>
       <div className="filters small">
-        <select className="field" value={person} onChange={(e) => setPerson(e.target.value)}>
-          <option value="">Todas las personas</option>
+        <select
+          className="field"
+          aria-label={t("agent.allPeople")}
+          value={person}
+          onChange={(e) => setPerson(e.target.value)}
+        >
+          <option value="">{t("agent.allPeople")}</option>
           {agents
             .filter((a) => a.id !== agent.id)
             .map((a) => (
@@ -180,24 +203,31 @@ export function MemoryGarden({ agent, agents, world, thinkingTask }: Props) {
               </option>
             ))}
         </select>
-        <select className="field" value={place} onChange={(e) => setPlace(e.target.value)}>
-          <option value="">Todos los lugares</option>
+        <select
+          className="field"
+          aria-label={t("agent.allPlaces")}
+          value={place}
+          onChange={(e) => setPlace(e.target.value)}
+        >
+          <option value="">{t("agent.allPlaces")}</option>
           {world?.places.map((p) => (
             <option key={p.id} value={p.id}>
               {p.name}
             </option>
           ))}
         </select>
-        <label title="Mostrar olvidados">
+        <label>
           <input
             type="checkbox"
             checked={showForgotten}
             onChange={(e) => setShowForgotten(e.target.checked)}
           />{" "}
-          🕳
+          {t("agent.showForgotten")}
         </label>
       </div>
-      <div className="small muted">Memoria de trabajo: {(data?.workingMemory ?? []).length}/7</div>
+      <div className="small muted">
+        {t("agent.working", { n: (data?.workingMemory ?? []).length })}
+      </div>
       <div className="garden">
         {memories.map(({ memory: m, scores: s }) => (
           <div
@@ -206,14 +236,16 @@ export function MemoryGarden({ agent, agents, world, thinkingTask }: Props) {
             style={{ opacity: 0.3 + 0.7 * s.strength }}
             title={`total ${s.total.toFixed(2)} · recencia ${s.recency.toFixed(2)} · relevancia ${s.relevance.toFixed(2)} · ánimo ${s.moodMatch.toFixed(2)}`}
           >
-            <div className="text">{s.clarity === "vague" && m.gist ? `… ${m.gist}` : m.text}</div>
+            <div className="text readable">
+              {s.clarity === "vague" && m.gist ? `… ${m.gist}` : m.text}
+            </div>
             <div className="tags">
-              <span className="tag">{TYPE_LABEL[m.type] ?? m.type}</span>
-              <span className="tag">{SOURCE_LABEL[m.source] ?? m.source}</span>
-              <span className="tag">fuerza {s.strength.toFixed(2)}</span>
-              <span className="tag">imp. {m.importance}</span>
+              <span className="tag">{t(`memory.type.${m.type}` as MessageKey)}</span>
+              <span className="tag">{m.source}</span>
+              <span className="tag">{t("memory.strength", { value: s.strength.toFixed(2) })}</span>
+              <span className="tag">{t("memory.importance", { value: m.importance })}</span>
               {s.clarity !== "clear" && (
-                <span className="tag">{s.clarity === "vague" ? "vago" : "olvidado"}</span>
+                <span className="tag">{t(`memory.clarity.${s.clarity}` as MessageKey)}</span>
               )}
               {m.links.length > 0 && <span className="tag">🔗 {m.links.length}</span>}
               <span className="tag">{formatGameTime(m.createdAt)}</span>
@@ -221,22 +253,21 @@ export function MemoryGarden({ agent, agents, world, thinkingTask }: Props) {
           </div>
         ))}
       </div>
-
       {data && data.total > data.memories.length && (
         <button className="btn small" onClick={() => setPages(pages + 1)}>
-          Ver más ({data.memories.length} de {data.total})
+          {t("agent.more", { shown: data.memories.length, total: data.total })}
         </button>
       )}
 
-      <h4>Olvidos y cambios</h4>
-      <ul className="audit">
+      <h4>{t("agent.audit")}</h4>
+      <ul className="audit readable">
         {(data?.audit ?? []).slice(0, 15).map((a, i) => (
           <li key={`${a.memoryId}-${a.at}-${i}`}>
-            {formatGameTime(a.at)} · {AUDIT_LABEL[a.action] ?? a.action} «
-            {a.memoryText.slice(0, 60)}» porque {a.reason}
+            {formatGameTime(a.at)} · {t(`memory.audit.${a.action}` as MessageKey)} «
+            {a.memoryText.slice(0, 60)}» {t("agent.because")} {a.reason}
           </li>
         ))}
       </ul>
-    </section>
+    </div>
   );
 }

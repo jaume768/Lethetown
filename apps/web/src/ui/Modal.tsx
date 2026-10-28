@@ -1,4 +1,5 @@
 import { useEffect, useRef, type ReactNode } from "react";
+import { t } from "../i18n";
 
 interface Props {
   title: string;
@@ -38,7 +39,7 @@ export function Modal({ title, onClose, children, actions, className = "" }: Pro
           <div className="row gap">
             {actions}
             <button className="btn" onClick={onClose}>
-              Cerrar
+              {t("common.close")}
             </button>
           </div>
         </div>

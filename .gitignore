@@ -15,3 +15,7 @@ apps/web/public/assets/vendor/
 
 # Resultados de pnpm interview
 interviews/
+
+# Playwright
+test-results/
+playwright-report/

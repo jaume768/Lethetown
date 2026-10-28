@@ -1295,6 +1295,14 @@
       "url": "https://github.com/eifetx/Pixelify-Sans",
       "license": "commercial",
       "notice": "SIL Open Font License 1.1"
+    },
+    {
+      "id": "atkinson",
+      "name": "Atkinson Hyperlegible",
+      "author": "Braille Institute of America",
+      "url": "https://github.com/googlefonts/atkinson-hyperlegible",
+      "license": "commercial",
+      "notice": "SIL Open Font License 1.1"
     }
   ]
 }
