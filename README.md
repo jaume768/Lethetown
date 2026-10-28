@@ -94,8 +94,7 @@ Requisitos: Node 20+, pnpm 9 y, si quieres persistencia, Docker.
 
 ```bash
 pnpm install
-cp .env.example .env
-pnpm dev            # servidor (http://127.0.0.1:3001) + web (http://localhost:5173)
+pnpm dev            # crea .env si falta; servidor (http://127.0.0.1:3001) + web (http://localhost:5173)
 ```
 
 Sin más pasos funciona en **modo mock** y con almacén en RAM. La primera vez descarga el modelo de embeddings (~25 MB). Si no hay red, usa embeddings hash automáticamente.
