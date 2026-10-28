@@ -23,10 +23,10 @@ export function SpeedControls({
         {SIM_SPEEDS.map((s) => (
           <button
             key={s}
-            className={clock.speed === s ? "active" : ""}
+            className={`btn ${clock.speed === s ? "active" : ""}`}
             onClick={() => send({ type: "setSpeed", speed: s })}
           >
-            {s === 0 ? "⏸ pausa" : `x${s}`}
+            {s === 0 ? "⏸" : `x${s}`}
           </button>
         ))}
       </div>

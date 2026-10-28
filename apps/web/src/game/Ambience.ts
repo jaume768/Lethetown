@@ -8,6 +8,9 @@ const RAIN_DROPS = 260;
 export class Ambience {
   private readonly veil: Phaser.GameObjects.Rectangle;
   private readonly glows: Phaser.GameObjects.Image[] = [];
+  /** Lugar al que pertenece cada ventana. */
+  private readonly windowPlace = new Map<Phaser.GameObjects.Image, string>();
+  private hiddenPlaces = new Set<string>();
   private readonly rain: Phaser.GameObjects.Graphics;
   private readonly drops: { x: number; y: number; v: number }[] = [];
   weather: Weather = "sunny";
@@ -24,11 +27,18 @@ export class Ambience {
       .setDepth(30)
       .setBlendMode(Phaser.BlendModes.MULTIPLY);
     for (const p of world.windows) {
-      this.glows.push(
-        scene.add
-          .image(p.x * TS + TS / 2, p.y * TS + TS / 2, "glow-window")
-          .setBlendMode(Phaser.BlendModes.ADD),
+      const glow = scene.add
+        .image(p.x * TS + TS / 2, p.y * TS + TS / 2, "glow-window")
+        .setBlendMode(Phaser.BlendModes.ADD);
+      const place = world.places.find(
+        (pl) =>
+          p.x >= pl.area.x &&
+          p.x < pl.area.x + pl.area.w &&
+          p.y >= pl.area.y &&
+          p.y < pl.area.y + pl.area.h,
       );
+      if (place) this.windowPlace.set(glow, place.id);
+      this.glows.push(glow);
     }
     for (const p of world.lights) {
       // La luz sale de la cabeza de la farola (3 baldosas por encima de su base).
@@ -45,10 +55,18 @@ export class Ambience {
     }
   }
 
+  /** Lugares con el tejado oculto: sus ventanas, vistas desde dentro, no brillan. */
+  setHiddenPlaces(ids: Set<string>) {
+    this.hiddenPlaces = ids;
+  }
+
   update(gameMinutes: number, dtSeconds: number) {
     const a = ambientAt(gameMinutes, this.weather);
     this.veil.setFillStyle(a.tint, a.alpha);
-    for (const g of this.glows) g.setAlpha(a.lights);
+    for (const g of this.glows) {
+      const place = this.windowPlace.get(g);
+      g.setAlpha(place && this.hiddenPlaces.has(place) ? 0 : a.lights);
+    }
     this.drawRain(dtSeconds);
   }
 

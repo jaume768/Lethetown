@@ -30,23 +30,23 @@ retomar desde el primer elemento sin marcar.
 ### Fase D — Personajes
 
 - [x] `appearance` en AgentSeed, `activityKind` en AgentState (LLM + rutinas + mock)
-- [~] Sprites animados 4 direcciones, pose al llegar al spot, selección con contorno (hecho; falta revisar orden de direcciones en juego)
+- [x] Sprites animados 4 direcciones, pose al llegar al spot, selección con contorno
 
 ### Fase E — Mente visible
 
-- [ ] Emotes pixel por actividad/ánimo
-- [~] `thinking` (start/end) por WS — servidor hecho; falta indicador en cliente
-- [ ] Bocadillos nine-slice con texto letra a letra
-- [~] Efectos de memoria (recall / vague / forget) por WS — servidor hecho; falta pintarlos
-- [ ] Inspector "jardín de recuerdos" con filtros
+- [x] Emotes pixel por actividad/ánimo (propios, dibujados por código)
+- [x] `thinking` (start/end) por WS + indicador (puntos animados + inspector)
+- [x] Bocadillos nine-slice con texto letra a letra
+- [x] Efectos de memoria (destello, nube, partículas, bombilla, interrogación)
+- [x] Inspector "jardín de recuerdos" con filtros, fichas sociales y auditoría
 
 ### Fase F — Ambiente e interfaz
 
-- [ ] Ciclo día/noche, ventanas y farolas
+- [x] Ciclo día/noche, ventanas y farolas (+ lluvia)
 - [x] Tejados que se desvanecen
 - [x] Cámara: zoom entero, arrastre, seguir agente, límites
-- [ ] UI pixel con fuente OFL incluida
-- [ ] Minimapa (opcional)
+- [x] UI pixel con fuente OFL incluida (Pixelify Sans)
+- [x] Minimapa
 
 ### Fase G — Memoria humana completa
 
@@ -62,11 +62,11 @@ retomar desde el primer elemento sin marcar.
 
 ### Fase H — Funciones estrella
 
-- [~] Vista Rashomon — API `/api/rashomon/:id` hecha; falta UI
-- [~] Línea de tiempo persistida — `sim_events` + `/api/events` hechos; falta barra en UI
+- [x] Vista Rashomon (clic en una frase del log)
+- [x] Línea de tiempo persistida (pestaña Historial: día + hora)
 - [x] `pnpm interview`
-- [~] Crónica del día — generación 23:00 + `chronicles` + WS hechos; falta panel UI
-- [~] Intervención del jugador — API hecha (thought, spots, weather); falta panel UI
+- [x] Crónica del día (panel Crónicas)
+- [x] Intervención del jugador (voz interior en el inspector, panel Mundo)
 
 ### Final
 
@@ -94,10 +94,7 @@ retomar desde el primer elemento sin marcar.
 
 ## Bloqueos / pendientes
 
-- **Sesión cortada por límite de uso.** Último paso hecho: escena con emotes, "pensando", bocadillos nine-slice letra a letra, efectos de memoria, día/noche, luces, lluvia y minimapa (`AgentView.ts`, `Ambience.ts`, `pixelArt.ts`). Compila y pasan los tests, pero NO se ha verificado visualmente.
-- Siguiente: `@font-face` de Pixelify Sans en styles.css (la fuente está en `apps/web/public/assets/fonts/`), UI pixel, inspector "jardín de recuerdos" (la API ya devuelve audit y fichas sociales), modal Rashomon (`/api/rashomon/:id`), barra de línea de tiempo (`/api/events?day=`), panel de crónicas (store ya las recibe) y panel de intervención (endpoints thought/spots/weather).
-- Después: placeholder `pnpm assets:placeholder`, README/CLAUDE.md, push y PR (gh no tiene sesión: `gh auth login`).
-
+- Pixelify Sans dibuja «¿» parecido a «ó» (limitación de la fuente).
 - Placeholder generado por código (`pnpm assets:placeholder`) aplazado: el usuario pidió priorizar lo que no dependía de assets y después aportó los packs vendor. Sigue pendiente para que el proyecto funcione sin ellos (ahora cae a formas simples).
 - A* no prefiere los caminos (coste uniforme): los agentes cruzan el césped en diagonal escalonada.
 - Etiquetas de nombre se solapan cuando hay varios agentes juntos (fase E).

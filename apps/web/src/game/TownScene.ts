@@ -239,6 +239,8 @@ export class TownScene extends Phaser.Scene {
     const worldPoint = pointer.positionToCamera(this.cameras.main) as Phaser.Math.Vector2;
     const px = worldPoint.x / TS;
     const py = worldPoint.y / TS;
+    const hidden = new Set<string>();
+    this.ambience?.setHiddenPlaces(hidden);
     for (const place of this.world.places) {
       if (!place.indoor) continue;
       const { x, y, w, h } = place.area;
@@ -248,6 +250,7 @@ export class TownScene extends Phaser.Scene {
         return contains(p.x, p.y);
       });
       const target = occupied || contains(px, py) ? ROOF_HIDDEN_ALPHA : 1;
+      if (target < 0.5) hidden.add(place.id);
       const current = this.roofAlpha.get(place.id) ?? 1;
       const next = current + (target - current) * 0.15;
       if (Math.abs(next - current) < 0.002) continue;
