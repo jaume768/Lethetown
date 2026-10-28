@@ -1,0 +1,789 @@
+[día 0, 06:50] system - Simulación iniciada con 3 agentes
+[día 0, 07:00] action lucia Lucía Ferrer: pensando en el día
+[día 0, 07:00] plan lucia Plan: preparar el desayuno → tomar un café → pasear y sentarse en el banco → comer → hacer la compra → tomar un café → cenar y descansar
+[día 0, 07:00] action lucia Lucía Ferrer: caminando a Casa azul
+[día 0, 07:01] action mateo Mateo Ruiz: pensando en el día
+[día 0, 07:01] plan mateo Plan: preparar el desayuno → tomar un café → hacer la compra → comer → hacer la compra → pasear y sentarse en el banco → cenar y descansar
+[día 0, 07:01] action mateo Mateo Ruiz: caminando a Casa roja
+[día 0, 07:01] action lucia Lucía Ferrer: preparar el desayuno
+[día 0, 07:02] action carmen Carmen Vidal: pensando en el día
+[día 0, 07:02] plan carmen Plan: preparar el desayuno → tomar un café → hacer la compra → comer → hacer la compra → pasear y sentarse en el banco → cenar y descansar
+[día 0, 07:02] action carmen Carmen Vidal: caminando a Casa roja
+[día 0, 07:02] action mateo Mateo Ruiz: preparar el desayuno
+[día 0, 07:03] action carmen Carmen Vidal: preparar el desayuno
+[día 0, 07:11] action mateo Mateo Ruiz: hablando con Carmen Vidal
+[día 0, 07:11] speech mateo Mateo Ruiz → Carmen Vidal: "Hola, ¿has probado el café nuevo?"
+[día 0, 07:12] action carmen Carmen Vidal: hablando con Mateo Ruiz
+[día 0, 07:12] speech carmen Carmen Vidal → Mateo Ruiz: "Muy bien, gracias. Aquí, disfrutando un rato."
+[día 0, 07:21] speech mateo Mateo Ruiz → Carmen Vidal: "Bastante liado, la verdad. ¿Y tú?"
+[día 0, 07:22] speech carmen Carmen Vidal → Mateo Ruiz: "Bastante liado, la verdad. ¿Y tú?"
+[día 0, 07:31] action - Mateo Ruiz y Carmen Vidal terminan de hablar (4 turnos; decidió no seguir)
+[día 0, 07:41] action mateo Mateo Ruiz: preparar el desayuno
+[día 0, 07:42] action carmen Carmen Vidal: caminando a Casa roja
+[día 0, 07:43] action carmen Carmen Vidal: preparar el desayuno
+[día 0, 07:52] action carmen Carmen Vidal: hablando con Mateo Ruiz
+[día 0, 07:52] speech carmen Carmen Vidal → Mateo Ruiz: "¡Hola! ¿Qué tal te va el día?"
+[día 0, 08:00] action lucia Lucía Ferrer: caminando a Café La Ola
+[día 0, 08:01] action - Carmen Vidal y Mateo Ruiz terminan de hablar (1 turnos; decidió no seguir)
+[día 0, 08:01] action mateo Mateo Ruiz: caminando a Café La Ola
+[día 0, 08:09] action lucia Lucía Ferrer: tomar un café
+[día 0, 08:09] action mateo Mateo Ruiz: tomar un café
+[día 0, 08:10] action lucia Lucía Ferrer: hablando con Mateo Ruiz
+[día 0, 08:10] speech lucia Lucía Ferrer → Mateo Ruiz: "¡Hola! ¿Qué tal te va el día?"
+[día 0, 08:11] action - Lucía Ferrer y Mateo Ruiz terminan de hablar (1 turnos; decidió no seguir)
+[día 0, 08:11] action mateo Mateo Ruiz: caminando a Café La Ola
+[día 0, 08:12] action carmen Carmen Vidal: caminando a Café La Ola
+[día 0, 08:12] action mateo Mateo Ruiz: tomar un café
+[día 0, 08:20] action carmen Carmen Vidal: tomar un café
+[día 0, 08:21] action mateo Mateo Ruiz: hablando con Lucía Ferrer
+[día 0, 08:21] speech mateo Mateo Ruiz → Lucía Ferrer: "Hola, ¿has probado el café nuevo?"
+[día 0, 08:22] action carmen Carmen Vidal: caminando a Café La Ola
+[día 0, 08:23] action carmen Carmen Vidal: tomar un café
+[día 0, 08:30] speech lucia Lucía Ferrer → Mateo Ruiz: "Muy bien, gracias. Aquí, disfrutando un rato."
+[día 0, 08:31] speech mateo Mateo Ruiz → Lucía Ferrer: "Bastante liado, la verdad. ¿Y tú?"
+[día 0, 08:32] action carmen Carmen Vidal: caminando a Café La Ola
+[día 0, 08:33] action carmen Carmen Vidal: tomar un café
+[día 0, 08:40] action - Mateo Ruiz y Lucía Ferrer terminan de hablar (3 turnos; decidió no seguir)
+[día 0, 08:42] action carmen Carmen Vidal: hablando con Lucía Ferrer
+[día 0, 08:42] speech carmen Carmen Vidal → Lucía Ferrer: "Hola, ¿has probado el café nuevo?"
+[día 0, 08:50] action lucia Lucía Ferrer: hablando con Carmen Vidal
+[día 0, 08:50] speech lucia Lucía Ferrer → Carmen Vidal: "Pues ya ves, lo de siempre. Me alegro de verte."
+[día 0, 08:51] action mateo Mateo Ruiz: caminando a Café La Ola
+[día 0, 08:52] speech carmen Carmen Vidal → Lucía Ferrer: "Bastante liado, la verdad. ¿Y tú?"
+[día 0, 08:52] action mateo Mateo Ruiz: tomar un café
+[día 0, 09:00] action - Carmen Vidal y Lucía Ferrer terminan de hablar (3 turnos; decidió no seguir)
+[día 0, 09:01] action mateo Mateo Ruiz: hablando con Lucía Ferrer
+[día 0, 09:01] speech mateo Mateo Ruiz → Lucía Ferrer: "Hola, ¿has probado el café nuevo?"
+[día 0, 09:02] speech carmen Carmen Vidal → Lucía Ferrer: "¿Sabes? Oí a Mateo Ruiz decir "…Bastante liado, la verdad.…"."
+[día 0, 09:10] action lucia Lucía Ferrer: hablando con Mateo Ruiz
+[día 0, 09:10] speech lucia Lucía Ferrer → Mateo Ruiz: "Bastante liado, la verdad. ¿Y tú?"
+[día 0, 09:11] action - Mateo Ruiz y Lucía Ferrer terminan de hablar (2 turnos; decidió no seguir)
+[día 0, 09:12] speech carmen Carmen Vidal → Lucía Ferrer: "Hola, ¿has probado el café nuevo?"
+[día 0, 09:20] action lucia Lucía Ferrer: hablando con Carmen Vidal
+[día 0, 09:20] speech lucia Lucía Ferrer → Carmen Vidal: "¡Sí! Me encantó. Deberíamos venir juntos."
+[día 0, 09:21] speech mateo Mateo Ruiz → Lucía Ferrer: "Hola, ¿has probado el café nuevo?"
+[día 0, 09:22] action - Carmen Vidal y Lucía Ferrer terminan de hablar (3 turnos; decidió no seguir)
+[día 0, 09:30] action - Mateo Ruiz y Lucía Ferrer terminan de hablar (1 turnos; decidió no seguir)
+[día 0, 09:32] action carmen Carmen Vidal: caminando a Café La Ola
+[día 0, 09:33] action carmen Carmen Vidal: tomar un café
+[día 0, 09:40] action lucia Lucía Ferrer: tomar un café
+[día 0, 09:41] action mateo Mateo Ruiz: caminando a Café La Ola
+[día 0, 09:42] action carmen Carmen Vidal: hablando con Lucía Ferrer
+[día 0, 09:42] speech carmen Carmen Vidal → Lucía Ferrer: "Hola, ¿has probado el café nuevo?"
+[día 0, 09:42] action mateo Mateo Ruiz: tomar un café
+[día 0, 09:50] action lucia Lucía Ferrer: hablando con Carmen Vidal
+[día 0, 09:50] speech lucia Lucía Ferrer → Carmen Vidal: "Muy bien, gracias. Aquí, disfrutando un rato."
+[día 0, 09:51] action mateo Mateo Ruiz: caminando a Café La Ola
+[día 0, 09:52] action - Carmen Vidal y Lucía Ferrer terminan de hablar (2 turnos; decidió no seguir)
+[día 0, 09:52] action mateo Mateo Ruiz: tomar un café
+[día 0, 10:01] action mateo Mateo Ruiz: hablando con Lucía Ferrer
+[día 0, 10:01] speech mateo Mateo Ruiz → Lucía Ferrer: "Hola, ¿has probado el café nuevo?"
+[día 0, 10:02] speech carmen Carmen Vidal → Lucía Ferrer: "¿Sabes? Oí a Lucía Ferrer decir "…la verdad. ¿Y tú?…"."
+[día 0, 10:10] action - Mateo Ruiz y Lucía Ferrer terminan de hablar (1 turnos; decidió no seguir)
+[día 0, 10:10] action lucia Lucía Ferrer: tomar un café
+[día 0, 10:11] speech mateo Mateo Ruiz → Lucía Ferrer: "Hola, ¿has probado el café nuevo?"
+[día 0, 10:20] action lucia Lucía Ferrer: hablando con Mateo Ruiz
+[día 0, 10:20] speech lucia Lucía Ferrer → Mateo Ruiz: "Bastante liado, la verdad. ¿Y tú?"
+[día 0, 10:21] action - Mateo Ruiz y Lucía Ferrer terminan de hablar (2 turnos; decidió no seguir)
+[día 0, 10:22] speech carmen Carmen Vidal → Lucía Ferrer: "Hola, ¿has probado el café nuevo?"
+[día 0, 10:30] action - Carmen Vidal y Lucía Ferrer terminan de hablar (2 turnos; decidió no seguir)
+[día 0, 10:31] action mateo Mateo Ruiz: caminando a Ultramarinos Lete
+[día 0, 10:40] action lucia Lucía Ferrer: caminando a Parque del Olvido
+[día 0, 10:42] action mateo Mateo Ruiz: hacer la compra
+[día 0, 10:42] action carmen Carmen Vidal: caminando a Ultramarinos Lete
+[día 0, 10:47] action lucia Lucía Ferrer: pasear y sentarse en el banco
+[día 0, 10:53] action carmen Carmen Vidal: hacer la compra
+[día 0, 11:01] action mateo Mateo Ruiz: hablando con Carmen Vidal
+[día 0, 11:01] speech mateo Mateo Ruiz → Carmen Vidal: "Hola, ¿has probado el café nuevo?"
+[día 0, 11:02] action carmen Carmen Vidal: hablando con Mateo Ruiz
+[día 0, 11:02] speech carmen Carmen Vidal → Mateo Ruiz: "Muy bien, gracias. Aquí, disfrutando un rato."
+[día 0, 11:11] speech mateo Mateo Ruiz → Carmen Vidal: "Bastante liado, la verdad. ¿Y tú?"
+[día 0, 11:12] speech carmen Carmen Vidal → Mateo Ruiz: "Bastante liado, la verdad. ¿Y tú?"
+[día 0, 11:21] speech mateo Mateo Ruiz → Carmen Vidal: "¡Sí! Me encantó. Deberíamos venir juntos."
+[día 0, 11:22] action - Mateo Ruiz y Carmen Vidal terminan de hablar (5 turnos; decidió no seguir)
+[día 0, 11:32] action carmen Carmen Vidal: caminando a Ultramarinos Lete
+[día 0, 11:33] action carmen Carmen Vidal: hacer la compra
+[día 0, 11:41] action mateo Mateo Ruiz: hacer la compra
+[día 0, 11:42] action carmen Carmen Vidal: caminando a Ultramarinos Lete
+[día 0, 11:43] action carmen Carmen Vidal: hacer la compra
+[día 0, 11:52] action carmen Carmen Vidal: hablando con Mateo Ruiz
+[día 0, 11:52] speech carmen Carmen Vidal → Mateo Ruiz: "Hola, ¿has probado el café nuevo?"
+[día 0, 12:01] action mateo Mateo Ruiz: hablando con Carmen Vidal
+[día 0, 12:01] speech mateo Mateo Ruiz → Carmen Vidal: "Muy bien, gracias. Aquí, disfrutando un rato."
+[día 0, 12:02] speech carmen Carmen Vidal → Mateo Ruiz: "Muy bien, gracias. Aquí, disfrutando un rato."
+[día 0, 12:11] action - Carmen Vidal y Mateo Ruiz terminan de hablar (3 turnos; decidió no seguir)
+[día 0, 12:21] action mateo Mateo Ruiz: hacer la compra
+[día 0, 12:22] action carmen Carmen Vidal: caminando a Ultramarinos Lete
+[día 0, 12:23] action carmen Carmen Vidal: hacer la compra
+[día 0, 12:30] action lucia Lucía Ferrer: caminando a Casa azul
+[día 0, 12:31] action mateo Mateo Ruiz: caminando a Casa roja
+[día 0, 12:32] action carmen Carmen Vidal: caminando a Casa roja
+[día 0, 12:34] action lucia Lucía Ferrer: comer
+[día 0, 12:40] action mateo Mateo Ruiz: comer
+[día 0, 12:41] action carmen Carmen Vidal: comer
+[día 0, 12:51] action mateo Mateo Ruiz: hablando con Carmen Vidal
+[día 0, 12:51] speech mateo Mateo Ruiz → Carmen Vidal: "Hola, ¿has probado el café nuevo?"
+[día 0, 12:52] action carmen Carmen Vidal: hablando con Mateo Ruiz
+[día 0, 12:52] speech carmen Carmen Vidal → Mateo Ruiz: "Pues ya ves, lo de siempre. Me alegro de verte."
+[día 0, 13:01] speech mateo Mateo Ruiz → Carmen Vidal: "Pues ya ves, lo de siempre. Me alegro de verte."
+[día 0, 13:02] speech carmen Carmen Vidal → Mateo Ruiz: "Bastante liado, la verdad. ¿Y tú?"
+[día 0, 13:11] action - Mateo Ruiz y Carmen Vidal terminan de hablar (4 turnos; decidió no seguir)
+[día 0, 13:21] action mateo Mateo Ruiz: comer
+[día 0, 13:22] action carmen Carmen Vidal: comer
+[día 0, 14:00] action lucia Lucía Ferrer: caminando a Ultramarinos Lete
+[día 0, 14:01] action mateo Mateo Ruiz: caminando a Ultramarinos Lete
+[día 0, 14:02] action carmen Carmen Vidal: caminando a Ultramarinos Lete
+[día 0, 14:10] action mateo Mateo Ruiz: hacer la compra
+[día 0, 14:11] action mateo Mateo Ruiz: caminando a Ultramarinos Lete
+[día 0, 14:11] action carmen Carmen Vidal: hacer la compra
+[día 0, 14:12] action carmen Carmen Vidal: caminando a Ultramarinos Lete
+[día 0, 14:12] action mateo Mateo Ruiz: hacer la compra
+[día 0, 14:13] action carmen Carmen Vidal: hacer la compra
+[día 0, 14:16] action lucia Lucía Ferrer: hacer la compra
+[día 0, 14:21] action mateo Mateo Ruiz: hablando con Lucía Ferrer
+[día 0, 14:21] speech mateo Mateo Ruiz → Lucía Ferrer: "¿Sabes? Oí a Carmen Vidal decir "…a Lucía Ferrer decir "…la verdad.…"."
+[día 0, 14:22] action carmen Carmen Vidal: hablando con Lucía Ferrer
+[día 0, 14:22] speech carmen Carmen Vidal → Lucía Ferrer: "Hola, ¿has probado el café nuevo?"
+[día 0, 14:30] action lucia Lucía Ferrer: hablando con Mateo Ruiz
+[día 0, 14:30] speech lucia Lucía Ferrer → Mateo Ruiz: "¡Sí! Me encantó. Deberíamos venir juntos."
+[día 0, 14:31] speech mateo Mateo Ruiz → Lucía Ferrer: "Pues ya ves, lo de siempre. Me alegro de verte."
+[día 0, 14:40] action - Mateo Ruiz y Lucía Ferrer terminan de hablar (3 turnos; decidió no seguir)
+[día 0, 14:42] action carmen Carmen Vidal: caminando a Ultramarinos Lete
+[día 0, 14:43] action carmen Carmen Vidal: hacer la compra
+[día 0, 14:50] action lucia Lucía Ferrer: hacer la compra
+[día 0, 14:51] action mateo Mateo Ruiz: caminando a Ultramarinos Lete
+[día 0, 14:52] action carmen Carmen Vidal: hablando con Lucía Ferrer
+[día 0, 14:52] speech carmen Carmen Vidal → Lucía Ferrer: "Hola, ¿has probado el café nuevo?"
+[día 0, 14:52] action mateo Mateo Ruiz: hacer la compra
+[día 0, 15:00] action - Carmen Vidal y Lucía Ferrer terminan de hablar (2 turnos; decidió no seguir)
+[día 0, 15:01] action mateo Mateo Ruiz: caminando a Ultramarinos Lete
+[día 0, 15:02] action mateo Mateo Ruiz: hacer la compra
+[día 0, 15:11] action mateo Mateo Ruiz: hablando con Lucía Ferrer
+[día 0, 15:11] speech mateo Mateo Ruiz → Lucía Ferrer: "¿Sabes? Oí a Carmen Vidal decir "…a Lucía Ferrer decir "…la verdad.…"."
+[día 0, 15:12] speech carmen Carmen Vidal → Lucía Ferrer: "¿Sabes? Oí a Lucía Ferrer decir "…la verdad. ¿Y tú?…"."
+[día 0, 15:20] action lucia Lucía Ferrer: hablando con Mateo Ruiz
+[día 0, 15:20] speech lucia Lucía Ferrer → Mateo Ruiz: "¡Sí! Me encantó. Deberíamos venir juntos."
+[día 0, 15:21] speech mateo Mateo Ruiz → Lucía Ferrer: "¡Sí! Me encantó. Deberíamos venir juntos."
+[día 0, 15:30] speech lucia Lucía Ferrer → Mateo Ruiz: "Pues ya ves, lo de siempre. Me alegro de verte."
+[día 0, 15:31] speech mateo Mateo Ruiz → Lucía Ferrer: "Pues ya ves, lo de siempre. Me alegro de verte."
+[día 0, 15:32] action carmen Carmen Vidal: caminando a Ultramarinos Lete
+[día 0, 15:33] action carmen Carmen Vidal: hacer la compra
+[día 0, 15:40] speech lucia Lucía Ferrer → Mateo Ruiz: "Bastante liado, la verdad. ¿Y tú?"
+[día 0, 15:41] speech mateo Mateo Ruiz → Lucía Ferrer: "Muy bien, gracias. Aquí, disfrutando un rato."
+[día 0, 15:42] action carmen Carmen Vidal: caminando a Ultramarinos Lete
+[día 0, 15:43] action carmen Carmen Vidal: hacer la compra
+[día 0, 15:50] action - Carmen Vidal y Lucía Ferrer terminan de hablar (1 turnos; se quedaron sin tema)
+[día 0, 15:50] speech lucia Lucía Ferrer → Mateo Ruiz: "Bastante liado, la verdad. ¿Y tú?"
+[día 0, 15:51] speech mateo Mateo Ruiz → Lucía Ferrer: "Muy bien, gracias. Aquí, disfrutando un rato."
+[día 0, 15:52] action carmen Carmen Vidal: caminando a Ultramarinos Lete
+[día 0, 15:53] action carmen Carmen Vidal: hacer la compra
+[día 0, 16:00] speech lucia Lucía Ferrer → Mateo Ruiz: "Pues ya ves, lo de siempre. Me alegro de verte."
+[día 0, 16:01] speech mateo Mateo Ruiz → Lucía Ferrer: "Bastante liado, la verdad. ¿Y tú?"
+[día 0, 16:02] action carmen Carmen Vidal: hablando con Lucía Ferrer
+[día 0, 16:02] speech carmen Carmen Vidal → Lucía Ferrer: "Hola, ¿has probado el café nuevo?"
+[día 0, 16:10] action - Mateo Ruiz y Lucía Ferrer terminan de hablar (11 turnos; decidió no seguir)
+[día 0, 16:20] action lucia Lucía Ferrer: hacer la compra
+[día 0, 16:21] action mateo Mateo Ruiz: caminando a Ultramarinos Lete
+[día 0, 16:22] action carmen Carmen Vidal: caminando a Ultramarinos Lete
+[día 0, 16:22] action mateo Mateo Ruiz: hacer la compra
+[día 0, 16:23] action carmen Carmen Vidal: hacer la compra
+[día 0, 16:31] action mateo Mateo Ruiz: caminando a Ultramarinos Lete
+[día 0, 16:32] action carmen Carmen Vidal: caminando a Ultramarinos Lete
+[día 0, 16:32] action mateo Mateo Ruiz: hacer la compra
+[día 0, 16:33] action carmen Carmen Vidal: hacer la compra
+[día 0, 16:40] action - Carmen Vidal y Lucía Ferrer terminan de hablar (1 turnos; se quedaron sin tema)
+[día 0, 16:41] action mateo Mateo Ruiz: caminando a Ultramarinos Lete
+[día 0, 16:42] action carmen Carmen Vidal: caminando a Ultramarinos Lete
+[día 0, 16:42] action mateo Mateo Ruiz: hacer la compra
+[día 0, 16:43] action carmen Carmen Vidal: hacer la compra
+[día 0, 16:51] action mateo Mateo Ruiz: caminando a Ultramarinos Lete
+[día 0, 16:52] action carmen Carmen Vidal: hablando con Lucía Ferrer
+[día 0, 16:52] speech carmen Carmen Vidal → Lucía Ferrer: "¿Sabes? Oí a Lucía Ferrer decir "…la verdad. ¿Y tú?…"."
+[día 0, 16:52] action mateo Mateo Ruiz: hacer la compra
+[día 0, 17:00] action lucia Lucía Ferrer: hablando con Carmen Vidal
+[día 0, 17:00] speech lucia Lucía Ferrer → Carmen Vidal: "¡Sí! Me encantó. Deberíamos venir juntos."
+[día 0, 17:01] action mateo Mateo Ruiz: hablando con Lucía Ferrer
+[día 0, 17:01] speech mateo Mateo Ruiz → Lucía Ferrer: "Hola, ¿has probado el café nuevo?"
+[día 0, 17:02] speech carmen Carmen Vidal → Lucía Ferrer: "Muy bien, gracias. Aquí, disfrutando un rato."
+[día 0, 17:10] action lucia Lucía Ferrer: hablando con Mateo Ruiz
+[día 0, 17:10] speech lucia Lucía Ferrer → Mateo Ruiz: "¡Sí! Me encantó. Deberíamos venir juntos."
+[día 0, 17:11] action - Mateo Ruiz y Lucía Ferrer terminan de hablar (2 turnos; decidió no seguir)
+[día 0, 17:21] action mateo Mateo Ruiz: caminando a Parque del Olvido
+[día 0, 17:22] action carmen Carmen Vidal: caminando a Parque del Olvido
+[día 0, 17:30] action lucia Lucía Ferrer: caminando a Café La Ola
+[día 0, 17:35] action mateo Mateo Ruiz: pasear y sentarse en el banco
+[día 0, 17:36] action carmen Carmen Vidal: pasear y sentarse en el banco
+[día 0, 17:41] action lucia Lucía Ferrer: tomar un café
+[día 0, 17:41] action - Carmen Vidal y Lucía Ferrer terminan de hablar (3 turnos; se quedaron sin tema)
+[día 0, 17:41] action mateo Mateo Ruiz: hablando con Carmen Vidal
+[día 0, 17:41] speech mateo Mateo Ruiz → Carmen Vidal: "Hola, ¿has probado el café nuevo?"
+[día 0, 17:42] action carmen Carmen Vidal: hablando con Mateo Ruiz
+[día 0, 17:42] speech carmen Carmen Vidal → Mateo Ruiz: "Muy bien, gracias. Aquí, disfrutando un rato."
+[día 0, 17:51] speech mateo Mateo Ruiz → Carmen Vidal: "Muy bien, gracias. Aquí, disfrutando un rato."
+[día 0, 17:52] action - Mateo Ruiz y Carmen Vidal terminan de hablar (3 turnos; decidió no seguir)
+[día 0, 18:02] action carmen Carmen Vidal: caminando a Parque del Olvido
+[día 0, 18:03] action carmen Carmen Vidal: pasear y sentarse en el banco
+[día 0, 18:11] action mateo Mateo Ruiz: pasear y sentarse en el banco
+[día 0, 18:12] action carmen Carmen Vidal: hablando con Mateo Ruiz
+[día 0, 18:12] speech carmen Carmen Vidal → Mateo Ruiz: "Hola, ¿has probado el café nuevo?"
+[día 0, 18:21] action mateo Mateo Ruiz: hablando con Carmen Vidal
+[día 0, 18:21] speech mateo Mateo Ruiz → Carmen Vidal: "Bastante liado, la verdad. ¿Y tú?"
+[día 0, 18:22] speech carmen Carmen Vidal → Mateo Ruiz: "Bastante liado, la verdad. ¿Y tú?"
+[día 0, 18:31] speech mateo Mateo Ruiz → Carmen Vidal: "Bastante liado, la verdad. ¿Y tú?"
+[día 0, 18:32] action - Carmen Vidal y Mateo Ruiz terminan de hablar (4 turnos; decidió no seguir)
+[día 0, 18:42] action carmen Carmen Vidal: caminando a Parque del Olvido
+[día 0, 18:43] action carmen Carmen Vidal: pasear y sentarse en el banco
+[día 0, 18:51] action mateo Mateo Ruiz: pasear y sentarse en el banco
+[día 0, 18:52] action carmen Carmen Vidal: hablando con Mateo Ruiz
+[día 0, 18:52] speech carmen Carmen Vidal → Mateo Ruiz: "¡Hola! ¿Qué tal te va el día?"
+[día 0, 19:00] action lucia Lucía Ferrer: caminando a Casa azul
+[día 0, 19:01] action mateo Mateo Ruiz: hablando con Carmen Vidal
+[día 0, 19:01] speech mateo Mateo Ruiz → Carmen Vidal: "Bastante liado, la verdad. ¿Y tú?"
+[día 0, 19:02] speech carmen Carmen Vidal → Mateo Ruiz: "Muy bien, gracias. Aquí, disfrutando un rato."
+[día 0, 19:08] action lucia Lucía Ferrer: cenar y descansar
+[día 0, 19:11] speech mateo Mateo Ruiz → Carmen Vidal: "Pues ya ves, lo de siempre. Me alegro de verte."
+[día 0, 19:12] speech carmen Carmen Vidal → Mateo Ruiz: "Bastante liado, la verdad. ¿Y tú?"
+[día 0, 19:21] action - Carmen Vidal y Mateo Ruiz terminan de hablar (5 turnos; decidió no seguir)
+[día 0, 19:31] action mateo Mateo Ruiz: caminando a Casa roja
+[día 0, 19:32] action carmen Carmen Vidal: caminando a Casa roja
+[día 0, 19:43] action mateo Mateo Ruiz: cenar y descansar
+[día 0, 19:44] action carmen Carmen Vidal: cenar y descansar
+[día 0, 22:00] action lucia Lucía Ferrer: caminando a Casa azul
+[día 0, 22:01] action mateo Mateo Ruiz: caminando a Casa roja
+[día 0, 22:01] action lucia Lucía Ferrer: durmiendo
+[día 0, 22:02] action carmen Carmen Vidal: caminando a Casa roja
+[día 0, 22:02] action mateo Mateo Ruiz: durmiendo
+[día 0, 22:03] action carmen Carmen Vidal: durmiendo
+[día 0, 22:10] memory lucia 🌙 Lucía Ferrer consolida el día: 3 reflexiones/hechos, refuerza 4 y debilita 4 recuerdos
+[día 0, 22:11] memory mateo 🌙 Mateo Ruiz consolida el día: 3 reflexiones/hechos, refuerza 4 y debilita 28 recuerdos
+[día 0, 22:12] memory carmen 🌙 Carmen Vidal consolida el día: 3 reflexiones/hechos, refuerza 4 y debilita 33 recuerdos
+[día 0, 23:00] chronicle - 📜 Crónica del día 0: Un día animado en Lethetown
+[día 1, 07:00] action lucia Lucía Ferrer: pensando en el día
+[día 1, 07:00] plan lucia Plan: preparar el desayuno → tomar un café → hacer la compra → comer → hacer la compra → pasear y sentarse en el banco → cenar y descansar
+[día 1, 07:00] action lucia Lucía Ferrer: caminando a Casa azul
+[día 1, 07:01] action mateo Mateo Ruiz: pensando en el día
+[día 1, 07:01] plan mateo Plan: preparar el desayuno → tomar un café → hacer la compra → comer → hacer la compra → pasear y sentarse en el banco → cenar y descansar
+[día 1, 07:01] action mateo Mateo Ruiz: caminando a Casa roja
+[día 1, 07:01] action lucia Lucía Ferrer: preparar el desayuno
+[día 1, 07:02] action carmen Carmen Vidal: pensando en el día
+[día 1, 07:02] plan carmen Plan: preparar el desayuno → tomar un café → hacer la compra → comer → hacer la compra → pasear y sentarse en el banco → cenar y descansar
+[día 1, 07:02] action carmen Carmen Vidal: caminando a Casa roja
+[día 1, 07:02] action mateo Mateo Ruiz: preparar el desayuno
+[día 1, 07:03] action carmen Carmen Vidal: preparar el desayuno
+[día 1, 07:11] action mateo Mateo Ruiz: hablando con Carmen Vidal
+[día 1, 07:11] speech mateo Mateo Ruiz → Carmen Vidal: "Hola, ¿has probado el café nuevo?"
+[día 1, 07:12] action - Mateo Ruiz y Carmen Vidal terminan de hablar (1 turnos; decidió no seguir)
+[día 1, 07:12] action carmen Carmen Vidal: caminando a Casa roja
+[día 1, 07:13] action carmen Carmen Vidal: preparar el desayuno
+[día 1, 07:22] action carmen Carmen Vidal: hablando con Mateo Ruiz
+[día 1, 07:22] speech carmen Carmen Vidal → Mateo Ruiz: "Hola, ¿has probado el café nuevo?"
+[día 1, 07:31] action - Carmen Vidal y Mateo Ruiz terminan de hablar (1 turnos; decidió no seguir)
+[día 1, 07:31] action mateo Mateo Ruiz: preparar el desayuno
+[día 1, 07:42] action carmen Carmen Vidal: caminando a Casa roja
+[día 1, 07:43] action carmen Carmen Vidal: preparar el desayuno
+[día 1, 07:52] action carmen Carmen Vidal: hablando con Mateo Ruiz
+[día 1, 07:52] speech carmen Carmen Vidal → Mateo Ruiz: "Hola, ¿has probado el café nuevo?"
+[día 1, 08:00] action lucia Lucía Ferrer: caminando a Café La Ola
+[día 1, 08:01] action mateo Mateo Ruiz: hablando con Carmen Vidal
+[día 1, 08:01] speech mateo Mateo Ruiz → Carmen Vidal: "Pues ya ves, lo de siempre. Me alegro de verte."
+[día 1, 08:02] speech carmen Carmen Vidal → Mateo Ruiz: "Pues ya ves, lo de siempre. Me alegro de verte."
+[día 1, 08:09] action lucia Lucía Ferrer: tomar un café
+[día 1, 08:11] speech mateo Mateo Ruiz → Carmen Vidal: "Pues ya ves, lo de siempre. Me alegro de verte."
+[día 1, 08:12] action - Carmen Vidal y Mateo Ruiz terminan de hablar (4 turnos; decidió no seguir)
+[día 1, 08:22] action carmen Carmen Vidal: caminando a Café La Ola
+[día 1, 08:30] action carmen Carmen Vidal: tomar un café
+[día 1, 08:31] action mateo Mateo Ruiz: caminando a Café La Ola
+[día 1, 08:32] action carmen Carmen Vidal: caminando a Café La Ola
+[día 1, 08:33] action carmen Carmen Vidal: tomar un café
+[día 1, 08:39] action mateo Mateo Ruiz: tomar un café
+[día 1, 08:40] action lucia Lucía Ferrer: hablando con Mateo Ruiz
+[día 1, 08:40] speech lucia Lucía Ferrer → Mateo Ruiz: "¡Hola! ¿Qué tal te va el día?"
+[día 1, 08:41] action mateo Mateo Ruiz: hablando con Lucía Ferrer
+[día 1, 08:41] speech mateo Mateo Ruiz → Lucía Ferrer: "Bastante liado, la verdad. ¿Y tú?"
+[día 1, 08:42] action carmen Carmen Vidal: hablando con Lucía Ferrer
+[día 1, 08:42] speech carmen Carmen Vidal → Lucía Ferrer: "Hola, ¿has probado el café nuevo?"
+[día 1, 08:50] speech lucia Lucía Ferrer → Mateo Ruiz: "Pues ya ves, lo de siempre. Me alegro de verte."
+[día 1, 08:51] speech mateo Mateo Ruiz → Lucía Ferrer: "¡Sí! Me encantó. Deberíamos venir juntos."
+[día 1, 09:00] speech lucia Lucía Ferrer → Mateo Ruiz: "Muy bien, gracias. Aquí, disfrutando un rato."
+[día 1, 09:01] speech mateo Mateo Ruiz → Lucía Ferrer: "Bastante liado, la verdad. ¿Y tú?"
+[día 1, 09:02] action carmen Carmen Vidal: caminando a Café La Ola
+[día 1, 09:03] action carmen Carmen Vidal: tomar un café
+[día 1, 09:10] speech lucia Lucía Ferrer → Mateo Ruiz: "Pues ya ves, lo de siempre. Me alegro de verte."
+[día 1, 09:11] speech mateo Mateo Ruiz → Lucía Ferrer: "¡Sí! Me encantó. Deberíamos venir juntos."
+[día 1, 09:12] action carmen Carmen Vidal: hablando con Lucía Ferrer
+[día 1, 09:12] speech carmen Carmen Vidal → Lucía Ferrer: "¿Sabes? Oí a Mateo Ruiz decir "…Me encantó. Deberíamos venir…"."
+[día 1, 09:20] speech lucia Lucía Ferrer → Mateo Ruiz: "Muy bien, gracias. Aquí, disfrutando un rato."
+[día 1, 09:21] speech mateo Mateo Ruiz → Lucía Ferrer: "Pues ya ves, lo de siempre. Me alegro de verte."
+[día 1, 09:22] speech carmen Carmen Vidal → Lucía Ferrer: "Hola, ¿has probado el café nuevo?"
+[día 1, 09:30] action - Lucía Ferrer y Mateo Ruiz terminan de hablar (10 turnos; decidió no seguir)
+[día 1, 09:31] speech mateo Mateo Ruiz → Lucía Ferrer: "Hola, ¿has probado el café nuevo?"
+[día 1, 09:32] speech carmen Carmen Vidal → Lucía Ferrer: "¿Sabes? Oí a alguien decir "…ves, lo de siempre. Me alegro…"."
+[día 1, 09:40] speech lucia Lucía Ferrer → Mateo Ruiz: "Pues ya ves, lo de siempre. Me alegro de verte."
+[día 1, 09:41] speech mateo Mateo Ruiz → Lucía Ferrer: "¡Sí! Me encantó. Deberíamos venir juntos."
+[día 1, 09:50] speech lucia Lucía Ferrer → Mateo Ruiz: "¡Sí! Me encantó. Deberíamos venir juntos."
+[día 1, 09:51] action - Mateo Ruiz y Lucía Ferrer terminan de hablar (4 turnos; decidió no seguir)
+[día 1, 09:52] speech carmen Carmen Vidal → Lucía Ferrer: "Hola, ¿has probado el café nuevo?"
+[día 1, 10:00] action lucia Lucía Ferrer: hablando con Carmen Vidal
+[día 1, 10:00] speech lucia Lucía Ferrer → Carmen Vidal: "¡Sí! Me encantó. Deberíamos venir juntos."
+[día 1, 10:01] action mateo Mateo Ruiz: caminando a Café La Ola
+[día 1, 10:02] action - Carmen Vidal y Lucía Ferrer terminan de hablar (6 turnos; decidió no seguir)
+[día 1, 10:02] action mateo Mateo Ruiz: tomar un café
+[día 1, 10:11] action mateo Mateo Ruiz: hablando con Lucía Ferrer
+[día 1, 10:11] speech mateo Mateo Ruiz → Lucía Ferrer: "Hola, ¿has probado el café nuevo?"
+[día 1, 10:12] action carmen Carmen Vidal: caminando a Café La Ola
+[día 1, 10:13] action carmen Carmen Vidal: tomar un café
+[día 1, 10:20] action lucia Lucía Ferrer: hablando con Mateo Ruiz
+[día 1, 10:20] speech lucia Lucía Ferrer → Mateo Ruiz: "Pues ya ves, lo de siempre. Me alegro de verte."
+[día 1, 10:21] speech mateo Mateo Ruiz → Lucía Ferrer: "¡Sí! Me encantó. Deberíamos venir juntos."
+[día 1, 10:22] action carmen Carmen Vidal: hablando con Lucía Ferrer
+[día 1, 10:22] speech carmen Carmen Vidal → Lucía Ferrer: "Hola, ¿has probado el café nuevo?"
+[día 1, 10:30] speech lucia Lucía Ferrer → Mateo Ruiz: "¡Sí! Me encantó. Deberíamos venir juntos."
+[día 1, 10:31] action - Mateo Ruiz y Lucía Ferrer terminan de hablar (4 turnos; decidió no seguir)
+[día 1, 10:41] action mateo Mateo Ruiz: caminando a Ultramarinos Lete
+[día 1, 10:42] action carmen Carmen Vidal: caminando a Ultramarinos Lete
+[día 1, 10:50] action lucia Lucía Ferrer: caminando a Ultramarinos Lete
+[día 1, 10:52] action mateo Mateo Ruiz: hacer la compra
+[día 1, 10:53] action carmen Carmen Vidal: hacer la compra
+[día 1, 11:01] action lucia Lucía Ferrer: hacer la compra
+[día 1, 11:01] action - Carmen Vidal y Lucía Ferrer terminan de hablar (1 turnos; se quedaron sin tema)
+[día 1, 11:02] action carmen Carmen Vidal: hablando con Lucía Ferrer
+[día 1, 11:02] speech carmen Carmen Vidal → Lucía Ferrer: "Hola, ¿has probado el café nuevo?"
+[día 1, 11:10] action lucia Lucía Ferrer: hablando con Carmen Vidal
+[día 1, 11:10] speech lucia Lucía Ferrer → Carmen Vidal: "Pues ya ves, lo de siempre. Me alegro de verte."
+[día 1, 11:12] speech carmen Carmen Vidal → Lucía Ferrer: "¡Sí! Me encantó. Deberíamos venir juntos."
+[día 1, 11:20] speech lucia Lucía Ferrer → Carmen Vidal: "Pues ya ves, lo de siempre. Me alegro de verte."
+[día 1, 11:22] action - Carmen Vidal y Lucía Ferrer terminan de hablar (4 turnos; decidió no seguir)
+[día 1, 11:32] action carmen Carmen Vidal: caminando a Ultramarinos Lete
+[día 1, 11:33] action carmen Carmen Vidal: hacer la compra
+[día 1, 11:40] action lucia Lucía Ferrer: caminando a Ultramarinos Lete
+[día 1, 11:41] action lucia Lucía Ferrer: hacer la compra
+[día 1, 11:42] action carmen Carmen Vidal: caminando a Ultramarinos Lete
+[día 1, 11:43] action carmen Carmen Vidal: hacer la compra
+[día 1, 11:50] action lucia Lucía Ferrer: caminando a Ultramarinos Lete
+[día 1, 11:51] action lucia Lucía Ferrer: hacer la compra
+[día 1, 11:52] action carmen Carmen Vidal: hablando con Lucía Ferrer
+[día 1, 11:52] speech carmen Carmen Vidal → Lucía Ferrer: "Hola, ¿has probado el café nuevo?"
+[día 1, 12:00] action - Carmen Vidal y Lucía Ferrer terminan de hablar (1 turnos; decidió no seguir)
+[día 1, 12:00] action lucia Lucía Ferrer: caminando a Ultramarinos Lete
+[día 1, 12:01] action lucia Lucía Ferrer: hacer la compra
+[día 1, 12:10] action lucia Lucía Ferrer: caminando a Ultramarinos Lete
+[día 1, 12:11] action lucia Lucía Ferrer: hacer la compra
+[día 1, 12:12] action carmen Carmen Vidal: caminando a Ultramarinos Lete
+[día 1, 12:13] action carmen Carmen Vidal: hacer la compra
+[día 1, 12:20] action lucia Lucía Ferrer: caminando a Ultramarinos Lete
+[día 1, 12:21] action lucia Lucía Ferrer: hacer la compra
+[día 1, 12:22] action carmen Carmen Vidal: hablando con Lucía Ferrer
+[día 1, 12:22] speech carmen Carmen Vidal → Lucía Ferrer: "¡Hola! ¿Qué tal te va el día?"
+[día 1, 12:30] action lucia Lucía Ferrer: hablando con Carmen Vidal
+[día 1, 12:30] speech lucia Lucía Ferrer → Carmen Vidal: "Bastante liado, la verdad. ¿Y tú?"
+[día 1, 12:31] action mateo Mateo Ruiz: caminando a Casa roja
+[día 1, 12:32] speech carmen Carmen Vidal → Lucía Ferrer: "Pues ya ves, lo de siempre. Me alegro de verte."
+[día 1, 12:40] speech lucia Lucía Ferrer → Carmen Vidal: "Pues ya ves, lo de siempre. Me alegro de verte."
+[día 1, 12:40] action mateo Mateo Ruiz: comer
+[día 1, 12:42] action - Carmen Vidal y Lucía Ferrer terminan de hablar (4 turnos; decidió no seguir)
+[día 1, 12:52] action carmen Carmen Vidal: caminando a Casa roja
+[día 1, 13:00] action lucia Lucía Ferrer: caminando a Casa azul
+[día 1, 13:01] action carmen Carmen Vidal: comer
+[día 1, 13:02] action carmen Carmen Vidal: hablando con Mateo Ruiz
+[día 1, 13:02] speech carmen Carmen Vidal → Mateo Ruiz: "¡Hola! ¿Qué tal te va el día?"
+[día 1, 13:11] action - Carmen Vidal y Mateo Ruiz terminan de hablar (1 turnos; decidió no seguir)
+[día 1, 13:16] action lucia Lucía Ferrer: comer
+[día 1, 13:22] action carmen Carmen Vidal: comer
+[día 1, 14:00] action lucia Lucía Ferrer: caminando a Ultramarinos Lete
+[día 1, 14:01] action mateo Mateo Ruiz: caminando a Ultramarinos Lete
+[día 1, 14:02] action carmen Carmen Vidal: caminando a Ultramarinos Lete
+[día 1, 14:10] action mateo Mateo Ruiz: hacer la compra
+[día 1, 14:11] action mateo Mateo Ruiz: caminando a Ultramarinos Lete
+[día 1, 14:11] action carmen Carmen Vidal: hacer la compra
+[día 1, 14:12] action carmen Carmen Vidal: caminando a Ultramarinos Lete
+[día 1, 14:12] action mateo Mateo Ruiz: hacer la compra
+[día 1, 14:13] action carmen Carmen Vidal: hacer la compra
+[día 1, 14:16] action lucia Lucía Ferrer: hacer la compra
+[día 1, 14:21] action mateo Mateo Ruiz: caminando a Ultramarinos Lete
+[día 1, 14:22] action carmen Carmen Vidal: caminando a Ultramarinos Lete
+[día 1, 14:22] action mateo Mateo Ruiz: hacer la compra
+[día 1, 14:23] action carmen Carmen Vidal: hacer la compra
+[día 1, 14:31] action mateo Mateo Ruiz: caminando a Ultramarinos Lete
+[día 1, 14:32] action carmen Carmen Vidal: hablando con Lucía Ferrer
+[día 1, 14:32] speech carmen Carmen Vidal → Lucía Ferrer: "¡Hola! ¿Qué tal te va el día?"
+[día 1, 14:32] action mateo Mateo Ruiz: hacer la compra
+[día 1, 14:40] action lucia Lucía Ferrer: hablando con Carmen Vidal
+[día 1, 14:40] speech lucia Lucía Ferrer → Carmen Vidal: "Muy bien, gracias. Aquí, disfrutando un rato."
+[día 1, 14:41] action mateo Mateo Ruiz: caminando a Ultramarinos Lete
+[día 1, 14:42] speech carmen Carmen Vidal → Lucía Ferrer: "¡Sí! Me encantó. Deberíamos venir juntos."
+[día 1, 14:42] action mateo Mateo Ruiz: hacer la compra
+[día 1, 14:50] action - Carmen Vidal y Lucía Ferrer terminan de hablar (3 turnos; decidió no seguir)
+[día 1, 14:51] action mateo Mateo Ruiz: caminando a Ultramarinos Lete
+[día 1, 14:52] action mateo Mateo Ruiz: hacer la compra
+[día 1, 15:00] action lucia Lucía Ferrer: hacer la compra
+[día 1, 15:01] action mateo Mateo Ruiz: hablando con Lucía Ferrer
+[día 1, 15:01] speech mateo Mateo Ruiz → Lucía Ferrer: "Hola, ¿has probado el café nuevo?"
+[día 1, 15:02] speech carmen Carmen Vidal → Lucía Ferrer: "¡Hola! ¿Qué tal te va el día?"
+[día 1, 15:10] action lucia Lucía Ferrer: hablando con Mateo Ruiz
+[día 1, 15:10] speech lucia Lucía Ferrer → Mateo Ruiz: "Pues ya ves, lo de siempre. Me alegro de verte."
+[día 1, 15:11] speech mateo Mateo Ruiz → Lucía Ferrer: "Pues ya ves, lo de siempre. Me alegro de verte."
+[día 1, 15:20] action - Mateo Ruiz y Lucía Ferrer terminan de hablar (3 turnos; decidió no seguir)
+[día 1, 15:22] action carmen Carmen Vidal: caminando a Ultramarinos Lete
+[día 1, 15:23] action carmen Carmen Vidal: hacer la compra
+[día 1, 15:30] action lucia Lucía Ferrer: hacer la compra
+[día 1, 15:31] action mateo Mateo Ruiz: caminando a Ultramarinos Lete
+[día 1, 15:32] action carmen Carmen Vidal: caminando a Ultramarinos Lete
+[día 1, 15:32] action mateo Mateo Ruiz: hacer la compra
+[día 1, 15:33] action carmen Carmen Vidal: hacer la compra
+[día 1, 15:40] action - Carmen Vidal y Lucía Ferrer terminan de hablar (1 turnos; se quedaron sin tema)
+[día 1, 15:41] action mateo Mateo Ruiz: caminando a Ultramarinos Lete
+[día 1, 15:42] action carmen Carmen Vidal: caminando a Ultramarinos Lete
+[día 1, 15:42] action mateo Mateo Ruiz: hacer la compra
+[día 1, 15:43] action carmen Carmen Vidal: hacer la compra
+[día 1, 15:51] action mateo Mateo Ruiz: hablando con Lucía Ferrer
+[día 1, 15:51] speech mateo Mateo Ruiz → Lucía Ferrer: "Hola, ¿has probado el café nuevo?"
+[día 1, 15:52] action carmen Carmen Vidal: hablando con Lucía Ferrer
+[día 1, 15:52] speech carmen Carmen Vidal → Lucía Ferrer: "Hola, ¿has probado el café nuevo?"
+[día 1, 16:00] action - Mateo Ruiz y Lucía Ferrer terminan de hablar (1 turnos; decidió no seguir)
+[día 1, 16:11] action mateo Mateo Ruiz: caminando a Ultramarinos Lete
+[día 1, 16:12] action carmen Carmen Vidal: caminando a Ultramarinos Lete
+[día 1, 16:12] action mateo Mateo Ruiz: hacer la compra
+[día 1, 16:13] action carmen Carmen Vidal: hacer la compra
+[día 1, 16:21] action mateo Mateo Ruiz: caminando a Ultramarinos Lete
+[día 1, 16:22] action carmen Carmen Vidal: hablando con Lucía Ferrer
+[día 1, 16:22] speech carmen Carmen Vidal → Lucía Ferrer: "Hola, ¿has probado el café nuevo?"
+[día 1, 16:22] action mateo Mateo Ruiz: hacer la compra
+[día 1, 16:30] action lucia Lucía Ferrer: hablando con Carmen Vidal
+[día 1, 16:30] speech lucia Lucía Ferrer → Carmen Vidal: "¡Sí! Me encantó. Deberíamos venir juntos."
+[día 1, 16:31] action mateo Mateo Ruiz: caminando a Ultramarinos Lete
+[día 1, 16:32] speech carmen Carmen Vidal → Lucía Ferrer: "Bastante liado, la verdad. ¿Y tú?"
+[día 1, 16:32] action mateo Mateo Ruiz: hacer la compra
+[día 1, 16:40] action - Carmen Vidal y Lucía Ferrer terminan de hablar (4 turnos; decidió no seguir)
+[día 1, 16:41] action mateo Mateo Ruiz: hablando con Lucía Ferrer
+[día 1, 16:41] speech mateo Mateo Ruiz → Lucía Ferrer: "Hola, ¿has probado el café nuevo?"
+[día 1, 16:50] action lucia Lucía Ferrer: hablando con Mateo Ruiz
+[día 1, 16:50] speech lucia Lucía Ferrer → Mateo Ruiz: "¡Sí! Me encantó. Deberíamos venir juntos."
+[día 1, 16:51] action - Mateo Ruiz y Lucía Ferrer terminan de hablar (2 turnos; decidió no seguir)
+[día 1, 16:52] action carmen Carmen Vidal: caminando a Ultramarinos Lete
+[día 1, 16:53] action carmen Carmen Vidal: hacer la compra
+[día 1, 17:01] action mateo Mateo Ruiz: caminando a Parque del Olvido
+[día 1, 17:02] action carmen Carmen Vidal: caminando a Parque del Olvido
+[día 1, 17:10] action lucia Lucía Ferrer: caminando a Parque del Olvido
+[día 1, 17:15] action mateo Mateo Ruiz: pasear y sentarse en el banco
+[día 1, 17:16] action carmen Carmen Vidal: pasear y sentarse en el banco
+[día 1, 17:21] action mateo Mateo Ruiz: hablando con Carmen Vidal
+[día 1, 17:21] speech mateo Mateo Ruiz → Carmen Vidal: "¿Sabes? Oí a Lucía Ferrer decir "…Me encantó. Deberíamos venir…"."
+[día 1, 17:22] action - Mateo Ruiz y Carmen Vidal terminan de hablar (1 turnos; decidió no seguir)
+[día 1, 17:22] action carmen Carmen Vidal: caminando a Parque del Olvido
+[día 1, 17:23] action carmen Carmen Vidal: pasear y sentarse en el banco
+[día 1, 17:24] action lucia Lucía Ferrer: pasear y sentarse en el banco
+[día 1, 17:30] action lucia Lucía Ferrer: hablando con Mateo Ruiz
+[día 1, 17:30] speech lucia Lucía Ferrer → Mateo Ruiz: "Hola, ¿has probado el café nuevo?"
+[día 1, 17:31] action mateo Mateo Ruiz: hablando con Lucía Ferrer
+[día 1, 17:31] speech mateo Mateo Ruiz → Lucía Ferrer: "Pues ya ves, lo de siempre. Me alegro de verte."
+[día 1, 17:32] action carmen Carmen Vidal: hablando con Lucía Ferrer
+[día 1, 17:32] speech carmen Carmen Vidal → Lucía Ferrer: "Hola, ¿has probado el café nuevo?"
+[día 1, 17:40] action - Lucía Ferrer y Mateo Ruiz terminan de hablar (2 turnos; decidió no seguir)
+[día 1, 17:50] action lucia Lucía Ferrer: caminando a Parque del Olvido
+[día 1, 17:51] action mateo Mateo Ruiz: pasear y sentarse en el banco
+[día 1, 17:51] action lucia Lucía Ferrer: pasear y sentarse en el banco
+[día 1, 17:52] action carmen Carmen Vidal: caminando a Parque del Olvido
+[día 1, 17:53] action carmen Carmen Vidal: pasear y sentarse en el banco
+[día 1, 18:00] action lucia Lucía Ferrer: hablando con Mateo Ruiz
+[día 1, 18:00] speech lucia Lucía Ferrer → Mateo Ruiz: "¡Hola! ¿Qué tal te va el día?"
+[día 1, 18:01] action mateo Mateo Ruiz: hablando con Lucía Ferrer
+[día 1, 18:01] speech mateo Mateo Ruiz → Lucía Ferrer: "Pues ya ves, lo de siempre. Me alegro de verte."
+[día 1, 18:02] action carmen Carmen Vidal: hablando con Lucía Ferrer
+[día 1, 18:02] speech carmen Carmen Vidal → Lucía Ferrer: "¿Sabes? Oí a alguien decir "…tal te va el…"."
+[día 1, 18:10] speech lucia Lucía Ferrer → Mateo Ruiz: "Muy bien, gracias. Aquí, disfrutando un rato."
+[día 1, 18:11] action - Lucía Ferrer y Mateo Ruiz terminan de hablar (3 turnos; decidió no seguir)
+[día 1, 18:21] action mateo Mateo Ruiz: pasear y sentarse en el banco
+[día 1, 18:22] action carmen Carmen Vidal: caminando a Parque del Olvido
+[día 1, 18:23] action carmen Carmen Vidal: pasear y sentarse en el banco
+[día 1, 18:30] action lucia Lucía Ferrer: caminando a Parque del Olvido
+[día 1, 18:31] action lucia Lucía Ferrer: pasear y sentarse en el banco
+[día 1, 18:32] action carmen Carmen Vidal: hablando con Lucía Ferrer
+[día 1, 18:32] speech carmen Carmen Vidal → Lucía Ferrer: "Hola, ¿has probado el café nuevo?"
+[día 1, 18:40] action lucia Lucía Ferrer: hablando con Carmen Vidal
+[día 1, 18:40] speech lucia Lucía Ferrer → Carmen Vidal: "¡Sí! Me encantó. Deberíamos venir juntos."
+[día 1, 18:41] action mateo Mateo Ruiz: hablando con Lucía Ferrer
+[día 1, 18:41] speech mateo Mateo Ruiz → Lucía Ferrer: "¿Sabes? Oí a Lucía Ferrer decir "…encantó. Deberíamos venir juntos.…"."
+[día 1, 18:42] action - Carmen Vidal y Lucía Ferrer terminan de hablar (4 turnos; decidió no seguir)
+[día 1, 18:50] action lucia Lucía Ferrer: hablando con Mateo Ruiz
+[día 1, 18:50] speech lucia Lucía Ferrer → Mateo Ruiz: "Muy bien, gracias. Aquí, disfrutando un rato."
+[día 1, 18:51] action - Mateo Ruiz y Lucía Ferrer terminan de hablar (2 turnos; decidió no seguir)
+[día 1, 18:52] speech carmen Carmen Vidal → Lucía Ferrer: "¿Sabes? Oí a alguien decir "…gracias. Aquí, disfrutando un…"."
+[día 1, 19:00] action lucia Lucía Ferrer: hablando con Carmen Vidal
+[día 1, 19:00] speech lucia Lucía Ferrer → Carmen Vidal: "Bastante liado, la verdad. ¿Y tú?"
+[día 1, 19:01] speech mateo Mateo Ruiz → Lucía Ferrer: "Hola, ¿has probado el café nuevo?"
+[día 1, 19:02] speech carmen Carmen Vidal → Lucía Ferrer: "Pues ya ves, lo de siempre. Me alegro de verte."
+[día 1, 19:10] action lucia Lucía Ferrer: hablando con Mateo Ruiz
+[día 1, 19:10] speech lucia Lucía Ferrer → Mateo Ruiz: "¡Sí! Me encantó. Deberíamos venir juntos."
+[día 1, 19:11] speech mateo Mateo Ruiz → Lucía Ferrer: "Bastante liado, la verdad. ¿Y tú?"
+[día 1, 19:12] speech carmen Carmen Vidal → Lucía Ferrer: "Hola, ¿has probado el café nuevo?"
+[día 1, 19:20] speech lucia Lucía Ferrer → Mateo Ruiz: "Muy bien, gracias. Aquí, disfrutando un rato."
+[día 1, 19:21] action - Mateo Ruiz y Lucía Ferrer terminan de hablar (4 turnos; decidió no seguir)
+[día 1, 19:31] action mateo Mateo Ruiz: caminando a Casa roja
+[día 1, 19:32] action carmen Carmen Vidal: caminando a Casa roja
+[día 1, 19:40] action lucia Lucía Ferrer: caminando a Casa azul
+[día 1, 19:43] action mateo Mateo Ruiz: cenar y descansar
+[día 1, 19:44] action carmen Carmen Vidal: cenar y descansar
+[día 1, 19:44] action lucia Lucía Ferrer: cenar y descansar
+[día 1, 19:50] action - Carmen Vidal y Lucía Ferrer terminan de hablar (4 turnos; se quedaron sin tema)
+[día 1, 22:00] action lucia Lucía Ferrer: caminando a Casa azul
+[día 1, 22:01] action mateo Mateo Ruiz: caminando a Casa roja
+[día 1, 22:01] action lucia Lucía Ferrer: durmiendo
+[día 1, 22:02] action carmen Carmen Vidal: caminando a Casa roja
+[día 1, 22:02] action mateo Mateo Ruiz: durmiendo
+[día 1, 22:03] action carmen Carmen Vidal: durmiendo
+[día 1, 22:10] memory lucia 🌙 Lucía Ferrer consolida el día: 3 reflexiones/hechos, refuerza 4 y debilita 22 recuerdos
+[día 1, 22:11] memory mateo 🌙 Mateo Ruiz consolida el día: 3 reflexiones/hechos, refuerza 4 y debilita 34 recuerdos
+[día 1, 22:12] memory carmen 🌙 Carmen Vidal consolida el día: 3 reflexiones/hechos, refuerza 4 y debilita 38 recuerdos
+[día 1, 23:00] chronicle - 📜 Crónica del día 1: Un día animado en Lethetown
+[día 2, 07:00] action lucia Lucía Ferrer: pensando en el día
+[día 2, 07:00] plan lucia Plan: preparar el desayuno → tomar un café → hacer la compra → comer → hacer la compra → pasear y sentarse en el banco → cenar y descansar
+[día 2, 07:00] action lucia Lucía Ferrer: caminando a Casa azul
+[día 2, 07:01] action mateo Mateo Ruiz: pensando en el día
+[día 2, 07:01] plan mateo Plan: preparar el desayuno → tomar un café → pasear y sentarse en el banco → comer → hacer la compra → tomar un café → cenar y descansar
+[día 2, 07:01] action mateo Mateo Ruiz: caminando a Casa roja
+[día 2, 07:01] action lucia Lucía Ferrer: preparar el desayuno
+[día 2, 07:02] action carmen Carmen Vidal: pensando en el día
+[día 2, 07:02] plan carmen Plan: preparar el desayuno → tomar un café → pasear y sentarse en el banco → comer → hacer la compra → tomar un café → cenar y descansar
+[día 2, 07:02] action carmen Carmen Vidal: caminando a Casa roja
+[día 2, 07:02] action mateo Mateo Ruiz: preparar el desayuno
+[día 2, 07:03] action carmen Carmen Vidal: preparar el desayuno
+[día 2, 07:12] action carmen Carmen Vidal: hablando con Mateo Ruiz
+[día 2, 07:12] speech carmen Carmen Vidal → Mateo Ruiz: "¿Sabes? Oí a Mateo Ruiz decir "…Lucía Ferrer decir "…encantó. Deberíamos venir…"."
+[día 2, 07:21] action mateo Mateo Ruiz: hablando con Carmen Vidal
+[día 2, 07:21] speech mateo Mateo Ruiz → Carmen Vidal: "Pues ya ves, lo de siempre. Me alegro de verte."
+[día 2, 07:22] action - Carmen Vidal y Mateo Ruiz terminan de hablar (2 turnos; decidió no seguir)
+[día 2, 07:32] action carmen Carmen Vidal: caminando a Casa roja
+[día 2, 07:33] action carmen Carmen Vidal: preparar el desayuno
+[día 2, 07:41] action mateo Mateo Ruiz: preparar el desayuno
+[día 2, 07:42] action carmen Carmen Vidal: caminando a Casa roja
+[día 2, 07:43] action carmen Carmen Vidal: preparar el desayuno
+[día 2, 07:52] action carmen Carmen Vidal: caminando a Casa roja
+[día 2, 07:53] action carmen Carmen Vidal: preparar el desayuno
+[día 2, 08:00] action lucia Lucía Ferrer: caminando a Café La Ola
+[día 2, 08:01] action mateo Mateo Ruiz: caminando a Café La Ola
+[día 2, 08:02] action carmen Carmen Vidal: caminando a Café La Ola
+[día 2, 08:09] action lucia Lucía Ferrer: tomar un café
+[día 2, 08:09] action mateo Mateo Ruiz: tomar un café
+[día 2, 08:10] action lucia Lucía Ferrer: hablando con Mateo Ruiz
+[día 2, 08:10] speech lucia Lucía Ferrer → Mateo Ruiz: "Hola, ¿has probado el café nuevo?"
+[día 2, 08:10] action carmen Carmen Vidal: tomar un café
+[día 2, 08:11] action mateo Mateo Ruiz: hablando con Lucía Ferrer
+[día 2, 08:11] speech mateo Mateo Ruiz → Lucía Ferrer: "Pues ya ves, lo de siempre. Me alegro de verte."
+[día 2, 08:12] action carmen Carmen Vidal: caminando a Café La Ola
+[día 2, 08:13] action carmen Carmen Vidal: tomar un café
+[día 2, 08:20] speech lucia Lucía Ferrer → Mateo Ruiz: "Bastante liado, la verdad. ¿Y tú?"
+[día 2, 08:21] speech mateo Mateo Ruiz → Lucía Ferrer: "Bastante liado, la verdad. ¿Y tú?"
+[día 2, 08:22] action carmen Carmen Vidal: caminando a Café La Ola
+[día 2, 08:23] action carmen Carmen Vidal: tomar un café
+[día 2, 08:30] speech lucia Lucía Ferrer → Mateo Ruiz: "Pues ya ves, lo de siempre. Me alegro de verte."
+[día 2, 08:31] speech mateo Mateo Ruiz → Lucía Ferrer: "Muy bien, gracias. Aquí, disfrutando un rato."
+[día 2, 08:32] action carmen Carmen Vidal: hablando con Lucía Ferrer
+[día 2, 08:32] speech carmen Carmen Vidal → Lucía Ferrer: "¿Sabes? Oí a Lucía Ferrer decir "…ves, lo de siempre. Me alegro…"."
+[día 2, 08:40] speech lucia Lucía Ferrer → Mateo Ruiz: "Bastante liado, la verdad. ¿Y tú?"
+[día 2, 08:41] speech mateo Mateo Ruiz → Lucía Ferrer: "Pues ya ves, lo de siempre. Me alegro de verte."
+[día 2, 08:50] speech lucia Lucía Ferrer → Mateo Ruiz: "Muy bien, gracias. Aquí, disfrutando un rato."
+[día 2, 08:51] speech mateo Mateo Ruiz → Lucía Ferrer: "Bastante liado, la verdad. ¿Y tú?"
+[día 2, 08:52] action carmen Carmen Vidal: caminando a Café La Ola
+[día 2, 08:53] action carmen Carmen Vidal: tomar un café
+[día 2, 09:00] speech lucia Lucía Ferrer → Mateo Ruiz: "¡Sí! Me encantó. Deberíamos venir juntos."
+[día 2, 09:01] speech mateo Mateo Ruiz → Lucía Ferrer: "Bastante liado, la verdad. ¿Y tú?"
+[día 2, 09:02] action carmen Carmen Vidal: hablando con Lucía Ferrer
+[día 2, 09:02] speech carmen Carmen Vidal → Lucía Ferrer: "Hola, ¿has probado el café nuevo?"
+[día 2, 09:10] action - Lucía Ferrer y Mateo Ruiz terminan de hablar (12 turnos; máximo de seguridad (12 turnos))
+[día 2, 09:11] speech mateo Mateo Ruiz → Lucía Ferrer: "¿Sabes? Oí a Carmen Vidal decir "…¿has probado el café…"."
+[día 2, 09:20] speech lucia Lucía Ferrer → Mateo Ruiz: "¡Sí! Me encantó. Deberíamos venir juntos."
+[día 2, 09:21] action - Mateo Ruiz y Lucía Ferrer terminan de hablar (2 turnos; decidió no seguir)
+[día 2, 09:22] action carmen Carmen Vidal: caminando a Café La Ola
+[día 2, 09:23] action carmen Carmen Vidal: tomar un café
+[día 2, 09:31] action mateo Mateo Ruiz: caminando a Café La Ola
+[día 2, 09:32] action carmen Carmen Vidal: caminando a Café La Ola
+[día 2, 09:32] action mateo Mateo Ruiz: tomar un café
+[día 2, 09:33] action carmen Carmen Vidal: tomar un café
+[día 2, 09:40] action - Carmen Vidal y Lucía Ferrer terminan de hablar (2 turnos; se quedaron sin tema)
+[día 2, 09:40] action lucia Lucía Ferrer: tomar un café
+[día 2, 09:41] action mateo Mateo Ruiz: caminando a Café La Ola
+[día 2, 09:42] action carmen Carmen Vidal: caminando a Café La Ola
+[día 2, 09:42] action mateo Mateo Ruiz: tomar un café
+[día 2, 09:43] action carmen Carmen Vidal: tomar un café
+[día 2, 09:51] action mateo Mateo Ruiz: caminando a Café La Ola
+[día 2, 09:52] action carmen Carmen Vidal: hablando con Lucía Ferrer
+[día 2, 09:52] speech carmen Carmen Vidal → Lucía Ferrer: "Hola, ¿has probado el café nuevo?"
+[día 2, 09:52] action mateo Mateo Ruiz: tomar un café
+[día 2, 10:00] action - Carmen Vidal y Lucía Ferrer terminan de hablar (1 turnos; decidió no seguir)
+[día 2, 10:01] action mateo Mateo Ruiz: caminando a Café La Ola
+[día 2, 10:02] action mateo Mateo Ruiz: tomar un café
+[día 2, 10:11] action mateo Mateo Ruiz: caminando a Café La Ola
+[día 2, 10:12] action carmen Carmen Vidal: caminando a Café La Ola
+[día 2, 10:12] action mateo Mateo Ruiz: tomar un café
+[día 2, 10:13] action carmen Carmen Vidal: tomar un café
+[día 2, 10:21] action mateo Mateo Ruiz: hablando con Lucía Ferrer
+[día 2, 10:21] speech mateo Mateo Ruiz → Lucía Ferrer: "Hola, ¿has probado el café nuevo?"
+[día 2, 10:22] action carmen Carmen Vidal: hablando con Lucía Ferrer
+[día 2, 10:22] speech carmen Carmen Vidal → Lucía Ferrer: "¿Sabes? Oí a Mateo Ruiz decir "…Pues ya ves, lo de siempre.…"."
+[día 2, 10:30] action - Mateo Ruiz y Lucía Ferrer terminan de hablar (1 turnos; decidió no seguir)
+[día 2, 10:30] action lucia Lucía Ferrer: caminando a Ultramarinos Lete
+[día 2, 10:41] action lucia Lucía Ferrer: hacer la compra
+[día 2, 10:41] action mateo Mateo Ruiz: caminando a Parque del Olvido
+[día 2, 10:42] action carmen Carmen Vidal: caminando a Parque del Olvido
+[día 2, 10:47] action mateo Mateo Ruiz: pasear y sentarse en el banco
+[día 2, 10:49] action carmen Carmen Vidal: pasear y sentarse en el banco
+[día 2, 10:52] action carmen Carmen Vidal: hablando con Mateo Ruiz
+[día 2, 10:52] speech carmen Carmen Vidal → Mateo Ruiz: "Hola, ¿has probado el café nuevo?"
+[día 2, 11:00] action - Carmen Vidal y Lucía Ferrer terminan de hablar (1 turnos; se quedaron sin tema)
+[día 2, 11:01] action mateo Mateo Ruiz: hablando con Carmen Vidal
+[día 2, 11:01] speech mateo Mateo Ruiz → Carmen Vidal: "Muy bien, gracias. Aquí, disfrutando un rato."
+[día 2, 11:02] memory carmen 🧠 Carmen Vidal olvida 46 recuerdos y resume 0 (presupuesto de memoria)
+[día 2, 11:02] speech carmen Carmen Vidal → Mateo Ruiz: "Bastante liado, la verdad. ¿Y tú?"
+[día 2, 11:11] action - Carmen Vidal y Mateo Ruiz terminan de hablar (3 turnos; decidió no seguir)
+[día 2, 11:21] action mateo Mateo Ruiz: pasear y sentarse en el banco
+[día 2, 11:22] action carmen Carmen Vidal: caminando a Parque del Olvido
+[día 2, 11:23] action carmen Carmen Vidal: pasear y sentarse en el banco
+[día 2, 11:32] action carmen Carmen Vidal: caminando a Parque del Olvido
+[día 2, 11:33] action carmen Carmen Vidal: pasear y sentarse en el banco
+[día 2, 11:42] action carmen Carmen Vidal: hablando con Mateo Ruiz
+[día 2, 11:42] speech carmen Carmen Vidal → Mateo Ruiz: "Hola, ¿has probado el café nuevo?"
+[día 2, 11:51] action mateo Mateo Ruiz: hablando con Carmen Vidal
+[día 2, 11:51] speech mateo Mateo Ruiz → Carmen Vidal: "Bastante liado, la verdad. ¿Y tú?"
+[día 2, 11:52] action - Carmen Vidal y Mateo Ruiz terminan de hablar (2 turnos; decidió no seguir)
+[día 2, 12:02] action carmen Carmen Vidal: caminando a Parque del Olvido
+[día 2, 12:03] action carmen Carmen Vidal: pasear y sentarse en el banco
+[día 2, 12:11] action mateo Mateo Ruiz: pasear y sentarse en el banco
+[día 2, 12:12] action carmen Carmen Vidal: caminando a Parque del Olvido
+[día 2, 12:13] action carmen Carmen Vidal: pasear y sentarse en el banco
+[día 2, 12:22] action carmen Carmen Vidal: caminando a Parque del Olvido
+[día 2, 12:23] action carmen Carmen Vidal: pasear y sentarse en el banco
+[día 2, 12:30] action lucia Lucía Ferrer: caminando a Casa azul
+[día 2, 12:31] action mateo Mateo Ruiz: caminando a Casa roja
+[día 2, 12:32] action carmen Carmen Vidal: caminando a Casa roja
+[día 2, 12:43] action mateo Mateo Ruiz: comer
+[día 2, 12:44] action carmen Carmen Vidal: comer
+[día 2, 12:46] action lucia Lucía Ferrer: comer
+[día 2, 14:00] action lucia Lucía Ferrer: caminando a Ultramarinos Lete
+[día 2, 14:01] action mateo Mateo Ruiz: caminando a Ultramarinos Lete
+[día 2, 14:02] action carmen Carmen Vidal: caminando a Ultramarinos Lete
+[día 2, 14:10] action mateo Mateo Ruiz: hacer la compra
+[día 2, 14:11] action mateo Mateo Ruiz: caminando a Ultramarinos Lete
+[día 2, 14:11] action carmen Carmen Vidal: hacer la compra
+[día 2, 14:12] action carmen Carmen Vidal: caminando a Ultramarinos Lete
+[día 2, 14:12] action mateo Mateo Ruiz: hacer la compra
+[día 2, 14:13] action carmen Carmen Vidal: hacer la compra
+[día 2, 14:16] action lucia Lucía Ferrer: hacer la compra
+[día 2, 14:20] action lucia Lucía Ferrer: hablando con Mateo Ruiz
+[día 2, 14:20] speech lucia Lucía Ferrer → Mateo Ruiz: "¡Hola! ¿Qué tal te va el día?"
+[día 2, 14:21] action mateo Mateo Ruiz: hablando con Lucía Ferrer
+[día 2, 14:21] speech mateo Mateo Ruiz → Lucía Ferrer: "Muy bien, gracias. Aquí, disfrutando un rato."
+[día 2, 14:22] action carmen Carmen Vidal: caminando a Ultramarinos Lete
+[día 2, 14:23] action carmen Carmen Vidal: hacer la compra
+[día 2, 14:30] action - Lucía Ferrer y Mateo Ruiz terminan de hablar (2 turnos; decidió no seguir)
+[día 2, 14:32] action carmen Carmen Vidal: hablando con Lucía Ferrer
+[día 2, 14:32] speech carmen Carmen Vidal → Lucía Ferrer: "Hola, ¿has probado el café nuevo?"
+[día 2, 14:40] action lucia Lucía Ferrer: hablando con Carmen Vidal
+[día 2, 14:40] speech lucia Lucía Ferrer → Carmen Vidal: "¡Sí! Me encantó. Deberíamos venir juntos."
+[día 2, 14:41] speech mateo Mateo Ruiz → Lucía Ferrer: "¿Sabes? Oí a Carmen Vidal decir "…¿has probado el café…"."
+[día 2, 14:42] speech carmen Carmen Vidal → Lucía Ferrer: "¡Sí! Me encantó. Deberíamos venir juntos."
+[día 2, 14:50] action lucia Lucía Ferrer: hablando con Mateo Ruiz
+[día 2, 14:50] speech lucia Lucía Ferrer → Mateo Ruiz: "¡Sí! Me encantó. Deberíamos venir juntos."
+[día 2, 14:51] speech mateo Mateo Ruiz → Lucía Ferrer: "Bastante liado, la verdad. ¿Y tú?"
+[día 2, 15:00] speech lucia Lucía Ferrer → Mateo Ruiz: "¡Sí! Me encantó. Deberíamos venir juntos."
+[día 2, 15:01] memory mateo 🧠 Mateo Ruiz olvida 47 recuerdos y resume 0 (presupuesto de memoria)
+[día 2, 15:01] action - Mateo Ruiz y Lucía Ferrer terminan de hablar (4 turnos; decidió no seguir)
+[día 2, 15:02] action carmen Carmen Vidal: caminando a Ultramarinos Lete
+[día 2, 15:03] action carmen Carmen Vidal: hacer la compra
+[día 2, 15:11] action mateo Mateo Ruiz: caminando a Ultramarinos Lete
+[día 2, 15:12] action carmen Carmen Vidal: hablando con Lucía Ferrer
+[día 2, 15:12] speech carmen Carmen Vidal → Lucía Ferrer: "Hola, ¿has probado el café nuevo?"
+[día 2, 15:12] action mateo Mateo Ruiz: hacer la compra
+[día 2, 15:20] action - Carmen Vidal y Lucía Ferrer terminan de hablar (4 turnos; decidió no seguir)
+[día 2, 15:20] action lucia Lucía Ferrer: hacer la compra
+[día 2, 15:21] action mateo Mateo Ruiz: hablando con Lucía Ferrer
+[día 2, 15:21] speech mateo Mateo Ruiz → Lucía Ferrer: "¿Sabes? Oí a Carmen Vidal decir "…¿Qué tal te va…"."
+[día 2, 15:30] action - Mateo Ruiz y Lucía Ferrer terminan de hablar (1 turnos; decidió no seguir)
+[día 2, 15:32] action carmen Carmen Vidal: caminando a Ultramarinos Lete
+[día 2, 15:33] action carmen Carmen Vidal: hacer la compra
+[día 2, 15:41] action mateo Mateo Ruiz: caminando a Ultramarinos Lete
+[día 2, 15:42] action carmen Carmen Vidal: hablando con Lucía Ferrer
+[día 2, 15:42] speech carmen Carmen Vidal → Lucía Ferrer: "¿Sabes? Oí a alguien decir "…¡Sí! Me encantó. Deberíamos…"."
+[día 2, 15:42] action mateo Mateo Ruiz: hacer la compra
+[día 2, 15:50] action - Carmen Vidal y Lucía Ferrer terminan de hablar (1 turnos; decidió no seguir)
+[día 2, 15:51] action mateo Mateo Ruiz: caminando a Ultramarinos Lete
+[día 2, 15:52] action mateo Mateo Ruiz: hacer la compra
+[día 2, 16:01] action mateo Mateo Ruiz: hablando con Lucía Ferrer
+[día 2, 16:01] speech mateo Mateo Ruiz → Lucía Ferrer: "Hola, ¿has probado el café nuevo?"
+[día 2, 16:02] action carmen Carmen Vidal: caminando a Ultramarinos Lete
+[día 2, 16:03] action carmen Carmen Vidal: hacer la compra
+[día 2, 16:10] action - Mateo Ruiz y Lucía Ferrer terminan de hablar (1 turnos; decidió no seguir)
+[día 2, 16:12] action carmen Carmen Vidal: caminando a Ultramarinos Lete
+[día 2, 16:13] action carmen Carmen Vidal: hacer la compra
+[día 2, 16:21] action mateo Mateo Ruiz: caminando a Ultramarinos Lete
+[día 2, 16:22] action carmen Carmen Vidal: caminando a Ultramarinos Lete
+[día 2, 16:22] action mateo Mateo Ruiz: hacer la compra
+[día 2, 16:23] action carmen Carmen Vidal: hacer la compra
+[día 2, 16:31] action mateo Mateo Ruiz: hablando con Lucía Ferrer
+[día 2, 16:31] speech mateo Mateo Ruiz → Lucía Ferrer: "Hola, ¿has probado el café nuevo?"
+[día 2, 16:32] action carmen Carmen Vidal: hablando con Lucía Ferrer
+[día 2, 16:32] speech carmen Carmen Vidal → Lucía Ferrer: "¿Sabes? Oí a Mateo Ruiz decir "…Pues ya ves, lo de siempre.…"."
+[día 2, 16:40] action lucia Lucía Ferrer: hablando con Mateo Ruiz
+[día 2, 16:40] speech lucia Lucía Ferrer → Mateo Ruiz: "Bastante liado, la verdad. ¿Y tú?"
+[día 2, 16:41] action - Mateo Ruiz y Lucía Ferrer terminan de hablar (2 turnos; decidió no seguir)
+[día 2, 16:51] action mateo Mateo Ruiz: caminando a Ultramarinos Lete
+[día 2, 16:52] action carmen Carmen Vidal: caminando a Ultramarinos Lete
+[día 2, 16:52] action mateo Mateo Ruiz: hacer la compra
+[día 2, 16:53] action carmen Carmen Vidal: hacer la compra
+[día 2, 17:00] action lucia Lucía Ferrer: caminando a Parque del Olvido
+[día 2, 17:01] action mateo Mateo Ruiz: hablando con Carmen Vidal
+[día 2, 17:01] speech mateo Mateo Ruiz → Carmen Vidal: "¿Sabes? Oí a Carmen Vidal decir "…¿Qué tal te va…"."
+[día 2, 17:02] action carmen Carmen Vidal: hablando con Mateo Ruiz
+[día 2, 17:02] speech carmen Carmen Vidal → Mateo Ruiz: "Pues ya ves, lo de siempre. Me alegro de verte."
+[día 2, 17:11] action - Carmen Vidal y Lucía Ferrer terminan de hablar (1 turnos; se quedaron sin tema)
+[día 2, 17:11] speech mateo Mateo Ruiz → Carmen Vidal: "¡Sí! Me encantó. Deberíamos venir juntos."
+[día 2, 17:12] speech carmen Carmen Vidal → Mateo Ruiz: "¡Sí! Me encantó. Deberíamos venir juntos."
+[día 2, 17:14] action lucia Lucía Ferrer: pasear y sentarse en el banco
+[día 2, 17:21] action - Mateo Ruiz y Carmen Vidal terminan de hablar (4 turnos; decidió no seguir)
+[día 2, 17:31] action mateo Mateo Ruiz: caminando a Café La Ola
+[día 2, 17:32] action carmen Carmen Vidal: caminando a Café La Ola
+[día 2, 17:42] action mateo Mateo Ruiz: tomar un café
+[día 2, 17:43] action carmen Carmen Vidal: tomar un café
+[día 2, 17:52] action carmen Carmen Vidal: caminando a Café La Ola
+[día 2, 17:53] action carmen Carmen Vidal: tomar un café
+[día 2, 18:02] action carmen Carmen Vidal: caminando a Café La Ola
+[día 2, 18:03] action carmen Carmen Vidal: tomar un café
+[día 2, 18:12] action carmen Carmen Vidal: hablando con Mateo Ruiz
+[día 2, 18:12] speech carmen Carmen Vidal → Mateo Ruiz: "¿Sabes? Oí a alguien decir "…¡Sí! Me encantó. Deberíamos…"."
+[día 2, 18:21] action mateo Mateo Ruiz: hablando con Carmen Vidal
+[día 2, 18:21] speech mateo Mateo Ruiz → Carmen Vidal: "Muy bien, gracias. Aquí, disfrutando un rato."
+[día 2, 18:22] speech carmen Carmen Vidal → Mateo Ruiz: "¡Sí! Me encantó. Deberíamos venir juntos."
+[día 2, 18:31] speech mateo Mateo Ruiz → Carmen Vidal: "Bastante liado, la verdad. ¿Y tú?"
+[día 2, 18:32] action - Carmen Vidal y Mateo Ruiz terminan de hablar (4 turnos; decidió no seguir)
+[día 2, 18:42] action carmen Carmen Vidal: caminando a Café La Ola
+[día 2, 18:43] action carmen Carmen Vidal: tomar un café
+[día 2, 18:51] action mateo Mateo Ruiz: tomar un café
+[día 2, 18:52] action carmen Carmen Vidal: caminando a Café La Ola
+[día 2, 18:53] action carmen Carmen Vidal: tomar un café
+[día 2, 19:00] action lucia Lucía Ferrer: caminando a Casa azul
+[día 2, 19:01] action mateo Mateo Ruiz: caminando a Casa roja
+[día 2, 19:02] memory carmen 🧠 Carmen Vidal olvida 24 recuerdos y resume 0 (presupuesto de memoria)
+[día 2, 19:02] action carmen Carmen Vidal: caminando a Casa roja
+[día 2, 19:04] action lucia Lucía Ferrer: cenar y descansar
+[día 2, 19:09] action mateo Mateo Ruiz: cenar y descansar
+[día 2, 19:10] action carmen Carmen Vidal: cenar y descansar
+[día 2, 19:11] action mateo Mateo Ruiz: hablando con Carmen Vidal
+[día 2, 19:11] speech mateo Mateo Ruiz → Carmen Vidal: "Hola, ¿has probado el café nuevo?"
+[día 2, 19:12] action carmen Carmen Vidal: hablando con Mateo Ruiz
+[día 2, 19:12] speech carmen Carmen Vidal → Mateo Ruiz: "Muy bien, gracias. Aquí, disfrutando un rato."
+[día 2, 19:21] speech mateo Mateo Ruiz → Carmen Vidal: "Muy bien, gracias. Aquí, disfrutando un rato."
+[día 2, 19:22] speech carmen Carmen Vidal → Mateo Ruiz: "Muy bien, gracias. Aquí, disfrutando un rato."
+[día 2, 19:31] speech mateo Mateo Ruiz → Carmen Vidal: "Bastante liado, la verdad. ¿Y tú?"
+[día 2, 19:32] action - Mateo Ruiz y Carmen Vidal terminan de hablar (5 turnos; decidió no seguir)
+[día 2, 19:42] action carmen Carmen Vidal: cenar y descansar
+[día 2, 19:51] action mateo Mateo Ruiz: cenar y descansar
+[día 2, 22:00] action lucia Lucía Ferrer: caminando a Casa azul
+[día 2, 22:01] action mateo Mateo Ruiz: caminando a Casa roja
+[día 2, 22:01] action lucia Lucía Ferrer: durmiendo
+[día 2, 22:02] action carmen Carmen Vidal: caminando a Casa roja
+[día 2, 22:02] action mateo Mateo Ruiz: durmiendo
+[día 2, 22:03] action carmen Carmen Vidal: durmiendo
+[día 2, 22:10] memory lucia 🌙 Lucía Ferrer consolida el día: 3 reflexiones/hechos, refuerza 4 y debilita 4 recuerdos
+[día 2, 22:11] memory mateo 🌙 Mateo Ruiz consolida el día: 3 reflexiones/hechos, refuerza 4 y debilita 28 recuerdos
+[día 2, 22:12] memory carmen 🌙 Carmen Vidal consolida el día: 3 reflexiones/hechos, refuerza 4 y debilita 41 recuerdos
+[día 2, 23:00] chronicle - 📜 Crónica del día 2: Un día animado en Lethetown
+llamadas: 1366
