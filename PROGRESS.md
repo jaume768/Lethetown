@@ -71,7 +71,7 @@ retomar desde el primer elemento sin marcar.
 ### Final
 
 - [x] README y CLAUDE.md al día
-- [ ] Push de la rama y PR
+- [x] Push de la rama (PR pendiente: `gh` sin sesión)
 
 ## Decisiones tomadas
 
