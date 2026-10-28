@@ -45,6 +45,8 @@ export interface LiveState {
   agents: AgentState[];
   weather: Weather;
   status: WorldRunStatus;
+  /** Estado de los objetos (el resto del mapa es fijo). */
+  spots: { id: string; state: string }[];
   /** Memoria de trabajo por agente (para el inspector). */
   workingMemory: Record<string, string[]>;
 }
@@ -118,6 +120,7 @@ export function liveState(w: WorldRuntime): LiveState {
     agents: w.sim.agentStates(),
     weather: w.world.weather,
     status: w.status(),
+    spots: w.world.places.flatMap((p) => p.objects.map((o) => ({ id: o.id, state: o.state }))),
     workingMemory: Object.fromEntries(
       [...w.sim.agents.values()].map((a) => [a.id, a.workingMemory.contents.map((i) => i.text)]),
     ),

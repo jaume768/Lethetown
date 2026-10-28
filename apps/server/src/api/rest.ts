@@ -16,6 +16,7 @@ import {
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import type { AppConfig } from "../config";
+import { WorldId } from "../db/worlds";
 import type { Metrics } from "../observability";
 import { requireRole } from "../security/http";
 import type { CommandResult, WorldCommand, WorldGateway } from "../worlds/gateway";
@@ -24,10 +25,23 @@ import type { CommandResult, WorldCommand, WorldGateway } from "../worlds/gatewa
 export interface AdminOps {
   /** Health detallado: proceso, BD, proveedor, mundos. */
   health(): Promise<Record<string, unknown>>;
-  budget(): unknown;
+  budget(): Promise<unknown>;
   setKillSwitch(on: boolean): Promise<void>;
   moderation(worldId: string): Promise<unknown>;
+  listWorlds(): Promise<unknown[]>;
+  /** Crea un mundo nuevo (mapa de seeds/) y lo pone en marcha. */
+  createWorld(w: NewWorld): Promise<CommandResult>;
+  /** running | paused | stopped (stopped = deja de ejecutarse y de reclamarse). */
+  setWorldStatus(id: string, status: "running" | "paused" | "stopped"): Promise<CommandResult>;
 }
+
+export const NewWorld = z.object({
+  id: WorldId,
+  name: z.string().trim().min(1).max(60),
+  map: z.string().regex(/^seeds\/[\w-]+\.tmj$/, "map: seeds/<nombre>.tmj"),
+  seed: z.number().int().nullable().default(null),
+});
+export type NewWorld = z.infer<typeof NewWorld>;
 
 /** Lo que la API REST necesita del proceso: los mundos que puede servir y datos generales. */
 export interface ApiContext {
@@ -107,6 +121,27 @@ export function registerGlobalRest(server: FastifyInstance, ctx: ApiContext): vo
     await ctx.admin.setKillSwitch(parsed.data.on);
     return { ok: true, killed: parsed.data.on };
   });
+  server.get("/api/admin/worlds", admin, async () => ctx.admin.listWorlds());
+  server.post("/api/admin/worlds", admin, async (req, reply) => {
+    const parsed = NewWorld.safeParse(req.body);
+    if (!parsed.success) return reply.code(400).send({ error: z.prettifyError(parsed.error) });
+    return sendResult(reply, await ctx.admin.createWorld(parsed.data));
+  });
+  server.post<{ Params: { worldId: string } }>(
+    "/api/admin/worlds/:worldId/status",
+    admin,
+    async (req, reply) => {
+      const parsed = z
+        .object({ status: z.enum(["running", "paused", "stopped"]) })
+        .safeParse(req.body);
+      if (!parsed.success)
+        return reply.code(400).send({ error: "status: running | paused | stopped" });
+      return sendResult(
+        reply,
+        await ctx.admin.setWorldStatus(req.params.worldId, parsed.data.status),
+      );
+    },
+  );
   server.get<{ Params: { worldId: string } }>(
     "/api/admin/worlds/:worldId/moderation",
     admin,

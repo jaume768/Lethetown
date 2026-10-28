@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch --clear-screen=false src/index.ts",
+    "dev": "tsx watch --clear-screen=false src/api-main.ts",
     "start": "tsx src/index.ts",
     "sim:text": "tsx src/scripts/sim-text.ts",
     "typecheck": "tsc -p tsconfig.json",
@@ -13,7 +13,10 @@
     "db:migrate": "tsx src/scripts/migrate.ts",
     "seed": "tsx src/scripts/seed.ts",
     "interview": "tsx src/scripts/interview.ts",
-    "user:create": "tsx src/scripts/user-create.ts"
+    "user:create": "tsx src/scripts/user-create.ts",
+    "dev:worker": "tsx watch --clear-screen=false src/worker.ts",
+    "start:api": "tsx src/api-main.ts",
+    "start:worker": "tsx src/worker.ts"
   },
   "dependencies": {
     "@fastify/cookie": "11.1.3",

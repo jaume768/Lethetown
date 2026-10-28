@@ -51,7 +51,6 @@ import {
 } from "./security/auth";
 import { checkDb, createDb, type DbHandle } from "./db/client";
 import { PgMemoryStore } from "./db/pg-memory-store";
-import { gte, sql } from "drizzle-orm";
 import {
   InMemoryChronicleStore,
   InMemoryEventStore,
@@ -81,13 +80,8 @@ import { GameClock } from "./sim/clock";
 import { LimitedProvider } from "./sim/llm-queue";
 import { Simulation } from "./sim/simulation";
 import { parseSnapshot } from "./sim/snapshot";
-import {
-  BudgetGuard,
-  BudgetedProvider,
-  describeBreach,
-  periodStarts,
-  type Spent,
-} from "./security/budget";
+import { BudgetGuard, BudgetedProvider, describeBreach } from "./security/budget";
+import { budgetTotals } from "./worker/shared";
 import { WorldMap } from "./sim/world";
 
 /** Mapa Tiled: fuente única de verdad del mundo (lo genera `pnpm map:generate`). */
@@ -339,24 +333,7 @@ async function createBudget(config: AppConfig, db: DbHandle | undefined): Promis
     },
   });
   if (!db) return guard;
-  const { day, month } = periodStarts(new Date());
-  const rows = await db.db
-    .select({
-      worldId: llmCalls.worldId,
-      day: sql<number>`coalesce(sum(${llmCalls.usd}) filter (where ${llmCalls.at} >= ${day}), 0)`,
-      month: sql<number>`coalesce(sum(${llmCalls.usd}), 0)`,
-    })
-    .from(llmCalls)
-    .where(gte(llmCalls.at, month))
-    .groupBy(llmCalls.worldId);
-  const worlds: Record<string, Spent> = {};
-  const total: Spent = { day: 0, month: 0 };
-  for (const r of rows) {
-    worlds[r.worldId] = { day: Number(r.day), month: Number(r.month) };
-    total.day += Number(r.day);
-    total.month += Number(r.month);
-  }
-  guard.load({ global: total, worlds });
+  guard.load(await budgetTotals(db.db));
   return guard;
 }
 
@@ -579,17 +556,7 @@ export async function bootstrap(
   if (!rows.some((r) => r.id === defaultRow.id) && !opts.worldIds) rows.unshift(defaultRow);
   const worlds = new Map<string, WorldRuntime>();
   for (const row of rows) worlds.set(row.id, await openWorld(services, row));
-  // Lotes solo si ningún mundo en marcha va más rápido que LLM_BATCH_MAX_SPEED.
-  services.setBatchGate(() =>
-    [...worlds.values()].every(
-      (w) => w.clock.speed === 0 || w.clock.speed <= config.LLM_BATCH_MAX_SPEED,
-    ),
-  );
-  // Presupuesto superado: se pausa el mundo afectado (o todos, si es el global).
-  services.budget.onBreach((b) => {
-    const targets = b.scope === "global" ? [...worlds.values()] : [worlds.get(b.worldId)];
-    for (const w of targets) w?.pause("budget", describeBreach(b));
-  });
+  attachWorlds(services, () => worlds.values());
   const defaultWorld = worlds.get(DEFAULT_WORLD_ID) ?? [...worlds.values()][0];
   if (!defaultWorld) throw new Error("No hay ningún mundo que abrir");
   return {
@@ -602,6 +569,23 @@ export async function bootstrap(
       await services.db?.pool.end();
     },
   };
+}
+
+/**
+ * Enlaza los servicios compartidos con los mundos que corre este proceso: la Batch API solo si
+ * ningún mundo va más rápido que LLM_BATCH_MAX_SPEED, y al superar el presupuesto se pausa el
+ * mundo afectado (o todos, si es el global).
+ */
+export function attachWorlds(services: Services, worlds: () => Iterable<WorldRuntime>): void {
+  const max = services.config.LLM_BATCH_MAX_SPEED;
+  services.setBatchGate(() =>
+    [...worlds()].every((w) => w.clock.speed === 0 || w.clock.speed <= max),
+  );
+  services.budget.onBreach((b) => {
+    for (const w of worlds()) {
+      if (b.scope === "global" || w.id === b.worldId) w.pause("budget", describeBreach(b));
+    }
+  });
 }
 
 async function resumeTime(store: MemoryStore): Promise<number> {

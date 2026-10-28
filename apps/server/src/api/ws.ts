@@ -76,7 +76,17 @@ class WorldChannel {
 export function registerWs(server: FastifyInstance, ctx: ApiContext) {
   const { config } = ctx;
   const channels = new Map<string, WorldChannel>();
-  for (const w of ctx.worlds.values()) channels.set(w.id, new WorldChannel(w, ctx.provider));
+  /** Canal de un mundo (se crea al primer uso: los mundos nuevos aparecen sin reiniciar). */
+  const channelOf = (id: string) => {
+    let c = channels.get(id);
+    const w = ctx.worlds.get(id);
+    if (!c && w) {
+      c = new WorldChannel(w, ctx.provider);
+      channels.set(id, c);
+    }
+    return c;
+  };
+  for (const id of ctx.worlds.keys()) channelOf(id);
   const perIp = new Map<string, number>();
 
   server.get<{ Querystring: { world?: string } }>(
@@ -93,7 +103,7 @@ export function registerWs(server: FastifyInstance, ctx: ApiContext) {
       },
     },
     (socket, req) => {
-      const channel = channels.get(req.query.world ?? ctx.defaultWorldId);
+      const channel = channelOf(req.query.world ?? ctx.defaultWorldId);
       if (!channel) {
         socket.close(4404, "Mundo no encontrado");
         return;

@@ -33,6 +33,8 @@ export class Simulation {
   private readonly thinking = new Map<string, number>();
   private restored = false;
   private readonly tickListeners: (() => void)[] = [];
+  /** Nivel de detalle: los agentes piensan cada tickMinutes × tickMultiplier (LOD sin público). */
+  private tickMultiplier = 1;
 
   constructor(deps: SimulationDeps) {
     const ctx = new SimContext(deps);
@@ -107,6 +109,15 @@ export class Simulation {
 
   onSignal(listener: (s: SimSignal) => void): () => void {
     return this.ctx.onSignal(listener);
+  }
+
+  /** LOD: con multiplicador > 1 los agentes piensan con menos frecuencia (menos llamadas al LLM). */
+  setTickMultiplier(n: number): void {
+    this.tickMultiplier = Math.max(1, n);
+  }
+
+  get tickMinutes(): number {
+    return this.ctx.deps.tickMinutes * this.tickMultiplier;
   }
 
   /** Cada tick de agente ejecutado (para métricas de ticks/s). */
@@ -227,9 +238,7 @@ export class Simulation {
     } catch (error) {
       this.ctx.emit("system", agent.id, `⚠ Error en el tick: ${errorMessage(error)}`);
     } finally {
-      this.clock.schedule(this.clock.now() + this.ctx.deps.tickMinutes, () =>
-        this.agentTick(agent),
-      );
+      this.clock.schedule(this.clock.now() + this.tickMinutes, () => this.agentTick(agent));
     }
   }
 
@@ -238,7 +247,7 @@ export class Simulation {
     const rt = ctx.rt(agent.id);
     if (rt.travelling) return;
     const now = this.clock.now();
-    updateNeeds(agent, ctx.deps.tickMinutes);
+    updateNeeds(agent, this.tickMinutes);
     endIdleConversations(ctx, now);
     await maintain(ctx, agent, now);
 

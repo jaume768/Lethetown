@@ -4,6 +4,8 @@ import { isProduction, loadConfig } from "./config";
 import { formatEvent } from "./log";
 import { createLogger, initSentry } from "./observability";
 import { localContext } from "./worlds/local";
+import { ViewerPolicy } from "./worlds/viewers";
+import { loadKillSwitch } from "./worker/shared";
 
 const config = loadConfig();
 await initSentry(config, "all-in-one");
@@ -21,10 +23,17 @@ for (const w of app.worlds.values()) {
 }
 
 const { server, ws } = await buildApi(localContext(app), app);
+if (app.db && (await loadKillSwitch(app.db.db))) app.budget.setKilled(true);
 for (const w of app.worlds.values()) {
+  if (app.budget.killed) w.pause("kill_switch", "Kill switch activado por un administrador");
   w.start();
   w.clock.start();
 }
+// Sin espectadores: pausa o menos detalle (NO_VIEWERS_MODE).
+const policy = new ViewerPolicy(config);
+const viewersTimer = setInterval(() => {
+  for (const w of app.worlds.values()) policy.update(w, ws.viewers(w.id));
+}, 5000);
 
 await server.listen({ port: config.PORT, host: config.HOST });
 log(
@@ -37,6 +46,7 @@ let closing = false;
 const shutdown = async () => {
   if (closing) return;
   closing = true;
+  clearInterval(viewersTimer);
   ws.close();
   await server.close();
   await app.close();

@@ -231,3 +231,32 @@ export const moderationLog = pgTable(
   },
   (t) => [index("moderation_log_world_idx").on(t.worldId, t.at)],
 );
+
+// --- Procesos separados (api + sim-worker) -------------------------------------------------
+
+/**
+ * Qué worker ejecuta cada mundo. Un worker reclama mundos sin dueño o con la lease caducada
+ * y la renueva cada pocos segundos; si muere, otro la recoge al caducar.
+ */
+export const worldLeases = pgTable("world_leases", {
+  worldId: text("world_id")
+    .primaryKey()
+    .references(() => worlds.id, { onDelete: "cascade" }),
+  owner: text("owner").notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  heartbeatAt: timestamp("heartbeat_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** Mensajes del bus demasiado grandes para NOTIFY (límite ~8 KB): se notifica solo el id. */
+export const busMessages = pgTable("bus_messages", {
+  id: serial("id").primaryKey(),
+  payload: jsonb("payload").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** Ajustes globales compartidos por todos los procesos (p. ej. el kill switch). */
+export const settings = pgTable("settings", {
+  key: text("key").primaryKey(),
+  value: jsonb("value").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});

@@ -48,6 +48,15 @@ const Env = z.object({
   SIM_SEED: z.preprocess(emptyToUndefined, z.coerce.number().int().optional()),
   SIM_WALK_TILES_PER_MINUTE: z.coerce.number().positive().default(6),
 
+  // --- Procesos y escala --------------------------------------------------------------------
+  /** Sin espectadores: pause | lod (los agentes piensan menos a menudo) | off. */
+  NO_VIEWERS_MODE: z.enum(["pause", "lod", "off"]).default("lod"),
+  NO_VIEWERS_AFTER_SECONDS: z.coerce.number().nonnegative().default(120),
+  LOD_TICK_FACTOR: z.coerce.number().int().min(1).default(4),
+  /** sim-worker: mundos como máximo por proceso y duración de las leases. */
+  WORKER_MAX_WORLDS: z.coerce.number().int().positive().default(8),
+  WORKER_LEASE_SECONDS: z.coerce.number().positive().default(20),
+
   // --- Observabilidad -----------------------------------------------------------------------
   LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"]).default("info"),
   SENTRY_DSN: z.preprocess(emptyToUndefined, z.string().url().optional()),

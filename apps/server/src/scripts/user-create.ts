@@ -33,7 +33,7 @@ async function readPassword(prompt: string): Promise<string> {
   return answer;
 }
 
-const [username, roleArg = "admin"] = process.argv.slice(2);
+const [username, roleArg = "admin"] = process.argv.slice(2).filter((a) => a !== "--");
 const role = Role.safeParse(roleArg);
 if (!username || !role.success) {
   console.error("Uso: pnpm user:create <usuario> [viewer|director|admin]");
