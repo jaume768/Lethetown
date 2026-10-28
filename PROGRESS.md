@@ -70,7 +70,7 @@ retomar desde el primer elemento sin marcar.
 
 ### Final
 
-- [ ] README y CLAUDE.md al día
+- [x] README y CLAUDE.md al día
 - [ ] Push de la rama y PR
 
 ## Decisiones tomadas
@@ -96,5 +96,4 @@ retomar desde el primer elemento sin marcar.
 
 - Pixelify Sans dibuja «¿» parecido a «ó» (limitación de la fuente).
 - El .tmj del repo usa el pack `limezu`; sin la carpeta vendor el cliente cae a formas simples. Para usar el placeholder: `pnpm assets:placeholder && pnpm map:generate --pack placeholder` (el cliente elige el pack por la propiedad `assetPack` del mapa).
-- A* no prefiere los caminos (coste uniforme): los agentes cruzan el césped en diagonal escalonada.
 - Etiquetas de nombre se solapan cuando hay varios agentes juntos (fase E).
