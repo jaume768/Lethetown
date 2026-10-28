@@ -14,11 +14,13 @@ import { recallText } from "../memory/retrieval";
 import type { MemorySource } from "@lethetown/shared";
 import { WorkingMemory } from "../memory/working-memory";
 import { inferActivityKind } from "./activity";
+import { untrusted } from "./moderation";
 import { DecideResponse, ImportanceResponse, PlanResponse, parseWith } from "./parse";
 import {
   decidePrompt,
   identityPrompt,
   importancePrompt,
+  type PromptLanguage,
   parseClock,
   planPrompt,
   type DecideContext,
@@ -62,6 +64,8 @@ export interface AgentDeps {
   llm: LLMClient;
   memory: MemorySystem;
   places: Place[];
+  /** Idioma en el que habla y escribe (por mundo). Por defecto, español. */
+  language?: PromptLanguage;
   /** Fichas sociales (lo que piensa de los demás). */
   social?: SocialProfileStore;
   /** Nombres de los demás agentes, para las notas sociales. */
@@ -111,7 +115,7 @@ export class Agent {
     private readonly deps: AgentDeps,
   ) {
     this.id = seed.id;
-    this.system = identityPrompt(seed, deps.places);
+    this.system = identityPrompt(seed, deps.places, deps.language);
     this.spots = new Map(deps.places.flatMap((p) => p.objects.map((o) => [o.id, o] as const)));
     const home = deps.places.find((p) => p.id === seed.homeId);
     if (!home) throw new Error(`${seed.id}: casa desconocida ${seed.homeId}`);
@@ -399,7 +403,8 @@ export function describePerception(p: Perception): string {
     case "overheard":
       return `Oí a ${p.fromName} decirle a ${p.toName} algo como: "${p.fragment}"`;
     case "thought":
-      return `Pensé: ${p.text}`;
+      // La voz interior la escribe un jugador: va delimitada como dato no confiable.
+      return `Pensé: ${untrusted(p.text)}`;
     case "world":
       return p.text;
   }

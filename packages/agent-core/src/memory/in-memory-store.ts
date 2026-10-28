@@ -16,6 +16,15 @@ export class InMemoryStore implements MemoryStore {
     this.byId.set(id, { ...current, ...patch });
   }
 
+  async updateMany(updates: { id: string; patch: MemoryPatch }[]): Promise<void> {
+    for (const u of updates) await this.update(u.id, u.patch);
+  }
+
+  /** En RAM no hay escrituras a medias que deshacer (todo es síncrono en un solo hilo). */
+  async transaction<T>(fn: (tx: MemoryStore) => Promise<T>): Promise<T> {
+    return fn(this);
+  }
+
   async get(id: string): Promise<MemoryRecord | undefined> {
     const m = this.byId.get(id);
     return m && { ...m };

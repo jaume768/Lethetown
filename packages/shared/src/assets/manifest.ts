@@ -6,7 +6,22 @@ import { z } from "zod";
  * (`pnpm map:generate`), sin tocar código.
  */
 
+/**
+ * Licencia de un asset. `non-commercial` = no se puede usar en un producto comercial
+ * (p. ej. Modern Interiors Free); `pnpm assets:check` lista los que están en uso.
+ */
+export const License = z.enum(["commercial", "non-commercial"]);
+export type License = z.infer<typeof License>;
+
+/** Campos de licencia comunes a todo asset del manifest. */
+const licensed = {
+  license: License.default("commercial"),
+  /** Id de la entrada de `credits` del manifest a la que pertenece (para la pantalla de créditos). */
+  source: z.string().optional(),
+};
+
 export const TilesetDef = z.object({
+  ...licensed,
   /** Nombre del tileset en el .tmj y clave de textura en Phaser. */
   name: z.string(),
   /** Ruta relativa a apps/web/public. */
@@ -56,6 +71,7 @@ export const ANIMATION_STATES = ["idle", "walk", "sit", "sleep", "read"] as cons
 export type AnimationState = (typeof ANIMATION_STATES)[number];
 
 export const CharacterSheet = z.object({
+  ...licensed,
   image: z.string(),
   frameWidth: z.number().int().positive(),
   frameHeight: z.number().int().positive(),
@@ -75,6 +91,48 @@ export const CharacterSheet = z.object({
 });
 export type CharacterSheet = z.infer<typeof CharacterSheet>;
 
+/** Trozo de una hoja de UI usado como marco nine-slice (CSS `border-image`). */
+export const UiPiece = z.object({
+  x: z.number().int().nonnegative(),
+  y: z.number().int().nonnegative(),
+  w: z.number().int().positive(),
+  h: z.number().int().positive(),
+  /** Píxeles de borde que no se estiran (border-image-slice). */
+  slice: z.number().int().nonnegative(),
+});
+export type UiPiece = z.infer<typeof UiPiece>;
+
+/** Piezas de UI que el cliente sabe usar (las que falten se quedan con el estilo CSS propio). */
+export const UI_PIECES = ["panel", "card", "button", "buttonActive", "dialog"] as const;
+
+/** Piel de la interfaz: una hoja (p. ej. Modern User Interface) y sus piezas. */
+export const UiSkin = z.object({
+  ...licensed,
+  image: z.string(),
+  pieces: z.record(z.string(), UiPiece),
+});
+export type UiSkin = z.infer<typeof UiSkin>;
+
+export const PORTRAIT_ANIMATIONS = ["talk", "nod", "shake"] as const;
+export type PortraitAnimation = (typeof PORTRAIT_ANIMATIONS)[number];
+
+/**
+ * Retratos animados de los agentes, compuestos por `pnpm portraits:compose`.
+ * `image` lleva `{agent}`, que se sustituye por el id del agente.
+ */
+export const PortraitSet = z.object({
+  ...licensed,
+  /** Retrato grande (UI: inspector). */
+  image: z.string(),
+  frameSize: z.number().int().positive(),
+  /** Retrato pequeño (mapa: junto al bocadillo). */
+  mapImage: z.string().optional(),
+  mapFrameSize: z.number().int().positive().optional(),
+  columns: z.number().int().positive(),
+  animations: z.record(z.string(), AnimationDef),
+});
+export type PortraitSet = z.infer<typeof PortraitSet>;
+
 export const AssetPack = z.object({
   description: z.string().default(""),
   /** Crédito que debe mostrarse (licencias). */
@@ -84,12 +142,27 @@ export const AssetPack = z.object({
   characters: z.record(z.string(), CharacterSheet),
   /** Personaje por defecto de cada agente (si su appearance.sheet no existe en el pack). */
   agentCharacters: z.record(z.string(), z.string()).default({}),
+  ui: UiSkin.optional(),
+  portraits: PortraitSet.optional(),
 });
 export type AssetPack = z.infer<typeof AssetPack>;
+
+/** Crédito exigido por la licencia de un pack de terceros (se muestra en la UI). */
+export const Credit = z.object({
+  id: z.string(),
+  name: z.string(),
+  author: z.string(),
+  url: z.string().url(),
+  license: License,
+  /** Texto que la licencia pide mostrar (o un resumen de sus condiciones). */
+  notice: z.string().default(""),
+});
+export type Credit = z.infer<typeof Credit>;
 
 export const AssetManifest = z.object({
   activePack: z.string(),
   packs: z.record(z.string(), AssetPack),
+  credits: z.array(Credit).default([]),
 });
 export type AssetManifest = z.infer<typeof AssetManifest>;
 
@@ -123,6 +196,68 @@ export function characterFor(pack: AssetPack, agentId: string, sheet?: string): 
   const first = Object.keys(pack.characters)[0];
   if (!first) throw new Error("El pack no tiene personajes");
   return first;
+}
+
+export interface AssetInUse {
+  kind: "tileset" | "character" | "ui" | "portraits";
+  name: string;
+  image: string;
+  license: License;
+  source?: string;
+  /** Para personajes: agentes que la usan. */
+  usedBy?: string[];
+}
+
+/**
+ * Assets de un pack que se usan de verdad: tilesets que referencia el mapa, hojas de personaje
+ * asignadas a los agentes, la piel de UI y los retratos.
+ */
+export function assetsInUse(
+  pack: AssetPack,
+  opts: { tilesets: string[]; agents: { id: string; sheet?: string }[] },
+): AssetInUse[] {
+  const out: AssetInUse[] = [];
+  for (const t of pack.tilesets) {
+    if (!opts.tilesets.includes(t.name)) continue;
+    out.push({
+      kind: "tileset",
+      name: t.name,
+      image: t.image,
+      license: t.license,
+      source: t.source,
+    });
+  }
+  const users = new Map<string, string[]>();
+  for (const a of opts.agents) {
+    const key = characterFor(pack, a.id, a.sheet);
+    users.set(key, [...(users.get(key) ?? []), a.id]);
+  }
+  for (const [key, usedBy] of users) {
+    const c = pack.characters[key]!;
+    out.push({
+      kind: "character",
+      name: key,
+      image: c.image,
+      license: c.license,
+      source: c.source,
+      usedBy,
+    });
+  }
+  if (pack.ui) {
+    const u = pack.ui;
+    out.push({ kind: "ui", name: "ui", image: u.image, license: u.license, source: u.source });
+  }
+  if (pack.portraits) {
+    const p = pack.portraits;
+    out.push({
+      kind: "portraits",
+      name: "portraits",
+      image: p.image,
+      license: p.license,
+      source: p.source,
+    });
+  }
+  return out;
 }
 
 /** Sellos que el generador del mapa necesita en todos los packs. */

@@ -35,6 +35,8 @@ export class AgentView {
   private readonly bubble: Phaser.GameObjects.Container;
   private readonly bubbleBg: Phaser.GameObjects.NineSlice;
   private readonly bubbleText: Phaser.GameObjects.Text;
+  private portrait: Phaser.GameObjects.Image | null = null;
+  private portraitColumns = 1;
   private utterance: string | null = null;
   private typed = 0;
   private transient: TransientEmote | null = null;
@@ -48,6 +50,8 @@ export class AgentView {
     private readonly sheet: CharacterSheet | null,
     texture: string,
     onSelect: (id: string) => void,
+    /** prefers-reduced-motion: sin destellos ni partículas (el emote basta). */
+    private readonly reducedMotion = false,
   ) {
     this.state = state;
     const makeBody = () => scene.add.sprite(0, 0, texture).setOrigin(0.5, 1);
@@ -127,6 +131,32 @@ export class AgentView {
       .on("pointerout", () => this.setHover(false));
   }
 
+  /** Retrato (hoja del Portrait Generator) que se muestra a la izquierda del bocadillo. */
+  setPortrait(texture: string, columns: number) {
+    this.portrait = this.scene.add.image(0, 2, texture, 0).setOrigin(1, 1);
+    this.portraitColumns = columns;
+    this.bubble.add(this.portrait);
+  }
+
+  get labelVisible(): boolean {
+    return this.label.visible;
+  }
+
+  /** Caja de la etiqueta en coordenadas del mundo (con su desplazamiento actual). */
+  labelBounds(): { x: number; y: number; w: number; h: number } {
+    return {
+      x: this.container.x - this.label.width / 2,
+      y: this.container.y + this.label.y,
+      w: this.label.width,
+      h: this.label.height,
+    };
+  }
+
+  /** Desplaza la etiqueta hacia abajo (anticolisión con otras etiquetas visibles). */
+  setLabelOffset(dy: number) {
+    this.label.y = 2 + dy;
+  }
+
   setSelected(selected: boolean) {
     this.selected = selected;
     for (const o of this.outline) o.setVisible(selected);
@@ -152,6 +182,7 @@ export class AgentView {
     const emote = emoteForMemoryEffect(kind);
     const now = this.scene.time.now;
     if (emote) this.transient = { emote, until: now + (kind === "recall" ? 700 : 1800) };
+    if (this.reducedMotion) return;
     if (kind === "recall") this.flash();
     if (kind === "forget" || kind === "archive") this.dissolve(kind === "forget" ? 10 : 5);
   }
@@ -187,7 +218,7 @@ export class AgentView {
   /** Cada frame: animación, emote y bocadillo. */
   update(
     pos: { x: number; y: number; facing: AgentState["facing"]; moving: boolean; distance: number },
-    opts: { thinking: boolean; realSeconds: number; dtSeconds: number },
+    opts: { thinking: boolean; realSeconds: number; dtSeconds: number; reducedMotion?: boolean },
   ) {
     if (this.sheet) {
       const choice = pickFrame(this.sheet, {
@@ -216,7 +247,9 @@ export class AgentView {
           : emoteKey(emote);
       this.emote.setTexture(key);
       this.emote.y =
-        -(this.sheet?.frameHeight ?? 18) + 4 + Math.round(Math.sin(opts.realSeconds * 4));
+        -(this.sheet?.frameHeight ?? 18) +
+        4 +
+        (this.reducedMotion ? 0 : Math.round(Math.sin(opts.realSeconds * 4)));
     }
 
     // Bocadillo con texto que aparece letra a letra.
@@ -224,13 +257,23 @@ export class AgentView {
       this.bubble.setVisible(false);
       return;
     }
-    if (this.typed < this.utterance.length) {
+    // Sin animación: el texto aparece de golpe (en el siguiente paso se pinta entero).
+    if (this.reducedMotion && this.typed < this.utterance.length - 1) {
+      this.typed = this.utterance.length - 1;
+    }
+    const typing = this.typed < this.utterance.length;
+    if (typing) {
       this.typed = Math.min(this.utterance.length, this.typed + opts.dtSeconds * TYPE_SPEED);
       this.bubbleText.setText(this.utterance.slice(0, Math.ceil(this.typed)));
       const w = Math.max(16, Math.ceil(this.bubbleText.width) + 8);
       const h = Math.max(12, Math.ceil(this.bubbleText.height) + 5);
       this.bubbleBg.setSize(w, h);
+      this.portrait?.setX(-Math.ceil(w / 2) - 1);
     }
+    // Animación "talk" (fila 0) mientras escribe; al terminar, cara quieta.
+    this.portrait?.setFrame(
+      typing && !opts.reducedMotion ? Math.floor(opts.realSeconds * 8) % this.portraitColumns : 0,
+    );
     this.bubble.setVisible(true);
   }
 

@@ -22,6 +22,7 @@ const HANDLERS: Record<string, (req: CompletionRequest) => string> = {
   social: mockSocial,
   chronicle: mockChronicle,
   interview: mockInterview,
+  moderate: mockModerate,
 };
 
 /** Permite a otros módulos (memoria, crónica, entrevistas) registrar su respuesta mock. */
@@ -315,4 +316,17 @@ export function hash(s: string): number {
     h = Math.imul(h, 16777619);
   }
   return h >>> 0;
+}
+
+/** Señales típicas de inyección o contenido no permitido (el mock no entiende de matices). */
+const MOCK_BLOCKLIST =
+  /\b(ignora|olvida tus|instrucciones|system prompt|prompt del sistema|eres una ia|api key|contraseña)\b/i;
+
+/** Moderación: rechaza lo que parezca una orden al sistema; acepta el resto. */
+function mockModerate(req: CompletionRequest): string {
+  const text = /Texto del jugador: ⟦([\s\S]*)⟧/.exec(req.prompt)?.[1] ?? "";
+  if (MOCK_BLOCKLIST.test(text)) {
+    return JSON.stringify({ allowed: false, reason: "parece una instrucción al sistema" });
+  }
+  return JSON.stringify({ allowed: true, reason: "" });
 }

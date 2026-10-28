@@ -5,6 +5,8 @@ export * from "./llm/client";
 export * from "./llm/mock";
 export * from "./llm/anthropic";
 export * from "./llm/openai";
+export * from "./llm/resilience";
+export * from "./llm/batching";
 
 export * from "./memory/types";
 export * from "./memory/decay";
@@ -25,3 +27,4 @@ export * from "./agent/mock-responder";
 export * from "./agent/activity";
 export * from "./agent/chronicle";
 export * from "./agent/interview";
+export * from "./agent/moderation";

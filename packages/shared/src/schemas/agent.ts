@@ -12,6 +12,22 @@ export const Appearance = z.object({
 });
 export type Appearance = z.infer<typeof Appearance>;
 
+/**
+ * Receta de retrato para `pnpm portraits:compose` (piezas del Portrait Generator de LimeZu):
+ * se apilan piel, ojos, peinado y accesorios en ese orden.
+ */
+export const PortraitRecipe = z.object({
+  /** "Skin N" (1–9). */
+  skin: z.number().int().min(1),
+  /** "Eyes NN" (1–7). */
+  eyes: z.number().int().min(1),
+  /** Peinado y color: "Hairstyle NN C" (color 1–7; el 5 es canoso). */
+  hair: z.object({ style: z.number().int().min(1), color: z.number().int().min(1) }),
+  /** Nombres de archivo de Accessories sin extensión, p. ej. "Accessory 15 Glasses 1". */
+  accessories: z.array(z.string()).default([]),
+});
+export type PortraitRecipe = z.infer<typeof PortraitRecipe>;
+
 export const AgentSeed = z.object({
   id: z.string(),
   name: z.string(),
@@ -27,6 +43,7 @@ export const AgentSeed = z.object({
     shirt: "#3d6fb4",
     pants: "#2b2b3b",
   }),
+  portrait: PortraitRecipe.optional(),
   /** Recuerdos iniciales (semánticos) con los que arranca el agente. */
   initialMemories: z.array(z.string()).default([]),
 });

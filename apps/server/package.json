@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch --clear-screen=false src/index.ts",
+    "dev": "tsx watch --clear-screen=false src/api-main.ts",
     "start": "tsx src/index.ts",
     "sim:text": "tsx src/scripts/sim-text.ts",
     "typecheck": "tsc -p tsconfig.json",
@@ -12,24 +12,36 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/scripts/migrate.ts",
     "seed": "tsx src/scripts/seed.ts",
-    "interview": "tsx src/scripts/interview.ts"
+    "interview": "tsx src/scripts/interview.ts",
+    "user:create": "tsx src/scripts/user-create.ts",
+    "dev:worker": "tsx watch --clear-screen=false src/worker.ts",
+    "start:api": "tsx src/api-main.ts",
+    "start:worker": "tsx src/worker.ts"
   },
   "dependencies": {
+    "@fastify/cookie": "11.1.3",
+    "@fastify/cors": "11.3.1",
+    "@fastify/helmet": "13.2.0",
+    "@fastify/rate-limit": "11.2.1",
     "@fastify/websocket": "^11.3.4",
     "@huggingface/transformers": "^4.3.2",
     "@lethetown/agent-core": "workspace:*",
     "@lethetown/shared": "workspace:*",
+    "@node-rs/argon2": "2.2.2",
+    "@sentry/node": "11.7.0",
     "dotenv": "^18.0.9",
     "drizzle-orm": "^0.45.4",
     "fastify": "^5.12.7",
     "p-limit": "^7.3.3",
     "pg": "^8.23.1",
+    "pino": "10.4.0",
+    "prom-client": "15.1.3",
+    "tsx": "^4.23.15",
     "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/pg": "^8.23.1",
     "@types/ws": "^8.18.1",
-    "drizzle-kit": "^0.31.11",
-    "tsx": "^4.23.15"
+    "drizzle-kit": "^0.31.11"
   }
 }

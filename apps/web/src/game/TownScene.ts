@@ -13,6 +13,7 @@ import {
 import Phaser from "phaser";
 import { AgentView, PIXEL_FONT } from "./AgentView";
 import { Ambience } from "./Ambience";
+import { apiPath } from "../net/store";
 import { createPixelTextures } from "./pixelArt";
 
 const TS = 16;
@@ -51,6 +52,8 @@ export class TownScene extends Phaser.Scene {
   /** Agentes con una llamada al LLM en curso. */
   isThinking: (id: string) => boolean = () => false;
   ready = false;
+  /** prefers-reduced-motion: sin animaciones decorativas. */
+  reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
 
   constructor() {
     super("town");
@@ -58,7 +61,7 @@ export class TownScene extends Phaser.Scene {
 
   preload() {
     this.load.json("manifest", "/assets/manifest.json");
-    this.load.json("tmj", "/api/map");
+    this.load.json("tmj", apiPath("/api/map"));
   }
 
   create() {
@@ -108,7 +111,7 @@ export class TownScene extends Phaser.Scene {
     this.world = world;
     if (this.assetsOk && this.pack) this.buildTilemap();
     else this.buildShapes(world);
-    this.ambience = new Ambience(this, world);
+    this.ambience = new Ambience(this, world, this.reducedMotion);
     this.ambience.weather = this.weather;
     const cam = this.cameras.main;
     cam.setBounds(0, 0, world.width * TS, world.height * TS);
@@ -135,6 +138,41 @@ export class TownScene extends Phaser.Scene {
     this.following = Boolean(target);
     if (target) cam.startFollow(target.container, true, 0.15, 0.15);
     else cam.stopFollow();
+  }
+
+  /** "Ir a verlo": deja de seguir y centra la cámara en un lugar (con zoom de cerca). */
+  focusPlace(placeId: string) {
+    const place = this.world?.places.find((p) => p.id === placeId);
+    if (!place) return;
+    this.setFollow(null);
+    this.onFollowChange(null);
+    const cam = this.cameras.main;
+    const x = (place.area.x + place.area.w / 2) * TS;
+    const y = (place.area.y + place.area.h / 2) * TS;
+    if (this.reducedMotion) cam.centerOn(x, y);
+    else cam.pan(x, y, 600, "Sine.easeInOut");
+    cam.setZoom(Math.max(cam.zoom, 3));
+  }
+
+  /** Mueve la cámara con el teclado (flechas) y hace zoom con +/−. */
+  nudgeCamera(dx: number, dy: number) {
+    if (this.followId) {
+      this.setFollow(null);
+      this.onFollowChange(null);
+    }
+    const cam = this.cameras.main;
+    cam.scrollX += (dx * TS * 4) / cam.zoom;
+    cam.scrollY += (dy * TS * 4) / cam.zoom;
+  }
+
+  zoomBy(step: number) {
+    const cam = this.cameras.main;
+    cam.setZoom(Phaser.Math.Clamp(Math.round(cam.zoom + step), ZOOM_MIN, ZOOM_MAX));
+  }
+
+  /** Lienzo del juego (para grabar clips). */
+  get canvas(): HTMLCanvasElement {
+    return this.game.canvas;
   }
 
   setMinimapVisible(visible: boolean) {
@@ -167,10 +205,38 @@ export class TownScene extends Phaser.Scene {
       const p = positionAt(v.state, now);
       v.container.setPosition(Math.round(p.x * TS + TS / 2), Math.round(p.y * TS + TS));
       v.container.setDepth(10 + p.y / this.world.height);
-      v.update(p, { thinking: this.isThinking(v.state.id), realSeconds, dtSeconds });
+      v.update(p, {
+        thinking: this.isThinking(v.state.id),
+        realSeconds,
+        dtSeconds,
+        reducedMotion: this.reducedMotion,
+      });
     }
+    this.placeLabels();
     this.updateRoofs(now);
     this.ambience?.update(now, dtSeconds);
+  }
+
+  /** Etiquetas de nombre sin solapes: si dos visibles chocan, la de abajo baja una línea. */
+  private placeLabels() {
+    const visible = [...this.views.values()].filter((v) => v.labelVisible);
+    if (visible.length < 2) {
+      for (const v of visible) v.setLabelOffset(0);
+      return;
+    }
+    const placed: { x: number; y: number; w: number; h: number }[] = [];
+    for (const v of visible.sort((a, b) => a.container.y - b.container.y)) {
+      v.setLabelOffset(0);
+      for (let shift = 0; shift < 4; shift++) {
+        const r = v.labelBounds();
+        const hit = placed.some(
+          (p) => r.x < p.x + p.w && p.x < r.x + r.w && r.y < p.y + p.h && p.y < r.y + r.h,
+        );
+        if (!hit) break;
+        v.setLabelOffset((shift + 1) * (r.h + 1));
+      }
+      placed.push(v.labelBounds());
+    }
   }
 
   // --- Construcción -----------------------------------------------------------------------
@@ -228,10 +294,35 @@ export class TownScene extends Phaser.Scene {
     const key = this.pack ? characterFor(this.pack, agent.id, agent.appearance.sheet) : null;
     const sheet = this.assetsOk && key ? (this.pack!.characters[key] ?? null) : null;
     const texture = sheet && key ? this.textureFor(agent, key) : "pixel";
-    const view = new AgentView(this, agent, sheet, texture, (id) => this.onSelect(id));
+    const view = new AgentView(
+      this,
+      agent,
+      sheet,
+      texture,
+      (id) => this.onSelect(id),
+      this.reducedMotion,
+    );
     this.views.set(agent.id, view);
+    this.loadPortrait(agent.id, view);
     if (agent.id === this.selectedId) view.setSelected(true);
     return view;
+  }
+
+  /** Carga (en diferido) el retrato pequeño del agente; si falta, el bocadillo va sin retrato. */
+  private loadPortrait(agentId: string, view: AgentView) {
+    const p = this.pack?.portraits;
+    if (!this.assetsOk || !p?.mapImage || !p.mapFrameSize) return;
+    const key = `portrait:${agentId}`;
+    const attach = () => {
+      if (this.textures.exists(key)) view.setPortrait(key, p.columns);
+    };
+    if (this.textures.exists(key)) return attach();
+    this.load.spritesheet(key, encodeURI(`/${p.mapImage.replace("{agent}", agentId)}`), {
+      frameWidth: p.mapFrameSize,
+      frameHeight: p.mapFrameSize,
+    });
+    this.load.once(`filecomplete-spritesheet-${key}`, attach);
+    this.load.start();
   }
 
   /** Textura del personaje; si la hoja es recoloreable, crea una copia con los colores del agente. */
@@ -288,8 +379,27 @@ export class TownScene extends Phaser.Scene {
 
   private setupCamera() {
     const cam = this.cameras.main;
-    cam.setZoom(2);
+    cam.setZoom(window.innerWidth < 600 ? 2 : 2);
     cam.setRoundPixels(true);
+    // Pellizcar para hacer zoom (dos dedos); con un dedo se arrastra.
+    this.input.addPointer(1);
+    let pinchStart: { dist: number; zoom: number } | null = null;
+    this.input.on(Phaser.Input.Events.POINTER_DOWN, () => {
+      const [a, b] = [this.input.pointer1, this.input.pointer2];
+      if (a.isDown && b.isDown) {
+        pinchStart = { dist: Phaser.Math.Distance.BetweenPoints(a, b), zoom: cam.zoom };
+      }
+    });
+    this.input.on(Phaser.Input.Events.POINTER_UP, () => {
+      pinchStart = null;
+    });
+    this.input.on(Phaser.Input.Events.POINTER_MOVE, () => {
+      const [a, b] = [this.input.pointer1, this.input.pointer2];
+      if (!pinchStart || !a.isDown || !b.isDown) return;
+      const ratio = Phaser.Math.Distance.BetweenPoints(a, b) / Math.max(1, pinchStart.dist);
+      // Zoom entero (pixel art nítido).
+      cam.setZoom(Phaser.Math.Clamp(Math.round(pinchStart.zoom * ratio), ZOOM_MIN, ZOOM_MAX));
+    });
     this.input.on(
       Phaser.Input.Events.POINTER_WHEEL,
       (_p: Phaser.Input.Pointer, _o: unknown, _dx: number, dy: number) => {
@@ -298,7 +408,7 @@ export class TownScene extends Phaser.Scene {
       },
     );
     this.input.on(Phaser.Input.Events.POINTER_MOVE, (p: Phaser.Input.Pointer) => {
-      if (!p.isDown) return;
+      if (!p.isDown || (this.input.pointer1.isDown && this.input.pointer2.isDown)) return;
       if (this.followId) {
         this.setFollow(null);
         this.onFollowChange(null);

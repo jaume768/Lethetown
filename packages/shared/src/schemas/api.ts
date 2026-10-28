@@ -62,12 +62,27 @@ export const ClockState = z.object({
 });
 export type ClockState = z.infer<typeof ClockState>;
 
+/**
+ * Estado de ejecución de un mundo. `paused` con motivo: presupuesto superado, kill switch, sin
+ * espectadores o pausa manual.
+ */
+export const WorldRunStatus = z.object({
+  state: z.enum(["running", "paused"]),
+  reason: z.enum(["budget", "kill_switch", "no_viewers", "manual"]).nullable(),
+  /** Texto legible (p. ej. "Presupuesto diario del mundo superado: $2.01 de $2.00"). */
+  detail: z.string().nullable(),
+});
+export type WorldRunStatus = z.infer<typeof WorldRunStatus>;
+
+export const RUNNING: WorldRunStatus = { state: "running", reason: null, detail: null };
+
 export const WorldSnapshot = z.object({
   world: World,
   clock: ClockState,
   agents: z.array(AgentState),
   provider: z.string(),
   weather: Weather,
+  status: WorldRunStatus.default(RUNNING),
 });
 export type WorldSnapshot = z.infer<typeof WorldSnapshot>;
 
@@ -75,7 +90,11 @@ export const AgentMemoryResponse = z.object({
   agentId: z.string(),
   now: z.number(),
   workingMemory: z.array(z.string()),
+  /** Página de recuerdos, ordenados por puntuación. */
   memories: z.array(ScoredMemoryView),
+  /** Total de recuerdos del agente (para paginar) y posición de esta página. */
+  total: z.number().int().nonnegative().default(0),
+  offset: z.number().int().nonnegative().default(0),
   /** Decisiones de olvido/transformación recientes ("olvidó X porque..."). */
   audit: z.array(MemoryAuditEntry),
   social: z.array(SocialProfile),

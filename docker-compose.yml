@@ -1,17 +1,19 @@
+# Postgres + pgvector para desarrollo. Solo escucha en 127.0.0.1 (no se expone a la red).
+# Las credenciales salen de .env (POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB).
 services:
   db:
     image: pgvector/pgvector:pg16
     container_name: lethetown-db
     environment:
-      POSTGRES_USER: lethetown
-      POSTGRES_PASSWORD: lethetown
-      POSTGRES_DB: lethetown
+      POSTGRES_USER: ${POSTGRES_USER:-lethetown}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD en .env}
+      POSTGRES_DB: ${POSTGRES_DB:-lethetown}
     ports:
-      - "${POSTGRES_PORT:-5433}:5432"
+      - "127.0.0.1:${POSTGRES_PORT:-5433}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U lethetown"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
       interval: 5s
       timeout: 3s
       retries: 10

@@ -1,0 +1,78 @@
+# Producción en un VPS: Caddy (HTTPS automático + web estática + proxy), api, sim-worker y
+# Postgres. Guía: docs/despliegue.md. Variables: .env (ver .env.example).
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-lethetown}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD en .env}
+      POSTGRES_DB: ${POSTGRES_DB:-lethetown}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    # Sin puertos publicados: solo la red interna.
+
+  migrate:
+    build: { context: ., dockerfile: docker/server.Dockerfile, target: runtime }
+    env_file: .env
+    environment: &server-env
+      NODE_ENV: production
+      DATABASE_URL: postgres://${POSTGRES_USER:-lethetown}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-lethetown}
+      HOST: 0.0.0.0
+      TRUST_PROXY: "true"
+      ALLOWED_ORIGINS: https://${DOMAIN:?Define DOMAIN en .env}
+    command: ["node", "--import", "tsx", "src/scripts/migrate.ts"]
+    depends_on:
+      db: { condition: service_healthy }
+    restart: "no"
+
+  api:
+    build: { context: ., dockerfile: docker/server.Dockerfile, target: api }
+    restart: unless-stopped
+    env_file: .env
+    environment: *server-env
+    volumes:
+      - models:/app/.cache
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+
+  worker:
+    build: { context: ., dockerfile: docker/server.Dockerfile, target: worker }
+    restart: unless-stopped
+    env_file: .env
+    environment: *server-env
+    volumes:
+      - models:/app/.cache
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+    # Para más mundos: docker compose -f docker-compose.prod.yml up -d --scale worker=3
+    stop_grace_period: 30s
+
+  web:
+    build: { context: ., dockerfile: docker/web.Dockerfile }
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL:?Define ACME_EMAIL en .env}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      # Assets de LimeZu (licencia: no se redistribuyen): se suben al servidor aparte.
+      - ./apps/web/public/assets/vendor:/srv/assets/vendor:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - api
+
+volumes:
+  pgdata:
+  models:
+  caddy-data:
+  caddy-config:

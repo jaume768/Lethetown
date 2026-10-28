@@ -1,71 +1,291 @@
-import { useCallback, useState } from "react";
-import { TownMap } from "../game/TownMap";
-import { useGame } from "../net/store";
+import type { Drama } from "@lethetown/shared";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { TownMap, type MapController } from "../game/TownMap";
+import { useI18n } from "../i18n";
+import { useAssets } from "../net/assets";
+import { hasRole, logout, refreshMe, useAuth } from "../net/auth";
+import { api, useGame } from "../net/store";
 import { ChroniclePanel } from "./ChroniclePanel";
-import { CostCounter } from "./CostCounter";
+import { ClipRecorder } from "./ClipRecorder";
+import { CreditsModal } from "./Credits";
+import { DirectorPanel } from "./DirectorPanel";
+import { DramaFeed } from "./DramaFeed";
 import { EventLog } from "./EventLog";
+import { Header, type Mode } from "./Header";
+import { initialParams } from "./links";
+import { LoginDialog } from "./LoginDialog";
 import { MemoryGarden } from "./MemoryGarden";
+import { Onboarding, shouldOnboard } from "./Onboarding";
 import { RashomonModal } from "./RashomonModal";
-import { SpeedControls } from "./SpeedControls";
-import { WorldPanel } from "./WorldPanel";
+import { ConnectionBanner, LoadingScreen, PausedOverlay } from "./StatusOverlay";
+import { Tabs, type TabDef } from "./Tabs";
+
+type TabId = "dramas" | "agent" | "events" | "chronicles" | "director";
+const MODE_KEY = "lethetown.mode";
+const MOBILE = "(max-width: 760px)";
+
+function useMediaQuery(query: string): boolean {
+  return useSyncExternalStore(
+    (cb) => {
+      const mq = window.matchMedia(query);
+      mq.addEventListener("change", cb);
+      return () => mq.removeEventListener("change", cb);
+    },
+    () => window.matchMedia(query).matches,
+  );
+}
+
+function savedMode(): Mode {
+  try {
+    return localStorage.getItem(MODE_KEY) === "director" ? "director" : "spectator";
+  } catch {
+    return "spectator";
+  }
+}
 
 export function App() {
+  const { t } = useI18n();
   const game = useGame();
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const { user } = useAuth();
+  const assets = useAssets();
+  const mobile = useMediaQuery(MOBILE);
+  const map = useRef<MapController | null>(null);
+  const params = useRef(initialParams());
+
+  const [mode, setModeState] = useState<Mode>(savedMode);
+  const [tab, setTab] = useState<TabId>("dramas");
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(params.current.agent);
   const [followId, setFollowId] = useState<string | null>(null);
-  const [minimap, setMinimap] = useState(true);
-  const [rashomonId, setRashomonId] = useState<string | null>(null);
-  const onSelect = useCallback((id: string) => setSelectedId(id), []);
+  const [minimap, setMinimap] = useState(!window.matchMedia(MOBILE).matches);
+  const [rashomonId, setRashomonId] = useState<string | null>(params.current.event);
+  const [dialog, setDialog] = useState<"login" | "credits" | "clip" | "onboarding" | null>(
+    shouldOnboard() ? "onboarding" : null,
+  );
+  const [seenDramas, setSeenDramas] = useState(0);
+
+  useEffect(() => {
+    void refreshMe();
+  }, []);
+
+  const director = mode === "director" && hasRole(user, "director");
+  const setMode = (m: Mode) => {
+    if (m === "director" && !hasRole(user, "director")) return setDialog("login");
+    setModeState(m);
+    try {
+      localStorage.setItem(MODE_KEY, m);
+    } catch {
+      /* no se recuerda el modo: no pasa nada */
+    }
+    if (m === "director") {
+      setTab("director");
+      if (mobile) setSheetOpen(true);
+    } else if (tab === "director") setTab("dramas");
+  };
+
+  const onSelect = useCallback(
+    (id: string) => {
+      setSelectedId(id);
+      setTab("agent");
+      if (mobile) setSheetOpen(true);
+    },
+    [mobile],
+  );
+
+  const goTo = useCallback(
+    (d: Drama) => {
+      if (d.placeId) map.current?.focusPlace(d.placeId);
+      if (d.agents[0]) setSelectedId(d.agents[0]);
+      if (mobile) setSheetOpen(false);
+    },
+    [mobile],
+  );
+
+  // Enlace permanente a un drama: ir a verlo en cuanto llegue la lista.
+  useEffect(() => {
+    const id = params.current.drama;
+    if (!id || !game.loaded) return;
+    const d = game.dramas.find((x) => x.id === id);
+    if (d) {
+      params.current.drama = null;
+      // Espera un poco a que el mapa esté construido.
+      setTimeout(() => goTo(d), 500);
+    }
+  }, [game.dramas, game.loaded, goTo]);
+
+  useEffect(() => {
+    if (tab === "dramas") setSeenDramas(game.dramas.length);
+  }, [tab, game.dramas.length]);
+
   const selected = game.agents.find((a) => a.id === selectedId);
   const today = Math.floor(game.clock.time / 1440);
   const thinking = selectedId ? game.thinking[selectedId] : undefined;
+  const newDramas = tab === "dramas" ? 0 : Math.max(0, game.dramas.length - seenDramas);
+
+  const tabs: TabDef<TabId>[] = [
+    { id: "dramas", label: t("tabs.dramas"), badge: newDramas },
+    { id: "agent", label: t("tabs.agent") },
+    ...(mobile ? [{ id: "events" as const, label: t("tabs.events") }] : []),
+    { id: "chronicles", label: t("tabs.chronicles") },
+    ...(director ? [{ id: "director" as const, label: t("tabs.director") }] : []),
+  ];
+  const activeTab = tabs.some((x) => x.id === tab) ? tab : "dramas";
+
+  const panel = (() => {
+    switch (activeTab) {
+      case "dramas":
+        return <DramaFeed dramas={game.dramas} onGoTo={goTo} onOpenEvent={setRashomonId} />;
+      case "agent":
+        return (
+          <MemoryGarden
+            agent={selected}
+            agents={game.agents}
+            world={game.world}
+            thinkingTask={thinking && thinking.count > 0 ? thinking.task : null}
+            canIntervene={director}
+          />
+        );
+      case "events":
+        return <EventLog events={game.events} today={today} onOpenEvent={setRashomonId} />;
+      case "chronicles":
+        return <ChroniclePanel chronicles={game.chronicles} />;
+      case "director":
+        return user ? <DirectorPanel game={game} user={user} /> : null;
+    }
+  })();
 
   return (
-    <div className="layout">
-      <main>
-        <TownMap
-          world={game.world}
-          agents={game.agents}
-          selectedId={selectedId}
-          followId={followId}
-          weather={game.weather}
-          minimap={minimap}
-          onSelect={onSelect}
-          onFollowChange={setFollowId}
-        />
-        <div className="follow wrap">
-          <button
-            className={`btn small ${minimap ? "active" : ""}`}
-            onClick={() => setMinimap(!minimap)}
-          >
-            Minimapa
-          </button>
-          {selected && (
-            <button
-              className={`btn small ${followId === selected.id ? "active" : ""}`}
-              onClick={() => setFollowId(followId === selected.id ? null : selected.id)}
+    <div
+      className={`app ${mobile ? "mobile" : ""} ${director ? "mode-director" : "mode-spectator"}`}
+    >
+      <a href="#side" className="skip-link">
+        {t("app.skip")}
+      </a>
+      <Header
+        clock={game.clock}
+        connected={game.connected}
+        mode={director ? "director" : "spectator"}
+        user={user}
+        onMode={setMode}
+        onLogin={() => setDialog("login")}
+        onLogout={() => {
+          void logout();
+          setModeState("spectator");
+        }}
+        onHelp={() => setDialog("onboarding")}
+        onCredits={() => setDialog("credits")}
+      />
+      <ConnectionBanner connected={game.connected} retries={game.retries} />
+      <main className="stage">
+        <div className="map-wrap">
+          <TownMap
+            world={game.world}
+            agents={game.agents}
+            selectedId={selectedId}
+            followId={followId}
+            weather={game.weather}
+            minimap={minimap}
+            onSelect={onSelect}
+            onFollowChange={setFollowId}
+            controller={map}
+          />
+          <div className="map-toolbar wrap">
+            <select
+              className="field compact"
+              aria-label={t("map.selectAgent")}
+              value={selectedId ?? ""}
+              onChange={(e) => e.target.value && onSelect(e.target.value)}
             >
-              {followId === selected.id
-                ? "Dejar de seguir"
-                : `Seguir a ${selected.name.split(" ")[0]}`}
+              <option value="">{t("map.selectAgent")}</option>
+              {game.agents.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.name}
+                </option>
+              ))}
+            </select>
+            <button
+              className={`btn small ${minimap ? "active" : ""}`}
+              aria-pressed={minimap}
+              onClick={() => setMinimap(!minimap)}
+            >
+              {t("map.minimap")}
             </button>
-          )}
+            {selected && (
+              <button
+                className={`btn small ${followId === selected.id ? "active" : ""}`}
+                aria-pressed={followId === selected.id}
+                onClick={() => setFollowId(followId === selected.id ? null : selected.id)}
+              >
+                {followId === selected.id
+                  ? t("map.unfollow")
+                  : t("map.follow", { name: selected.name.split(" ")[0] ?? selected.name })}
+              </button>
+            )}
+            <button className="btn small" onClick={() => setDialog("clip")}>
+              ⏺ {t("map.clip")}
+            </button>
+          </div>
+          <PausedOverlay
+            status={game.status}
+            canResume={director}
+            onResume={() => void api("/api/resume", {}).catch(() => undefined)}
+          />
+          {!game.loaded && <LoadingScreen />}
         </div>
-        <EventLog events={game.events} today={today} onOpenEvent={setRashomonId} />
+        {!mobile && <EventLog events={game.events} today={today} onOpenEvent={setRashomonId} />}
       </main>
-      <aside>
-        <SpeedControls clock={game.clock} connected={game.connected} provider={game.provider} />
-        <CostCounter costs={game.costs} />
-        <MemoryGarden
-          agent={selected}
-          agents={game.agents}
-          world={game.world}
-          thinkingTask={thinking && thinking.count > 0 ? thinking.task : null}
-        />
-        <WorldPanel world={game.world} weather={game.weather} />
-        <ChroniclePanel chronicles={game.chronicles} day={today} />
+      <aside
+        id="side"
+        className={`side ${mobile ? "sheet" : ""} ${sheetOpen ? "open" : ""}`}
+        aria-label={t("tabs.label")}
+      >
+        {mobile && (
+          <button
+            className="sheet-handle"
+            aria-expanded={sheetOpen}
+            aria-controls="side-tabs"
+            onClick={() => setSheetOpen(!sheetOpen)}
+          >
+            {sheetOpen ? "▼" : "▲"} {tabs.find((x) => x.id === activeTab)?.label}
+          </button>
+        )}
+        <div id="side-tabs">
+          <Tabs
+            tabs={tabs}
+            active={activeTab}
+            label={t("tabs.label")}
+            onChange={(id) => {
+              setTab(id);
+              if (mobile) setSheetOpen(true);
+            }}
+          >
+            {panel}
+          </Tabs>
+        </div>
       </aside>
+
       {rashomonId && <RashomonModal eventId={rashomonId} onClose={() => setRashomonId(null)} />}
+      {dialog === "login" && (
+        <LoginDialog
+          onClose={() => setDialog(null)}
+          onDone={() => {
+            setDialog(null);
+            setModeState("director");
+            setTab("director");
+            if (mobile) setSheetOpen(true);
+          }}
+        />
+      )}
+      {dialog === "credits" && (
+        <CreditsModal credits={assets.credits} onClose={() => setDialog(null)} />
+      )}
+      {dialog === "clip" && (
+        <ClipRecorder
+          source={() => map.current?.canvas() ?? null}
+          onClose={() => setDialog(null)}
+        />
+      )}
+      {dialog === "onboarding" && <Onboarding onClose={() => setDialog(null)} />}
     </div>
   );
 }

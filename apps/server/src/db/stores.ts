@@ -1,8 +1,15 @@
 import type { SocialProfileStore } from "@lethetown/agent-core";
-import { SimEventKind, type Chronicle, type SimEvent, type SocialProfile } from "@lethetown/shared";
+import {
+  DramaKind,
+  SimEventKind,
+  type Chronicle,
+  type Drama,
+  type SimEvent,
+  type SocialProfile,
+} from "@lethetown/shared";
 import { and, asc, desc, eq, gte, lt } from "drizzle-orm";
 import type { Db } from "./client";
-import { chronicles, simEvents, socialProfiles } from "./schema";
+import { chronicles, dramas, moderationLog, simEvents, socialProfiles } from "./schema";
 
 /** Línea de tiempo de eventos. */
 export interface EventStore {
@@ -49,30 +56,41 @@ export class InMemoryChronicleStore implements ChronicleStore {
 
 // --- Postgres ------------------------------------------------------------------------------
 
-const toEvent = (r: typeof simEvents.$inferSelect): SimEvent => ({
+const toEvent = ({ worldId: _w, ...r }: typeof simEvents.$inferSelect): SimEvent => ({
   ...r,
   kind: SimEventKind.parse(r.kind),
 });
 
 export class PgEventStore implements EventStore {
-  constructor(private readonly db: Db) {}
+  constructor(
+    private readonly db: Db,
+    readonly worldId: string,
+  ) {}
 
   async add(event: SimEvent) {
-    await this.db.insert(simEvents).values(event).onConflictDoNothing();
+    await this.db
+      .insert(simEvents)
+      .values({ ...event, worldId: this.worldId })
+      .onConflictDoNothing();
   }
 
   async range(from: number, to: number, limit = 1000) {
     const rows = await this.db
       .select()
       .from(simEvents)
-      .where(and(gte(simEvents.time, from), lt(simEvents.time, to)))
+      .where(
+        and(eq(simEvents.worldId, this.worldId), gte(simEvents.time, from), lt(simEvents.time, to)),
+      )
       .orderBy(asc(simEvents.time))
       .limit(limit);
     return rows.map(toEvent);
   }
 
   async get(id: string) {
-    const [row] = await this.db.select().from(simEvents).where(eq(simEvents.id, id));
+    const [row] = await this.db
+      .select()
+      .from(simEvents)
+      .where(and(eq(simEvents.worldId, this.worldId), eq(simEvents.id, id)));
     return row && toEvent(row);
   }
 
@@ -80,6 +98,7 @@ export class PgEventStore implements EventStore {
     const [row] = await this.db
       .select({ t: simEvents.time })
       .from(simEvents)
+      .where(eq(simEvents.worldId, this.worldId))
       .orderBy(desc(simEvents.time))
       .limit(1);
     return row?.t ?? 0;
@@ -87,35 +106,55 @@ export class PgEventStore implements EventStore {
 }
 
 export class PgChronicleStore implements ChronicleStore {
-  constructor(private readonly db: Db) {}
+  constructor(
+    private readonly db: Db,
+    readonly worldId: string,
+  ) {}
   async add(c: Chronicle) {
     await this.db
       .insert(chronicles)
-      .values(c)
-      .onConflictDoUpdate({ target: chronicles.day, set: { title: c.title, text: c.text } });
+      .values({ ...c, worldId: this.worldId })
+      .onConflictDoUpdate({
+        target: [chronicles.worldId, chronicles.day],
+        set: { title: c.title, text: c.text },
+      });
   }
   async list() {
-    return this.db.select().from(chronicles).orderBy(asc(chronicles.day));
+    const rows = await this.db
+      .select()
+      .from(chronicles)
+      .where(eq(chronicles.worldId, this.worldId))
+      .orderBy(asc(chronicles.day));
+    return rows.map(({ worldId: _w, ...c }) => c);
   }
 }
 
 export class PgSocialProfileStore implements SocialProfileStore {
-  constructor(private readonly db: Db) {}
+  constructor(
+    private readonly db: Db,
+    readonly worldId: string,
+  ) {}
 
   async get(ownerId: string, aboutId: string): Promise<SocialProfile | undefined> {
     const [row] = await this.db
       .select()
       .from(socialProfiles)
-      .where(and(eq(socialProfiles.ownerId, ownerId), eq(socialProfiles.aboutId, aboutId)));
-    return row;
+      .where(
+        and(
+          eq(socialProfiles.worldId, this.worldId),
+          eq(socialProfiles.ownerId, ownerId),
+          eq(socialProfiles.aboutId, aboutId),
+        ),
+      );
+    return row && stripWorld(row);
   }
 
   async upsert(p: SocialProfile): Promise<void> {
     await this.db
       .insert(socialProfiles)
-      .values(p)
+      .values({ ...p, worldId: this.worldId })
       .onConflictDoUpdate({
-        target: [socialProfiles.ownerId, socialProfiles.aboutId],
+        target: [socialProfiles.worldId, socialProfiles.ownerId, socialProfiles.aboutId],
         set: {
           summary: p.summary,
           affinity: p.affinity,
@@ -126,6 +165,104 @@ export class PgSocialProfileStore implements SocialProfileStore {
   }
 
   async list(ownerId: string): Promise<SocialProfile[]> {
-    return this.db.select().from(socialProfiles).where(eq(socialProfiles.ownerId, ownerId));
+    const rows = await this.db
+      .select()
+      .from(socialProfiles)
+      .where(and(eq(socialProfiles.worldId, this.worldId), eq(socialProfiles.ownerId, ownerId)));
+    return rows.map(stripWorld);
+  }
+}
+
+function stripWorld<T extends { worldId: string }>({
+  worldId: _w,
+  ...rest
+}: T): Omit<T, "worldId"> {
+  return rest;
+}
+
+// --- Moderación ----------------------------------------------------------------------------
+
+export interface ModerationRejection {
+  worldId: string;
+  userId: string | null;
+  kind: string;
+  text: string;
+  reason: string;
+}
+
+/** Registro de textos de usuario rechazados. */
+export interface ModerationLog {
+  add(r: ModerationRejection): Promise<void>;
+  recent(worldId: string, limit?: number): Promise<(ModerationRejection & { at: Date })[]>;
+}
+
+export class InMemoryModerationLog implements ModerationLog {
+  private readonly items: (ModerationRejection & { at: Date })[] = [];
+  async add(r: ModerationRejection) {
+    this.items.push({ ...r, at: new Date() });
+    if (this.items.length > 1000) this.items.shift();
+  }
+  async recent(worldId: string, limit = 50) {
+    return this.items
+      .filter((r) => r.worldId === worldId)
+      .slice(-limit)
+      .reverse();
+  }
+}
+
+export class PgModerationLog implements ModerationLog {
+  constructor(private readonly db: Db) {}
+  async add(r: ModerationRejection) {
+    await this.db.insert(moderationLog).values(r);
+  }
+  async recent(worldId: string, limit = 50) {
+    const rows = await this.db
+      .select()
+      .from(moderationLog)
+      .where(eq(moderationLog.worldId, worldId))
+      .orderBy(desc(moderationLog.at))
+      .limit(limit);
+    return rows.map(({ id: _id, ...r }) => r);
+  }
+}
+
+// --- Dramas --------------------------------------------------------------------------------
+
+export interface DramaStore {
+  add(d: Drama): Promise<void>;
+  /** Los más recientes primero. */
+  recent(limit?: number): Promise<Drama[]>;
+}
+
+export class InMemoryDramaStore implements DramaStore {
+  private readonly items: Drama[] = [];
+  async add(d: Drama) {
+    this.items.push(d);
+    if (this.items.length > 500) this.items.shift();
+  }
+  async recent(limit = 50) {
+    return this.items.slice(-limit).reverse();
+  }
+}
+
+export class PgDramaStore implements DramaStore {
+  constructor(
+    private readonly db: Db,
+    readonly worldId: string,
+  ) {}
+  async add(d: Drama) {
+    await this.db
+      .insert(dramas)
+      .values({ ...d, worldId: this.worldId })
+      .onConflictDoNothing();
+  }
+  async recent(limit = 50) {
+    const rows = await this.db
+      .select()
+      .from(dramas)
+      .where(eq(dramas.worldId, this.worldId))
+      .orderBy(desc(dramas.time))
+      .limit(limit);
+    return rows.map(({ worldId: _w, ...d }) => ({ ...d, kind: DramaKind.parse(d.kind) }));
   }
 }

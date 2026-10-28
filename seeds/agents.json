@@ -13,6 +13,15 @@
       "shirt": "#e0a030",
       "pants": "#3a4a6b"
     },
+    "portrait": {
+      "skin": 2,
+      "eyes": 1,
+      "hair": {
+        "style": 9,
+        "color": 1
+      },
+      "accessories": []
+    },
     "initialMemories": [
       "Soy ilustradora y estoy terminando los dibujos de un cuento infantil.",
       "Mateo prepara el mejor café con leche del pueblo y siempre me pregunta por mis dibujos.",
@@ -34,6 +43,15 @@
       "shirt": "#3f8f5a",
       "pants": "#2b2b3b"
     },
+    "portrait": {
+      "skin": 4,
+      "eyes": 2,
+      "hair": {
+        "style": 2,
+        "color": 4
+      },
+      "accessories": ["Accessory 13 Beard 1"]
+    },
     "initialMemories": [
       "Abro el Café La Ola cada mañana a las ocho.",
       "Mi madre, Carmen, se preocupa demasiado por mí.",
@@ -54,6 +72,15 @@
       "hair": "#d8d8d8",
       "shirt": "#8a4fa8",
       "pants": "#5a4030"
+    },
+    "portrait": {
+      "skin": 2,
+      "eyes": 3,
+      "hair": {
+        "style": 4,
+        "color": 5
+      },
+      "accessories": ["Accessory 15 Glasses 1"]
     },
     "initialMemories": [
       "Fui maestra en la escuela del pueblo durante treinta años.",

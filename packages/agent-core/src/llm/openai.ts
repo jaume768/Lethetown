@@ -12,18 +12,24 @@ export class OpenAIProvider implements LLMProvider {
   private readonly client: OpenAI;
 
   constructor(options: OpenAIProviderOptions = {}) {
-    this.client = options.client ?? new OpenAI(options.apiKey ? { apiKey: options.apiKey } : {});
+    // Reintentos y timeouts los gestiona ResilientProvider (no los dupliquemos en el SDK).
+    this.client =
+      options.client ??
+      new OpenAI({ maxRetries: 0, ...(options.apiKey ? { apiKey: options.apiKey } : {}) });
   }
 
   async complete(req: CompletionRequest): Promise<CompletionResult> {
-    const response = await this.client.responses.create({
-      model: req.model,
-      instructions: req.system,
-      input: req.prompt,
-      max_output_tokens: req.maxTokens,
-      reasoning: { effort: req.effort },
-      ...(req.cacheKey ? { prompt_cache_key: req.cacheKey } : {}),
-    });
+    const response = await this.client.responses.create(
+      {
+        model: req.model,
+        instructions: req.system,
+        input: req.prompt,
+        max_output_tokens: req.maxTokens,
+        reasoning: { effort: req.effort },
+        ...(req.cacheKey ? { prompt_cache_key: req.cacheKey } : {}),
+      },
+      { signal: req.signal },
+    );
 
     const usage = response.usage;
     // OpenAI incluye lecturas y escrituras de caché dentro de input_tokens: las separamos.

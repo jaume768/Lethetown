@@ -1,4 +1,7 @@
-/** Borra memorias, costes, auditoría, fichas, eventos y crónicas, y vuelve a sembrar los recuerdos iniciales de seeds/agents.json. */
+/**
+ * Borra memorias, costes, auditoría, fichas, eventos, crónicas e instantáneas de todos los
+ * mundos (los mundos se conservan) y vuelve a sembrar los recuerdos iniciales de seeds/agents.json.
+ */
 import { loadConfig } from "../config";
 import { bootstrap } from "../bootstrap";
 import { createDb } from "../db/client";
@@ -10,6 +13,7 @@ import {
   memoryVersions,
   simEvents,
   socialProfiles,
+  worldSnapshots,
 } from "../db/schema";
 
 const config = loadConfig();
@@ -26,6 +30,7 @@ for (const table of [
   socialProfiles,
   simEvents,
   chronicles,
+  worldSnapshots,
 ]) {
   await db.delete(table);
 }

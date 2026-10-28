@@ -1,0 +1,60 @@
+import { z } from "zod";
+
+/** Tipos de "drama": lo que merece la pena ir a ver. */
+export const DramaKind = z.enum([
+  /** Alguien oyó a escondidas una conversación. */
+  "eavesdrop",
+  /** Se propaga algo oído ("¿Sabes? Oí a…"). */
+  "rumor",
+  /** La afinidad entre dos agentes cae mucho tras hablar. */
+  "argument",
+  /** La afinidad sube mucho. */
+  "friendship",
+  /** Un recuerdo importante se reescribe al recordarlo. */
+  "reconsolidation",
+  /** Se olvida un recuerdo importante. */
+  "forgetting",
+]);
+export type DramaKind = z.infer<typeof DramaKind>;
+
+export const Drama = z.object({
+  id: z.string(),
+  /** Minutos de juego. */
+  time: z.number(),
+  kind: DramaKind,
+  /** Interés de 0 a 1 (el feed ordena y filtra por esto). */
+  score: z.number().min(0).max(1),
+  title: z.string(),
+  agents: z.array(z.string()),
+  /** Dónde ocurrió (para "Ir a verlo"). */
+  placeId: z.string().nullable(),
+  /** Evento relacionado (vista Rashomon / enlace permanente). */
+  eventId: z.string().nullable(),
+});
+export type Drama = z.infer<typeof Drama>;
+
+/** Por debajo de esto no se publica. */
+export const DRAMA_MIN_SCORE = 0.5;
+
+/** Cambio de afinidad a partir del cual una conversación es una discusión o una amistad. */
+export const AFFINITY_DRAMA_DELTA = 0.2;
+
+/**
+ * Interés de un posible drama. Funciones puras: la detección (qué eventos lo disparan) vive en
+ * el servidor; aquí solo la puntuación, para que sea fácil de ajustar y de probar.
+ */
+export const dramaScore = {
+  eavesdrop: (listeners: number) => Math.min(1, 0.5 + 0.1 * listeners),
+  rumor: (listeners: number) => Math.min(1, 0.7 + 0.1 * listeners),
+  affinity: (delta: number) => Math.min(1, 0.45 + Math.abs(delta) * 1.5),
+  reconsolidation: (importance: number) => Math.min(1, 0.3 + importance / 20),
+  forgetting: (importance: number) => Math.min(1, importance / 10),
+};
+
+/** ¿Parece que alguien cuenta algo que oyó? (rumor que se propaga). */
+export function looksLikeRumor(text: string): boolean {
+  // Sin \b: en JS no trata "í" como letra. Límites de palabra con clases Unicode.
+  return /(^|[^\p{L}])(oí|oi|dicen que|me contaron|¿sabes|he oído|he oido)(?=$|[^\p{L}])/iu.test(
+    text,
+  );
+}

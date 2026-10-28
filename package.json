@@ -8,7 +8,7 @@
   },
   "scripts": {
     "predev": "node scripts/ensure-env.mjs",
-    "dev": "concurrently -k -n server,web -c blue,green \"pnpm --filter @lethetown/server dev\" \"pnpm --filter @lethetown/web dev\"",
+    "dev": "concurrently --kill-others-on-fail -n api,worker,web -c blue,magenta,green \"pnpm --filter @lethetown/server dev\" \"pnpm --filter @lethetown/server dev:worker\" \"pnpm --filter @lethetown/web dev\"",
     "build": "pnpm -r build",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -22,21 +22,31 @@
     "seed": "pnpm --filter @lethetown/server seed",
     "map:generate": "tsx tools/generate-map.ts",
     "interview": "pnpm --filter @lethetown/server interview --",
-    "assets:placeholder": "tsx tools/generate-placeholder-assets.ts"
+    "assets:placeholder": "tsx tools/generate-placeholder-assets.ts",
+    "assets:check": "tsx tools/check-assets.ts",
+    "portraits:compose": "tsx tools/compose-portraits.ts",
+    "user:create": "pnpm --filter @lethetown/server user:create --",
+    "test:e2e": "playwright test"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@lethetown/shared": "workspace:*",
+    "@playwright/test": "1.64.0",
     "@types/node": "^22.0.0",
+    "@types/pngjs": "^6.0.5",
     "concurrently": "^10.0.6",
     "eslint": "^10.13.0",
     "globals": "^17.13.0",
+    "pngjs": "^7.0.0",
     "prettier": "^3.9.10",
+    "tsx": "^4.23.15",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.72.1",
-    "vitest": "^5.0.5",
-    "tsx": "^4.23.15",
-    "@lethetown/shared": "workspace:*",
-    "pngjs": "^7.0.0",
-    "@types/pngjs": "^6.0.5"
+    "vitest": "^5.0.5"
+  },
+  "pnpm": {
+    "neverBuiltDependencies": [
+      "onnxruntime-node"
+    ]
   }
 }

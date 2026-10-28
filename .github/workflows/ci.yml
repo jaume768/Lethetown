@@ -4,9 +4,26 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   check:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: lethetown
+          POSTGRES_PASSWORD: lethetown
+          POSTGRES_DB: lethetown
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U lethetown" --health-interval 5s --health-timeout 3s
+          --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgres://lethetown:lethetown@localhost:5432/lethetown
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -18,4 +35,30 @@ jobs:
       - run: pnpm lint
       - run: pnpm format:check
       - run: pnpm typecheck
+      - run: pnpm db:migrate
+        env:
+          DATABASE_URL: postgres://lethetown:lethetown@localhost:5432/lethetown
       - run: pnpm test
+        env:
+          # Los tests usan embeddings hash y mock: no necesitan red ni API keys.
+          EMBEDDINGS: hash
+      - run: pnpm assets:check
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      # Sin la carpeta vendor (LimeZu) el cliente usa formas simples: basta para los smoke tests.
+      - run: pnpm test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: test-results/

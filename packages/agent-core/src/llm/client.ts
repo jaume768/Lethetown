@@ -19,6 +19,9 @@ export interface CallEvent {
   agentId?: string;
   model: string;
   ok?: boolean;
+  /** Solo en "end": duración de la llamada (ms reales) y nombre del error si falló. */
+  durationMs?: number;
+  error?: string;
 }
 
 /** Fachada que combina proveedor + router + registro de costes. Es lo que usan los agentes. */
@@ -43,12 +46,19 @@ export class LLMClient {
     const model = this.router.modelFor(req.kind);
     const base = { task: req.task, agentId: req.agentId, model };
     this.notify({ ...base, phase: "start" });
+    const t0 = performance.now();
     try {
       const result = await this.call(req, model);
-      this.notify({ ...base, phase: "end", ok: true });
+      this.notify({ ...base, phase: "end", ok: true, durationMs: performance.now() - t0 });
       return result;
     } catch (error) {
-      this.notify({ ...base, phase: "end", ok: false });
+      this.notify({
+        ...base,
+        phase: "end",
+        ok: false,
+        durationMs: performance.now() - t0,
+        error: error instanceof Error ? error.name : "Error",
+      });
       throw error;
     }
   }
@@ -63,12 +73,10 @@ export class LLMClient {
       cacheKey: req.agentId ? `agent:${req.agentId}` : undefined,
       meta: { task: req.task, agentId: req.agentId },
     });
-    this.costs.record({
-      model: result.model,
-      task: req.task,
-      agentId: req.agentId,
-      usage: result.usage,
-    });
+    this.costs.record(
+      { model: result.model, task: req.task, agentId: req.agentId, usage: result.usage },
+      result.priceMultiplier ?? 1,
+    );
     return result;
   }
 }

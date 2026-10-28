@@ -13,23 +13,64 @@ import {
   ThoughtRequest,
   WeatherRequest,
 } from "@lethetown/shared";
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import type { App } from "../bootstrap";
+import type { AppConfig } from "../config";
+import { WorldId } from "../db/worlds";
+import type { Metrics } from "../observability";
+import { requireRole } from "../security/http";
+import type { CommandResult, WorldCommand, WorldGateway } from "../worlds/gateway";
 
-export function snapshot(app: App): WorldSnapshot {
+/** Operaciones de administración (en modo separado las ejecuta el worker vía bus). */
+export interface AdminOps {
+  /** Health detallado: proceso, BD, proveedor, mundos. */
+  health(): Promise<Record<string, unknown>>;
+  budget(): Promise<unknown>;
+  setKillSwitch(on: boolean): Promise<void>;
+  moderation(worldId: string): Promise<unknown>;
+  listWorlds(): Promise<unknown[]>;
+  /** Crea un mundo nuevo (mapa de seeds/) y lo pone en marcha. */
+  createWorld(w: NewWorld): Promise<CommandResult>;
+  /** running | paused | stopped (stopped = deja de ejecutarse y de reclamarse). */
+  setWorldStatus(id: string, status: "running" | "paused" | "stopped"): Promise<CommandResult>;
+}
+
+export const NewWorld = z.object({
+  id: WorldId,
+  name: z.string().trim().min(1).max(60),
+  map: z.string().regex(/^seeds\/[\w-]+\.tmj$/, "map: seeds/<nombre>.tmj"),
+  seed: z.number().int().nullable().default(null),
+  /** Idioma en el que hablan los agentes y escribe el cronista. */
+  language: z.enum(["es", "en"]).default("es"),
+});
+export type NewWorld = z.infer<typeof NewWorld>;
+
+/** Lo que la API REST necesita del proceso: los mundos que puede servir y datos generales. */
+export interface ApiContext {
+  config: AppConfig;
+  worlds: Map<string, WorldGateway>;
+  defaultWorldId: string;
+  provider: string;
+  admin: AdminOps;
+  metrics: Metrics;
+}
+
+export function snapshot(w: WorldGateway, provider: string): WorldSnapshot {
+  const live = w.live();
   return {
-    world: app.world.world,
-    clock: { time: app.clock.now(), speed: app.clock.speed },
-    agents: app.sim.agentStates(),
-    provider: app.provider.name,
-    weather: app.world.weather,
+    world: w.world,
+    clock: { time: live.time, speed: live.speed },
+    agents: live.agents,
+    provider,
+    weather: live.weather,
+    status: live.status,
   };
 }
 
 const MemoryQuery = z.object({
-  q: z.string().optional(),
-  limit: z.coerce.number().int().positive().max(500).default(50),
+  q: z.string().max(500).optional(),
+  limit: z.coerce.number().int().positive().max(200).default(50),
+  offset: z.coerce.number().int().nonnegative().default(0),
 });
 
 const EventsQuery = z.object({
@@ -44,140 +85,274 @@ export function toView(m: MemoryRecord): MemoryView {
   return view;
 }
 
-export function registerRest(server: FastifyInstance, app: App, onSpeedChange: () => void): void {
-  server.get("/api/health", async () => ({
-    ok: true,
-    provider: app.provider.name,
-    store: app.storeKind,
-    embedder: app.memory.embedder.name,
-  }));
+type WorldParams = { worldId?: string };
 
-  server.get("/api/state", async () => snapshot(app));
+/** Mundo de la ruta (`/api/worlds/:worldId/...`) o el mundo por defecto (alias `/api/...`). */
+export function worldOf(
+  ctx: ApiContext,
+  req: FastifyRequest,
+  reply: FastifyReply,
+): WorldGateway | null {
+  const id = (req.params as WorldParams).worldId ?? ctx.defaultWorldId;
+  const w = ctx.worlds.get(id);
+  if (!w) {
+    void reply.code(404).send({ error: "Mundo no encontrado" });
+    return null;
+  }
+  return w;
+}
+
+async function sendResult(reply: FastifyReply, r: CommandResult) {
+  if (!r.ok) return reply.code(r.status).send({ error: r.error });
+  return r.value ?? { ok: true };
+}
+
+const director = { preHandler: requireRole("director") };
+const admin = { preHandler: requireRole("admin") };
+
+/** Rutas generales (fuera de cualquier mundo). */
+export function registerGlobalRest(server: FastifyInstance, ctx: ApiContext): void {
+  /** Health público mínimo (para el balanceador); el detallado es de admin. */
+  server.get("/api/health", async () => ({ ok: true }));
+
+  server.get("/api/admin/health", admin, async () => ctx.admin.health());
+  server.get("/api/admin/budget", admin, async () => ctx.admin.budget());
+  server.post("/api/admin/kill", admin, async (req, reply) => {
+    const parsed = z.object({ on: z.boolean() }).safeParse(req.body);
+    if (!parsed.success) return reply.code(400).send({ error: "on: true | false" });
+    await ctx.admin.setKillSwitch(parsed.data.on);
+    return { ok: true, killed: parsed.data.on };
+  });
+  server.get("/api/admin/worlds", admin, async () => ctx.admin.listWorlds());
+  server.post("/api/admin/worlds", admin, async (req, reply) => {
+    const parsed = NewWorld.safeParse(req.body);
+    if (!parsed.success) return reply.code(400).send({ error: z.prettifyError(parsed.error) });
+    return sendResult(reply, await ctx.admin.createWorld(parsed.data));
+  });
+  server.post<{ Params: { worldId: string } }>(
+    "/api/admin/worlds/:worldId/status",
+    admin,
+    async (req, reply) => {
+      const parsed = z
+        .object({ status: z.enum(["running", "paused", "stopped"]) })
+        .safeParse(req.body);
+      if (!parsed.success)
+        return reply.code(400).send({ error: "status: running | paused | stopped" });
+      return sendResult(
+        reply,
+        await ctx.admin.setWorldStatus(req.params.worldId, parsed.data.status),
+      );
+    },
+  );
+  server.get<{ Params: { worldId: string } }>(
+    "/api/admin/worlds/:worldId/moderation",
+    admin,
+    async (req) => ctx.admin.moderation(req.params.worldId),
+  );
+
+  server.get("/api/worlds", async () =>
+    [...ctx.worlds.values()].map((w) => ({
+      id: w.id,
+      name: w.name,
+      default: w.id === ctx.defaultWorldId,
+    })),
+  );
+}
+
+/**
+ * Rutas de un mundo. Se registran dos veces: bajo `/api/worlds/:worldId` y, como alias
+ * temporal del mundo por defecto, bajo `/api` (las rutas que ya usaba el cliente).
+ */
+export function registerWorldRest(server: FastifyInstance, ctx: ApiContext): void {
+  const { config } = ctx;
+  /** Intervención (voz interior, objetos): gasta LLM en moderación y en la reacción. */
+  const intervention = {
+    ...director,
+    config: {
+      rateLimit: { max: config.RATE_LIMIT_INTERVENTION_PER_MINUTE, timeWindow: "1 minute" },
+    },
+  };
+  const command = async (req: FastifyRequest, reply: FastifyReply, cmd: WorldCommand) => {
+    const w = worldOf(ctx, req, reply);
+    if (!w) return reply;
+    return sendResult(reply, await w.command(cmd));
+  };
+
+  server.get("/state", async (req, reply) => {
+    const w = worldOf(ctx, req, reply);
+    return w ? snapshot(w, ctx.provider) : reply;
+  });
 
   /** Mapa Tiled (.tmj) que pinta el cliente; el mismo del que sale el `World`. */
-  server.get("/api/map", async () => app.tmj);
+  server.get("/map", async (req, reply) => {
+    const w = worldOf(ctx, req, reply);
+    return w ? w.tmj : reply;
+  });
 
   /** Jardín de recuerdos: puntuados contra `q` (por defecto, su acción actual), auditoría y fichas. */
-  server.get<{ Params: { id: string } }>("/api/agents/:id/memory", async (req, reply) => {
-    const agent = app.sim.agents.get(req.params.id);
+  server.get<{ Params: { id: string } }>("/agents/:id/memory", async (req, reply) => {
+    const w = worldOf(ctx, req, reply);
+    if (!w) return reply;
+    const live = w.live();
+    const agent = live.agents.find((a) => a.id === req.params.id);
     if (!agent) return reply.code(404).send({ error: "Agente no encontrado" });
-    const { q, limit } = MemoryQuery.parse(req.query);
-    const now = app.clock.now();
-    const scored = await app.memory.inspect({
+    const { q, limit, offset } = MemoryQuery.parse(req.query);
+    const scored = await w.memory.inspect({
       agentId: agent.id,
-      query: q ?? agent.state.action,
-      now,
-      moodValence: agent.state.mood.valence,
+      query: q ?? agent.action,
+      now: live.time,
+      moodValence: agent.mood.valence,
     });
     const memories: ScoredMemoryView[] = scored
-      .slice(0, limit)
+      .slice(offset, offset + limit)
       .map(({ memory, scores }) => ({ memory: toView(memory), scores }));
     const body: AgentMemoryResponse = {
       agentId: agent.id,
-      now,
-      workingMemory: agent.workingMemory.contents.map((i) => i.text),
+      now: live.time,
+      workingMemory: live.workingMemory[agent.id] ?? [],
       memories,
-      audit: await app.memory.store.audit(agent.id, 50),
-      social: await app.social.list(agent.id),
+      total: scored.length,
+      offset,
+      audit: await w.memory.store.audit(agent.id, 50),
+      social: await w.social.list(agent.id),
     };
     return body;
   });
 
   /** Vista Rashomon: cómo recuerda cada agente un evento (o conversación) y cómo ha cambiado. */
-  server.get<{ Params: { id: string } }>("/api/rashomon/:id", async (req) => {
+  server.get<{ Params: { id: string } }>("/rashomon/:id", async (req, reply) => {
+    const w = worldOf(ctx, req, reply);
+    if (!w) return reply;
     const id = req.params.id;
     // Las frases de una conversación tienen id "<conversación>:<turno>".
     const eventId = id.includes(":") ? id.slice(0, id.indexOf(":")) : id;
-    const now = app.clock.now();
-    const records = await app.memory.store.byEvent(eventId);
+    const live = w.live();
+    const names = new Map(live.agents.map((a) => [a.id, a.name]));
+    const records = await w.memory.store.byEvent(eventId);
     const byAgent = new Map<string, MemoryRecord[]>();
     for (const r of records) byAgent.set(r.agentId, [...(byAgent.get(r.agentId) ?? []), r]);
     const accounts: RashomonAccount[] = [];
     for (const [agentId, mems] of byAgent) {
       accounts.push({
         agentId,
-        name: app.sim.agents.get(agentId)?.seed.name ?? agentId,
+        name: names.get(agentId) ?? agentId,
         memories: await Promise.all(
           mems
             .sort((a, b) => a.createdAt - b.createdAt)
             .map(async (m) => {
-              const strength = currentStrength(m, now);
+              const strength = currentStrength(m, live.time);
               return {
                 memory: toView(m),
                 strength,
-                clarity: clarityFor(strength, app.memory.config.retrieval),
-                versions: await app.memory.store.versions(m.id),
+                clarity: clarityFor(strength, w.memory.config.retrieval),
+                versions: await w.memory.store.versions(m.id),
               };
             }),
         ),
       });
     }
     const body: RashomonResponse = {
-      event: (await app.events.get(id)) ?? null,
-      now,
+      event: (await w.events.get(id)) ?? null,
+      now: live.time,
       accounts: accounts.sort((a, b) => a.name.localeCompare(b.name)),
     };
     return body;
   });
 
   /** Línea de tiempo: eventos por día o por rango [from, to) de minutos de juego. */
-  server.get("/api/events", async (req) => {
+  server.get("/events", async (req, reply) => {
+    const w = worldOf(ctx, req, reply);
+    if (!w) return reply;
     const q = EventsQuery.parse(req.query);
     const from = q.day !== undefined ? q.day * 1440 : (q.from ?? 0);
-    const to = q.day !== undefined ? (q.day + 1) * 1440 : (q.to ?? app.clock.now() + 1);
-    return app.events.range(from, to, q.limit);
+    const to = q.day !== undefined ? (q.day + 1) * 1440 : (q.to ?? w.live().time + 1);
+    return w.events.range(from, to, q.limit);
   });
 
-  server.get("/api/chronicles", async () => app.chronicles.list());
+  /** Feed de dramas (lo más interesante que ha pasado), los más recientes primero. */
+  server.get("/dramas", async (req, reply) => {
+    const w = worldOf(ctx, req, reply);
+    if (!w) return reply;
+    const { limit } = z
+      .object({ limit: z.coerce.number().int().positive().max(200).default(50) })
+      .parse(req.query);
+    return w.dramas.recent(limit);
+  });
+
+  server.get("/chronicles", async (req, reply) => {
+    const w = worldOf(ctx, req, reply);
+    return w ? w.chronicles.list() : reply;
+  });
 
   /** Genera ya la crónica de un día (normalmente se escribe sola a las 23:00). */
-  server.post<{ Params: { day: string } }>("/api/chronicles/:day", async (req, reply) => {
-    const day = Number(req.params.day);
-    if (!Number.isInteger(day) || day < 0) return reply.code(400).send({ error: "día inválido" });
-    return (
-      (await app.sim.writeChronicle(day)) ?? reply.code(500).send({ error: "no se pudo generar" })
-    );
-  });
+  const chronicleLimit = {
+    ...director,
+    config: { rateLimit: { max: config.RATE_LIMIT_CHRONICLE_PER_MINUTE, timeWindow: "1 minute" } },
+  };
+  server.post<{ Params: { day: string } }>(
+    "/chronicles/:day",
+    chronicleLimit,
+    async (req, reply) => {
+      const day = Number(req.params.day);
+      if (!Number.isInteger(day) || day < 0) return reply.code(400).send({ error: "día inválido" });
+      return command(req, reply, { type: "chronicle", day });
+    },
+  );
 
   // --- Intervención del jugador ---------------------------------------------------------------
 
-  server.post<{ Params: { id: string } }>("/api/agents/:id/thought", async (req, reply) => {
-    const parsed = ThoughtRequest.safeParse(req.body);
-    if (!parsed.success)
-      return reply.code(400).send({ error: "text requerido (1-500 caracteres)" });
-    if (!app.sim.agents.has(req.params.id))
-      return reply.code(404).send({ error: "Agente no encontrado" });
-    app.sim.injectThought(req.params.id, parsed.data.text);
-    return { ok: true };
-  });
+  server.post<{ Params: { id: string } }>(
+    "/agents/:id/thought",
+    intervention,
+    async (req, reply) => {
+      const parsed = ThoughtRequest.safeParse(req.body);
+      if (!parsed.success)
+        return reply.code(400).send({ error: "text requerido (1-500 caracteres)" });
+      return command(req, reply, {
+        type: "thought",
+        agentId: req.params.id,
+        text: parsed.data.text,
+        userId: req.user?.id ?? null,
+      });
+    },
+  );
 
-  server.post<{ Params: { id: string } }>("/api/world/spots/:id", async (req, reply) => {
+  server.post<{ Params: { id: string } }>("/world/spots/:id", intervention, async (req, reply) => {
     const parsed = SpotStateRequest.safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ error: "state requerido" });
-    if (!app.world.spot(req.params.id))
-      return reply.code(404).send({ error: "Objeto no encontrado" });
-    app.sim.setSpotState(req.params.id, parsed.data.state);
-    return { ok: true };
+    return command(req, reply, {
+      type: "spot",
+      spotId: req.params.id,
+      state: parsed.data.state,
+      userId: req.user?.id ?? null,
+    });
   });
 
-  server.post("/api/world/weather", async (req, reply) => {
+  server.post("/world/weather", director, async (req, reply) => {
     const parsed = WeatherRequest.safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ error: "weather: sunny | cloudy | rain" });
-    app.sim.setWeather(parsed.data.weather);
-    return { ok: true };
+    return command(req, reply, { type: "weather", weather: parsed.data.weather });
   });
 
-  server.get("/api/costs", async () => ({
-    ...app.costs.summary(),
-    unpricedModels: [...app.costs.unpricedModels],
-  }));
+  server.get("/costs", admin, async (req, reply) => {
+    const w = worldOf(ctx, req, reply);
+    return w ? w.costs() : reply;
+  });
 
-  server.post("/api/speed", async (req, reply) => {
+  server.post("/pause", director, async (req, reply) => command(req, reply, { type: "pause" }));
+  server.post("/resume", director, async (req, reply) => command(req, reply, { type: "resume" }));
+
+  server.post("/speed", director, async (req, reply) => {
     const parsed = SetSpeedRequest.safeParse(req.body);
     if (!parsed.success)
       return reply.code(400).send({ error: "speed debe ser 0, 1, 10, 60 o 360" });
-    app.clock.setSpeed(parsed.data.speed);
-    onSpeedChange();
-    return { time: app.clock.now(), speed: app.clock.speed };
+    return command(req, reply, { type: "speed", speed: parsed.data.speed });
   });
+}
+
+/** Registra todas las rutas REST: generales, por mundo y alias del mundo por defecto. */
+export async function registerRest(server: FastifyInstance, ctx: ApiContext): Promise<void> {
+  registerGlobalRest(server, ctx);
+  await server.register(async (s) => registerWorldRest(s, ctx), { prefix: "/api/worlds/:worldId" });
+  await server.register(async (s) => registerWorldRest(s, ctx), { prefix: "/api" });
 }

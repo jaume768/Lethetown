@@ -18,6 +18,8 @@ export class Ambience {
   constructor(
     private readonly scene: Phaser.Scene,
     world: World,
+    /** prefers-reduced-motion: luz por tramos de media hora y lluvia quieta. */
+    private readonly reducedMotion = false,
   ) {
     const w = world.width * TS;
     const h = world.height * TS;
@@ -61,13 +63,14 @@ export class Ambience {
   }
 
   update(gameMinutes: number, dtSeconds: number) {
-    const a = ambientAt(gameMinutes, this.weather);
+    const minutes = this.reducedMotion ? Math.floor(gameMinutes / 30) * 30 : gameMinutes;
+    const a = ambientAt(minutes, this.weather);
     this.veil.setFillStyle(a.tint, a.alpha);
     for (const g of this.glows) {
       const place = this.windowPlace.get(g);
       g.setAlpha(place && this.hiddenPlaces.has(place) ? 0 : a.lights);
     }
-    this.drawRain(dtSeconds);
+    this.drawRain(this.reducedMotion ? 0 : dtSeconds);
   }
 
   private drawRain(dt: number) {

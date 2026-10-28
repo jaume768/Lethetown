@@ -20,6 +20,8 @@ export interface CompletionRequest {
   cacheKey?: string;
   /** Metadatos para el registro de costes y para el MockProvider. */
   meta: CompletionMeta;
+  /** Cancela la llamada (timeout propio de ResilientProvider). */
+  signal?: AbortSignal;
 }
 
 export interface CompletionMeta {
@@ -33,6 +35,21 @@ export interface CompletionResult {
   usage: TokenUsage;
   /** Modelo que realmente respondió (puede diferir si hubo fallback). */
   model: string;
+  /** Multiplicador de precio (Batch API: 0.5). Por defecto 1. */
+  priceMultiplier?: number;
+}
+
+/** Proveedor que además admite envío por lotes asíncrono (p. ej. Message Batches de Anthropic). */
+export interface BatchCapableProvider extends LLMProvider {
+  /** Envía las peticiones en un lote y espera los resultados (en el mismo orden). */
+  submitBatch(
+    reqs: CompletionRequest[],
+    opts: { pollMs: number; signal: AbortSignal },
+  ): Promise<(CompletionResult | Error)[]>;
+}
+
+export function isBatchCapable(p: LLMProvider): p is BatchCapableProvider {
+  return typeof (p as Partial<BatchCapableProvider>).submitBatch === "function";
 }
 
 export interface LLMProvider {
