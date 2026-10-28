@@ -1,6 +1,8 @@
 import type { AgentMemoryResponse, AgentState, World } from "@lethetown/shared";
 import { useEffect, useMemo, useState } from "react";
+import { useAssets } from "../net/assets";
 import { api } from "../net/store";
+import { Portrait } from "./Portrait";
 import { formatGameTime, formatMinuteOfDay } from "./format";
 
 const REFRESH_MS = 3000;
@@ -49,6 +51,7 @@ export function MemoryGarden({ agent, agents, world, thinkingTask }: Props) {
   const [showForgotten, setShowForgotten] = useState(false);
   const [thought, setThought] = useState("");
   const agentId = agent?.id;
+  const { pack } = useAssets();
 
   useEffect(() => {
     if (!agentId) return;
@@ -96,9 +99,17 @@ export function MemoryGarden({ agent, agents, world, thinkingTask }: Props) {
 
   return (
     <section className="panel inspector">
-      <div className="row">
-        <h3>{agent.name}</h3>
-        {thinkingTask && <span className="thinking small">pensando… ({thinkingTask})</span>}
+      <div className="row inspector-head">
+        <Portrait
+          pack={pack}
+          agentId={agent.id}
+          name={agent.name}
+          animation={agent.lastUtterance ? "talk" : thinkingTask ? "nod" : null}
+        />
+        <div>
+          <h3>{agent.name}</h3>
+          {thinkingTask && <span className="thinking small">pensando… ({thinkingTask})</span>}
+        </div>
       </div>
       <div className="small">
         📍 {agent.locationId}

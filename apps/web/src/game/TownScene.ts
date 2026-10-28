@@ -51,6 +51,8 @@ export class TownScene extends Phaser.Scene {
   /** Agentes con una llamada al LLM en curso. */
   isThinking: (id: string) => boolean = () => false;
   ready = false;
+  /** prefers-reduced-motion: sin animaciones decorativas. */
+  reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
 
   constructor() {
     super("town");
@@ -167,7 +169,12 @@ export class TownScene extends Phaser.Scene {
       const p = positionAt(v.state, now);
       v.container.setPosition(Math.round(p.x * TS + TS / 2), Math.round(p.y * TS + TS));
       v.container.setDepth(10 + p.y / this.world.height);
-      v.update(p, { thinking: this.isThinking(v.state.id), realSeconds, dtSeconds });
+      v.update(p, {
+        thinking: this.isThinking(v.state.id),
+        realSeconds,
+        dtSeconds,
+        reducedMotion: this.reducedMotion,
+      });
     }
     this.updateRoofs(now);
     this.ambience?.update(now, dtSeconds);
@@ -230,8 +237,26 @@ export class TownScene extends Phaser.Scene {
     const texture = sheet && key ? this.textureFor(agent, key) : "pixel";
     const view = new AgentView(this, agent, sheet, texture, (id) => this.onSelect(id));
     this.views.set(agent.id, view);
+    this.loadPortrait(agent.id, view);
     if (agent.id === this.selectedId) view.setSelected(true);
     return view;
+  }
+
+  /** Carga (en diferido) el retrato pequeño del agente; si falta, el bocadillo va sin retrato. */
+  private loadPortrait(agentId: string, view: AgentView) {
+    const p = this.pack?.portraits;
+    if (!this.assetsOk || !p?.mapImage || !p.mapFrameSize) return;
+    const key = `portrait:${agentId}`;
+    const attach = () => {
+      if (this.textures.exists(key)) view.setPortrait(key, p.columns);
+    };
+    if (this.textures.exists(key)) return attach();
+    this.load.spritesheet(key, encodeURI(`/${p.mapImage.replace("{agent}", agentId)}`), {
+      frameWidth: p.mapFrameSize,
+      frameHeight: p.mapFrameSize,
+    });
+    this.load.once(`filecomplete-spritesheet-${key}`, attach);
+    this.load.start();
   }
 
   /** Textura del personaje; si la hoja es recoloreable, crea una copia con los colores del agente. */

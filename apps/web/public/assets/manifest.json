@@ -11,7 +11,9 @@
           "tileWidth": 16,
           "tileHeight": 16,
           "imageWidth": 128,
-          "imageHeight": 128
+          "imageHeight": 128,
+          "license": "commercial",
+          "source": "lethetown"
         }
       ],
       "stamps": {
@@ -446,13 +448,15 @@
             "hair": "#ff0000",
             "shirt": "#00ff00",
             "pants": "#0000ff"
-          }
+          },
+          "license": "commercial",
+          "source": "lethetown"
         }
       },
       "agentCharacters": {}
     },
     "limezu": {
-      "description": "LimeZu Modern Exteriors + Modern Interiors (Free) + Modern UI, 16x16. No redistribuible: va en assets/vendor (gitignored).",
+      "description": "LimeZu Modern Exteriors + Modern Interiors (Free) + Modern User Interface + Portrait Generator, 16x16. No redistribuir: vive en assets/vendor (ignorado por git).",
       "credits": "Pixel art de LimeZu — https://limezu.itch.io/",
       "tilesets": [
         {
@@ -461,7 +465,9 @@
           "tileWidth": 16,
           "tileHeight": 16,
           "imageWidth": 512,
-          "imageHeight": 1184
+          "imageHeight": 1184,
+          "license": "commercial",
+          "source": "limezu-exteriors"
         },
         {
           "name": "ext_props",
@@ -469,7 +475,9 @@
           "tileWidth": 16,
           "tileHeight": 16,
           "imageWidth": 512,
-          "imageHeight": 3584
+          "imageHeight": 3584,
+          "license": "commercial",
+          "source": "limezu-exteriors"
         },
         {
           "name": "ext_garden",
@@ -477,7 +485,9 @@
           "tileWidth": 16,
           "tileHeight": 16,
           "imageWidth": 512,
-          "imageHeight": 3136
+          "imageHeight": 3136,
+          "license": "commercial",
+          "source": "limezu-exteriors"
         },
         {
           "name": "ext_buildings",
@@ -485,7 +495,9 @@
           "tileWidth": 16,
           "tileHeight": 16,
           "imageWidth": 512,
-          "imageHeight": 3200
+          "imageHeight": 3200,
+          "license": "commercial",
+          "source": "limezu-exteriors"
         },
         {
           "name": "int_rooms",
@@ -493,7 +505,9 @@
           "tileWidth": 16,
           "tileHeight": 16,
           "imageWidth": 272,
-          "imageHeight": 368
+          "imageHeight": 368,
+          "license": "non-commercial",
+          "source": "limezu-interiors-free"
         },
         {
           "name": "int_furniture",
@@ -501,7 +515,9 @@
           "tileWidth": 16,
           "tileHeight": 16,
           "imageWidth": 256,
-          "imageHeight": 1424
+          "imageHeight": 1424,
+          "license": "non-commercial",
+          "source": "limezu-interiors-free"
         }
       ],
       "stamps": {
@@ -917,7 +933,9 @@
               "count": 9,
               "frameRate": 6
             }
-          }
+          },
+          "license": "non-commercial",
+          "source": "limezu-interiors-free"
         },
         "alex": {
           "image": "assets/vendor/limezu/interiors_free/Modern tiles_Free/Characters_free/Alex_16x16.png",
@@ -992,7 +1010,9 @@
               "count": 9,
               "frameRate": 6
             }
-          }
+          },
+          "license": "non-commercial",
+          "source": "limezu-interiors-free"
         },
         "amelia": {
           "image": "assets/vendor/limezu/interiors_free/Modern tiles_Free/Characters_free/Amelia_16x16.png",
@@ -1067,7 +1087,9 @@
               "count": 9,
               "frameRate": 6
             }
-          }
+          },
+          "license": "non-commercial",
+          "source": "limezu-interiors-free"
         },
         "bob": {
           "image": "assets/vendor/limezu/interiors_free/Modern tiles_Free/Characters_free/Bob_16x16.png",
@@ -1142,14 +1164,137 @@
               "count": 9,
               "frameRate": 6
             }
-          }
+          },
+          "license": "non-commercial",
+          "source": "limezu-interiors-free"
         }
       },
       "agentCharacters": {
         "lucia": "amelia",
         "mateo": "bob",
         "carmen": "alex"
+      },
+      "ui": {
+        "license": "commercial",
+        "source": "limezu-ui",
+        "image": "assets/vendor/limezu/ui/16x16/Modern_UI_Style_1.png",
+        "pieces": {
+          "panel": {
+            "x": 8,
+            "y": 8,
+            "w": 32,
+            "h": 31,
+            "slice": 8
+          },
+          "dialog": {
+            "x": 58,
+            "y": 129,
+            "w": 28,
+            "h": 29,
+            "slice": 9
+          },
+          "card": {
+            "x": 13,
+            "y": 61,
+            "w": 22,
+            "h": 22,
+            "slice": 4
+          },
+          "button": {
+            "x": 277,
+            "y": 466,
+            "w": 22,
+            "h": 11,
+            "slice": 4
+          },
+          "buttonActive": {
+            "x": 245,
+            "y": 466,
+            "w": 22,
+            "h": 11,
+            "slice": 4
+          }
+        }
+      },
+      "portraits": {
+        "license": "commercial",
+        "source": "limezu-portraits",
+        "image": "assets/vendor/limezu/portraits/generated/{agent}.png",
+        "frameSize": 64,
+        "mapImage": "assets/vendor/limezu/portraits/generated/{agent}-map.png",
+        "mapFrameSize": 32,
+        "columns": 10,
+        "animations": {
+          "talk": {
+            "row": 0,
+            "start": 0,
+            "count": 10,
+            "frameRate": 8
+          },
+          "nod": {
+            "row": 1,
+            "start": 0,
+            "count": 10,
+            "frameRate": 8
+          },
+          "shake": {
+            "row": 2,
+            "start": 0,
+            "count": 10,
+            "frameRate": 8
+          }
+        }
       }
     }
-  }
+  },
+  "credits": [
+    {
+      "id": "lethetown",
+      "name": "Pixel art placeholder y emotes",
+      "author": "Lethetown",
+      "url": "https://github.com/jaume768/Lethetown",
+      "license": "commercial",
+      "notice": "Generado por código en este repositorio."
+    },
+    {
+      "id": "limezu-exteriors",
+      "name": "Modern Exteriors",
+      "author": "LimeZu",
+      "url": "https://limezu.itch.io/modernexteriors",
+      "license": "commercial",
+      "notice": "Pixel art de LimeZu — https://limezu.itch.io/"
+    },
+    {
+      "id": "limezu-interiors-free",
+      "name": "Modern Interiors (Free)",
+      "author": "LimeZu",
+      "url": "https://limezu.itch.io/moderninteriors",
+      "license": "non-commercial",
+      "notice": "Versión gratuita, solo uso no comercial."
+    },
+    {
+      "id": "limezu-ui",
+      "name": "Modern User Interface",
+      "author": "LimeZu",
+      "url": "https://limezu.itch.io/modernuserinterface",
+      "license": "commercial",
+      "notice": "Pixel art de LimeZu — https://limezu.itch.io/"
+    },
+    {
+      "id": "limezu-portraits",
+      "name": "Portrait Generator",
+      "author": "LimeZu (arte) · MrSwordsman (herramienta)",
+      "url": "https://legendaryswordsman2.itch.io/portrait-generator",
+      "license": "commercial",
+      "notice": "Retratos compuestos con las piezas del Portrait Generator de Modern User Interface."
+    },
+    {
+      "id": "pixelify-sans",
+      "name": "Pixelify Sans",
+      "author": "The Pixelify Sans Project Authors",
+      "url": "https://github.com/eifetx/Pixelify-Sans",
+      "license": "commercial",
+      "notice": "SIL Open Font License 1.1"
+    }
+  ]
 }

@@ -6,6 +6,7 @@ import {
   activePack,
   characterFor,
   mapAssetPack,
+  assetsInUse,
   findPath,
   parseTiledMap,
   pathLength,
@@ -138,6 +139,26 @@ describe("manifest de assets", () => {
     expect(characterFor(pack, "desconocido", "no-existe")).toBe(Object.keys(pack.characters)[0]);
     const walk = pack.characters[characterFor(pack, "mateo")]!.animations["walk_down"];
     expect(walk?.count).toBeGreaterThan(1);
+  });
+
+  it("todo asset con `source` tiene su entrada de créditos", () => {
+    const ids = new Set(manifest.credits.map((c) => c.id));
+    for (const p of Object.values(manifest.packs)) {
+      const all = [...p.tilesets, ...Object.values(p.characters), p.ui, p.portraits];
+      for (const a of all) if (a?.source) expect(ids.has(a.source), a.source).toBe(true);
+    }
+  });
+
+  it("assetsInUse distingue los assets no comerciales en uso", () => {
+    const limezu = manifest.packs["limezu"]!;
+    const used = assetsInUse(limezu, {
+      tilesets: ["ext_terrains", "int_rooms"],
+      agents: [{ id: "lucia" }, { id: "carmen" }],
+    });
+    const nc = used.filter((a) => a.license === "non-commercial").map((a) => a.name);
+    expect(nc).toEqual(["int_rooms", "amelia", "alex"]);
+    expect(used.find((a) => a.name === "ext_terrains")?.license).toBe("commercial");
+    expect(used.find((a) => a.name === "amelia")?.usedBy).toEqual(["lucia"]);
   });
 });
 

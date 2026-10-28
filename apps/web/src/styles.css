@@ -346,3 +346,36 @@ textarea.field {
   margin: 2px 0 0;
   font-size: 13px;
 }
+
+/* --- Retratos (Portrait Generator) --------------------------------------------------------- */
+.portrait {
+  flex: none;
+  image-rendering: pixelated;
+  background-repeat: no-repeat;
+  background-position-x: 0;
+}
+.portrait.animated {
+  animation: portrait-frames var(--portrait-duration) steps(var(--portrait-steps)) infinite;
+}
+@keyframes portrait-frames {
+  to {
+    background-position-x: var(--portrait-end);
+  }
+}
+.portrait.fallback {
+  display: grid;
+  place-items: center;
+  background: #2a3042;
+  color: #f2e6c9;
+  font-size: 28px;
+}
+.inspector-head {
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-start;
+}
+@media (prefers-reduced-motion: reduce) {
+  .portrait.animated {
+    animation: none;
+  }
+}
