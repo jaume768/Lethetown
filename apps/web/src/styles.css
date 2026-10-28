@@ -1,0 +1,172 @@
+:root {
+  --bg: #f4f1ea;
+  --panel: #ffffff;
+  --text: #1d1d1d;
+  --muted: #6b6b6b;
+  --accent: #3d6fb4;
+  --border: #ddd6c8;
+  font-family: system-ui, sans-serif;
+  color: var(--text);
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+}
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 420px;
+  gap: 12px;
+  padding: 12px;
+  height: 100vh;
+}
+main {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+}
+aside {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+}
+.map {
+  width: 100%;
+  max-height: 62vh;
+}
+.map canvas {
+  border-radius: 8px;
+}
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.panel h3 {
+  margin: 0 0 6px;
+  font-size: 15px;
+}
+.panel h4 {
+  margin: 10px 0 4px;
+  font-size: 13px;
+}
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.clock {
+  font-size: 18px;
+}
+.badge {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+.badge.ok {
+  background: #d9f2dc;
+}
+.badge.off {
+  background: #f6d5d5;
+}
+.speeds {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+.speeds button {
+  flex: 1;
+  padding: 6px;
+  border: 1px solid var(--border);
+  background: #faf8f3;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.speeds button.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+.cost {
+  font-size: 24px;
+  font-weight: 600;
+}
+.muted {
+  color: var(--muted);
+}
+.small {
+  font-size: 12px;
+}
+.log {
+  flex: 1;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+}
+.log-body {
+  overflow-y: auto;
+  font-size: 13px;
+  font-family: ui-monospace, monospace;
+  flex: 1;
+}
+.ev-speech {
+  color: #0d6e8a;
+}
+.ev-plan {
+  color: #9a6a00;
+}
+.ev-system {
+  color: #8e3fa8;
+}
+.bar {
+  display: grid;
+  grid-template-columns: 70px 1fr;
+  align-items: center;
+  font-size: 12px;
+  gap: 6px;
+  margin: 2px 0;
+}
+.bar-track {
+  background: #eee;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.bar-fill {
+  background: var(--accent);
+  height: 100%;
+}
+.plan,
+.inspector ul {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+}
+.memories {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.memories th,
+.memories td {
+  text-align: left;
+  padding: 3px 4px;
+  border-bottom: 1px solid #eee;
+  vertical-align: top;
+}
+.memories td:nth-child(-n + 3) {
+  font-family: ui-monospace, monospace;
+}
+.clarity-vague td {
+  color: var(--muted);
+  font-style: italic;
+}
+.clarity-forgotten td {
+  color: #bbb;
+  text-decoration: line-through;
+}
