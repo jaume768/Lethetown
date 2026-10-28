@@ -112,7 +112,7 @@ export function recallText(scored: ScoredMemory): string {
 }
 
 /**
- * Esencia provisional mientras no exista compresión con LLM (ver future.ts):
+ * Esencia provisional mientras el GistCompressor (human.ts) no haya generado `gist`:
  * conserva las primeras palabras y marca la vaguedad.
  */
 export function vagueGist(text: string, words = 6): string {

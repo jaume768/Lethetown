@@ -1,8 +1,16 @@
-/** Borra memorias y costes y vuelve a sembrar los recuerdos iniciales de seeds/agents.json. */
+/** Borra memorias, costes, auditoría, fichas, eventos y crónicas, y vuelve a sembrar los recuerdos iniciales de seeds/agents.json. */
 import { loadConfig } from "../config";
 import { bootstrap } from "../bootstrap";
 import { createDb } from "../db/client";
-import { llmCalls, memories } from "../db/schema";
+import {
+  chronicles,
+  llmCalls,
+  memories,
+  memoryAudit,
+  memoryVersions,
+  simEvents,
+  socialProfiles,
+} from "../db/schema";
 
 const config = loadConfig();
 if (!config.DATABASE_URL) {
@@ -10,8 +18,17 @@ if (!config.DATABASE_URL) {
   process.exit(1);
 }
 const { db, pool } = createDb(config.DATABASE_URL);
-await db.delete(memories);
-await db.delete(llmCalls);
+for (const table of [
+  memories,
+  llmCalls,
+  memoryAudit,
+  memoryVersions,
+  socialProfiles,
+  simEvents,
+  chronicles,
+]) {
+  await db.delete(table);
+}
 await pool.end();
 
 const app = await bootstrap(config, (m) => console.log(`[seed] ${m}`));

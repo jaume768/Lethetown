@@ -13,9 +13,15 @@ export * from "./memory/working-memory";
 export * from "./memory/in-memory-store";
 export * from "./memory/hash-embedder";
 export * from "./memory/memory-system";
-export * from "./memory/future";
+export * from "./memory/config";
+export * from "./memory/human";
+export * from "./memory/maintenance";
+export * from "./util/random";
 
 export * from "./agent/agent";
 export * from "./agent/prompts";
 export * from "./agent/parse";
 export * from "./agent/mock-responder";
+export * from "./agent/activity";
+export * from "./agent/chronicle";
+export * from "./agent/interview";

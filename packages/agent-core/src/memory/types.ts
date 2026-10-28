@@ -1,4 +1,10 @@
-import type { MemorySource, MemoryType, MemoryView } from "@lethetown/shared";
+import type {
+  MemoryAuditEntry,
+  MemorySource,
+  MemoryType,
+  MemoryVersion,
+  MemoryView,
+} from "@lethetown/shared";
 
 /**
  * Recuerdo completo. `strength` y `lastAccessedAt` son los valores en el último refuerzo;
@@ -24,10 +30,24 @@ export interface NewMemory {
   emotionalValence?: number;
   people?: string[];
   placeId?: string | null;
+  eventId?: string | null;
+  links?: string[];
 }
 
 export type MemoryPatch = Partial<
-  Pick<MemoryRecord, "strength" | "stability" | "lastAccessedAt" | "accessCount" | "gist" | "text">
+  Pick<
+    MemoryRecord,
+    | "strength"
+    | "stability"
+    | "lastAccessedAt"
+    | "accessCount"
+    | "gist"
+    | "text"
+    | "emotionalValence"
+    | "source"
+    | "status"
+    | "forgottenAt"
+  >
 >;
 
 /** Almacén de recuerdos inyectable (en memoria para tests, Postgres+pgvector en el servidor). */
@@ -41,6 +61,15 @@ export interface MemoryStore {
    * por similitud; el de memoria devuelve todos. La puntuación final se hace en agent-core.
    */
   candidates(agentId: string, queryEmbedding: number[], limit: number): Promise<MemoryRecord[]>;
+  delete(id: string): Promise<void>;
+  /** Historial de versiones (reconsolidación, cambios de fuente). */
+  addVersion(version: MemoryVersion): Promise<void>;
+  versions(memoryId: string): Promise<MemoryVersion[]>;
+  /** Registro de decisiones de olvido/transformación con su motivo. */
+  addAudit(entry: MemoryAuditEntry): Promise<void>;
+  audit(agentId: string, limit?: number): Promise<MemoryAuditEntry[]>;
+  /** Recuerdos de un evento (todas los agentes), para la vista Rashomon. */
+  byEvent(eventId: string): Promise<MemoryRecord[]>;
 }
 
 export interface Embedder {

@@ -6,6 +6,13 @@
     "traits": ["creativa", "despistada", "cálida", "insegura con su trabajo"],
     "description": "Lucía es ilustradora freelance. Se mudó al pueblo hace un año buscando calma. Trabaja desde casa pero le gusta dibujar en el café o en el parque.",
     "homeId": "casa_azul",
+    "appearance": {
+      "sheet": "default",
+      "skin": "#f5d0b0",
+      "hair": "#c0502e",
+      "shirt": "#e0a030",
+      "pants": "#3a4a6b"
+    },
     "initialMemories": [
       "Soy ilustradora y estoy terminando los dibujos de un cuento infantil.",
       "Mateo prepara el mejor café con leche del pueblo y siempre me pregunta por mis dibujos.",
@@ -20,6 +27,13 @@
     "traits": ["sociable", "trabajador", "bromista", "algo cabezota"],
     "description": "Mateo regenta el Café La Ola desde que murió su padre. Vive en la casa roja con su madre, Carmen. Conoce a todo el mundo y le encanta charlar.",
     "homeId": "casa_roja",
+    "appearance": {
+      "sheet": "default",
+      "skin": "#d9a77c",
+      "hair": "#2a1d14",
+      "shirt": "#3f8f5a",
+      "pants": "#2b2b3b"
+    },
     "initialMemories": [
       "Abro el Café La Ola cada mañana a las ocho.",
       "Mi madre, Carmen, se preocupa demasiado por mí.",
@@ -34,6 +48,13 @@
     "traits": ["observadora", "cariñosa", "memoriosa", "chismosa"],
     "description": "Carmen fue maestra en la escuela del pueblo durante treinta años. Ahora jubilada, cuida su huerto, pasea por el parque y sabe la vida de todos.",
     "homeId": "casa_roja",
+    "appearance": {
+      "sheet": "default",
+      "skin": "#eac3a0",
+      "hair": "#d8d8d8",
+      "shirt": "#8a4fa8",
+      "pants": "#5a4030"
+    },
     "initialMemories": [
       "Fui maestra en la escuela del pueblo durante treinta años.",
       "Mi hijo Mateo trabaja demasiado en el café desde que murió su padre.",

@@ -46,7 +46,8 @@ export function registerWs(server: FastifyInstance, app: App) {
     socket.on("close", () => clients.delete(socket));
   });
 
-  app.sim.onEvent((event) => broadcast({ type: "event", event }));
+  // Eventos del log, "pensando", efectos de memoria, crónicas y cambios del mundo.
+  app.sim.onSignal((signal) => broadcast(signal));
 
   let lastCalls = -1;
   const timer = setInterval(() => {

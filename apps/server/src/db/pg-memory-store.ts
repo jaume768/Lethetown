@@ -1,8 +1,9 @@
 import type { MemoryPatch, MemoryRecord, MemoryStore } from "@lethetown/agent-core";
-import type { MemorySource, MemoryType } from "@lethetown/shared";
-import { cosineDistance, desc, eq, sql } from "drizzle-orm";
+import type { MemoryAuditEntry, MemorySource, MemoryType, MemoryVersion } from "@lethetown/shared";
+import { MemoryAuditAction } from "@lethetown/shared";
+import { and, cosineDistance, desc, eq, sql } from "drizzle-orm";
 import type { Db } from "./client";
-import { memories } from "./schema";
+import { memories, memoryAudit, memoryVersions } from "./schema";
 
 type Row = typeof memories.$inferSelect;
 
@@ -10,6 +11,7 @@ const toRecord = (r: Row): MemoryRecord => ({
   ...r,
   source: r.source as MemorySource,
   type: r.type as MemoryType,
+  status: r.status === "archived" ? "archived" : "active",
 });
 
 /** MemoryStore sobre Postgres + pgvector. */
@@ -44,7 +46,11 @@ export class PgMemoryStore implements MemoryStore {
     limit: number,
   ): Promise<MemoryRecord[]> {
     const third = Math.max(1, Math.floor(limit / 3));
-    const base = () => this.db.select().from(memories).where(eq(memories.agentId, agentId));
+    const base = () =>
+      this.db
+        .select()
+        .from(memories)
+        .where(and(eq(memories.agentId, agentId), eq(memories.status, "active")));
     const [similar, recent, important] = await Promise.all([
       base().orderBy(cosineDistance(memories.embedding, queryEmbedding)).limit(third),
       base().orderBy(desc(memories.lastAccessedAt)).limit(third),
@@ -53,6 +59,42 @@ export class PgMemoryStore implements MemoryStore {
     const byId = new Map<string, Row>();
     for (const r of [...similar, ...recent, ...important]) byId.set(r.id, r);
     return [...byId.values()].map(toRecord);
+  }
+
+  async delete(id: string): Promise<void> {
+    await this.db.delete(memories).where(eq(memories.id, id));
+  }
+
+  async addVersion(v: MemoryVersion): Promise<void> {
+    await this.db.insert(memoryVersions).values(v);
+  }
+
+  async versions(memoryId: string): Promise<MemoryVersion[]> {
+    const rows = await this.db
+      .select()
+      .from(memoryVersions)
+      .where(eq(memoryVersions.memoryId, memoryId))
+      .orderBy(memoryVersions.version);
+    return rows.map(({ id: _id, ...v }) => v);
+  }
+
+  async addAudit(entry: MemoryAuditEntry): Promise<void> {
+    await this.db.insert(memoryAudit).values(entry);
+  }
+
+  async audit(agentId: string, limit = 100): Promise<MemoryAuditEntry[]> {
+    const rows = await this.db
+      .select()
+      .from(memoryAudit)
+      .where(eq(memoryAudit.agentId, agentId))
+      .orderBy(desc(memoryAudit.id))
+      .limit(limit);
+    return rows.map(({ id: _id, ...e }) => ({ ...e, action: MemoryAuditAction.parse(e.action) }));
+  }
+
+  async byEvent(eventId: string): Promise<MemoryRecord[]> {
+    const rows = await this.db.select().from(memories).where(eq(memories.eventId, eventId));
+    return rows.map(toRecord);
   }
 
   async deleteAll(): Promise<void> {

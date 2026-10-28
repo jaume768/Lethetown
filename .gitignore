@@ -9,3 +9,9 @@ coverage/
 .env
 .env.*
 !.env.example
+
+# Packs de terceros (licencia LimeZu: prohibido redistribuir)
+apps/web/public/assets/vendor/
+
+# Resultados de pnpm interview
+interviews/

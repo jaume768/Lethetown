@@ -7,6 +7,10 @@ const COLORS: Record<SimEvent["kind"], string> = {
   observation: "\x1b[90m",
   plan: "\x1b[33m",
   system: "\x1b[35m",
+  world: "\x1b[32m",
+  thought: "\x1b[34m",
+  memory: "\x1b[95m",
+  chronicle: "\x1b[93m",
 };
 
 export function formatEvent(e: SimEvent, color = process.stdout.isTTY): string {
