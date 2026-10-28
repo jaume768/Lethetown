@@ -22,6 +22,13 @@
       "when": 1793188340295,
       "tag": "0002_memory_links",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793189800355,
+      "tag": "0003_human_memory",
+      "breakpoints": true
     }
   ]
 }

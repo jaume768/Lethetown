@@ -1,7 +1,14 @@
 import { z } from "zod";
 import { AgentState } from "./agent";
-import { ScoredMemoryView } from "./memory";
-import { SimSpeed, World } from "./world";
+import {
+  Clarity,
+  MemoryAuditEntry,
+  MemoryVersion,
+  MemoryView,
+  ScoredMemoryView,
+  SocialProfile,
+} from "./memory";
+import { SimSpeed, Weather, World } from "./world";
 
 export const TokenUsage = z.object({
   inputTokens: z.number().int().nonnegative(),
@@ -25,12 +32,27 @@ export const CostSummary = z.object({
 });
 export type CostSummary = z.infer<typeof CostSummary>;
 
+export const SimEventKind = z.enum([
+  "action",
+  "speech",
+  "observation",
+  "plan",
+  "system",
+  "world",
+  "thought",
+  "memory",
+  "chronicle",
+]);
+export type SimEventKind = z.infer<typeof SimEventKind>;
+
 export const SimEvent = z.object({
   id: z.string(),
   time: z.number(),
   agentId: z.string().nullable(),
-  kind: z.enum(["action", "speech", "observation", "plan", "system"]),
+  kind: SimEventKind,
   text: z.string(),
+  /** Agentes implicados (hablante, oyente, quien lo oyó a escondidas...). */
+  participants: z.array(z.string()).default([]),
 });
 export type SimEvent = z.infer<typeof SimEvent>;
 
@@ -45,6 +67,7 @@ export const WorldSnapshot = z.object({
   clock: ClockState,
   agents: z.array(AgentState),
   provider: z.string(),
+  weather: Weather,
 });
 export type WorldSnapshot = z.infer<typeof WorldSnapshot>;
 
@@ -53,7 +76,43 @@ export const AgentMemoryResponse = z.object({
   now: z.number(),
   workingMemory: z.array(z.string()),
   memories: z.array(ScoredMemoryView),
+  /** Decisiones de olvido/transformación recientes ("olvidó X porque..."). */
+  audit: z.array(MemoryAuditEntry),
+  social: z.array(SocialProfile),
 });
+
+/** Vista Rashomon: cómo recuerda un evento cada agente implicado, y cómo ha cambiado. */
+export const RashomonAccount = z.object({
+  agentId: z.string(),
+  name: z.string(),
+  memories: z.array(
+    z.object({
+      memory: MemoryView,
+      clarity: Clarity,
+      strength: z.number(),
+      versions: z.array(MemoryVersion),
+    }),
+  ),
+});
+export type RashomonAccount = z.infer<typeof RashomonAccount>;
+
+export const RashomonResponse = z.object({
+  event: SimEvent.nullable(),
+  now: z.number(),
+  accounts: z.array(RashomonAccount),
+});
+export type RashomonResponse = z.infer<typeof RashomonResponse>;
+
+export const Chronicle = z.object({
+  day: z.number().int(),
+  title: z.string(),
+  text: z.string(),
+});
+export type Chronicle = z.infer<typeof Chronicle>;
+
+export const ThoughtRequest = z.object({ text: z.string().min(1).max(500) });
+export const SpotStateRequest = z.object({ state: z.string().min(1).max(80) });
+export const WeatherRequest = z.object({ weather: Weather });
 export type AgentMemoryResponse = z.infer<typeof AgentMemoryResponse>;
 
 export const SetSpeedRequest = z.object({ speed: SimSpeed });

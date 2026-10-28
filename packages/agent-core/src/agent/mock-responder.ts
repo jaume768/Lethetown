@@ -158,7 +158,10 @@ function mockDecide(req: CompletionRequest): string {
     .exec(p)?.[1]
     ?.match(/(\w+): (rot[oa]|estropead[oa]|averiad[oa])/);
   const thought = /^- Pensé: (.+)$/m.exec(p)?.[1];
-  const rumor = /^- Oí a (.+?) decirle a .+? algo como: "(.+)"$/m.exec(p);
+  // Rumor: algo oído a escondidas que no sea ya un rumor (evita "oí que oí que...").
+  const rumor = [...p.matchAll(/^- Oí a (.+?) decirle a .+? algo como: "(.+)"$/gm)].find(
+    (m) => !/Oí a|Sabes/.test(m[2]!),
+  );
 
   if (broken && h % 2 === 0) {
     return JSON.stringify({
@@ -173,7 +176,7 @@ function mockDecide(req: CompletionRequest): string {
     return JSON.stringify({ choice: "talk", to: speaker, say: REPLIES[h % REPLIES.length] });
   }
   const someone = present[h % Math.max(1, present.length)];
-  if (!speaker && someone && rumor && h % 2 === 0) {
+  if (!speaker && someone && rumor && h % 4 === 0) {
     return JSON.stringify({
       choice: "talk",
       to: someone,

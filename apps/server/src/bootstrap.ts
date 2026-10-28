@@ -1,10 +1,21 @@
+import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import {
   AnthropicProvider,
   CostTracker,
+  InMemorySocialProfileStore,
   InMemoryStore,
   LLMClient,
+  LLMConsolidator,
+  LLMEpisodeSummarizer,
+  LLMGistCompressor,
+  LLMReconsolidator,
+  MemoryConfig,
+  MemoryMaintenance,
   MemorySystem,
+  RandomSourceConfuser,
+  seededRng,
+  type SocialProfileStore,
   MockProvider,
   ModelRouter,
   OpenAIProvider,
@@ -18,6 +29,15 @@ import { z } from "zod";
 import { modelsFor, type AppConfig } from "./config";
 import { checkDb, createDb, type DbHandle } from "./db/client";
 import { PgMemoryStore } from "./db/pg-memory-store";
+import {
+  InMemoryChronicleStore,
+  InMemoryEventStore,
+  PgChronicleStore,
+  PgEventStore,
+  PgSocialProfileStore,
+  type ChronicleStore,
+  type EventStore,
+} from "./db/stores";
 import { llmCalls } from "./db/schema";
 import { createEmbedder } from "./embeddings";
 import { fromRoot } from "./paths";
@@ -40,6 +60,10 @@ export interface App {
   clock: GameClock;
   world: WorldMap;
   memory: MemorySystem;
+  llm: LLMClient;
+  social: SocialProfileStore;
+  events: EventStore;
+  chronicles: ChronicleStore;
   costs: CostTracker;
   provider: LimitedProvider;
   storeKind: "postgres" | "memory";
@@ -63,6 +87,14 @@ export async function loadPricing(): Promise<PricingTable> {
     ),
   });
   return (await readJson(Pricing, "config/pricing.json")).models;
+}
+
+/** Config de memoria: valores por defecto + config/memory.json si existe. */
+export async function loadMemoryConfig(log: (msg: string) => void): Promise<MemoryConfig> {
+  const file = "config/memory.json";
+  if (!existsSync(fromRoot(file))) return MemoryConfig.parse({});
+  log(`Config de memoria: ${file}`);
+  return readJson(MemoryConfig, file);
 }
 
 export function createProvider(config: AppConfig): LLMProvider {
@@ -131,7 +163,30 @@ export async function bootstrap(config: AppConfig, log: (msg: string) => void): 
   }
   const embedder = await createEmbedder(config, log);
   log(`Embeddings: ${embedder.name}`);
-  const memory = new MemorySystem({ store, embedder });
+  const memoryConfig = await loadMemoryConfig(log);
+  const rng = seededRng(config.SIM_SEED ?? Date.now());
+  const memory = new MemorySystem({
+    store,
+    embedder,
+    config: memoryConfig,
+    reconsolidator: new LLMReconsolidator(llm),
+    rng,
+  });
+  const social: SocialProfileStore = db
+    ? new PgSocialProfileStore(db.db)
+    : new InMemorySocialProfileStore();
+  const events: EventStore = db ? new PgEventStore(db.db) : new InMemoryEventStore();
+  const chronicles: ChronicleStore = db
+    ? new PgChronicleStore(db.db)
+    : new InMemoryChronicleStore();
+  const names = () => seeds.map((s) => ({ id: s.id, name: s.name }));
+  const maintenance = new MemoryMaintenance({
+    memory,
+    gist: new LLMGistCompressor(llm),
+    confuser: new RandomSourceConfuser(rng, memoryConfig.sourceConfusion.toLivedShare),
+    summarizer: new LLMEpisodeSummarizer(llm),
+    onError: (task, e) => log(`⚠ Error en "${task}": ${String(e)}`),
+  });
 
   const startTime = await resumeTime(store);
   const speed: SimSpeed = SIM_SPEEDS.includes(config.SIM_SPEED as SimSpeed)
@@ -146,6 +201,19 @@ export async function bootstrap(config: AppConfig, log: (msg: string) => void): 
     clock,
     tickMinutes: config.SIM_TICK_MINUTES,
     walkSpeed: config.SIM_WALK_TILES_PER_MINUTE,
+    social,
+    events,
+    chronicles,
+    consolidator: new LLMConsolidator(llm, memory, social, names),
+    maintenance,
+    rng,
+  });
+  sim.onEvent((e) => {
+    const write = events
+      .add(e)
+      .catch((err: unknown) => log(`⚠ No se pudo guardar el evento: ${String(err)}`))
+      .finally(() => pendingWrites.delete(write));
+    pendingWrites.add(write);
   });
   const seeded = await sim.seedMemoriesIfEmpty(startTime);
   if (seeded) log(`Sembrados los recuerdos iniciales de ${seeded} agentes.`);
@@ -157,6 +225,10 @@ export async function bootstrap(config: AppConfig, log: (msg: string) => void): 
     clock,
     world: worldMap,
     memory,
+    llm,
+    social,
+    events,
+    chronicles,
     costs,
     provider,
     storeKind: kind,

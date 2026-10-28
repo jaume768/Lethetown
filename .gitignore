@@ -12,3 +12,6 @@ coverage/
 
 # Packs de terceros (licencia LimeZu: prohibido redistribuir)
 apps/web/public/assets/vendor/
+
+# Resultados de pnpm interview
+interviews/

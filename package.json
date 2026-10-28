@@ -20,7 +20,8 @@
     "db:generate": "pnpm --filter @lethetown/server db:generate",
     "db:migrate": "pnpm --filter @lethetown/server db:migrate",
     "seed": "pnpm --filter @lethetown/server seed",
-    "map:generate": "tsx tools/generate-map.ts"
+    "map:generate": "tsx tools/generate-map.ts",
+    "interview": "pnpm --filter @lethetown/server interview --"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

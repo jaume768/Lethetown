@@ -35,9 +35,9 @@ retomar desde el primer elemento sin marcar.
 ### Fase E — Mente visible
 
 - [ ] Emotes pixel por actividad/ánimo
-- [ ] `thinking_start` / `thinking_end` por WS + indicador
+- [~] `thinking` (start/end) por WS — servidor hecho; falta indicador en cliente
 - [ ] Bocadillos nine-slice con texto letra a letra
-- [ ] Efectos de memoria (recall / vague / forget) por WS
+- [~] Efectos de memoria (recall / vague / forget) por WS — servidor hecho; falta pintarlos
 - [ ] Inspector "jardín de recuerdos" con filtros
 
 ### Fase F — Ambiente e interfaz
@@ -50,23 +50,23 @@ retomar desde el primer elemento sin marcar.
 
 ### Fase G — Memoria humana completa
 
-- [ ] Config tipada de memoria con valores por defecto documentados
-- [ ] Consolidator (reflexión nocturna con citas)
-- [ ] SocialProfile + store (RAM y Postgres)
-- [ ] GistCompressor
-- [ ] Reconsolidator con historial de versiones
-- [ ] SourceConfuser
-- [ ] Olvido por presupuesto + `memory_audit`
-- [ ] Escuchar a escondidas (rumores)
-- [ ] Fin de conversación natural
+- [x] Config tipada de memoria con valores por defecto documentados
+- [x] Consolidator (reflexión nocturna con citas)
+- [x] SocialProfile + store (RAM y Postgres)
+- [x] GistCompressor
+- [x] Reconsolidator con historial de versiones
+- [x] SourceConfuser
+- [x] Olvido por presupuesto + `memory_audit`
+- [x] Escuchar a escondidas (rumores)
+- [x] Fin de conversación natural
 
 ### Fase H — Funciones estrella
 
-- [ ] Vista Rashomon
-- [ ] Línea de tiempo persistida
-- [ ] `pnpm interview`
-- [ ] Crónica del día
-- [ ] Intervención del jugador (voz interior, eventos del mundo)
+- [~] Vista Rashomon — API `/api/rashomon/:id` hecha; falta UI
+- [~] Línea de tiempo persistida — `sim_events` + `/api/events` hechos; falta barra en UI
+- [x] `pnpm interview`
+- [~] Crónica del día — generación 23:00 + `chronicles` + WS hechos; falta panel UI
+- [~] Intervención del jugador — API hecha (thought, spots, weather); falta panel UI
 
 ### Final
 
@@ -84,6 +84,13 @@ retomar desde el primer elemento sin marcar.
 - **Frames por distancia** al andar (0,5 baldosas por frame) → a x360 se saltan frames en vez de trompicones; quieto, por tiempo real (`pickFrame` en shared, con tests).
 - **Postgres en 5433** (ya en fase 1). Assets vendor ~11 MB extraídos solo en 16×16.
 - **Licencia**: Modern Interiors Free es solo para uso NO comercial.
+- **future.ts → human.ts**: las interfaces de fase 2 ahora reciben el contexto del dueño (prompt de identidad), necesario para llamar al LLM. Se añadió `EpisodeSummarizer` (paso 2 del olvido por presupuesto) y `list()` en `SocialProfileStore`.
+- **Conversaciones**: id propio (se usa como `eventId` de los recuerdos → Rashomon). Terminan cuando quien recibe una frase decide no contestar, por inactividad (`idleMinutes`) o por el máximo de seguridad (12). Al terminar se actualiza la ficha social de ambos (modelo fast).
+- **Escuchar a escondidas**: fragmento contiguo de la frase (60 % de palabras), con fuente "contado por <id>" o "contado por alguien" (50 %). Se guarda con el mismo `eventId`, así aparece en Rashomon.
+- **Olvido por presupuesto**: protegidos = planes de las últimas 24 h, conocimiento semántico de importancia ≥ 6 y todo lo que citan. Los resúmenes ARCHIVAN los originales (no se borran, siguen enlazados); el paso 3 sí borra.
+- **Entrevistas** usan `inspect` (sin refuerzo ni reconsolidación) para no alterar la memoria al medirla.
+- **Mantenimiento** cada hora de juego por agente; consolidación al primer tick dormido de cada noche; crónica a las 23:00.
+- **SIM_SEED**: semilla opcional del azar de la memoria para simulaciones reproducibles.
 
 ## Bloqueos / pendientes
 
