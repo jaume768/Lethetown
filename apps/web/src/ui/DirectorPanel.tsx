@@ -1,5 +1,5 @@
 import { SIM_SPEEDS, type Weather } from "@lethetown/shared";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useI18n, type MessageKey } from "../i18n";
 import { useAssets } from "../net/assets";
 import { hasRole, type User } from "../net/auth";
@@ -24,6 +24,12 @@ export function DirectorPanel({ game, user }: Props) {
   const [spotState, setSpotState] = useState("rota");
   const [killed, setKilled] = useState(false);
   const admin = hasRole(user, "admin");
+  useEffect(() => {
+    if (!admin) return;
+    void api<{ killed?: boolean }>("/api/admin/budget")
+      .then((b) => setKilled(b.killed === true))
+      .catch(() => undefined);
+  }, [admin]);
   const spots =
     game.world?.places.flatMap((p) => p.objects.map((o) => ({ ...o, placeName: p.name }))) ?? [];
   const thinking = Object.values(game.thinking).filter((x) => x.count > 0).length;

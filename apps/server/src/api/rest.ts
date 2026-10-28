@@ -40,6 +40,8 @@ export const NewWorld = z.object({
   name: z.string().trim().min(1).max(60),
   map: z.string().regex(/^seeds\/[\w-]+\.tmj$/, "map: seeds/<nombre>.tmj"),
   seed: z.number().int().nullable().default(null),
+  /** Idioma en el que hablan los agentes y escribe el cronista. */
+  language: z.enum(["es", "en"]).default("es"),
 });
 export type NewWorld = z.infer<typeof NewWorld>;
 
