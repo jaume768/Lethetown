@@ -40,7 +40,9 @@ function mockPlan(req: CompletionRequest): string {
   const home = /^Tu casa: (\S+)$/m.exec(req.system)?.[1] ?? places[0]?.id ?? "home";
   const outings = places.filter((p) => p.kind !== "home");
   const h = hash(req.system + req.prompt);
-  const pick = (i: number) => outings[(h + i) % Math.max(1, outings.length)]?.id ?? home;
+  // Solo dos "perfiles" de agenda, para que los agentes coincidan a menudo en algún sitio.
+  const pick = (i: number) =>
+    outings[(i + (h % 2) * (i % 2)) % Math.max(1, outings.length)]?.id ?? home;
   const plan = [
     { start: "07:00", durationMin: 60, activity: "desayunar en casa", placeId: home },
     { start: "08:00", durationMin: 150, activity: "ocuparse de sus cosas", placeId: pick(0) },

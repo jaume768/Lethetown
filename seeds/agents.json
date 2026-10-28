@@ -1,0 +1,44 @@
+[
+  {
+    "id": "lucia",
+    "name": "Lucía Ferrer",
+    "age": 28,
+    "traits": ["creativa", "despistada", "cálida", "insegura con su trabajo"],
+    "description": "Lucía es ilustradora freelance. Se mudó al pueblo hace un año buscando calma. Trabaja desde casa pero le gusta dibujar en el café o en el parque.",
+    "homeId": "casa_azul",
+    "initialMemories": [
+      "Soy ilustradora y estoy terminando los dibujos de un cuento infantil.",
+      "Mateo prepara el mejor café con leche del pueblo y siempre me pregunta por mis dibujos.",
+      "Carmen me prestó un libro de poemas hace dos semanas y todavía no se lo he devuelto.",
+      "Me agobia que se acerque la fecha de entrega del cuento."
+    ]
+  },
+  {
+    "id": "mateo",
+    "name": "Mateo Ruiz",
+    "age": 34,
+    "traits": ["sociable", "trabajador", "bromista", "algo cabezota"],
+    "description": "Mateo regenta el Café La Ola desde que murió su padre. Vive en la casa roja con su madre, Carmen. Conoce a todo el mundo y le encanta charlar.",
+    "homeId": "casa_roja",
+    "initialMemories": [
+      "Abro el Café La Ola cada mañana a las ocho.",
+      "Mi madre, Carmen, se preocupa demasiado por mí.",
+      "Lucía es la clienta más simpática del café; creo que me gusta.",
+      "El proveedor de café me ha subido los precios y estoy preocupado por el negocio."
+    ]
+  },
+  {
+    "id": "carmen",
+    "name": "Carmen Vidal",
+    "age": 63,
+    "traits": ["observadora", "cariñosa", "memoriosa", "chismosa"],
+    "description": "Carmen fue maestra en la escuela del pueblo durante treinta años. Ahora jubilada, cuida su huerto, pasea por el parque y sabe la vida de todos.",
+    "homeId": "casa_roja",
+    "initialMemories": [
+      "Fui maestra en la escuela del pueblo durante treinta años.",
+      "Mi hijo Mateo trabaja demasiado en el café desde que murió su padre.",
+      "Le presté a Lucía mi libro de poemas favorito.",
+      "Cada mañana paseo por el parque y doy de comer a las palomas junto a la fuente."
+    ]
+  }
+]
