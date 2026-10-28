@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from "react";
+import { reconnect } from "./store";
 
 export type Role = "viewer" | "director" | "admin";
 export interface User {
@@ -42,6 +43,7 @@ export async function login(username: string, password: string): Promise<User> {
   if (!res.ok) throw new Error(((await res.json().catch(() => ({}))) as { error?: string }).error);
   user = ((await res.json()) as { user: User }).user;
   notify();
+  reconnect();
   return user;
 }
 
@@ -49,6 +51,7 @@ export async function logout(): Promise<void> {
   await fetch("/api/auth/logout", { method: "POST" }).catch(() => undefined);
   user = null;
   notify();
+  reconnect();
 }
 
 export function useAuth(): { user: User | null; loaded: boolean } {

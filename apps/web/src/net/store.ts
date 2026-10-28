@@ -70,6 +70,7 @@ function set(patch: Partial<GameState>) {
 function handle(msg: ServerMessage) {
   switch (msg.type) {
     case "snapshot":
+      loadRecentEvents(msg.snapshot.clock.time);
       return set({
         world: msg.snapshot.world,
         provider: msg.snapshot.provider,
@@ -169,6 +170,22 @@ export function connect() {
     // Backoff suave: 1,5 s, 3 s, 4,5 s… hasta 15 s.
     setTimeout(connect, Math.min(15_000, 1500 * (state.retries || 1)));
   };
+}
+
+/** Lo último que pasó (si no, el log arranca vacío hasta el siguiente evento). */
+function loadRecentEvents(now: number) {
+  void api<SimEvent[]>(`/api/events?from=${Math.max(0, now - 180)}&limit=200`)
+    .then((recent) => {
+      const known = new Set(state.events.map((e) => e.id));
+      const merged = [...recent.filter((e) => !known.has(e.id)), ...state.events];
+      set({ events: merged.sort((a, b) => a.time - b.time).slice(-MAX_EVENTS) });
+    })
+    .catch(() => undefined);
+}
+
+/** Vuelve a conectar (p. ej. tras iniciar o cerrar sesión: el WS lleva la cookie de sesión). */
+export function reconnect() {
+  socket?.close();
 }
 
 export function send(msg: ClientMessage) {

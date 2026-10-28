@@ -930,3 +930,12 @@ html.overlay-mode body {
 .modal:focus-visible {
   outline: none;
 }
+html.ui-skin .notice {
+  color: #7a3f1c;
+  border-color: #8a5a32;
+  background: rgba(255, 244, 220, 0.6);
+}
+html.ui-skin .cost,
+html.ui-skin .thinking {
+  color: #8a4a12;
+}
