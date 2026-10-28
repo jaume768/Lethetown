@@ -1,21 +1,37 @@
 import { randomUUID } from "node:crypto";
-import { DEFAULT_DECAY, initialStability, reinforce, type DecayConfig } from "./decay";
-import {
-  DEFAULT_RETRIEVAL,
-  rankMemories,
-  type RetrievalConfig,
-  type ScoredMemory,
-} from "./retrieval";
+import type { MemoryAuditEntry } from "@lethetown/shared";
+import { seededRng, type Rng } from "../util/random";
+import { DEFAULT_MEMORY_CONFIG, type MemoryConfig } from "./config";
+import { initialStability, reinforce } from "./decay";
+import type { Reconsolidator } from "./human";
+import { rankMemories, recallText, type RetrievalConfig, type ScoredMemory } from "./retrieval";
 import type { Embedder, MemoryRecord, MemoryStore, NewMemory } from "./types";
+
+/** Efectos visibles de la memoria (el servidor los emite por WebSocket). */
+export interface MemoryEffect {
+  kind: "recall" | "vague" | "forget" | "gist" | "reconsolidate" | "consolidate" | "archive";
+  agentId: string;
+  memoryId: string;
+  text: string;
+}
 
 export interface MemorySystemDeps {
   store: MemoryStore;
   embedder: Embedder;
-  retrieval?: RetrievalConfig;
-  decay?: DecayConfig;
+  config?: MemoryConfig;
+  reconsolidator?: Reconsolidator;
   /** Candidatos que se piden al almacén antes de puntuar. */
   candidateLimit?: number;
   idGenerator?: () => string;
+  rng?: Rng;
+}
+
+/** Contexto para reconsolidar al recordar (identidad del agente y lo que piensa de otros). */
+export interface RecallContext {
+  system: string;
+  moodLabel: string;
+  /** Resumen de lo que el agente piensa de las personas implicadas. */
+  socialSummary: (people: string[]) => Promise<string>;
 }
 
 export interface RetrieveOptions {
@@ -24,24 +40,45 @@ export interface RetrieveOptions {
   now: number;
   moodValence: number;
   k?: number;
+  /** Si se pasa, los recuerdos recuperados pueden reconsolidarse (reescribirse). */
+  recall?: RecallContext;
 }
 
-/** Orquesta almacén + embeddings + puntuación + decaimiento/refuerzo. */
+/** Orquesta almacén + embeddings + puntuación + decaimiento/refuerzo + reconsolidación. */
 export class MemorySystem {
   readonly store: MemoryStore;
   readonly embedder: Embedder;
-  readonly retrievalConfig: RetrievalConfig;
-  readonly decayConfig: DecayConfig;
+  readonly config: MemoryConfig;
+  readonly rng: Rng;
+  private readonly reconsolidator?: Reconsolidator;
   private readonly candidateLimit: number;
   private readonly newId: () => string;
+  private readonly effectListeners: ((e: MemoryEffect) => void)[] = [];
 
   constructor(deps: MemorySystemDeps) {
     this.store = deps.store;
     this.embedder = deps.embedder;
-    this.retrievalConfig = deps.retrieval ?? DEFAULT_RETRIEVAL;
-    this.decayConfig = deps.decay ?? DEFAULT_DECAY;
+    this.config = deps.config ?? DEFAULT_MEMORY_CONFIG;
+    this.reconsolidator = deps.reconsolidator;
     this.candidateLimit = deps.candidateLimit ?? 200;
     this.newId = deps.idGenerator ?? randomUUID;
+    this.rng = deps.rng ?? seededRng(Date.now());
+  }
+
+  get retrievalConfig(): RetrievalConfig {
+    return this.config.retrieval;
+  }
+
+  onEffect(listener: (e: MemoryEffect) => void): void {
+    this.effectListeners.push(listener);
+  }
+
+  emitEffect(effect: MemoryEffect): void {
+    for (const l of this.effectListeners) l(effect);
+  }
+
+  async audit(entry: MemoryAuditEntry): Promise<void> {
+    await this.store.addAudit(entry);
   }
 
   async remember(input: NewMemory, now: number): Promise<MemoryRecord> {
@@ -59,7 +96,7 @@ export class MemorySystem {
       importance,
       emotionalValence: valence,
       strength: 1,
-      stability: initialStability(importance, valence, this.decayConfig),
+      stability: initialStability(importance, valence, this.config.decay),
       accessCount: 0,
       source: input.source ?? "vivido",
       type: input.type,
@@ -75,19 +112,19 @@ export class MemorySystem {
   }
 
   /** Puntúa todos los recuerdos del agente sin modificarlos (para el inspector). */
-  async inspect(opts: Omit<RetrieveOptions, "k">): Promise<ScoredMemory[]> {
+  async inspect(opts: Omit<RetrieveOptions, "k" | "recall">): Promise<ScoredMemory[]> {
     const [embedding] = await this.embedder.embed([opts.query]);
     const all = await this.store.listByAgent(opts.agentId);
     return rankMemories(
       all,
       { embedding: embedding ?? [], now: opts.now, moodValence: opts.moodValence },
-      this.retrievalConfig,
+      this.config.retrieval,
     );
   }
 
   /**
-   * Recupera los k mejores recuerdos no olvidados y los refuerza (recordar fortalece).
-   * TODO(fase 2): pasar aquí por el Reconsolidator para deformar lo recordado.
+   * Recupera los k mejores recuerdos no olvidados, los refuerza (recordar fortalece) y, con
+   * cierta probabilidad, los reconsolida: el recuerdo se reescribe influido por el ánimo actual.
    */
   async retrieve(opts: RetrieveOptions): Promise<ScoredMemory[]> {
     const [embedding] = await this.embedder.embed([opts.query]);
@@ -99,16 +136,65 @@ export class MemorySystem {
     const ranked = rankMemories(
       candidates,
       { embedding: embedding ?? [], now: opts.now, moodValence: opts.moodValence },
-      this.retrievalConfig,
+      this.config.retrieval,
     );
     const picked = ranked
       .filter((s) => s.memory.status === "active" && s.scores.clarity !== "forgotten")
       .slice(0, opts.k ?? 5);
-    await Promise.all(
-      picked.map((s) =>
-        this.store.update(s.memory.id, reinforce(s.memory, opts.now, this.decayConfig)),
-      ),
-    );
+    for (const s of picked) {
+      await this.store.update(s.memory.id, reinforce(s.memory, opts.now, this.config.decay));
+      this.emitEffect({
+        kind: s.scores.clarity === "vague" ? "vague" : "recall",
+        agentId: s.memory.agentId,
+        memoryId: s.memory.id,
+        text: recallText(s),
+      });
+      if (opts.recall) await this.maybeReconsolidate(s, opts.recall, opts.now);
+    }
     return picked;
+  }
+
+  private async maybeReconsolidate(s: ScoredMemory, ctx: RecallContext, now: number) {
+    const cfg = this.config.reconsolidation;
+    const m = s.memory;
+    if (!this.reconsolidator || s.scores.clarity !== "clear") return;
+    if (m.importance < cfg.minImportance || m.type === "plan") return;
+    if (this.rng() >= cfg.probability) return;
+    const rewritten = await this.reconsolidator.reconsolidate(m, {
+      now,
+      system: ctx.system,
+      moodLabel: ctx.moodLabel,
+      socialSummary: await ctx.socialSummary(m.people),
+    });
+    if (!rewritten || rewritten.text === m.text) return;
+    const previous = await this.store.versions(m.id);
+    await this.store.addVersion({
+      memoryId: m.id,
+      version: previous.length,
+      text: m.text,
+      emotionalValence: m.emotionalValence,
+      source: m.source,
+      at: now,
+      reason: "reconsolidación al recordar",
+    });
+    await this.store.update(m.id, {
+      text: rewritten.text,
+      emotionalValence: rewritten.emotionalValence,
+    });
+    await this.store.addAudit({
+      agentId: m.agentId,
+      memoryId: m.id,
+      memoryText: m.text,
+      action: "reconsolidated",
+      reason: `al recordarlo con ánimo "${ctx.moodLabel}" pasó a: "${rewritten.text}"`,
+      at: now,
+    });
+    s.memory.text = rewritten.text;
+    this.emitEffect({
+      kind: "reconsolidate",
+      agentId: m.agentId,
+      memoryId: m.id,
+      text: rewritten.text,
+    });
   }
 }

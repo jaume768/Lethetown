@@ -15,6 +15,13 @@ const HANDLERS: Record<string, (req: CompletionRequest) => string> = {
   plan: mockPlan,
   importance: mockImportance,
   decide: mockDecide,
+  consolidate: mockConsolidate,
+  gist: mockGist,
+  reconsolidate: mockReconsolidate,
+  summarize: mockSummarize,
+  social: mockSocial,
+  chronicle: mockChronicle,
+  interview: mockInterview,
 };
 
 /** Permite a otros módulos (memoria, crónica, entrevistas) registrar su respuesta mock. */
@@ -185,6 +192,117 @@ function mockDecide(req: CompletionRequest): string {
     });
   }
   return JSON.stringify({ choice: "continue" });
+}
+
+/** Recuerdos numerados ("1. texto") de un prompt. */
+function numbered(prompt: string): string[] {
+  return [...prompt.matchAll(/^\d+\. (.+)$/gm)].map((m) => m[1]!);
+}
+
+function mockConsolidate(req: CompletionRequest): string {
+  const lines = numbered(req.prompt);
+  const people = [
+    ...(/^Personas que conoces: (.+)$/m.exec(req.prompt)?.[1] ?? "").matchAll(/(\w+)=([^,]+)/g),
+  ];
+  const mentioned = people.filter(([, , name]) =>
+    lines.some((l) => l.includes(name!.split(" ")[0]!)),
+  );
+  const talks = lines
+    .map((l, i) => ({ l, n: i + 1 }))
+    .filter(({ l }) => /dijo|Le dije|Oí a/.test(l));
+  const insights = [];
+  if (talks.length) {
+    insights.push({
+      text: `Hoy he hablado bastante con la gente del pueblo; me sienta bien tener compañía.`,
+      cites: talks.slice(0, 3).map((t) => t.n),
+      importance: 6,
+      valence: 0.3,
+    });
+  }
+  if (lines.length) {
+    insights.push({
+      text: `Mi día gira alrededor de mis rutinas: ${lines[0]!.slice(0, 60)}`,
+      cites: [1],
+      importance: 5,
+      valence: 0.1,
+    });
+  }
+  return JSON.stringify({
+    questions: ["¿Con quién me siento más a gusto en el pueblo?"],
+    insights,
+    facts: talks.length
+      ? [{ text: `Suelo encontrarme con gente en el café.`, cites: [talks[0]!.n] }]
+      : [],
+    people: mentioned.map(([, id]) => ({
+      id,
+      summary: "Alguien con quien hablo a menudo.",
+      affinityDelta: 0.05,
+      trustDelta: 0.02,
+    })),
+  });
+}
+
+function mockGist(req: CompletionRequest): string {
+  const text = /Recuerdo: "(.+)"$/m.exec(req.prompt)?.[1] ?? "algo";
+  const words = text
+    .replace(/"[^"]*"/g, "algo")
+    .split(/\s+/)
+    .slice(0, 5)
+    .join(" ");
+  return JSON.stringify({ gist: `${words}…` });
+}
+
+function mockReconsolidate(req: CompletionRequest): string {
+  const text = /Estás recordando esto: "(.+)"$/m.exec(req.prompt)?.[1] ?? "";
+  const mood = /Tu ánimo ahora: ([^.]+)\./.exec(req.prompt)?.[1] ?? "neutral";
+  const sad = /apagado|triste/.test(mood);
+  const happy = /contento|buen humor/.test(mood);
+  const suffix = sad
+    ? " (aunque ahora me parece más triste de lo que fue)"
+    : happy
+      ? " (y fue muy agradable)"
+      : " (más o menos)";
+  const already = /\((aunque|y fue|más o menos)/.test(text);
+  return JSON.stringify({
+    text: already ? text : `${text}${suffix}`,
+    valence: sad ? -0.2 : happy ? 0.3 : 0,
+  });
+}
+
+function mockSummarize(req: CompletionRequest): string {
+  const lines = numbered(req.prompt);
+  return JSON.stringify({
+    summary: `Durante un tiempo pasaron cosas parecidas: ${lines[0]?.slice(0, 50) ?? "rutinas"} (y ${lines.length - 1} más).`,
+  });
+}
+
+function mockSocial(req: CompletionRequest): string {
+  const name = /Acabas de hablar con ([^(]+) \(/.exec(req.prompt)?.[1]?.trim() ?? "esa persona";
+  const negative = /liado|mal|triste/i.test(req.prompt);
+  return JSON.stringify({
+    summary: negative ? `${name} parece agobiado últimamente.` : `${name} es agradable de tratar.`,
+    affinityDelta: negative ? -0.02 : 0.06,
+    trustDelta: 0.02,
+  });
+}
+
+function mockChronicle(req: CompletionRequest): string {
+  const lines = [...req.prompt.matchAll(/^- (.+)$/gm)].map((m) => m[1]!);
+  const speech = lines.filter((l) => l.includes("→")).length;
+  return JSON.stringify({
+    title: `Un día ${speech > 4 ? "animado" : "tranquilo"} en Lethetown`,
+    text: `El día empezó con los vecinos preparando el desayuno. ${speech ? `Hubo ${speech} conversaciones, sobre todo en el café.` : "Apenas hubo conversaciones."} Al caer la noche, cada cual volvió a su casa a dormir.`,
+  });
+}
+
+function mockInterview(req: CompletionRequest): string {
+  const question = /^PREGUNTA: (.+)$/m.exec(req.prompt)?.[1] ?? "";
+  const memories = [...req.prompt.matchAll(/^- (.+)$/gm)].map((m) => m[1]!);
+  const name = /^Eres ([^,]+),/m.exec(req.system)?.[1] ?? "yo";
+  const first = memories[0] ?? "no recuerdo nada concreto";
+  return JSON.stringify({
+    answer: `Soy ${name}. Sobre "${question.slice(0, 40)}": recuerdo que ${first.charAt(0).toLowerCase()}${first.slice(1)}`,
+  });
 }
 
 export function hash(s: string): number {

@@ -8,7 +8,8 @@ import type {
   Spot,
 } from "@lethetown/shared";
 import type { LLMClient } from "../llm/client";
-import type { MemorySystem } from "../memory/memory-system";
+import { socialNote, type MemoryOwner, type SocialProfileStore } from "../memory/human";
+import type { MemorySystem, RecallContext } from "../memory/memory-system";
 import { recallText } from "../memory/retrieval";
 import type { MemorySource } from "@lethetown/shared";
 import { WorkingMemory } from "../memory/working-memory";
@@ -61,6 +62,10 @@ export interface AgentDeps {
   llm: LLMClient;
   memory: MemorySystem;
   places: Place[];
+  /** Fichas sociales (lo que piensa de los demás). */
+  social?: SocialProfileStore;
+  /** Nombres de los demás agentes, para las notas sociales. */
+  names?: Record<string, string>;
   onError?: (agentId: string, task: string, error: unknown) => void;
 }
 
@@ -131,6 +136,30 @@ export class Agent {
     };
   }
 
+  get owner(): MemoryOwner {
+    return { agentId: this.id, agentName: this.seed.name, system: this.system };
+  }
+
+  /** Contexto para que al recordar se pueda reconsolidar (ánimo y opiniones actuales). */
+  recallContext(): RecallContext {
+    return {
+      system: this.system,
+      moodLabel: this.state.mood.label,
+      socialSummary: async (people) => (await this.socialNotes(people)).join(" "),
+    };
+  }
+
+  /** Notas de lo que piensa de esas personas (para el prompt). */
+  async socialNotes(ids: string[]): Promise<string[]> {
+    if (!this.deps.social) return [];
+    const notes: string[] = [];
+    for (const id of ids) {
+      const profile = await this.deps.social.get(this.id, id);
+      if (profile) notes.push(socialNote(profile, this.deps.names?.[id] ?? id));
+    }
+    return notes;
+  }
+
   /** Su cama: un spot "sleep" de su casa con su id como dueño (o cualquiera de su casa). */
   bedSpot(): Spot | undefined {
     const home = this.deps.places.find((p) => p.id === this.seed.homeId);
@@ -172,6 +201,7 @@ export class Agent {
       now,
       moodValence: this.state.mood.valence,
       k: 5,
+      recall: this.recallContext(),
     });
     try {
       const res = await this.deps.llm.run({
@@ -264,6 +294,7 @@ export class Agent {
       now,
       moodValence: this.state.mood.valence,
       k: 3,
+      recall: this.recallContext(),
     });
     for (const s of recalled) {
       this.workingMemory.push({ text: recallText(s), memoryId: s.memory.id, addedAt: now });

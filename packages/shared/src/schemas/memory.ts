@@ -57,3 +57,52 @@ export const ScoredMemoryView = z.object({
   scores: MemoryScores,
 });
 export type ScoredMemoryView = z.infer<typeof ScoredMemoryView>;
+
+/** Versión anterior de un recuerdo (reconsolidación, confusión de fuente...). */
+export const MemoryVersion = z.object({
+  memoryId: z.string(),
+  version: z.number().int().nonnegative(),
+  text: z.string(),
+  emotionalValence: z.number(),
+  source: z.string(),
+  at: z.number(),
+  reason: z.string(),
+});
+export type MemoryVersion = z.infer<typeof MemoryVersion>;
+
+export const MemoryAuditAction = z.enum([
+  "forgotten",
+  "deleted",
+  "archived",
+  "summarized",
+  "gist",
+  "reconsolidated",
+  "source_changed",
+  "weakened",
+  "reinforced",
+]);
+export type MemoryAuditAction = z.infer<typeof MemoryAuditAction>;
+
+/** Registro de cada decisión de olvido o transformación, con su motivo. */
+export const MemoryAuditEntry = z.object({
+  agentId: z.string(),
+  memoryId: z.string(),
+  memoryText: z.string(),
+  action: MemoryAuditAction,
+  reason: z.string(),
+  at: z.number(),
+});
+export type MemoryAuditEntry = z.infer<typeof MemoryAuditEntry>;
+
+/** Ficha social: lo que un agente cree saber de otro. */
+export const SocialProfile = z.object({
+  ownerId: z.string(),
+  aboutId: z.string(),
+  summary: z.string(),
+  /** -1 (aversión) .. 1 (afecto) */
+  affinity: z.number().min(-1).max(1),
+  /** 0..1 */
+  trust: z.number().min(0).max(1),
+  lastUpdated: z.number(),
+});
+export type SocialProfile = z.infer<typeof SocialProfile>;
