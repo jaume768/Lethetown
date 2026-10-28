@@ -63,12 +63,10 @@ export class LLMClient {
       cacheKey: req.agentId ? `agent:${req.agentId}` : undefined,
       meta: { task: req.task, agentId: req.agentId },
     });
-    this.costs.record({
-      model: result.model,
-      task: req.task,
-      agentId: req.agentId,
-      usage: result.usage,
-    });
+    this.costs.record(
+      { model: result.model, task: req.task, agentId: req.agentId, usage: result.usage },
+      result.priceMultiplier ?? 1,
+    );
     return result;
   }
 }

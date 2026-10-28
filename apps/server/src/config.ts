@@ -15,6 +15,26 @@ const Env = z.object({
   OPENAI_MODEL_FAST: z.string().default("gpt-6-luna"),
   OPENAI_MODEL_REFLECTION: z.string().default("gpt-6-sol"),
   LLM_CONCURRENCY: z.coerce.number().int().positive().default(4),
+  /** Timeout propio por intento, reintentos (429/5xx/red) y circuit breaker del proveedor. */
+  LLM_TIMEOUT_SECONDS: z.coerce.number().positive().default(60),
+  LLM_RETRIES: z.coerce.number().int().nonnegative().default(3),
+  LLM_BREAKER_THRESHOLD: z.coerce.number().int().positive().default(5),
+  LLM_BREAKER_COOLDOWN_SECONDS: z.coerce.number().positive().default(30),
+  /** Batch API (50 % más barata) para tareas sin prisa; solo Anthropic. */
+  LLM_BATCH: z.enum(["on", "off"]).default("off"),
+  LLM_BATCH_TASKS: z
+    .string()
+    .default("consolidate,chronicle")
+    .transform((s) =>
+      s
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean),
+    ),
+  /** Solo se usa el lote si ningún mundo va más rápido que esto (a x60 una noche dura 9 min). */
+  LLM_BATCH_MAX_SPEED: z.coerce.number().nonnegative().default(10),
+  LLM_BATCH_MAX_WAIT_MINUTES: z.coerce.number().positive().default(30),
+  LLM_BATCH_POLL_SECONDS: z.coerce.number().positive().default(30),
   DATABASE_URL: z.preprocess(emptyToUndefined, z.string().optional()),
   EMBEDDINGS: z.enum(["local", "hash"]).default("local"),
   EMBEDDINGS_MODEL: z.string().default("Xenova/all-MiniLM-L6-v2"),

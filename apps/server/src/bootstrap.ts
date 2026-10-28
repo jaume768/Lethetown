@@ -17,8 +17,11 @@ import {
   RandomSourceConfuser,
   seededRng,
   type SocialProfileStore,
+  BatchingProvider,
   MockProvider,
   ModelRouter,
+  ResilientProvider,
+  isBatchCapable,
   moderateUserText,
   sanitizeUserText,
   OpenAIProvider,
@@ -98,7 +101,14 @@ const START_MINUTE_OF_DAY = 6 * 60 + 50;
 /** Servicios compartidos por todos los mundos de un proceso. */
 export interface Services {
   config: AppConfig;
-  provider: LimitedProvider;
+  /** Proveedor compartido: lotes → cola de concurrencia → reintentos/breaker → API. */
+  provider: LLMProvider;
+  /** La cola de concurrencia (para métricas: llamadas activas y en espera). */
+  llmQueue: LimitedProvider;
+  /** El decorador de reintentos (para el estado del circuit breaker). */
+  llmResilience: ResilientProvider;
+  /** Lo fija bootstrap: ¿se puede usar la Batch API ahora? (según la velocidad de los mundos). */
+  setBatchGate(gate: () => boolean): void;
   models: { fast: string; reflection: string };
   pricing: PricingTable;
   embedder: Embedder;
@@ -228,7 +238,45 @@ export async function createServices(
     readJson(z.array(AgentSeed), "seeds/agents.json"),
     loadPricing(),
   ]);
-  const provider = new LimitedProvider(createProvider(config), config.LLM_CONCURRENCY);
+  const base = createProvider(config);
+  const llmResilience = new ResilientProvider(
+    base,
+    {
+      timeoutMs: config.LLM_TIMEOUT_SECONDS * 1000,
+      retries: config.LLM_RETRIES,
+      baseDelayMs: 500,
+      maxDelayMs: 20_000,
+      breakerThreshold: config.LLM_BREAKER_THRESHOLD,
+      breakerCooldownMs: config.LLM_BREAKER_COOLDOWN_SECONDS * 1000,
+    },
+    {
+      onRetry: ({ attempt, delayMs, error }) =>
+        log(`↻ Reintento ${attempt} del LLM en ${delayMs} ms (${String(error)})`),
+      onBreaker: (state) => log(`⚡ Circuit breaker del LLM: ${state}`),
+    },
+  );
+  const llmQueue = new LimitedProvider(llmResilience, config.LLM_CONCURRENCY);
+  let batchGate: () => boolean = () => false;
+  let provider: LLMProvider = llmQueue;
+  if (config.LLM_BATCH === "on") {
+    if (isBatchCapable(base)) {
+      provider = new BatchingProvider(
+        llmQueue,
+        base,
+        {
+          tasks: config.LLM_BATCH_TASKS,
+          windowMs: 5_000,
+          pollMs: config.LLM_BATCH_POLL_SECONDS * 1000,
+          maxWaitMs: config.LLM_BATCH_MAX_WAIT_MINUTES * 60_000,
+          enabled: () => batchGate(),
+        },
+        (reason) => log(`⚠ Lote del LLM fallido (${reason}); se repite por la vía normal.`),
+      );
+      log(`Batch API activa para: ${config.LLM_BATCH_TASKS.join(", ")}`);
+    } else {
+      log(`⚠ LLM_BATCH=on, pero ${base.name} no admite lotes: se ignora.`);
+    }
+  }
   const models = modelsFor(config);
   log(`Proveedor LLM: ${provider.name} (fast=${models.fast}, reflection=${models.reflection})`);
   const db = await connectDb(config, log);
@@ -238,6 +286,11 @@ export async function createServices(
   return {
     config,
     provider,
+    llmQueue,
+    llmResilience,
+    setBatchGate: (gate) => {
+      batchGate = gate;
+    },
     models,
     pricing,
     embedder,
@@ -516,6 +569,12 @@ export async function bootstrap(
   if (!rows.some((r) => r.id === defaultRow.id) && !opts.worldIds) rows.unshift(defaultRow);
   const worlds = new Map<string, WorldRuntime>();
   for (const row of rows) worlds.set(row.id, await openWorld(services, row));
+  // Lotes solo si ningún mundo en marcha va más rápido que LLM_BATCH_MAX_SPEED.
+  services.setBatchGate(() =>
+    [...worlds.values()].every(
+      (w) => w.clock.speed === 0 || w.clock.speed <= config.LLM_BATCH_MAX_SPEED,
+    ),
+  );
   // Presupuesto superado: se pausa el mundo afectado (o todos, si es el global).
   services.budget.onBreach((b) => {
     const targets = b.scope === "global" ? [...worlds.values()] : [worlds.get(b.worldId)];

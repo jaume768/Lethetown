@@ -68,8 +68,9 @@ export class CostTracker {
     );
   }
 
-  record(entry: Omit<CostRecord, "usd">): CostRecord {
-    const usd = this.priceOf(entry.model, entry.usage);
+  /** `priceMultiplier`: descuento del proveedor (Batch API = 0.5). */
+  record(entry: Omit<CostRecord, "usd">, priceMultiplier = 1): CostRecord {
+    const usd = this.priceOf(entry.model, entry.usage) * priceMultiplier;
     const record: CostRecord = { ...entry, usd };
     addTo(this.total, entry.usage, usd);
     addTo(bucketFor(this.byTask, entry.task), entry.usage, usd);
