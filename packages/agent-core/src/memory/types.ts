@@ -70,6 +70,22 @@ export interface MemoryStore {
   audit(agentId: string, limit?: number): Promise<MemoryAuditEntry[]>;
   /** Recuerdos de un evento (todas los agentes), para la vista Rashomon. */
   byEvent(eventId: string): Promise<MemoryRecord[]>;
+  /** Varias actualizaciones en una sola operación (p. ej. los refuerzos de una recuperación). */
+  updateMany(updates: { id: string; patch: MemoryPatch }[]): Promise<void>;
+  /**
+   * Ejecuta `fn` de forma atómica: o se aplican todas sus escrituras o ninguna. Dentro de `fn`
+   * hay que usar el store que recibe (en Postgres va ligado a la transacción).
+   */
+  transaction<T>(fn: (tx: MemoryStore) => Promise<T>): Promise<T>;
+  /**
+   * Para el inspector: todos los recuerdos del agente con su similitud al `queryEmbedding`
+   * calculada por el almacén, sin traer los embeddings (`embedding` viene vacío).
+   * Opcional: si no existe, se usa `listByAgent`.
+   */
+  listForInspection?(
+    agentId: string,
+    queryEmbedding: number[],
+  ): Promise<{ memory: MemoryRecord; relevance: number }[]>;
 }
 
 export interface Embedder {

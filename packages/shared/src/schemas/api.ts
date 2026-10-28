@@ -90,7 +90,11 @@ export const AgentMemoryResponse = z.object({
   agentId: z.string(),
   now: z.number(),
   workingMemory: z.array(z.string()),
+  /** Página de recuerdos, ordenados por puntuación. */
   memories: z.array(ScoredMemoryView),
+  /** Total de recuerdos del agente (para paginar) y posición de esta página. */
+  total: z.number().int().nonnegative().default(0),
+  offset: z.number().int().nonnegative().default(0),
   /** Decisiones de olvido/transformación recientes ("olvidó X porque..."). */
   audit: z.array(MemoryAuditEntry),
   social: z.array(SocialProfile),

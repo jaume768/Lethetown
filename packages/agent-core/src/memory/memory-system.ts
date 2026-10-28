@@ -4,7 +4,13 @@ import { seededRng, type Rng } from "../util/random";
 import { DEFAULT_MEMORY_CONFIG, type MemoryConfig } from "./config";
 import { initialStability, reinforce } from "./decay";
 import type { Reconsolidator } from "./human";
-import { rankMemories, recallText, type RetrievalConfig, type ScoredMemory } from "./retrieval";
+import {
+  rankMemories,
+  scoreMemory,
+  recallText,
+  type RetrievalConfig,
+  type ScoredMemory,
+} from "./retrieval";
 import type { Embedder, MemoryRecord, MemoryStore, NewMemory } from "./types";
 
 /** Efectos visibles de la memoria (el servidor los emite por WebSocket). */
@@ -114,12 +120,16 @@ export class MemorySystem {
   /** Puntúa todos los recuerdos del agente sin modificarlos (para el inspector). */
   async inspect(opts: Omit<RetrieveOptions, "k" | "recall">): Promise<ScoredMemory[]> {
     const [embedding] = await this.embedder.embed([opts.query]);
+    const query = { embedding: embedding ?? [], now: opts.now, moodValence: opts.moodValence };
+    if (this.store.listForInspection) {
+      // El almacén calcula la similitud: no hace falta traer los embeddings.
+      const rows = await this.store.listForInspection(opts.agentId, query.embedding);
+      return rows
+        .map((r) => scoreMemory(r.memory, query, this.config.retrieval, r.relevance))
+        .sort((a, b) => b.scores.total - a.scores.total);
+    }
     const all = await this.store.listByAgent(opts.agentId);
-    return rankMemories(
-      all,
-      { embedding: embedding ?? [], now: opts.now, moodValence: opts.moodValence },
-      this.config.retrieval,
-    );
+    return rankMemories(all, query, this.config.retrieval);
   }
 
   /**
@@ -141,8 +151,14 @@ export class MemorySystem {
     const picked = ranked
       .filter((s) => s.memory.status === "active" && s.scores.clarity !== "forgotten")
       .slice(0, opts.k ?? 5);
+    // Recordar fortalece: todos los refuerzos en una sola operación.
+    await this.store.updateMany(
+      picked.map((s) => ({
+        id: s.memory.id,
+        patch: reinforce(s.memory, opts.now, this.config.decay),
+      })),
+    );
     for (const s of picked) {
-      await this.store.update(s.memory.id, reinforce(s.memory, opts.now, this.config.decay));
       this.emitEffect({
         kind: s.scores.clarity === "vague" ? "vague" : "recall",
         agentId: s.memory.agentId,
@@ -167,27 +183,30 @@ export class MemorySystem {
       socialSummary: await ctx.socialSummary(m.people),
     });
     if (!rewritten || rewritten.text === m.text) return;
-    const previous = await this.store.versions(m.id);
-    await this.store.addVersion({
-      memoryId: m.id,
-      version: previous.length,
-      text: m.text,
-      emotionalValence: m.emotionalValence,
-      source: m.source,
-      at: now,
-      reason: "reconsolidación al recordar",
-    });
-    await this.store.update(m.id, {
-      text: rewritten.text,
-      emotionalValence: rewritten.emotionalValence,
-    });
-    await this.store.addAudit({
-      agentId: m.agentId,
-      memoryId: m.id,
-      memoryText: m.text,
-      action: "reconsolidated",
-      reason: `al recordarlo con ánimo "${ctx.moodLabel}" pasó a: "${rewritten.text}"`,
-      at: now,
+    // Versión + cambio + auditoría, todo o nada.
+    await this.store.transaction(async (tx) => {
+      const previous = await tx.versions(m.id);
+      await tx.addVersion({
+        memoryId: m.id,
+        version: previous.length,
+        text: m.text,
+        emotionalValence: m.emotionalValence,
+        source: m.source,
+        at: now,
+        reason: "reconsolidación al recordar",
+      });
+      await tx.update(m.id, {
+        text: rewritten.text,
+        emotionalValence: rewritten.emotionalValence,
+      });
+      await tx.addAudit({
+        agentId: m.agentId,
+        memoryId: m.id,
+        memoryText: m.text,
+        action: "reconsolidated",
+        reason: `al recordarlo con ánimo "${ctx.moodLabel}" pasó a: "${rewritten.text}"`,
+        at: now,
+      });
     });
     s.memory.text = rewritten.text;
     this.emitEffect({

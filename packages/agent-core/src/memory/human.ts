@@ -307,14 +307,27 @@ Formato:
       );
     }
 
-    // Reforzar lo citado, debilitar lo trivial no citado.
-    for (const m of chosen) {
-      if (cited.has(m.id)) {
-        await this.memory.store.update(m.id, {
-          strength: Math.min(1, m.strength * this.cfg.reinforceFactor),
-          stability: m.stability * this.cfg.reinforceFactor,
-        });
-        await this.memory.audit({
+    // Reforzar lo citado y debilitar lo trivial no citado, con su auditoría, de forma atómica.
+    const reinforced = chosen.filter((m) => cited.has(m.id));
+    const weakened = day.filter(
+      (m) => !cited.has(m.id) && m.importance <= this.cfg.trivialImportanceMax,
+    );
+    await this.memory.store.transaction(async (tx) => {
+      await tx.updateMany([
+        ...reinforced.map((m) => ({
+          id: m.id,
+          patch: {
+            strength: Math.min(1, m.strength * this.cfg.reinforceFactor),
+            stability: m.stability * this.cfg.reinforceFactor,
+          },
+        })),
+        ...weakened.map((m) => ({
+          id: m.id,
+          patch: { strength: m.strength * this.cfg.weakenFactor },
+        })),
+      ]);
+      for (const m of reinforced) {
+        await tx.addAudit({
           agentId: owner.agentId,
           memoryId: m.id,
           memoryText: m.text,
@@ -322,22 +335,20 @@ Formato:
           reason: "citado en una reflexión nocturna",
           at: now,
         });
-        result.reinforced.push(m.id);
       }
-    }
-    for (const m of day) {
-      if (cited.has(m.id) || m.importance > this.cfg.trivialImportanceMax) continue;
-      await this.memory.store.update(m.id, { strength: m.strength * this.cfg.weakenFactor });
-      await this.memory.audit({
-        agentId: owner.agentId,
-        memoryId: m.id,
-        memoryText: m.text,
-        action: "weakened",
-        reason: `trivial (importancia ${m.importance}) y no citado al consolidar`,
-        at: now,
-      });
-      result.weakened.push(m.id);
-    }
+      for (const m of weakened) {
+        await tx.addAudit({
+          agentId: owner.agentId,
+          memoryId: m.id,
+          memoryText: m.text,
+          action: "weakened",
+          reason: `trivial (importancia ${m.importance}) y no citado al consolidar`,
+          at: now,
+        });
+      }
+    });
+    result.reinforced.push(...reinforced.map((m) => m.id));
+    result.weakened.push(...weakened.map((m) => m.id));
 
     const known = new Set(people.map((p) => p.id));
     for (const p of r.people.filter((x) => known.has(x.id))) {

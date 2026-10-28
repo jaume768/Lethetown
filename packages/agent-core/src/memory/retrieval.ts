@@ -65,11 +65,13 @@ export function scoreMemory(
   memory: MemoryRecord,
   query: RetrievalQuery,
   config: RetrievalConfig = DEFAULT_RETRIEVAL,
+  /** Similitud ya calculada (p. ej. por pgvector); si no, el coseno de los embeddings. */
+  precomputedRelevance?: number,
 ): ScoredMemory {
   const hours = Math.max(0, query.now - memory.lastAccessedAt) / 60;
   const recency = Math.pow(config.recencyDecayPerHour, hours);
   const importance = memory.importance / 10;
-  const relevance = Math.max(0, cosine(memory.embedding, query.embedding));
+  const relevance = Math.max(0, precomputedRelevance ?? cosine(memory.embedding, query.embedding));
   const moodMatch = 1 - Math.abs(memory.emotionalValence - query.moodValence) / 2;
   const strength = currentStrength(memory, query.now);
   const w = config.weights;

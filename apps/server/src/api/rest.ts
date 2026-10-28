@@ -51,7 +51,8 @@ export function snapshot(w: WorldGateway, provider: string): WorldSnapshot {
 
 const MemoryQuery = z.object({
   q: z.string().max(500).optional(),
-  limit: z.coerce.number().int().positive().max(500).default(50),
+  limit: z.coerce.number().int().positive().max(200).default(50),
+  offset: z.coerce.number().int().nonnegative().default(0),
 });
 
 const EventsQuery = z.object({
@@ -156,7 +157,7 @@ export function registerWorldRest(server: FastifyInstance, ctx: ApiContext): voi
     const live = w.live();
     const agent = live.agents.find((a) => a.id === req.params.id);
     if (!agent) return reply.code(404).send({ error: "Agente no encontrado" });
-    const { q, limit } = MemoryQuery.parse(req.query);
+    const { q, limit, offset } = MemoryQuery.parse(req.query);
     const scored = await w.memory.inspect({
       agentId: agent.id,
       query: q ?? agent.action,
@@ -164,13 +165,15 @@ export function registerWorldRest(server: FastifyInstance, ctx: ApiContext): voi
       moodValence: agent.mood.valence,
     });
     const memories: ScoredMemoryView[] = scored
-      .slice(0, limit)
+      .slice(offset, offset + limit)
       .map(({ memory, scores }) => ({ memory: toView(memory), scores }));
     const body: AgentMemoryResponse = {
       agentId: agent.id,
       now: live.time,
       workingMemory: live.workingMemory[agent.id] ?? [],
       memories,
+      total: scored.length,
+      offset,
       audit: await w.memory.store.audit(agent.id, 50),
       social: await w.social.list(agent.id),
     };

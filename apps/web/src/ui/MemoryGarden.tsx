@@ -6,6 +6,8 @@ import { Portrait } from "./Portrait";
 import { formatGameTime, formatMinuteOfDay } from "./format";
 
 const REFRESH_MS = 3000;
+/** Recuerdos por página del jardín. */
+const PAGE = 40;
 const SOURCE_LABEL: Record<string, string> = { vivido: "vivido", inferido: "inferido" };
 const TYPE_LABEL: Record<string, string> = {
   observation: "observación",
@@ -50,6 +52,7 @@ export function MemoryGarden({ agent, agents, world, thinkingTask }: Props) {
   const [place, setPlace] = useState("");
   const [showForgotten, setShowForgotten] = useState(false);
   const [thought, setThought] = useState("");
+  const [pages, setPages] = useState(1);
   const agentId = agent?.id;
   const { pack } = useAssets();
 
@@ -58,7 +61,9 @@ export function MemoryGarden({ agent, agents, world, thinkingTask }: Props) {
     let cancelled = false;
     const load = async () => {
       try {
-        const res = await api<AgentMemoryResponse>(`/api/agents/${agentId}/memory?limit=80`);
+        const res = await api<AgentMemoryResponse>(
+          `/api/agents/${agentId}/memory?limit=${PAGE * pages}`,
+        );
         if (!cancelled) setData(res);
       } catch {
         /* reintenta en el siguiente intervalo */
@@ -70,7 +75,8 @@ export function MemoryGarden({ agent, agents, world, thinkingTask }: Props) {
       cancelled = true;
       clearInterval(timer);
     };
-  }, [agentId]);
+  }, [agentId, pages]);
+  useEffect(() => setPages(1), [agentId]);
 
   const names = useMemo(() => Object.fromEntries(agents.map((a) => [a.id, a.name])), [agents]);
   const memories = useMemo(
@@ -215,6 +221,12 @@ export function MemoryGarden({ agent, agents, world, thinkingTask }: Props) {
           </div>
         ))}
       </div>
+
+      {data && data.total > data.memories.length && (
+        <button className="btn small" onClick={() => setPages(pages + 1)}>
+          Ver más ({data.memories.length} de {data.total})
+        </button>
+      )}
 
       <h4>Olvidos y cambios</h4>
       <ul className="audit">

@@ -10,6 +10,20 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: lethetown
+          POSTGRES_PASSWORD: lethetown
+          POSTGRES_DB: lethetown
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U lethetown" --health-interval 5s --health-timeout 3s
+          --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgres://lethetown:lethetown@localhost:5432/lethetown
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -21,6 +35,9 @@ jobs:
       - run: pnpm lint
       - run: pnpm format:check
       - run: pnpm typecheck
+      - run: pnpm db:migrate
+        env:
+          DATABASE_URL: postgres://lethetown:lethetown@localhost:5432/lethetown
       - run: pnpm test
         env:
           # Los tests usan embeddings hash y mock: no necesitan red ni API keys.

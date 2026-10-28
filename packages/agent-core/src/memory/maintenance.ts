@@ -219,16 +219,21 @@ export class MemoryMaintenance {
             now,
           );
           report.summaries.push(created.id);
+          // Archivar el grupo entero (y auditarlo) de forma atómica.
+          await this.memory.store.transaction(async (tx) => {
+            await tx.updateMany(cluster.map((m) => ({ id: m.id, patch: { status: "archived" } })));
+            for (const m of cluster) {
+              await tx.addAudit({
+                agentId: owner.agentId,
+                memoryId: m.id,
+                memoryText: m.text,
+                action: "archived",
+                reason: `presupuesto de memoria superado: resumido junto a ${cluster.length - 1} episodios parecidos en "${summary}"`,
+                at: now,
+              });
+            }
+          });
           for (const m of cluster) {
-            await this.memory.store.update(m.id, { status: "archived" });
-            await this.memory.audit({
-              agentId: owner.agentId,
-              memoryId: m.id,
-              memoryText: m.text,
-              action: "archived",
-              reason: `presupuesto de memoria superado: resumido junto a ${cluster.length - 1} episodios parecidos en "${summary}"`,
-              at: now,
-            });
             this.memory.emitEffect({
               kind: "archive",
               agentId: owner.agentId,
@@ -296,14 +301,17 @@ export class MemoryMaintenance {
     reason: string,
     report: MaintenanceReport,
   ) {
-    await this.memory.store.delete(m.id);
-    await this.memory.audit({
-      agentId: owner.agentId,
-      memoryId: m.id,
-      memoryText: m.text,
-      action: "deleted",
-      reason,
-      at: now,
+    // Borrado + auditoría, todo o nada.
+    await this.memory.store.transaction(async (tx) => {
+      await tx.delete(m.id);
+      await tx.addAudit({
+        agentId: owner.agentId,
+        memoryId: m.id,
+        memoryText: m.text,
+        action: "deleted",
+        reason,
+        at: now,
+      });
     });
     this.memory.emitEffect({
       kind: "forget",
