@@ -19,6 +19,8 @@ import {
   type SocialProfileStore,
   MockProvider,
   ModelRouter,
+  moderateUserText,
+  sanitizeUserText,
   OpenAIProvider,
   agentMockResponder,
   type Embedder,
@@ -26,14 +28,33 @@ import {
   type MemoryStore,
   type PricingTable,
 } from "@lethetown/agent-core";
-import { AgentSeed, SIM_SPEEDS, parseTiledMap, type SimSpeed } from "@lethetown/shared";
+import {
+  AgentSeed,
+  RUNNING,
+  SIM_SPEEDS,
+  parseTiledMap,
+  type SimSpeed,
+  type WorldRunStatus,
+} from "@lethetown/shared";
 import { z } from "zod";
-import { modelsFor, type AppConfig } from "./config";
+import { isProduction, modelsFor, type AppConfig } from "./config";
+import {
+  InMemorySessionStore,
+  InMemoryUserStore,
+  PgSessionStore,
+  PgUserStore,
+  type SessionStore,
+  type UserStore,
+} from "./security/auth";
 import { checkDb, createDb, type DbHandle } from "./db/client";
 import { PgMemoryStore } from "./db/pg-memory-store";
+import { gte, sql } from "drizzle-orm";
 import {
   InMemoryChronicleStore,
   InMemoryEventStore,
+  InMemoryModerationLog,
+  PgModerationLog,
+  type ModerationLog,
   PgChronicleStore,
   PgEventStore,
   PgSocialProfileStore,
@@ -56,6 +77,13 @@ import { GameClock } from "./sim/clock";
 import { LimitedProvider } from "./sim/llm-queue";
 import { Simulation } from "./sim/simulation";
 import { parseSnapshot } from "./sim/snapshot";
+import {
+  BudgetGuard,
+  BudgetedProvider,
+  describeBreach,
+  periodStarts,
+  type Spent,
+} from "./security/budget";
 import { WorldMap } from "./sim/world";
 
 /** Mapa Tiled: fuente única de verdad del mundo (lo genera `pnpm map:generate`). */
@@ -80,6 +108,10 @@ export interface Services {
   storeKind: "postgres" | "memory";
   worldRepo: WorldRepo;
   snapshots: SnapshotStore;
+  budget: BudgetGuard;
+  moderationLog: ModerationLog;
+  users: UserStore;
+  sessions: SessionStore;
   log: (msg: string) => void;
   /** Escrituras a la BD en vuelo (se esperan al cerrar). */
   track(write: Promise<unknown>): void;
@@ -103,6 +135,19 @@ export interface WorldRuntime {
   costs: CostTracker;
   /** Instante de juego de la instantánea restaurada (null = arranque limpio). */
   restoredFrom: number | null;
+  status(): WorldRunStatus;
+  /** Pausa el mundo (velocidad 0) recordando la velocidad anterior. */
+  pause(reason: NonNullable<WorldRunStatus["reason"]>, detail: string): void;
+  /** Reanuda; falla si el presupuesto o el kill switch lo impiden. */
+  resume(): { ok: true } | { ok: false; error: string };
+  /**
+   * Sanea y modera un texto de usuario. Si se rechaza, lo registra y devuelve el motivo.
+   */
+  vetUserText(
+    kind: "thought" | "spot",
+    text: string,
+    userId: string | null,
+  ): Promise<{ ok: true; text: string } | { ok: false; error: string }>;
   /** Programa la simulación y las instantáneas horarias (no arranca el reloj real). */
   start(): void;
   saveSnapshot(reason: string): Promise<void>;
@@ -202,6 +247,10 @@ export async function createServices(
     storeKind: db ? "postgres" : "memory",
     worldRepo: db ? new PgWorldRepo(db.db) : new InMemoryWorldRepo(),
     snapshots: db ? new PgSnapshotStore(db.db) : new InMemorySnapshotStore(),
+    budget: await createBudget(config, db),
+    moderationLog: db ? new PgModerationLog(db.db) : new InMemoryModerationLog(),
+    users: db ? new PgUserStore(db.db) : await devUsers(config, log),
+    sessions: db ? new PgSessionStore(db.db) : new InMemorySessionStore(),
     log,
     track(write) {
       const p = write.finally(() => pending.delete(p));
@@ -211,6 +260,47 @@ export async function createServices(
       await Promise.all(pending);
     },
   };
+}
+
+/** Usuarios en RAM; fuera de producción, DEV_ADMIN_PASSWORD crea el admin "admin". */
+async function devUsers(config: AppConfig, log: (msg: string) => void): Promise<UserStore> {
+  const users = new InMemoryUserStore();
+  if (config.DEV_ADMIN_PASSWORD && !isProduction(config)) {
+    await users.create({ username: "admin", role: "admin", password: config.DEV_ADMIN_PASSWORD });
+    log('Usuario "admin" de desarrollo creado en RAM (DEV_ADMIN_PASSWORD).');
+  }
+  return users;
+}
+
+/** Guardián del presupuesto, con el gasto de hoy y de este mes ya registrado en llm_calls. */
+async function createBudget(config: AppConfig, db: DbHandle | undefined): Promise<BudgetGuard> {
+  const guard = new BudgetGuard({
+    global: { dailyUsd: config.BUDGET_DAILY_USD, monthlyUsd: config.BUDGET_MONTHLY_USD },
+    perWorld: {
+      dailyUsd: config.WORLD_BUDGET_DAILY_USD,
+      monthlyUsd: config.WORLD_BUDGET_MONTHLY_USD,
+    },
+  });
+  if (!db) return guard;
+  const { day, month } = periodStarts(new Date());
+  const rows = await db.db
+    .select({
+      worldId: llmCalls.worldId,
+      day: sql<number>`coalesce(sum(${llmCalls.usd}) filter (where ${llmCalls.at} >= ${day}), 0)`,
+      month: sql<number>`coalesce(sum(${llmCalls.usd}), 0)`,
+    })
+    .from(llmCalls)
+    .where(gte(llmCalls.at, month))
+    .groupBy(llmCalls.worldId);
+  const worlds: Record<string, Spent> = {};
+  const total: Spent = { day: 0, month: 0 };
+  for (const r of rows) {
+    worlds[r.worldId] = { day: Number(r.day), month: Number(r.month) };
+    total.day += Number(r.day);
+    total.month += Number(r.month);
+  }
+  guard.load({ global: total, worlds });
+  return guard;
 }
 
 /** Ruta de mapa segura: solo .tmj dentro de seeds/ (la ruta sale de la BD o de la API). */
@@ -226,7 +316,9 @@ export async function openWorld(services: Services, row: WorldRow): Promise<Worl
   const tmj = await readJson(z.unknown(), safeMapPath(row.map));
   const worldMap = new WorldMap(parseTiledMap(tmj));
   const costs = new CostTracker(services.pricing);
-  const llm = new LLMClient(services.provider, new ModelRouter(services.models), costs);
+  const provider = new BudgetedProvider(services.provider, services.budget, row.id);
+  const llm = new LLMClient(provider, new ModelRouter(services.models), costs);
+  costs.onRecord((r) => services.budget.record(row.id, r.usd));
   if (db) {
     costs.onRecord((r) =>
       services.track(
@@ -323,6 +415,21 @@ export async function openWorld(services: Services, row: WorldRow): Promise<Worl
     });
   };
 
+  let status: WorldRunStatus =
+    row.status === "paused" ? { state: "paused", reason: "manual", detail: "Pausado" } : RUNNING;
+  /** Velocidad a la que volver al reanudar. */
+  let resumeSpeed: SimSpeed = speed === 0 ? 10 : speed;
+  if (status.state === "paused") clock.setSpeed(0);
+  const setStatus = (next: WorldRunStatus) => {
+    status = next;
+    sim.notifyStatus(next);
+    services.track(
+      services.worldRepo
+        .setStatus(row.id, next.state)
+        .catch((e: unknown) => worldLog(`⚠ No se pudo guardar el estado: ${String(e)}`)),
+    );
+  };
+
   return {
     id: row.id,
     name: row.name,
@@ -337,6 +444,47 @@ export async function openWorld(services: Services, row: WorldRow): Promise<Worl
     chronicles,
     costs,
     restoredFrom: snapshot?.time ?? null,
+    status: () => status,
+    pause(reason, detail) {
+      // Una pausa "más fuerte" (presupuesto, kill switch) sustituye a una manual o por falta de público.
+      if (status.state === "paused" && status.reason === reason) return;
+      if (clock.speed !== 0) resumeSpeed = clock.speed;
+      clock.setSpeed(0);
+      setStatus({ state: "paused", reason, detail });
+      worldLog(`⏸ ${detail}`);
+    },
+    resume() {
+      const blocked = services.budget.blockReason(row.id);
+      if (blocked) return { ok: false, error: blocked };
+      if (status.state === "running") return { ok: true };
+      clock.setSpeed(resumeSpeed);
+      setStatus(RUNNING);
+      return { ok: true };
+    },
+    async vetUserText(kind, text, userId) {
+      const reject = async (reason: string) => {
+        services.track(
+          services.moderationLog
+            .add({ worldId: row.id, userId, kind, text: text.slice(0, 1000), reason })
+            .catch((e: unknown) => worldLog(`⚠ No se pudo registrar el rechazo: ${String(e)}`)),
+        );
+        worldLog(`🛡 Texto rechazado (${kind}): ${reason}`);
+        return { ok: false as const, error: `Texto rechazado: ${reason}` };
+      };
+      const clean = sanitizeUserText(text, config.USER_TEXT_MAX);
+      if (!clean) return reject(`vacío o de más de ${config.USER_TEXT_MAX} caracteres`);
+      if (config.MODERATION === "off") return { ok: true, text: clean };
+      try {
+        const verdict = await moderateUserText(llm, { kind, text: clean });
+        if (!verdict.allowed) return reject(verdict.reason || "no permitido");
+      } catch (error) {
+        // Sin moderación (p. ej. sin presupuesto) no entra nada.
+        return reject(
+          `no se pudo moderar (${error instanceof Error ? error.message : String(error)})`,
+        );
+      }
+      return { ok: true, text: clean };
+    },
     start() {
       sim.start();
       scheduleHourly(clock.now());
@@ -368,6 +516,11 @@ export async function bootstrap(
   if (!rows.some((r) => r.id === defaultRow.id) && !opts.worldIds) rows.unshift(defaultRow);
   const worlds = new Map<string, WorldRuntime>();
   for (const row of rows) worlds.set(row.id, await openWorld(services, row));
+  // Presupuesto superado: se pausa el mundo afectado (o todos, si es el global).
+  services.budget.onBreach((b) => {
+    const targets = b.scope === "global" ? [...worlds.values()] : [worlds.get(b.worldId)];
+    for (const w of targets) w?.pause("budget", describeBreach(b));
+  });
   const defaultWorld = worlds.get(DEFAULT_WORLD_ID) ?? [...worlds.values()][0];
   if (!defaultWorld) throw new Error("No hay ningún mundo que abrir");
   return {

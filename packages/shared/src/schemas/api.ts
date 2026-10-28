@@ -62,12 +62,27 @@ export const ClockState = z.object({
 });
 export type ClockState = z.infer<typeof ClockState>;
 
+/**
+ * Estado de ejecución de un mundo. `paused` con motivo: presupuesto superado, kill switch, sin
+ * espectadores o pausa manual.
+ */
+export const WorldRunStatus = z.object({
+  state: z.enum(["running", "paused"]),
+  reason: z.enum(["budget", "kill_switch", "no_viewers", "manual"]).nullable(),
+  /** Texto legible (p. ej. "Presupuesto diario del mundo superado: $2.01 de $2.00"). */
+  detail: z.string().nullable(),
+});
+export type WorldRunStatus = z.infer<typeof WorldRunStatus>;
+
+export const RUNNING: WorldRunStatus = { state: "running", reason: null, detail: null };
+
 export const WorldSnapshot = z.object({
   world: World,
   clock: ClockState,
   agents: z.array(AgentState),
   provider: z.string(),
   weather: Weather,
+  status: WorldRunStatus.default(RUNNING),
 });
 export type WorldSnapshot = z.infer<typeof WorldSnapshot>;
 

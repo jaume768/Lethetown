@@ -1,14 +1,23 @@
 import { ClientMessage, type ServerMessage } from "@lethetown/shared";
 import type { FastifyInstance } from "fastify";
 import type { WebSocket } from "ws";
+import { hasRole, type User } from "../security/auth";
+import { clientIp, originAllowed } from "../security/http";
 import type { WorldGateway } from "../worlds/gateway";
 import { snapshot, type ApiContext } from "./rest";
 
 const TICK_BROADCAST_MS = 500;
 
+interface Client {
+  ws: WebSocket;
+  user: User | null;
+  ip: string;
+  alive: boolean;
+}
+
 /** Clientes conectados a un mundo y su difusión periódica. */
 class WorldChannel {
-  readonly clients = new Set<WebSocket>();
+  readonly clients = new Set<Client>();
   private lastCalls = -1;
   private readonly unsubscribe: () => void;
 
@@ -20,19 +29,23 @@ class WorldChannel {
     this.unsubscribe = world.onSignal((signal) => this.broadcast(signal));
   }
 
-  send(ws: WebSocket, msg: ServerMessage) {
-    if (ws.readyState === ws.OPEN) ws.send(JSON.stringify(msg));
+  send(c: Client, msg: ServerMessage) {
+    if (c.ws.readyState === c.ws.OPEN) c.ws.send(JSON.stringify(msg));
   }
 
+  /** Difunde a todos; los costes solo a los admin. */
   broadcast(msg: ServerMessage) {
     if (!this.clients.size) return;
     const data = JSON.stringify(msg);
-    for (const ws of this.clients) if (ws.readyState === ws.OPEN) ws.send(data);
+    for (const c of this.clients) {
+      if (msg.type === "cost" && !hasRole(c.user, "admin")) continue;
+      if (c.ws.readyState === c.ws.OPEN) c.ws.send(data);
+    }
   }
 
-  sendSnapshot(ws: WebSocket) {
-    this.send(ws, { type: "snapshot", snapshot: snapshot(this.world, this.provider) });
-    this.send(ws, { type: "cost", summary: this.world.costs() });
+  sendSnapshot(c: Client) {
+    this.send(c, { type: "snapshot", snapshot: snapshot(this.world, this.provider) });
+    if (hasRole(c.user, "admin")) this.send(c, { type: "cost", summary: this.world.costs() });
   }
 
   tick() {
@@ -55,47 +68,92 @@ class WorldChannel {
   }
 }
 
+/**
+ * WebSocket por mundo (`/ws?world=<id>`): comprueba el Origin, limita conexiones por IP,
+ * hace ping/pong para cerrar conexiones muertas y solo deja cambiar la velocidad a directores.
+ * El tamaño máximo de mensaje (`maxPayload`) se fija al registrar @fastify/websocket.
+ */
 export function registerWs(server: FastifyInstance, ctx: ApiContext) {
+  const { config } = ctx;
   const channels = new Map<string, WorldChannel>();
   for (const w of ctx.worlds.values()) channels.set(w.id, new WorldChannel(w, ctx.provider));
+  const perIp = new Map<string, number>();
 
-  server.get<{ Querystring: { world?: string } }>("/ws", { websocket: true }, (socket, req) => {
-    const channel = channels.get(req.query.world ?? ctx.defaultWorldId);
-    if (!channel) {
-      socket.close(4404, "Mundo no encontrado");
-      return;
-    }
-    channel.clients.add(socket);
-    channel.sendSnapshot(socket);
-
-    socket.on("message", async (raw) => {
-      let parsed: ReturnType<typeof ClientMessage.safeParse>;
-      try {
-        parsed = ClientMessage.safeParse(JSON.parse(String(raw)));
-      } catch {
+  server.get<{ Querystring: { world?: string } }>(
+    "/ws",
+    {
+      websocket: true,
+      preValidation: async (req, reply) => {
+        if (!originAllowed(config, req.headers.origin)) {
+          return reply.code(403).send({ error: "Origen no permitido" });
+        }
+        if ((perIp.get(clientIp(req)) ?? 0) >= config.WS_MAX_PER_IP) {
+          return reply.code(429).send({ error: "Demasiadas conexiones desde esta IP" });
+        }
+      },
+    },
+    (socket, req) => {
+      const channel = channels.get(req.query.world ?? ctx.defaultWorldId);
+      if (!channel) {
+        socket.close(4404, "Mundo no encontrado");
         return;
       }
-      if (!parsed.success) return;
-      const msg = parsed.data;
-      if (msg.type === "setSpeed") {
-        await channel.world.command({ type: "speed", speed: msg.speed });
-        channel.tick();
-      } else {
-        channel.sendSnapshot(socket);
-      }
-    });
-    socket.on("close", () => channel.clients.delete(socket));
-  });
+      const client: Client = { ws: socket, user: req.user, ip: clientIp(req), alive: true };
+      perIp.set(client.ip, (perIp.get(client.ip) ?? 0) + 1);
+      channel.clients.add(client);
+      channel.sendSnapshot(client);
+
+      socket.on("pong", () => (client.alive = true));
+      socket.on("message", async (raw) => {
+        let parsed: ReturnType<typeof ClientMessage.safeParse>;
+        try {
+          parsed = ClientMessage.safeParse(JSON.parse(String(raw)));
+        } catch {
+          return;
+        }
+        if (!parsed.success) return;
+        const msg = parsed.data;
+        if (msg.type === "setSpeed") {
+          if (!hasRole(client.user, "director")) return;
+          await channel.world.command({ type: "speed", speed: msg.speed });
+          channel.tick();
+        } else {
+          channel.sendSnapshot(client);
+        }
+      });
+      socket.on("close", () => {
+        channel.clients.delete(client);
+        const n = (perIp.get(client.ip) ?? 1) - 1;
+        if (n <= 0) perIp.delete(client.ip);
+        else perIp.set(client.ip, n);
+      });
+    },
+  );
 
   const timer = setInterval(() => {
     for (const c of channels.values()) c.tick();
   }, TICK_BROADCAST_MS);
+
+  // Heartbeat: quien no contesta al ping anterior se desconecta.
+  const heartbeat = setInterval(() => {
+    for (const ch of channels.values()) {
+      for (const c of ch.clients) {
+        if (!c.alive) {
+          c.ws.terminate();
+          continue;
+        }
+        c.alive = false;
+        c.ws.ping();
+      }
+    }
+  }, config.WS_HEARTBEAT_SECONDS * 1000);
 
   return {
     clients: () => [...channels.values()].reduce((n, c) => n + c.clients.size, 0),
     viewers: (worldId: string) => channels.get(worldId)?.clients.size ?? 0,
     close: () => {
       clearInterval(timer);
+      clearInterval(heartbeat);
       for (const c of channels.values()) c.close();
     },
   };

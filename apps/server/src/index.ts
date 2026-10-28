@@ -1,14 +1,10 @@
-import websocket from "@fastify/websocket";
-import Fastify from "fastify";
-import { registerRest, type ApiContext } from "./api/rest";
-import { registerWs } from "./api/ws";
+import { buildApi } from "./api/server";
 import { bootstrap } from "./bootstrap";
 import { loadConfig } from "./config";
 import { formatEvent } from "./log";
-import { LocalWorldGateway } from "./worlds/gateway";
+import { localContext } from "./worlds/local";
 
 const config = loadConfig();
-const server = Fastify({ logger: { level: "warn" } });
 const log = (msg: string) => console.log(`\x1b[35m[lethetown]\x1b[0m ${msg}`);
 
 const app = await bootstrap(config, log);
@@ -17,25 +13,15 @@ for (const w of app.worlds.values()) {
   w.sim.onEvent((e) => console.log(`${multi ? `[${w.id}] ` : ""}${formatEvent(e)}`));
 }
 
-const ctx: ApiContext = {
-  worlds: new Map([...app.worlds].map(([id, w]) => [id, new LocalWorldGateway(w)])),
-  defaultWorldId: app.defaultWorld.id,
-  provider: app.provider.name,
-  storeKind: app.storeKind,
-  embedder: app.embedder.name,
-};
-await server.register(websocket);
-const ws = registerWs(server, ctx);
-await registerRest(server, ctx);
-
+const { server, ws } = await buildApi(localContext(app), app);
 for (const w of app.worlds.values()) {
   w.start();
   w.clock.start();
 }
 
-await server.listen({ port: config.PORT, host: "127.0.0.1" });
+await server.listen({ port: config.PORT, host: config.HOST });
 log(
-  `Servidor en http://127.0.0.1:${config.PORT} · mundos: ${[...app.worlds.values()]
+  `Servidor en http://${config.HOST}:${config.PORT} · mundos: ${[...app.worlds.values()]
     .map((w) => `${w.id} (x${w.clock.speed})`)
     .join(", ")}`,
 );

@@ -9,6 +9,7 @@ import {
   serial,
   text,
   timestamp,
+  uniqueIndex,
   vector,
 } from "drizzle-orm/pg-core";
 
@@ -174,4 +175,59 @@ export const worldSnapshots = pgTable(
     data: jsonb("data").notNull(),
   },
   (t) => [index("world_snapshots_world_idx").on(t.worldId, t.id)],
+);
+
+// --- Seguridad ------------------------------------------------------------------------------
+
+/**
+ * Usuarios con rol. `provider` = "local" (usuario + contraseña argon2) o, más adelante, un
+ * proveedor OAuth ("github", "google"...) identificado por `providerSubject`.
+ */
+export const users = pgTable(
+  "users",
+  {
+    id: text("id").primaryKey(),
+    username: text("username").notNull(),
+    /** viewer | director | admin. */
+    role: text("role").notNull(),
+    /** Hash argon2id (null en usuarios OAuth). */
+    passwordHash: text("password_hash"),
+    provider: text("provider").notNull().default("local"),
+    providerSubject: text("provider_subject"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("users_username_idx").on(t.username),
+    uniqueIndex("users_provider_subject_idx").on(t.provider, t.providerSubject),
+  ],
+);
+
+/** Sesiones: se guarda el SHA-256 del token, nunca el token (que solo vive en la cookie). */
+export const sessions = pgTable(
+  "sessions",
+  {
+    tokenHash: text("token_hash").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("sessions_user_idx").on(t.userId)],
+);
+
+/** Textos de usuario rechazados por la moderación (voz interior, estados de objetos...). */
+export const moderationLog = pgTable(
+  "moderation_log",
+  {
+    id: serial("id").primaryKey(),
+    worldId: worldId(),
+    userId: text("user_id"),
+    /** thought | spot | name... */
+    kind: text("kind").notNull(),
+    text: text("text").notNull(),
+    reason: text("reason").notNull(),
+    at: timestamp("at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("moderation_log_world_idx").on(t.worldId, t.at)],
 );

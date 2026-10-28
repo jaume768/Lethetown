@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { AgentState } from "./agent";
-import { Chronicle, ClockState, CostSummary, SimEvent, WorldSnapshot } from "./api";
+import { Chronicle, ClockState, CostSummary, SimEvent, WorldRunStatus, WorldSnapshot } from "./api";
 import { SimSpeed, Weather } from "./world";
 
 /** Mensajes servidor → cliente por WebSocket. */
@@ -25,6 +25,8 @@ export const ServerMessage = z.discriminatedUnion("type", [
     text: z.string(),
   }),
   z.object({ type: z.literal("chronicle"), chronicle: Chronicle }),
+  /** El mundo se pausó o se reanudó (presupuesto, kill switch, sin espectadores, manual). */
+  z.object({ type: z.literal("status"), status: WorldRunStatus }),
   /** Cambio del estado del mundo (tiempo, objetos). */
   z.object({
     type: z.literal("world"),

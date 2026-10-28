@@ -6,6 +6,7 @@ import {
   type Chronicle,
   type CostSummary,
   type World,
+  type WorldRunStatus,
 } from "@lethetown/shared";
 import { z } from "zod";
 import type { WorldRuntime } from "../bootstrap";
@@ -14,11 +15,23 @@ import type { SimSignal } from "../sim/simulation";
 
 /** Órdenes que cambian un mundo. Las ejecuta quien tenga la simulación (este proceso o el worker). */
 export const WorldCommand = z.discriminatedUnion("type", [
-  z.object({ type: z.literal("thought"), agentId: z.string(), text: z.string() }),
-  z.object({ type: z.literal("spot"), spotId: z.string(), state: z.string() }),
+  z.object({
+    type: z.literal("thought"),
+    agentId: z.string(),
+    text: z.string(),
+    userId: z.string().nullable(),
+  }),
+  z.object({
+    type: z.literal("spot"),
+    spotId: z.string(),
+    state: z.string(),
+    userId: z.string().nullable(),
+  }),
   z.object({ type: z.literal("weather"), weather: Weather }),
   z.object({ type: z.literal("speed"), speed: SimSpeed }),
   z.object({ type: z.literal("chronicle"), day: z.number().int().nonnegative() }),
+  z.object({ type: z.literal("pause") }),
+  z.object({ type: z.literal("resume") }),
 ]);
 export type WorldCommand = z.infer<typeof WorldCommand>;
 
@@ -31,6 +44,7 @@ export interface LiveState {
   speed: SimSpeed;
   agents: AgentState[];
   weather: Weather;
+  status: WorldRunStatus;
   /** Memoria de trabajo por agente (para el inspector). */
   workingMemory: Record<string, string[]>;
 }
@@ -56,20 +70,40 @@ const notFound = (what: string): CommandResult => ({ ok: false, status: 404, err
 /** Ejecuta una orden sobre un mundo que corre en este proceso. */
 export async function runCommand(w: WorldRuntime, cmd: WorldCommand): Promise<CommandResult> {
   switch (cmd.type) {
-    case "thought":
+    case "thought": {
       if (!w.sim.agents.has(cmd.agentId)) return notFound("Agente no encontrado");
-      w.sim.injectThought(cmd.agentId, cmd.text);
+      const vetted = await w.vetUserText("thought", cmd.text, cmd.userId);
+      if (!vetted.ok) return { ok: false, status: 422, error: vetted.error };
+      w.sim.injectThought(cmd.agentId, vetted.text);
       return { ok: true };
-    case "spot":
+    }
+    case "spot": {
       if (!w.world.spot(cmd.spotId)) return notFound("Objeto no encontrado");
-      w.sim.setSpotState(cmd.spotId, cmd.state);
+      const vetted = await w.vetUserText("spot", cmd.state, cmd.userId);
+      if (!vetted.ok) return { ok: false, status: 422, error: vetted.error };
+      w.sim.setSpotState(cmd.spotId, vetted.text);
       return { ok: true };
+    }
     case "weather":
       w.sim.setWeather(cmd.weather);
       return { ok: true };
-    case "speed":
+    case "speed": {
+      const st = w.status();
+      if (st.state === "paused" && cmd.speed > 0) {
+        // Cambiar la velocidad de un mundo pausado equivale a reanudarlo.
+        const r = w.resume();
+        if (!r.ok) return { ok: false, status: 409, error: r.error };
+      }
       w.clock.setSpeed(cmd.speed);
       return { ok: true, value: { time: w.clock.now(), speed: w.clock.speed } };
+    }
+    case "pause":
+      w.pause("manual", "Pausado por un director");
+      return { ok: true };
+    case "resume": {
+      const r = w.resume();
+      return r.ok ? { ok: true } : { ok: false, status: 409, error: r.error };
+    }
     case "chronicle": {
       const c: Chronicle | null = await w.sim.writeChronicle(cmd.day);
       return c ? { ok: true, value: c } : { ok: false, status: 500, error: "no se pudo generar" };
@@ -83,6 +117,7 @@ export function liveState(w: WorldRuntime): LiveState {
     speed: w.clock.speed,
     agents: w.sim.agentStates(),
     weather: w.world.weather,
+    status: w.status(),
     workingMemory: Object.fromEntries(
       [...w.sim.agents.values()].map((a) => [a.id, a.workingMemory.contents.map((i) => i.text)]),
     ),

@@ -14,6 +14,7 @@ import { recallText } from "../memory/retrieval";
 import type { MemorySource } from "@lethetown/shared";
 import { WorkingMemory } from "../memory/working-memory";
 import { inferActivityKind } from "./activity";
+import { untrusted } from "./moderation";
 import { DecideResponse, ImportanceResponse, PlanResponse, parseWith } from "./parse";
 import {
   decidePrompt,
@@ -399,7 +400,8 @@ export function describePerception(p: Perception): string {
     case "overheard":
       return `Oí a ${p.fromName} decirle a ${p.toName} algo como: "${p.fragment}"`;
     case "thought":
-      return `Pensé: ${p.text}`;
+      // La voz interior la escribe un jugador: va delimitada como dato no confiable.
+      return `Pensé: ${untrusted(p.text)}`;
     case "world":
       return p.text;
   }

@@ -2,7 +2,7 @@ import type { SocialProfileStore } from "@lethetown/agent-core";
 import { SimEventKind, type Chronicle, type SimEvent, type SocialProfile } from "@lethetown/shared";
 import { and, asc, desc, eq, gte, lt } from "drizzle-orm";
 import type { Db } from "./client";
-import { chronicles, simEvents, socialProfiles } from "./schema";
+import { chronicles, moderationLog, simEvents, socialProfiles } from "./schema";
 
 /** Línea de tiempo de eventos. */
 export interface EventStore {
@@ -171,4 +171,50 @@ function stripWorld<T extends { worldId: string }>({
   ...rest
 }: T): Omit<T, "worldId"> {
   return rest;
+}
+
+// --- Moderación ----------------------------------------------------------------------------
+
+export interface ModerationRejection {
+  worldId: string;
+  userId: string | null;
+  kind: string;
+  text: string;
+  reason: string;
+}
+
+/** Registro de textos de usuario rechazados. */
+export interface ModerationLog {
+  add(r: ModerationRejection): Promise<void>;
+  recent(worldId: string, limit?: number): Promise<(ModerationRejection & { at: Date })[]>;
+}
+
+export class InMemoryModerationLog implements ModerationLog {
+  private readonly items: (ModerationRejection & { at: Date })[] = [];
+  async add(r: ModerationRejection) {
+    this.items.push({ ...r, at: new Date() });
+    if (this.items.length > 1000) this.items.shift();
+  }
+  async recent(worldId: string, limit = 50) {
+    return this.items
+      .filter((r) => r.worldId === worldId)
+      .slice(-limit)
+      .reverse();
+  }
+}
+
+export class PgModerationLog implements ModerationLog {
+  constructor(private readonly db: Db) {}
+  async add(r: ModerationRejection) {
+    await this.db.insert(moderationLog).values(r);
+  }
+  async recent(worldId: string, limit = 50) {
+    const rows = await this.db
+      .select()
+      .from(moderationLog)
+      .where(eq(moderationLog.worldId, worldId))
+      .orderBy(desc(moderationLog.at))
+      .limit(limit);
+    return rows.map(({ id: _id, ...r }) => r);
+  }
 }

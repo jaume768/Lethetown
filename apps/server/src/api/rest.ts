@@ -15,15 +15,26 @@ import {
 } from "@lethetown/shared";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
+import type { AppConfig } from "../config";
+import { requireRole } from "../security/http";
 import type { CommandResult, WorldCommand, WorldGateway } from "../worlds/gateway";
+
+/** Operaciones de administración (en modo separado las ejecuta el worker vía bus). */
+export interface AdminOps {
+  /** Health detallado: proceso, BD, proveedor, mundos. */
+  health(): Promise<Record<string, unknown>>;
+  budget(): unknown;
+  setKillSwitch(on: boolean): Promise<void>;
+  moderation(worldId: string): Promise<unknown>;
+}
 
 /** Lo que la API REST necesita del proceso: los mundos que puede servir y datos generales. */
 export interface ApiContext {
+  config: AppConfig;
   worlds: Map<string, WorldGateway>;
   defaultWorldId: string;
   provider: string;
-  storeKind: "postgres" | "memory";
-  embedder: string;
+  admin: AdminOps;
 }
 
 export function snapshot(w: WorldGateway, provider: string): WorldSnapshot {
@@ -34,6 +45,7 @@ export function snapshot(w: WorldGateway, provider: string): WorldSnapshot {
     agents: live.agents,
     provider,
     weather: live.weather,
+    status: live.status,
   };
 }
 
@@ -76,9 +88,27 @@ async function sendResult(reply: FastifyReply, r: CommandResult) {
   return r.value ?? { ok: true };
 }
 
+const director = { preHandler: requireRole("director") };
+const admin = { preHandler: requireRole("admin") };
+
 /** Rutas generales (fuera de cualquier mundo). */
 export function registerGlobalRest(server: FastifyInstance, ctx: ApiContext): void {
+  /** Health público mínimo (para el balanceador); el detallado es de admin. */
   server.get("/api/health", async () => ({ ok: true }));
+
+  server.get("/api/admin/health", admin, async () => ctx.admin.health());
+  server.get("/api/admin/budget", admin, async () => ctx.admin.budget());
+  server.post("/api/admin/kill", admin, async (req, reply) => {
+    const parsed = z.object({ on: z.boolean() }).safeParse(req.body);
+    if (!parsed.success) return reply.code(400).send({ error: "on: true | false" });
+    await ctx.admin.setKillSwitch(parsed.data.on);
+    return { ok: true, killed: parsed.data.on };
+  });
+  server.get<{ Params: { worldId: string } }>(
+    "/api/admin/worlds/:worldId/moderation",
+    admin,
+    async (req) => ctx.admin.moderation(req.params.worldId),
+  );
 
   server.get("/api/worlds", async () =>
     [...ctx.worlds.values()].map((w) => ({
@@ -94,6 +124,14 @@ export function registerGlobalRest(server: FastifyInstance, ctx: ApiContext): vo
  * temporal del mundo por defecto, bajo `/api` (las rutas que ya usaba el cliente).
  */
 export function registerWorldRest(server: FastifyInstance, ctx: ApiContext): void {
+  const { config } = ctx;
+  /** Intervención (voz interior, objetos): gasta LLM en moderación y en la reacción. */
+  const intervention = {
+    ...director,
+    config: {
+      rateLimit: { max: config.RATE_LIMIT_INTERVENTION_PER_MINUTE, timeWindow: "1 minute" },
+    },
+  };
   const command = async (req: FastifyRequest, reply: FastifyReply, cmd: WorldCommand) => {
     const w = worldOf(ctx, req, reply);
     if (!w) return reply;
@@ -195,39 +233,64 @@ export function registerWorldRest(server: FastifyInstance, ctx: ApiContext): voi
   });
 
   /** Genera ya la crónica de un día (normalmente se escribe sola a las 23:00). */
-  server.post<{ Params: { day: string } }>("/chronicles/:day", async (req, reply) => {
-    const day = Number(req.params.day);
-    if (!Number.isInteger(day) || day < 0) return reply.code(400).send({ error: "día inválido" });
-    return command(req, reply, { type: "chronicle", day });
-  });
+  const chronicleLimit = {
+    ...director,
+    config: { rateLimit: { max: config.RATE_LIMIT_CHRONICLE_PER_MINUTE, timeWindow: "1 minute" } },
+  };
+  server.post<{ Params: { day: string } }>(
+    "/chronicles/:day",
+    chronicleLimit,
+    async (req, reply) => {
+      const day = Number(req.params.day);
+      if (!Number.isInteger(day) || day < 0) return reply.code(400).send({ error: "día inválido" });
+      return command(req, reply, { type: "chronicle", day });
+    },
+  );
 
   // --- Intervención del jugador ---------------------------------------------------------------
 
-  server.post<{ Params: { id: string } }>("/agents/:id/thought", async (req, reply) => {
-    const parsed = ThoughtRequest.safeParse(req.body);
-    if (!parsed.success)
-      return reply.code(400).send({ error: "text requerido (1-500 caracteres)" });
-    return command(req, reply, { type: "thought", agentId: req.params.id, text: parsed.data.text });
-  });
+  server.post<{ Params: { id: string } }>(
+    "/agents/:id/thought",
+    intervention,
+    async (req, reply) => {
+      const parsed = ThoughtRequest.safeParse(req.body);
+      if (!parsed.success)
+        return reply.code(400).send({ error: "text requerido (1-500 caracteres)" });
+      return command(req, reply, {
+        type: "thought",
+        agentId: req.params.id,
+        text: parsed.data.text,
+        userId: req.user?.id ?? null,
+      });
+    },
+  );
 
-  server.post<{ Params: { id: string } }>("/world/spots/:id", async (req, reply) => {
+  server.post<{ Params: { id: string } }>("/world/spots/:id", intervention, async (req, reply) => {
     const parsed = SpotStateRequest.safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ error: "state requerido" });
-    return command(req, reply, { type: "spot", spotId: req.params.id, state: parsed.data.state });
+    return command(req, reply, {
+      type: "spot",
+      spotId: req.params.id,
+      state: parsed.data.state,
+      userId: req.user?.id ?? null,
+    });
   });
 
-  server.post("/world/weather", async (req, reply) => {
+  server.post("/world/weather", director, async (req, reply) => {
     const parsed = WeatherRequest.safeParse(req.body);
     if (!parsed.success) return reply.code(400).send({ error: "weather: sunny | cloudy | rain" });
     return command(req, reply, { type: "weather", weather: parsed.data.weather });
   });
 
-  server.get("/costs", async (req, reply) => {
+  server.get("/costs", admin, async (req, reply) => {
     const w = worldOf(ctx, req, reply);
     return w ? w.costs() : reply;
   });
 
-  server.post("/speed", async (req, reply) => {
+  server.post("/pause", director, async (req, reply) => command(req, reply, { type: "pause" }));
+  server.post("/resume", director, async (req, reply) => command(req, reply, { type: "resume" }));
+
+  server.post("/speed", director, async (req, reply) => {
     const parsed = SetSpeedRequest.safeParse(req.body);
     if (!parsed.success)
       return reply.code(400).send({ error: "speed debe ser 0, 1, 10, 60 o 360" });

@@ -13,6 +13,7 @@ import {
   type Perception,
   type Rng,
   type SocialProfileStore,
+  untrusted,
 } from "@lethetown/agent-core";
 import {
   facingOf,
@@ -26,6 +27,7 @@ import {
   type SimEventKind,
   type TilePoint,
   type Weather,
+  type WorldRunStatus,
 } from "@lethetown/shared";
 import type { ChronicleStore, EventStore } from "../db/stores";
 import type { GameClock } from "./clock";
@@ -98,7 +100,7 @@ export interface SimulationDeps {
 /** Señales que la simulación emite hacia los clientes (además de los eventos del log). */
 export type SimSignal = Extract<
   ServerMessage,
-  { type: "event" | "thinking" | "memory_effect" | "chronicle" | "world" }
+  { type: "event" | "thinking" | "memory_effect" | "chronicle" | "world" | "status" }
 >;
 
 const SPEECH_BUBBLE_MINUTES = 20;
@@ -286,6 +288,16 @@ export class Simulation {
     });
   }
 
+  /** Avisa de que el mundo se pausó o se reanudó (presupuesto, kill switch, manual...). */
+  notifyStatus(status: WorldRunStatus): void {
+    const text =
+      status.state === "running"
+        ? "▶ El mundo se reanuda"
+        : `⏸ Mundo en pausa: ${status.detail ?? status.reason}`;
+    this.emit("system", null, text);
+    this.signal({ type: "status", status });
+  }
+
   // --- Intervención del jugador -------------------------------------------------------------
 
   /** "Voz interior": un pensamiento que el agente percibe como propio. */
@@ -309,7 +321,7 @@ export class Simulation {
       rt.knownStates.set(spot.id, state);
       rt.pending.push({
         kind: "world",
-        text: `Noté que ${spot.name} (${place.name}) está: ${state}`,
+        text: `Noté que ${spot.name} (${place.name}) está: ${untrusted(state)}`,
         placeId: place.id,
         eventId,
       });
@@ -392,7 +404,7 @@ export class Simulation {
         if (o.state !== "idle") {
           rt.pending.push({
             kind: "world",
-            text: `Noté que ${o.name} está: ${o.state}`,
+            text: `Noté que ${o.name} está: ${untrusted(o.state)}`,
             placeId: place.id,
           });
         }
