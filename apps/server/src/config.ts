@@ -38,6 +38,8 @@ const Env = z.object({
   DATABASE_URL: z.preprocess(emptyToUndefined, z.string().optional()),
   EMBEDDINGS: z.enum(["local", "hash"]).default("local"),
   EMBEDDINGS_MODEL: z.string().default("Xenova/all-MiniLM-L6-v2"),
+  /** Calcular los embeddings locales en un worker_thread (no bloquea el bucle de eventos). */
+  EMBEDDINGS_THREAD: z.enum(["on", "off"]).default("on"),
   PORT: z.coerce.number().int().default(3001),
   SIM_TICK_MINUTES: z.coerce.number().positive().default(10),
   SIM_SPEED: z.coerce.number().default(10),
