@@ -6,7 +6,9 @@ Juego de navegador con agentes LLM y memoria de tipo humano (Park et al. 2023 + 
 
 - `packages/shared`: esquemas **zod**, la única fuente de verdad de los mensajes cliente↔servidor. Si cambias un mensaje, cámbialo aquí primero.
 - `packages/agent-core`: **lógica pura**. No hace I/O de red ni accede a la base de datos, y no importa nada de `apps/*`. Todo llega por inyección (`LLMProvider`, `MemoryStore`, `Embedder`). Excepción: los SDKs de Anthropic y OpenAI viven aquí como implementaciones de `LLMProvider`, y solo se usan si el servidor los instancia.
-- `apps/server`: simulación, reloj, base de datos, embeddings y **todas** las llamadas al LLM. Las API keys solo se leen aquí, desde `.env`.
+- `apps/server`: simulación, reloj, base de datos, embeddings y **todas** las llamadas al LLM. Las API keys solo se leen aquí, desde `.env`. Tres entradas: `api-main.ts` (proceso api, sin simulación), `worker.ts` (sim-worker) e `index.ts` (todo en uno; lo usa el api si no hay Postgres).
+- La API habla con un `WorldGateway` (`worlds/gateway.ts`): `LocalWorldGateway` (mismo proceso) o `RemoteWorldGateway` (bus + Postgres). Toda mutación es un `WorldCommand` que ejecuta `runCommand` donde vive la simulación. Una ruta nueva no debe tocar `Simulation` directamente.
+- La simulación está en módulos (`sim/`): `context.ts` (estado compartido), `perception.ts`, `conversations.ts`, `routines.ts`, `memory-routines.ts`, `intervention.ts`; `simulation.ts` solo orquesta.
 - `apps/web`: Phaser 4 para el mapa y React solo para los paneles. Nunca llama a un LLM y solo habla con el servidor (`/api`, `/ws`). La lógica no visual (elegir frame, emote, luz ambiente, recolorear, interpolar posición) vive en `packages/shared` con tests; `apps/web/src/game` solo pinta.
 
 ## Reglas
@@ -23,11 +25,21 @@ Juego de navegador con agentes LLM y memoria de tipo humano (Park et al. 2023 + 
 - **Azar**: siempre a través del `Rng` inyectado (`seededRng`), nunca `Math.random()` en agent-core ni en la simulación. Así los tests y `SIM_SEED` son reproducibles. Excepción: efectos puramente visuales del cliente.
 - **Eventos**: `Simulation.emit()` persiste el evento (línea de tiempo) y lo envía por WS. Las conversaciones usan su id como `eventId` de los recuerdos (vista Rashomon); las frases tienen id `<conversación>:<turno>`.
 - **Mapa**: `seeds/town.tmj` es la fuente de verdad del mundo y se genera con `pnpm map:generate` a partir de los sellos del pack. Si cambias el trazado, edita `tools/generate-map.ts`; si cambias un sello, edita el manifest. Los spots tienen que estar sobre baldosas transitables (el parser lo comprueba) y ser alcanzables (lo comprueba un test).
-- **Assets**: nada de `apps/web/public/assets/vendor/` va al repo (licencia LimeZu). Comprueba siempre con `git check-ignore`. Los packs nuevos deben definir todos los `REQUIRED_STAMPS`. El cliente elige el pack por la propiedad `assetPack` del `.tmj`. Emotes, bocadillo y halos son pixel art propio en `apps/web/src/game/pixelArt.ts`.
+- **Assets**: nada de `apps/web/public/assets/vendor/` va al repo ni a las imágenes Docker (licencia LimeZu; `.dockerignore`). Comprueba siempre con `git check-ignore`. Todo asset del manifest lleva `license` y `source` (con su entrada en `credits`). Los packs nuevos deben definir todos los `REQUIRED_STAMPS`. El cliente elige el pack por la propiedad `assetPack` del `.tmj`. Emotes, bocadillo y halos son pixel art propio en `apps/web/src/game/pixelArt.ts`.
+
+- **Mundos**: todo dato persistente lleva `world_id`; los stores de Postgres reciben el `worldId` en el constructor y filtran siempre por él. Los ids de agente se repiten entre mundos.
+- **Instantáneas**: si añades estado al runtime de un agente o al mundo, añádelo a `SimSnapshot` (`sim/snapshot.ts`) y sube `SIM_SNAPSHOT_VERSION`. El test de ida y vuelta debe seguir pasando.
+- **Test dorado**: `sim/golden.test.ts` fija 3 días en mock. Un refactor no debe cambiarlo; si cambias el comportamiento a propósito (p. ej. un prompt fijo, del que depende el mock), regenéralo con `-u` y dilo en el commit.
+- **Seguridad**: toda ruta que muta o gasta LLM lleva `preHandler: requireRole(...)` y, si gasta, un `rateLimit` propio. Todo texto de usuario pasa por `vetUserText` (saneado + moderación) y entra en los prompts con `untrusted()` (`⟦ ⟧`). Nunca loguees cookies ni cuerpos de petición.
+- **Presupuesto**: no llames al proveedor por fuera de `LLMClient`: el `BudgetedProvider` y el `CostTracker` son los que pausan el mundo al superar el límite.
+- **Cliente**: textos de la UI en `apps/web/src/i18n/es.ts` (y `en.ts`), nunca literales en los componentes. Controles accesibles (rol, `aria-label`, teclado) y respetar `prefers-reduced-motion`. `localStorage` siempre con try/catch.
 
 ## Comandos
 
-- `pnpm dev`: servidor y web. Funciona sin Postgres (almacén en RAM) y sin API keys (`LLM_PROVIDER=mock`).
+- `pnpm dev`: api + sim-worker + web. Funciona sin Postgres (el api corre los mundos en RAM) y sin API keys (`LLM_PROVIDER=mock`).
+- `pnpm test:e2e`: smoke tests con Playwright (levantan su propio servidor mock en otros puertos).
+- `pnpm assets:check` / `pnpm portraits:compose` / `pnpm user:create <usuario> [rol]`.
+- `TEST_DATABASE_URL=… pnpm test`: incluye los tests de integración con Postgres.
 - `pnpm test`, `pnpm lint`, `pnpm typecheck` y `pnpm format:check` deben pasar antes de cada commit (es lo que ejecuta la CI).
 - `pnpm --filter @lethetown/server sim:text <horas>`: simulación determinista en texto, útil para depurar sin navegador (con `SIM_SEED=7 EMBEDDINGS=hash DATABASE_URL=` es reproducible).
 - `pnpm interview [--advance h]`: entrevistas de regresión de la memoria (resultado en `interviews/`, ignorado en git).

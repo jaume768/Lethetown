@@ -17,57 +17,62 @@ Todo funciona **sin API keys** gracias a un proveedor LLM simulado (mock).
 
 ## Arquitectura
 
+En producción (y en `pnpm dev` con Postgres) hay dos procesos: **api** (HTTP + WebSocket, sin
+estado de simulación) y uno o más **sim-worker** (ejecutan los mundos). Se reparten los mundos
+con _leases_ en Postgres y se hablan por `LISTEN/NOTIFY`. Sin Postgres, el api ejecuta los
+mundos en su propio proceso (modo todo en uno).
+
 ```mermaid
 flowchart LR
   subgraph web["apps/web (navegador)"]
-    Phaser["Phaser 4<br/>tilemap · sprites · emotes<br/>día/noche · minimapa"]
-    React["React<br/>jardín de recuerdos · Rashomon<br/>línea de tiempo · crónicas"]
+    Phaser["Phaser 4<br/>tilemap · sprites · retratos<br/>día/noche · clips"]
+    React["React<br/>modos Espectador / Director / Overlay<br/>dramas · jardín · Rashomon · i18n"]
   end
 
-  subgraph server["apps/server (Node + Fastify)"]
-    API["REST + WebSocket"]
-    Clock["GameClock<br/>cola de eventos"]
-    Sim["Simulation<br/>rutas A* · conversaciones<br/>rumores · intervención"]
-    Queue["LimitedProvider<br/>p-limit"]
-    Emb["Embeddings locales<br/>transformers.js"]
-    Stores["Pg / RAM stores"]
+  Caddy["Caddy<br/>HTTPS · estáticos · proxy"]
+
+  subgraph api["proceso api (Fastify)"]
+    REST["REST + WS<br/>sesiones · roles · rate limit<br/>helmet · CORS · Origin"]
+    GW["WorldGateway<br/>(remoto)"]
+    Insp["Inspector · Rashomon<br/>(lecturas directas)"]
+  end
+
+  subgraph worker["proceso sim-worker (×N)"]
+    Lease["Leases"]
+    Sim["Simulation<br/>percepción · conversaciones<br/>rutinas · memoria · intervención"]
+    Drama["DramaDetector"]
+    Budget["BudgetGuard<br/>kill switch"]
+    LLMc["LLMClient → Batching → cola<br/>→ reintentos/breaker → API"]
+    Emb["Embeddings<br/>(worker_thread)"]
   end
 
   subgraph core["packages/agent-core (lógica pura)"]
-    Agent["Agent<br/>percibir → guardar → decidir"]
-    Mem["MemorySystem<br/>recuperación · refuerzo · reconsolidación"]
-    Human["human.ts · maintenance.ts<br/>consolidación · esencia · fuente<br/>presupuesto · fichas sociales"]
-    LLM["LLMClient<br/>ModelRouter · CostTracker"]
-    Prov["Anthropic · OpenAI · Mock"]
+    Agent["Agent · MemorySystem<br/>human.ts · maintenance.ts<br/>moderación"]
   end
 
-  shared["packages/shared<br/>zod · parser Tiled · A*<br/>manifest de assets"]
-  tmj[("seeds/town.tmj")]
+  DB[("Postgres 16 + pgvector<br/>worlds · memories · events<br/>snapshots · leases · users")]
+  Prov["Anthropic · OpenAI · Mock"]
 
-  React <-- "WS: snapshot · tick · event · thinking<br/>memory_effect · chronicle · world" --> API
-  Phaser --- React
-  API --> Sim
-  Clock --> Sim
+  React <-- "WS: snapshot · delta · event · drama<br/>thinking · memory_effect · status" --> Caddy
+  Caddy --> REST
+  REST --> GW
+  REST --> Insp --> DB
+  GW <-- "LISTEN/NOTIFY<br/>estado vivo · señales · órdenes" --> DB
+  Lease <--> DB
   Sim --> Agent
-  Sim --> Human
-  Agent --> Mem
-  Agent --> LLM
-  Human --> Mem
-  Human --> LLM
-  LLM --> Queue --> Prov
-  Mem --> Emb
-  Mem --> Stores --> DB[("Postgres 16<br/>+ pgvector")]
-  tmj --> shared
-  shared -.-> web
-  shared -.-> server
-  shared -.-> core
+  Sim --> Drama
+  Agent --> LLMc --> Prov
+  LLMc --> Budget
+  Agent --> Emb
+  Sim <-- "NOTIFY" --> DB
+  Sim --> DB
 ```
 
 | Paquete               | Qué contiene                                                                                                                                                                        |
 | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `packages/shared`     | Esquemas zod de los mensajes, parser del mapa Tiled (`.tmj` → `World`), A* determinista, interpolación del movimiento, manifest de assets y lógica pura de animación, emotes y luz. |
 | `packages/agent-core` | Lógica pura y testeable, sin red: agente, memoria, memoria humana completa, crónica y entrevistas. El LLM y los almacenes llegan por inyección.                                     |
-| `apps/server`         | Simulación, reloj, base de datos, embeddings y **todas** las llamadas a la IA. Las API keys nunca llegan al navegador.                                                              |
+| `apps/server`         | Procesos `api` y `sim-worker` (o todo en uno): simulación, reloj, base de datos, embeddings, seguridad y **todas** las llamadas a la IA. Las API keys nunca llegan al navegador.    |
 | `apps/web`            | Vite + Phaser 4 para el mundo y React para los paneles.                                                                                                                             |
 
 ### El mundo
@@ -109,28 +114,62 @@ Todos los parámetros (pesos, umbrales, probabilidades, presupuesto) están en `
 Requisitos: Node 20+, pnpm 9 y, si quieres persistencia, Docker.
 
 ```bash
-pnpm install
-pnpm dev            # crea .env si falta; servidor (http://127.0.0.1:3001) + web (http://localhost:5173)
+pnpm install        # sin red también: onnxruntime no descarga nada (ver «Embeddings sin red»)
+pnpm dev            # crea .env si falta; api + sim-worker (http://127.0.0.1:3001) + web (http://localhost:5173)
 ```
 
-Funciona en **modo mock** con almacén en RAM. Para que el mapa se vea en pixel art necesitas un pack de assets (ver abajo); sin él, el cliente pinta formas simples.
+Funciona en **modo mock** con almacén en RAM (el api corre los mundos y el worker sale avisando).
+Para que el mapa se vea en pixel art necesitas un pack de assets (ver abajo); sin él, el cliente
+pinta formas simples.
 
-Con persistencia en Postgres + pgvector:
+Con persistencia en Postgres + pgvector (solo escucha en `127.0.0.1`; credenciales en `.env`):
 
 ```bash
 docker compose up -d   # Postgres en el puerto 5433 del host (POSTGRES_PORT para cambiarlo)
 pnpm db:migrate
-pnpm seed              # borra memorias, costes, auditoría, fichas, eventos y crónicas, y vuelve a sembrar
+pnpm user:create admin admin   # pide la contraseña sin eco
 pnpm dev
 ```
 
-### En el juego
+`pnpm seed` borra memorias, costes, auditoría, fichas, eventos, crónicas e instantáneas de todos
+los mundos (los mundos se conservan) y vuelve a sembrar. En RAM no hay `user:create`: define
+`DEV_ADMIN_PASSWORD` en `.env` y entra como `admin`.
 
-- **Mapa**: rueda para zoom (×1–×4), arrastrar para desplazar, clic en un agente para inspeccionarlo y "Seguir a…" para que la cámara lo siga. Los tejados se desvanecen si hay alguien dentro o pasas el ratón por encima.
-- **Inspector ("jardín de recuerdos")**: estado, plan, fichas sociales y recuerdos con opacidad según su fuerza. Se filtran por persona o lugar, y hay una lista de "olvidó X porque…". Desde aquí se envía la **voz interior**.
-- **Log**: clic en una frase o un suceso abre la **vista Rashomon** (cómo lo recuerda cada uno y cómo ha cambiado). La pestaña **Historial** es la línea de tiempo por día y hora.
-- **Mundo**: cambia el tiempo o el estado de un objeto ("la cafetera está rota") y los agentes reaccionan y lo recuerdan.
-- **Crónicas**: un relato del día que se escribe solo a las 23:00.
+Producción en un VPS (Caddy con HTTPS, api, workers y Postgres): **[docs/despliegue.md](docs/despliegue.md)**.
+
+### Modos y roles
+
+| Modo           | Quién                    | Qué ve y qué puede hacer                                                                                                                                                  |
+| -------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Espectador** | Cualquiera, sin cuenta   | Mapa, feed de **dramas** con «Ir a verlo», inspector y jardín de recuerdos, Rashomon, línea de tiempo y crónicas. Sin costes ni depuración. Crear clip y enlaces.         |
+| **Director**   | Rol `director` o `admin` | Además: velocidad, pausa, voz interior, objetos, clima, escribir la crónica y métricas. El `admin` ve también costes, el kill switch y el aviso de assets no comerciales. |
+| **Overlay**    | `/overlay?world=…` (OBS) | Fondo transparente con el mapa, el reloj y los últimos dramas.                                                                                                            |
+
+- **Mapa**: rueda o pellizco para zoom (×1–×4), arrastrar para desplazar, flechas y `+`/`−` con el
+  mapa enfocado, clic o el selector «Elegir agente» para inspeccionar. Los tejados se desvanecen
+  si hay alguien dentro.
+- **Dramas**: rumores, escuchas a escondidas, discusiones y amistades (cambios de afinidad),
+  reconsolidaciones y olvidos importantes, puntuados por interés.
+- **Compartir**: «Crear clip» graba la vista en vertical 9:16 (10–30 s) con la marca de agua;
+  la vista Rashomon se exporta como PNG; `?event=…`, `?drama=…` y `?agent=…` son enlaces permanentes.
+- En móvil el mapa ocupa la pantalla y los paneles van en una hoja inferior con pestañas.
+- Primera visita: onboarding de 3 pasos (botón «Ayuda» para verlo otra vez). Textos en es/en.
+
+### Seguridad y presupuesto
+
+- Sesiones con cookie `httpOnly` + `SameSite=Lax` (+ `Secure` en producción), contraseñas con
+  argon2id, `pnpm user:create`. Las peticiones que mutan exigen rol y un `Origin` permitido.
+- Rate limit global y más estricto en intervención (`RATE_LIMIT_INTERVENTION_PER_MINUTE`) y
+  crónicas; WebSocket con comprobación de Origin, `maxPayload`, heartbeat y límite por IP.
+- El texto de los jugadores se sanea, se limita (`USER_TEXT_MAX`), se modera con el modelo `fast`
+  y entra en los prompts entre `⟦ ⟧` como dato no confiable. Los rechazos quedan en
+  `moderation_log`.
+- **Presupuesto** en USD por día y mes, por mundo y global (`BUDGET_*`, `WORLD_BUDGET_*`). Al
+  superarlo, el mundo se pausa solo, se emite un evento y la web lo muestra. Kill switch para admin.
+- LLM con timeout propio, reintentos con backoff y jitter en 429/5xx y circuit breaker; Batch API
+  opcional (`LLM_BATCH=on`, Anthropic) para la consolidación nocturna y las crónicas.
+
+Todas las variables, con su explicación, están en [`.env.example`](.env.example).
 
 ### Comandos
 
@@ -139,26 +178,52 @@ pnpm dev
 | `pnpm test` / `lint` / `typecheck` / `format` | Vitest, ESLint, TypeScript y Prettier.                                                                                                           |
 | `pnpm map:generate [--pack nombre]`           | Regenera `seeds/town.tmj` con los sellos del pack indicado (por defecto, `activePack`).                                                          |
 | `pnpm assets:placeholder`                     | Genera el set placeholder propio en `apps/web/public/assets/placeholder/`.                                                                       |
+| `pnpm assets:check [--strict]`                | Lista los assets en uso con su licencia y marca los no comerciales (`--strict` falla si hay alguno).                                             |
+| `pnpm portraits:compose`                      | Compone los retratos animados de los agentes con las capas del Portrait Generator ([docs/personajes.md](docs/personajes.md)).                    |
+| `pnpm user:create <usuario> [rol]`            | Crea un usuario (viewer, director o admin) en Postgres.                                                                                          |
+| `pnpm test:e2e`                               | Smoke tests de la interfaz con Playwright (escritorio y 375 px), con su propio servidor mock.                                                    |
 | `pnpm interview [--advance horas]`            | Entrevista a cada agente con una batería fija de preguntas y guarda las respuestas en `interviews/`. Sirve como test de regresión de la memoria. |
 | `pnpm --filter @lethetown/server sim:text 16` | Simulación en modo texto, sin servidor: 16 horas de juego con eventos y costes.                                                                  |
 | `pnpm db:generate`                            | Genera una migración de Drizzle tras cambiar el esquema.                                                                                         |
 
-`SIM_SEED` en `.env` fija el azar de la memoria (rumores, reconsolidación…) para tener simulaciones reproducibles.
+`SIM_SEED` en `.env` fija el azar de la memoria (rumores, reconsolidación…) para tener simulaciones reproducibles. El test dorado (`apps/server/src/sim/golden.test.ts`) compara 3 días de simulación en mock con una línea de tiempo guardada.
+
+Con `TEST_DATABASE_URL` se ejecutan también los tests de integración con Postgres (la CI levanta uno).
+
+### Embeddings sin red
+
+En linux/x64, el `postinstall` de onnxruntime-node descargaría de NuGet los binarios CUDA; está
+desactivado (`pnpm.neverBuiltDependencies`) porque los de CPU vienen en el paquete. Si aun así el
+modelo no carga (p. ej. sin red la primera vez, para descargarlo), el servidor cae solo a
+`EMBEDDINGS=hash`. Los embeddings locales se calculan en un `worker_thread`.
 
 ### API
 
-| Método | Ruta                               | Descripción                                                                             |
-| ------ | ---------------------------------- | --------------------------------------------------------------------------------------- |
-| GET    | `/api/state` · `/api/map`          | Estado del mundo y mapa `.tmj`.                                                         |
-| GET    | `/api/agents/:id/memory?q=&limit=` | Jardín de recuerdos: puntuados, memoria de trabajo, auditoría y fichas.                 |
-| GET    | `/api/rashomon/:eventId`           | Versiones de un evento según cada implicado, con historial.                             |
-| GET    | `/api/events?day=` · `?from=&to=`  | Línea de tiempo.                                                                        |
-| GET    | `/api/chronicles` · POST `/:day`   | Crónicas (POST la genera ya).                                                           |
-| POST   | `/api/agents/:id/thought`          | Voz interior `{ text }`.                                                                |
-| POST   | `/api/world/spots/:id`             | Estado de un objeto `{ state }`.                                                        |
-| POST   | `/api/world/weather`               | `{ weather: "sunny" \| "cloudy" \| "rain" }`.                                           |
-| GET    | `/api/costs` · POST `/api/speed`   | Costes acumulados y velocidad (0, 1, 10, 60, 360).                                      |
-| WS     | `/ws`                              | `snapshot`, `tick`, `event`, `cost`, `thinking`, `memory_effect`, `chronicle`, `world`. |
+Todas las rutas de un mundo cuelgan de `/api/worlds/:worldId/…`; `/api/…` es un alias del mundo
+`default`. 👁 = público, 🎬 = director, 🔑 = admin.
+
+| Método  | Ruta (dentro del mundo)                | Descripción                                                        |
+| ------- | -------------------------------------- | ------------------------------------------------------------------ |
+| 👁 GET   | `/state` · `/map`                      | Estado del mundo (con su estado de pausa) y mapa `.tmj`.           |
+| 👁 GET   | `/agents/:id/memory?q=&limit=&offset=` | Jardín de recuerdos paginado (sin embeddings), auditoría y fichas. |
+| 👁 GET   | `/rashomon/:eventId`                   | Versiones de un evento según cada implicado, con historial.        |
+| 👁 GET   | `/events?day=` · `?from=&to=`          | Línea de tiempo.                                                   |
+| 👁 GET   | `/dramas?limit=` · `/chronicles`       | Feed de dramas y crónicas.                                         |
+| 🎬 POST | `/agents/:id/thought`                  | Voz interior `{ text }` (moderada).                                |
+| 🎬 POST | `/world/spots/:id` · `/world/weather`  | Estado de un objeto `{ state }` (moderado) y clima.                |
+| 🎬 POST | `/speed` · `/pause` · `/resume`        | Velocidad (0, 1, 10, 60, 360) y pausa.                             |
+| 🎬 POST | `/chronicles/:day`                     | Genera ya la crónica de un día.                                    |
+| 🔑 GET  | `/costs`                               | Costes acumulados.                                                 |
+
+| Método      | Ruta general                                            | Descripción                                                                                                                             |
+| ----------- | ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| 👁 GET       | `/api/health` · `/api/worlds`                           | Health mínimo y lista de mundos.                                                                                                        |
+| 👁 POST      | `/api/auth/login` · `/api/auth/logout` · GET `/me`      | Sesión por cookie.                                                                                                                      |
+| 🔑 GET      | `/api/admin/health` · `/api/admin/budget`               | Health detallado (leases, cola LLM, breaker) y presupuesto.                                                                             |
+| 🔑 POST     | `/api/admin/kill` `{ on }`                              | Kill switch.                                                                                                                            |
+| 🔑 GET/POST | `/api/admin/worlds` · `/:id/status` · `/:id/moderation` | Gestión de mundos (crear con `language`) y textos rechazados.                                                                           |
+| 🔑 GET      | `/metrics`                                              | Prometheus (o `Authorization: Bearer METRICS_TOKEN`).                                                                                   |
+| WS          | `/ws?world=`                                            | `snapshot` al conectar y luego `delta`, `event`, `drama`, `thinking`, `memory_effect`, `chronicle`, `world`, `status` y (admin) `cost`. |
 
 ## Cambiar de proveedor
 
@@ -187,12 +252,17 @@ El pixel art del juego es obra de **LimeZu**:
 
 - [Modern Exteriors](https://limezu.itch.io/modernexteriors)
 - [Modern Interiors](https://limezu.itch.io/moderninteriors) (versión gratuita)
-- [Modern User Interface](https://limezu.itch.io/modernuserinterface)
+- [Modern User Interface](https://limezu.itch.io/modernuserinterface) (incluye el Portrait Generator, herramienta de [MrSwordsman](https://legendaryswordsman2.itch.io/portrait-generator))
 - Página del autor: [limezu.itch.io](https://limezu.itch.io/)
+
+La pantalla de **Créditos** del juego muestra lo que exige cada licencia (sale del campo
+`credits` del manifest). Cada asset del manifest lleva `license: "commercial" | "non-commercial"`;
+`pnpm assets:check` lista los que están en uso y la web avisa en modo Director si alguno no es
+comercial. Inventario y licencias: `apps/web/public/assets/vendor/LICENSES.md` (ignorado por git).
 
 Las licencias de LimeZu **prohíben redistribuir** los assets. Por eso no están en el repositorio: cada desarrollador los descarga de itch.io y los descomprime en `apps/web/public/assets/vendor/`, que está en `.gitignore`. La versión gratuita de Modern Interiors además solo permite uso **no comercial**.
 
-La fuente [Pixelify Sans](https://github.com/eifetx/Pixelify-Sans) se distribuye bajo la SIL Open Font License 1.1 y está incluida en `apps/web/public/assets/fonts/`, junto con su `OFL.txt`.
+Las fuentes [Pixelify Sans](https://github.com/eifetx/Pixelify-Sans) (títulos y botones) y [Atkinson Hyperlegible](https://github.com/googlefonts/atkinson-hyperlegible) (textos largos) se distribuyen bajo la SIL Open Font License 1.1 y están incluidas en `apps/web/public/assets/fonts/` con sus licencias.
 
 ### Instalar los packs
 
@@ -202,8 +272,11 @@ Descomprime las versiones de 16×16 en `apps/web/public/assets/vendor/limezu/`, 
 apps/web/public/assets/vendor/limezu/
 ├── exteriors/Modern_Exteriors_16x16/...           # modernexteriors-win.zip
 ├── interiors_free/Modern tiles_Free/...           # Modern_Interiors_Free_v2.2.zip
-└── ui/16x16/...                                   # modernuserinterface-win.zip
+├── ui/16x16/...                                   # modernuserinterface-win.zip
+└── portraits/Portrait_Generator - 16x16|32x32|48x48 # «Portrait Pieces» del Portrait Generator
 ```
+
+Luego `pnpm portraits:compose` para generar los retratos (ver [docs/personajes.md](docs/personajes.md)).
 
 Compruébalo con `git check-ignore -v apps/web/public/assets/vendor/limezu`.
 
@@ -215,6 +288,8 @@ Compruébalo con `git check-ignore -v apps/web/public/assets/vendor/limezu`.
 - `stamps`: los "sellos" con los que el generador compone el mapa. Cada sello es un trozo del tileset (`x`, `y`, `w`, `h`) en modo `fixed`, `pattern` o `nineslice`, con su ancla respecto al spot y las baldosas que bloquean el paso.
 - `characters`: hojas de personaje con sus animaciones (`walk_down`, `sit_left`…). Las del placeholder son recoloreables con el `appearance` de cada agente.
 - `agentCharacters`: qué personaje usa cada agente.
+- `ui`: hoja de Modern User Interface y las piezas (panel, botón…) que el cliente recorta para la piel de la interfaz; sin ella, estilo pixel propio.
+- `portraits`: retratos compuestos (64 px para el inspector, 32 px junto a los bocadillos).
 
 Hay dos packs: `limezu` (el que usa el `.tmj` del repo) y `placeholder`, un set propio generado por código que sí se commitea. Para cambiar de pack:
 
@@ -229,6 +304,7 @@ El cliente elige automáticamente el pack con el que se generó el mapa (propied
 
 1. **MVP en modo texto** ✅
 2. **Memoria humana completa** ✅ consolidación, esencia, reconsolidación, confusión de fuente, fichas sociales, rumores y olvido por presupuesto.
-3. **Motor y acelerador**: nivel de detalle (LOD) para agentes lejanos o aburridos, Batch API para tareas no urgentes (consolidación, crónica), presupuestos de coste y una conversación completa por llamada.
-4. **Mundo visual 2D** ✅ (en gran parte): tilemap Tiled, personajes animados, emotes, bocadillos, día/noche, lluvia y minimapa. Pendiente: colisión de muebles, animaciones de dormir y de otras acciones (con el Character Generator completo) y objetos interactivos.
-5. **Pulido**: guardado y carga de partidas (posición y estado de los agentes), editor de agentes, más intervención del jugador y rendimiento.
+3. **Motor y acelerador** ✅ LOD sin espectadores, Batch API, presupuestos de coste. Pendiente: una conversación completa por llamada.
+4. **Mundo visual 2D** ✅ (en gran parte). Pendiente: colisión de muebles y animaciones con el Character Generator completo (cuando se compre Modern Interiors).
+5. **Producción** ✅ multi-mundo con instantáneas, seguridad, api + workers, observabilidad, Docker con Caddy e interfaz para espectadores, directores y streaming.
+6. **Siguiente**: OAuth, editor de mundos y agentes desde la web, traducción de los prompts (hoy se pide al modelo que responda en el idioma del mundo).
