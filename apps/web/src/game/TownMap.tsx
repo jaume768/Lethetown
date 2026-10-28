@@ -33,6 +33,9 @@ export function TownMap(props: Props) {
       width: 800,
       height: 610,
       backgroundColor: "#e8e2d0",
+      // Pixel art: sin suavizado y con posiciones enteras (en Phaser 4 roundPixels es false por defecto).
+      pixelArt: true,
+      roundPixels: true,
       scene: townScene,
       scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_HORIZONTALLY },
     });
