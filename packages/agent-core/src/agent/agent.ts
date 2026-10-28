@@ -115,6 +115,7 @@ export class Agent {
     this.state = {
       id: seed.id,
       name: seed.name,
+      appearance: seed.appearance,
       locationId: seed.homeId,
       targetId: null,
       spotId: bed?.id ?? null,

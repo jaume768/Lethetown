@@ -86,6 +86,7 @@ export type Movement = z.infer<typeof Movement>;
 export const AgentState = z.object({
   id: z.string(),
   name: z.string(),
+  appearance: Appearance,
   locationId: z.string(),
   /** Destino si se está desplazando. */
   targetId: z.string().nullable(),

@@ -4,7 +4,9 @@ import { formatGameTime } from "./format";
 
 export function EventLog({ events }: { events: SimEvent[] }) {
   const end = useRef<HTMLDivElement>(null);
-  useEffect(() => end.current?.scrollIntoView({ block: "end" }), [events.length]);
+  useEffect(() => {
+    end.current?.scrollIntoView({ block: "end" });
+  }, [events.length]);
   return (
     <section className="panel log">
       <h3>Eventos</h3>

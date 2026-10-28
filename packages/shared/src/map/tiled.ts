@@ -152,7 +152,7 @@ export function nearestWalkable(
 /**
  * Convierte un mapa Tiled en el `World` de la simulación: lugares (capa `places`),
  * objetos/spots (capa `spots`), rejilla de colisión (capa `collision`), farolas (`lights`)
- * y ventanas (baldosas de `buildings` cuyo tile tiene la propiedad `window: true`).
+ * y ventanas (`windows`).
  */
 export function parseTiledMap(input: unknown): World {
   const map = TiledMap.parse(input);
@@ -222,17 +222,10 @@ export function parseTiledMap(input: unknown): World {
     x: toTile(o.x),
     y: toTile(o.y),
   }));
-  const windowGids = new Set(
-    map.tilesets.flatMap((t) =>
-      (t.tiles ?? [])
-        .filter((tile) => prop(tile, "window") === true)
-        .map((tile) => tile.id + t.firstgid),
-    ),
-  );
-  const windows: TilePoint[] = [];
-  tileLayer(map, "buildings").data.forEach((gid, i) => {
-    if (windowGids.has(gid)) windows.push({ x: i % map.width, y: Math.floor(i / map.width) });
-  });
+  const windows = (objectLayer(map, "windows")?.objects ?? []).map((o) => ({
+    x: toTile(o.x),
+    y: toTile(o.y),
+  }));
 
   const name = prop(map, "name");
   return World.parse({
@@ -245,34 +238,4 @@ export function parseTiledMap(input: unknown): World {
     lights,
     windows,
   });
-}
-
-/**
- * Sustituye las baldosas del mapa según una tabla nombre → índice. Sirve para pintar el mismo
- * mapa (hecho con la paleta semántica) con otro tileset sin tocar el .tmj.
- */
-export function remapTiledMap(
-  input: TiledMap,
-  fromIndex: Readonly<Record<string, number>>,
-  toIndex: Readonly<Record<string, number>>,
-  tileset: Omit<TiledTileset, "firstgid">,
-): TiledMap {
-  const firstgid = input.tilesets[0]!.firstgid;
-  const byOldIndex = new Map<number, number>();
-  for (const [name, oldIndex] of Object.entries(fromIndex)) {
-    const target = toIndex[name];
-    if (target !== undefined) byOldIndex.set(oldIndex, target);
-  }
-  const remap = (gid: number) => {
-    if (!gid) return 0;
-    const target = byOldIndex.get(gid - firstgid);
-    return target === undefined ? 0 : target + 1;
-  };
-  return {
-    ...input,
-    tilesets: [{ ...tileset, firstgid: 1 }],
-    layers: input.layers.map((l) =>
-      l.type === "tilelayer" ? { ...l, data: l.data.map(remap) } : l,
-    ),
-  };
 }

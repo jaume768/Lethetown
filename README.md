@@ -147,6 +147,43 @@ LLM_CONCURRENCY=4             # llamadas simultáneas máximas
 
 Si cambias de modelo, añade su precio a `config/pricing.json`. Mientras no lo tenga, se contabiliza a 0 $ y aparece en `unpricedModels` de `/api/costs`.
 
+## Assets y créditos
+
+### Créditos (obligatorio)
+
+El pixel art del juego es obra de **LimeZu**:
+
+- [Modern Exteriors](https://limezu.itch.io/modernexteriors)
+- [Modern Interiors](https://limezu.itch.io/moderninteriors) (versión gratuita)
+- [Modern User Interface](https://limezu.itch.io/modernuserinterface)
+- Página del autor: [limezu.itch.io](https://limezu.itch.io/)
+
+Las licencias de LimeZu **prohíben redistribuir** los assets. Por eso no están en el repositorio: cada desarrollador los descarga de itch.io y los descomprime en `apps/web/public/assets/vendor/`, que está en `.gitignore`. La versión gratuita de Modern Interiors además solo permite uso **no comercial**.
+
+### Instalar los packs
+
+Descomprime las versiones de 16×16 en `apps/web/public/assets/vendor/limezu/`, manteniendo la estructura de los zip:
+
+```
+apps/web/public/assets/vendor/limezu/
+├── exteriors/Modern_Exteriors_16x16/...           # modernexteriors-win.zip
+├── interiors_free/Modern tiles_Free/...           # Modern_Interiors_Free_v2.2.zip
+└── ui/16x16/...                                   # modernuserinterface-win.zip
+```
+
+Compruébalo con `git check-ignore -v apps/web/public/assets/vendor/limezu`.
+
+### Manifest
+
+`apps/web/public/assets/manifest.json` (esquema zod en `packages/shared/src/assets/manifest.ts`) define, para cada pack:
+
+- `tilesets`: imagen y tamaño de cada tileset.
+- `stamps`: "sellos" que usa el generador del mapa. Cada sello es un trozo del tileset (`x`, `y`, `w`, `h` en baldosas) con un modo: `fixed` (se copia tal cual), `pattern` (se repite en mosaico) o `nineslice` (se estira). También indican el ancla respecto al spot y qué baldosas bloquean el paso.
+- `characters`: hojas de personaje con sus animaciones (`walk_down`, `sit_left`...).
+- `agentCharacters`: qué personaje usa cada agente.
+
+Para cambiar de pack, edita `activePack` (o añade uno nuevo con los mismos nombres de sellos) y ejecuta `pnpm map:generate`, que regenera `seeds/town.tmj` con los tilesets de ese pack. El `.tmj` se puede abrir y retocar en [Tiled](https://www.mapeditor.org/). Si lo editas a mano, no lo regeneres o perderás los cambios.
+
 ## Roadmap
 
 1. **MVP en modo texto** _(en curso)_: esqueleto, simulación mínima, memoria con olvido, vaguedad y refuerzo, proveedores y costes.

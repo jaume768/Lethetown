@@ -9,6 +9,7 @@ import { SpeedControls } from "./SpeedControls";
 export function App() {
   const game = useGame();
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [followId, setFollowId] = useState<string | null>(null);
   const onSelect = useCallback((id: string) => setSelectedId(id), []);
   const selected = game.agents.find((a) => a.id === selectedId);
 
@@ -19,8 +20,20 @@ export function App() {
           world={game.world}
           agents={game.agents}
           selectedId={selectedId}
+          followId={followId}
           onSelect={onSelect}
+          onFollowChange={setFollowId}
         />
+        {selected && (
+          <button
+            className="follow"
+            onClick={() => setFollowId(followId === selected.id ? null : selected.id)}
+          >
+            {followId === selected.id
+              ? "Dejar de seguir"
+              : `Seguir a ${selected.name.split(" ")[0]}`}
+          </button>
+        )}
         <EventLog events={game.events} />
       </main>
       <aside>

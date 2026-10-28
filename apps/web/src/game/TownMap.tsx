@@ -8,7 +8,9 @@ interface Props {
   world: World | null;
   agents: AgentState[];
   selectedId: string | null;
+  followId: string | null;
   onSelect: (id: string) => void;
+  onFollowChange: (id: string | null) => void;
 }
 
 function sync(scene: TownScene, { world, agents, selectedId }: Props) {
@@ -26,21 +28,23 @@ export function TownMap(props: Props) {
 
   useEffect(() => {
     const townScene = new TownScene();
-    townScene.onReady = () => sync(townScene, latest.current);
+    townScene.onReady = () => {
+      sync(townScene, latest.current);
+      townScene.setFollow(latest.current.followId);
+    };
     townScene.gameTime = gameTimeNow;
     scene.current = townScene;
+    // Solo en desarrollo: acceso desde la consola / scripts de captura.
+    if (import.meta.env.DEV) (window as unknown as { __town: TownScene }).__town = townScene;
     const game = new Phaser.Game({
       type: Phaser.AUTO,
       parent: host.current!,
-      width: 960,
-      height: 640,
-      backgroundColor: "#e8e2d0",
+      backgroundColor: "#1d2330",
       // Pixel art: sin suavizado y con posiciones enteras (en Phaser 4 roundPixels es false por defecto).
       pixelArt: true,
       roundPixels: true,
       scene: townScene,
-      scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_HORIZONTALLY },
-      zoom: 1,
+      scale: { mode: Phaser.Scale.RESIZE, width: "100%", height: "100%" },
     });
     return () => {
       scene.current = null;
@@ -49,12 +53,18 @@ export function TownMap(props: Props) {
   }, []);
 
   useEffect(() => {
-    if (scene.current) scene.current.onSelect = props.onSelect;
-  }, [props.onSelect]);
+    if (!scene.current) return;
+    scene.current.onSelect = props.onSelect;
+    scene.current.onFollowChange = props.onFollowChange;
+  }, [props.onSelect, props.onFollowChange]);
 
   useEffect(() => {
     if (scene.current) sync(scene.current, props);
   }, [props]);
+
+  useEffect(() => {
+    if (scene.current?.ready) scene.current.setFollow(props.followId);
+  }, [props.followId]);
 
   return <div ref={host} className="map" />;
 }

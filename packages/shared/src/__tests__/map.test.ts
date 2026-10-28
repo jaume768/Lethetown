@@ -1,15 +1,16 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
-  TILE_INDEX,
+  AssetManifest,
+  REQUIRED_STAMPS,
+  activePack,
+  characterFor,
   findPath,
   parseTiledMap,
   pathLength,
   pointAlong,
-  remapTiledMap,
   toWaypoints,
   positionAt,
-  TiledMap,
   type Grid,
 } from "../index";
 
@@ -96,28 +97,34 @@ describe("mapa del pueblo (seeds/town.tmj)", () => {
     const from = world.places[0]!.anchor;
     for (const t of targets) expect(findPath(world, from, t), JSON.stringify(t)).not.toBeNull();
   });
+});
 
-  it("remapTiledMap traduce baldosas por nombre a otro tileset", () => {
-    const map = TiledMap.parse(tmj);
-    const to = { grass: 100, wall: 7 };
-    const out = remapTiledMap(map, TILE_INDEX, to, {
-      name: "vendor",
-      image: "x.png",
-      imagewidth: 16,
-      imageheight: 16,
-      tilewidth: 16,
-      tileheight: 16,
-      tilecount: 200,
-      columns: 10,
-      margin: 0,
-      spacing: 0,
-    });
-    const ground = out.layers.find((l) => l.name === "ground");
-    expect(ground?.type === "tilelayer" && ground.data[0]).toBe(101);
-    const buildings = out.layers.find((l) => l.name === "buildings");
-    expect(
-      buildings?.type === "tilelayer" && buildings.data.filter((g) => g === 8).length,
-    ).toBeGreaterThan(0);
+describe("manifest de assets", () => {
+  const manifest = AssetManifest.parse(
+    JSON.parse(
+      readFileSync(
+        new URL("../../../../apps/web/public/assets/manifest.json", import.meta.url),
+        "utf8",
+      ),
+    ),
+  );
+  const { pack } = activePack(manifest);
+
+  it("el pack activo tiene todos los sellos que necesita el generador", () => {
+    for (const s of REQUIRED_STAMPS) expect(pack.stamps[s], s).toBeDefined();
+  });
+
+  it("el mapa usa exactamente los tilesets del pack activo", () => {
+    expect(tmj.tilesets.map((t: { name: string }) => t.name)).toEqual(
+      pack.tilesets.map((t) => t.name),
+    );
+  });
+
+  it("asigna un personaje a cada agente y cae en uno válido si no hay asignación", () => {
+    expect(pack.characters[characterFor(pack, "lucia")]).toBeDefined();
+    expect(characterFor(pack, "desconocido", "no-existe")).toBe(Object.keys(pack.characters)[0]);
+    const walk = pack.characters[characterFor(pack, "mateo")]!.animations["walk_down"];
+    expect(walk?.count).toBeGreaterThan(1);
   });
 });
 
