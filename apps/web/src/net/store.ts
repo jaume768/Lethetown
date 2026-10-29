@@ -1,61 +1,25 @@
 import {
   ClockEstimator,
-  RUNNING,
   ServerMessage,
-  type AgentState,
   type Chronicle,
-  type Drama,
-  type WorldRunStatus,
   type ClientMessage,
-  type ClockState,
-  type CostSummary,
+  type Drama,
   type SimEvent,
-  type Weather,
-  type World,
 } from "@lethetown/shared";
 import { useSyncExternalStore } from "react";
+import {
+  applyMessage,
+  INITIAL_STATE,
+  MAX_EVENTS,
+  worldApiPath,
+  type GameState,
+} from "./game-state";
+
+export type { GameState } from "./game-state";
 
 export type MemoryEffectMessage = Extract<ServerMessage, { type: "memory_effect" }>;
 
-export interface GameState {
-  connected: boolean;
-  /** Ya se recibió el primer snapshot (para la pantalla de carga). */
-  loaded: boolean;
-  /** Intentos de reconexión seguidos (0 = conectado o primer intento). */
-  retries: number;
-  status: WorldRunStatus;
-  dramas: Drama[];
-  world: World | null;
-  provider: string;
-  clock: ClockState;
-  agents: AgentState[];
-  events: SimEvent[];
-  costs: CostSummary | null;
-  weather: Weather;
-  /** Llamadas al LLM en curso por agente (y tarea de la última). */
-  thinking: Record<string, { count: number; task: string }>;
-  chronicles: Chronicle[];
-}
-
-const MAX_EVENTS = 400;
-const MAX_DRAMAS = 100;
-
-let state: GameState = {
-  connected: false,
-  loaded: false,
-  retries: 0,
-  status: RUNNING,
-  dramas: [],
-  world: null,
-  provider: "",
-  clock: { time: 0, speed: 0 },
-  agents: [],
-  events: [],
-  costs: null,
-  weather: "sunny",
-  thinking: {},
-  chronicles: [],
-};
+let state: GameState = INITIAL_STATE;
 const listeners = new Set<() => void>();
 const effectListeners = new Set<(e: MemoryEffectMessage) => void>();
 let socket: WebSocket | null = null;
@@ -71,85 +35,21 @@ const clockEstimate = new ClockEstimator();
 function handle(msg: ServerMessage) {
   if (msg.type === "snapshot") {
     clockEstimate.sync(msg.snapshot.clock.time, msg.snapshot.clock.speed, performance.now());
+    loadRecentEvents(msg.snapshot.clock.time);
   } else if (msg.type === "tick" || msg.type === "delta") {
     clockEstimate.sync(msg.clock.time, msg.clock.speed, performance.now());
   }
-  switch (msg.type) {
-    case "snapshot":
-      loadRecentEvents(msg.snapshot.clock.time);
-      return set({
-        world: msg.snapshot.world,
-        provider: msg.snapshot.provider,
-        clock: msg.snapshot.clock,
-        agents: msg.snapshot.agents,
-        weather: msg.snapshot.weather,
-        status: msg.snapshot.status,
-        loaded: true,
-      });
-    case "tick":
-      return set({ clock: msg.clock, agents: msg.agents });
-    case "delta": {
-      // Mezcla los agentes que cambiaron con los que ya teníamos.
-      const changed = new Map(msg.agents.map((a) => [a.id, a]));
-      const removed = new Set(msg.removed);
-      const agents = state.agents
-        .filter((a) => !removed.has(a.id))
-        .map((a) => changed.get(a.id) ?? a);
-      for (const a of msg.agents) if (!state.agents.some((x) => x.id === a.id)) agents.push(a);
-      return set({
-        clock: msg.clock,
-        ...(msg.agents.length || removed.size ? { agents } : {}),
-      });
-    }
-    case "event":
-      return set({ events: [...state.events, msg.event].slice(-MAX_EVENTS) });
-    case "cost":
-      return set({ costs: msg.summary });
-    case "thinking": {
-      const prev = state.thinking[msg.agentId]?.count ?? 0;
-      const count = Math.max(0, prev + (msg.phase === "start" ? 1 : -1));
-      return set({ thinking: { ...state.thinking, [msg.agentId]: { count, task: msg.task } } });
-    }
-    case "memory_effect":
-      for (const l of effectListeners) l(msg);
-      return;
-    case "status":
-      return set({ status: msg.status });
-    case "drama":
-      return set({
-        dramas: [msg.drama, ...state.dramas.filter((d) => d.id !== msg.drama.id)].slice(
-          0,
-          MAX_DRAMAS,
-        ),
-      });
-    case "chronicle":
-      return set({
-        chronicles: [...state.chronicles.filter((c) => c.day !== msg.chronicle.day), msg.chronicle],
-      });
-    case "world": {
-      const states = new Map(msg.spots.map((s) => [s.id, s.state]));
-      const world = state.world && {
-        ...state.world,
-        places: state.world.places.map((p) => ({
-          ...p,
-          objects: p.objects.map((o) => ({ ...o, state: states.get(o.id) ?? o.state })),
-        })),
-      };
-      return set({ weather: msg.weather, world });
-    }
-  }
+  if (msg.type === "memory_effect") for (const l of effectListeners) l(msg);
+  const next = applyMessage(state, msg);
+  if (next !== state) set(next);
 }
 
 /** Mundo que se está viendo (`?world=…`); sin parámetro, el mundo por defecto. */
 export const WORLD_ID = new URLSearchParams(location.search).get("world") ?? "default";
 
-/** Rutas de la API que no pertenecen a un mundo. */
-const GLOBAL_API = ["/api/health", "/api/worlds", "/api/auth", "/api/admin"];
-
 /** `/api/x` → `/api/worlds/<mundo>/x` (salvo las rutas generales). */
 export function apiPath(path: string): string {
-  if (!path.startsWith("/api/") || GLOBAL_API.some((g) => path.startsWith(g))) return path;
-  return `/api/worlds/${encodeURIComponent(WORLD_ID)}/${path.slice("/api/".length)}`;
+  return worldApiPath(path, WORLD_ID);
 }
 
 /** Conecta al WebSocket del servidor y reconecta si se cae. */

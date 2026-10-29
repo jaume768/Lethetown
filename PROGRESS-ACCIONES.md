@@ -20,7 +20,7 @@ y comprobar que `pnpm dev` arranca en modo mock.
 - [x] 0.5 Retención de datos configurable por tabla + job + test
 - [x] 0.6 `gist.minImportance` = 4 (y medir)
 - [x] 0.7 `docs/decisiones/` (ADR breves), CLAUDE.md corto, sin PROGRESS antiguos
-- [ ] 0.8 Tests unitarios de la lógica no visual de la web
+- [x] 0.8 Tests unitarios de la lógica no visual de la web
 
 ### Paso 1 — Catálogo de acciones
 
@@ -150,3 +150,8 @@ LLM: se desvanece con la esencia provisional.
   los checklists y las notas de bloqueos ya resueltos. Los tres PROGRESS antiguos se borran;
   CLAUDE.md queda en convenciones cortas con enlaces. Este archivo se consolidará en
   `docs/decisiones/acciones.md` al final de la rama.
+- **Tests de la web**: `apps/web` entra en los proyectos de Vitest. Lo no visual se saca a
+  módulos puros: `net/game-state.ts` (estado y `applyMessage`, el reductor de los mensajes del
+  servidor, más `worldApiPath`) y `ui/filters.ts` (jardín de recuerdos, relaciones, búsqueda sin
+  tildes); `store.ts` solo conecta el WebSocket y los efectos. i18n no toca `document` fuera del
+  navegador. El estimador de reloj ya estaba en shared con sus tests.

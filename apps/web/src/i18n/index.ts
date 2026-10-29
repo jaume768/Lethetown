@@ -22,7 +22,7 @@ const listeners = new Set<() => void>();
 
 export function setLang(next: Lang) {
   lang = next;
-  document.documentElement.lang = next;
+  if (typeof document !== "undefined") document.documentElement.lang = next;
   try {
     localStorage.setItem(STORAGE_KEY, next);
   } catch {
@@ -49,5 +49,6 @@ export function useI18n() {
   return { t, lang: current, setLang };
 }
 
-document.documentElement.lang = lang;
+// Fuera del navegador (tests) no hay documento.
+if (typeof document !== "undefined") document.documentElement.lang = lang;
 export type { MessageKey };

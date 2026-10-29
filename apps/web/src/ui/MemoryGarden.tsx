@@ -5,6 +5,7 @@ import es from "../i18n/es";
 import { useAssets } from "../net/assets";
 import { api, gameTimeNow } from "../net/store";
 import { formatGameTime, formatMinuteOfDay } from "./format";
+import { filterMemories } from "./filters";
 import { Portrait } from "./Portrait";
 import { RelationshipsPanel } from "./RelationshipsPanel";
 import { Tabs } from "./Tabs";
@@ -97,13 +98,11 @@ export function MemoryGarden(props: Props) {
 
   const memories = useMemo(
     () =>
-      (data && data.agentId === agentId ? data.memories : []).filter(
-        ({ memory: m, scores }) =>
-          (showForgotten || scores.clarity !== "forgotten") &&
-          m.status === "active" &&
-          (!person || m.people.includes(person)) &&
-          (!place || m.placeId === place),
-      ),
+      filterMemories(data && data.agentId === agentId ? data.memories : [], {
+        person,
+        place,
+        showForgotten,
+      }),
     [data, agentId, person, place, showForgotten],
   );
 

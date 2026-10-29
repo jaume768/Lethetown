@@ -15,6 +15,7 @@ import { useI18n, type MessageKey } from "../i18n";
 import { useAssets } from "../net/assets";
 import { api } from "../net/store";
 import { formatGameTime } from "./format";
+import { filterByName, filterRelationships } from "./filters";
 import { Portrait } from "./Portrait";
 
 const REFRESH_MS = 4000;
@@ -34,13 +35,6 @@ interface Props {
   onMarks: (marks: Record<string, AffinityIcon> | null) => void;
   onOpenNetwork: () => void;
 }
-
-/** Sin tildes y en minúsculas, para buscar. */
-const fold = (s: string) =>
-  s
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "")
-    .toLowerCase();
 
 /** Barra de −1 a 1 que crece desde el centro, con el color de la afinidad. */
 function AffinityBar({ value, label }: { value: number; label: string }) {
@@ -169,18 +163,11 @@ export function RelationshipsPanel(props: Props) {
   }, [marksOn, current, onMarks]);
   useEffect(() => () => onMarks(null), [onMarks]);
 
-  const items = useMemo(() => {
-    const needle = fold(query.trim());
-    return (current?.items ?? []).filter(
-      (i) =>
-        (!type || i.profile.relationshipType === type) &&
-        (!needle || fold(i.name).includes(needle)),
-    );
-  }, [current, query, type]);
-  const unknown = useMemo(() => {
-    const needle = fold(query.trim());
-    return (current?.unknown ?? []).filter((u) => !needle || fold(u.name).includes(needle));
-  }, [current, query]);
+  const items = useMemo(
+    () => filterRelationships(current?.items ?? [], query, type),
+    [current, query, type],
+  );
+  const unknown = useMemo(() => filterByName(current?.unknown ?? [], query), [current, query]);
 
   const first = agent.name.split(" ")[0] ?? agent.name;
   const typeLabel = (k: RelationshipType) => t(`rel.type.${k}` as MessageKey);
