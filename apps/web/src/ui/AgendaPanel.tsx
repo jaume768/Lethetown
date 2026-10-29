@@ -1,8 +1,7 @@
 import type { AgentState, Commitment, CommitmentsResponse, World } from "@lethetown/shared";
-import { useEffect, useState } from "react";
 import { useI18n, type MessageKey } from "../i18n";
-import { api } from "../net/store";
 import { formatGameTime } from "./format";
+import { usePolled } from "./usePolled";
 
 const REFRESH_MS = 5000;
 /** Más tarde que esto (minutos) es llegar tarde (como en el motor). */
@@ -17,27 +16,11 @@ interface Props {
 /** Pestaña «Agenda» del inspector: citas próximas y pasadas, y cómo acabaron. */
 export function AgendaPanel({ agent, agents, world }: Props) {
   const { t } = useI18n();
-  const [data, setData] = useState<CommitmentsResponse | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      try {
-        const res = await api<CommitmentsResponse>(`/api/agents/${agent.id}/commitments?limit=50`);
-        if (!cancelled) setData(res);
-      } catch {
-        /* reintenta en el siguiente intervalo */
-      }
-    };
-    void load();
-    const timer = setInterval(load, REFRESH_MS);
-    return () => {
-      cancelled = true;
-      clearInterval(timer);
-    };
-  }, [agent.id]);
-
-  const current = data && data.agentId === agent.id ? data : null;
+  const current = usePolled<CommitmentsResponse>(
+    `/api/agents/${agent.id}/commitments?limit=50`,
+    agent.id,
+    REFRESH_MS,
+  );
   if (!current) return <p className="muted small">{t("rel.loading")}</p>;
   const name = (id: string) => agents.find((a) => a.id === id)?.name.split(" ")[0] ?? id;
   const place = (id: string) => world?.places.find((p) => p.id === id)?.name ?? id;

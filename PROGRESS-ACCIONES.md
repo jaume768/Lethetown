@@ -71,9 +71,9 @@ y comprobar que `pnpm dev` arranca en modo mock.
 
 ### Paso 9 — Interfaz
 
-- [ ] Inspector: Agenda, Inventario y Lugares conocidos; iconos por acción en el log y Rashomon
-- [ ] Mapa: cita, acompañando, tablón
-- [ ] Dramas nuevos; responsive, accesible, i18n
+- [x] Inspector: Agenda, Inventario y Lugares conocidos; iconos por acción en el log y Rashomon
+- [x] Mapa: cita, acompañando, tablón
+- [x] Dramas nuevos; responsive, accesible, i18n
 
 ### Final
 
@@ -398,3 +398,12 @@ text }` dejaría la nota en un buzón del destinatario (`placeId = null`) que se
   quedar, acompañar y prestar.
 - **Orden de las acciones** en el prompt: el del catálogo (`ACTION_SPECS`), no el de registro (un
   import circular nuevo lo había cambiado).
+- **Interfaz** (`apps/web`): el inspector tiene cinco pestañas (Estado y recuerdos, Relaciones,
+  Agenda, Inventario y Lugares), que piden su API cada pocos segundos con un hook común
+  (`usePolled`). El log y Rashomon muestran una insignia por acción (`meta.action` → icono,
+  `ui/icons.ts`) con su nombre para lectores de pantalla, y ✗ si no salió; el icono no se repite si
+  el texto ya empieza por él. En el mapa, junto al agente, 📅 si le toca una cita y 👣 si va con
+  alguien (`agentBadge`, lógica pura en shared con test), y 📌 con el número de notas sobre el
+  tablón. Con cinco pestañas la fila se desplaza en horizontal; se corrigió que en móvil
+  ensanchara el panel más que la pantalla (`min-width: 0`). Textos en `es.ts` y `en.ts`; e2e de las
+  pestañas nuevas en escritorio y móvil. Capturas (sin assets de vendor) en `docs/capturas/`.

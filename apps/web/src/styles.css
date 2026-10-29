@@ -347,7 +347,13 @@ textarea.field {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  /* Sin esto, una fila de pestañas larga ensancha el panel más que la pantalla (móvil). */
+  min-width: 0;
+  max-width: 100%;
   flex: 1;
+}
+.tabs > [role="tabpanel"] {
+  min-width: 0;
 }
 .tablist {
   display: flex;
@@ -1196,4 +1202,15 @@ html.ui-skin .warn-text {
   .rel-head .sparkline {
     grid-column: 1 / -1;
   }
+}
+
+/* Insignia de la acción del catálogo en el log y en Rashomon. */
+.act-badge {
+  display: inline-block;
+  min-width: 1.4em;
+  text-align: center;
+}
+.act-badge.failed {
+  color: var(--danger);
+  font-weight: 700;
 }

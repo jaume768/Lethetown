@@ -1,5 +1,7 @@
 import {
   bubbleSeconds,
+  agentBadge,
+  BADGE_ICON,
   emoteFor,
   emoteForMemoryEffect,
   pickFrame,
@@ -36,6 +38,8 @@ export class AgentView {
   private readonly emote: Phaser.GameObjects.Image;
   /** Lo que el agente seleccionado piensa de este (corazón, indiferencia, enfado). */
   private readonly mark: Phaser.GameObjects.Image;
+  /** Indicador junto al nombre: va a una cita (📅) o acompaña a alguien (👣). */
+  private readonly badge: Phaser.GameObjects.Text;
   private readonly bubble: Phaser.GameObjects.Container;
   private readonly bubbleBg: Phaser.GameObjects.NineSlice;
   private readonly bubbleText: Phaser.GameObjects.Text;
@@ -125,12 +129,17 @@ export class AgentView {
       .container(0, -height - 8, [this.bubbleBg, tail, this.bubbleText])
       .setVisible(false);
 
+    this.badge = scene.add
+      .text(7, -(sheet?.frameHeight ?? 18) + 2, "", { fontSize: "8px", resolution: 2 })
+      .setOrigin(0, 1)
+      .setVisible(false);
     this.container = scene.add.container(0, 0, [
       ...this.outline,
       this.body,
       this.label,
       this.emote,
       this.mark,
+      this.badge,
       this.bubble,
     ]);
     this.body
@@ -254,7 +263,14 @@ export class AgentView {
   /** Cada frame: animación, emote y bocadillo. */
   update(
     pos: { x: number; y: number; facing: AgentState["facing"]; moving: boolean; distance: number },
-    opts: { thinking: boolean; realSeconds: number; dtSeconds: number; reducedMotion?: boolean },
+    opts: {
+      thinking: boolean;
+      realSeconds: number;
+      dtSeconds: number;
+      /** Minuto de juego (para el indicador de cita). */
+      gameTime: number;
+      reducedMotion?: boolean;
+    },
   ) {
     if (this.sheet) {
       const choice = pickFrame(this.sheet, {
@@ -269,6 +285,10 @@ export class AgentView {
         spr.setAngle(choice.lying ? -90 : 0);
       }
     }
+
+    const badge = agentBadge(this.state, opts.gameTime);
+    this.badge.setVisible(Boolean(badge));
+    if (badge) this.badge.setText(BADGE_ICON[badge]);
 
     // Emote: uno breve (efecto de memoria) tiene prioridad sobre el persistente.
     const now = this.scene.time.now;

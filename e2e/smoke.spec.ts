@@ -114,3 +114,21 @@ test("relaciones: pestaña del inspector, recíproca y red del pueblo", async ({
   await expect(dialog.getByRole("button", { name: "Marta Gil" })).toBeVisible();
   await expect(dialog.getByRole("slider")).toBeVisible();
 });
+
+test("inspector: agenda, inventario y lugares conocidos", async ({ page }, info) => {
+  await open(page);
+  if (info.project.name === "movil") await page.locator(".sheet-handle").click();
+  await page.getByRole("combobox", { name: "Elegir agente" }).selectOption("valentina");
+  const panel = page.getByRole("tabpanel").first();
+  await page.getByRole("tab", { name: "Inventario" }).click();
+  await expect(page.getByRole("heading", { name: "Lleva encima" })).toBeVisible({
+    timeout: 15_000,
+  });
+  await page.getByRole("tab", { name: "Lugares" }).click();
+  await expect(page.getByText(/Conoce \d+ de \d+ lugares del pueblo/)).toBeVisible({
+    timeout: 15_000,
+  });
+  await page.getByRole("tab", { name: "Agenda" }).click();
+  await expect(page.getByRole("heading", { name: "Próximas citas" })).toBeVisible();
+  await expect(panel).toBeVisible();
+});

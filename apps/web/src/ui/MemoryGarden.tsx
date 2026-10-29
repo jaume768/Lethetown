@@ -8,6 +8,8 @@ import { formatGameTime, formatMinuteOfDay } from "./format";
 import { filterMemories } from "./filters";
 import { Portrait } from "./Portrait";
 import { AgendaPanel } from "./AgendaPanel";
+import { InventoryPanel } from "./InventoryPanel";
+import { PlacesPanel } from "./PlacesPanel";
 import { RelationshipsPanel } from "./RelationshipsPanel";
 import { Tabs } from "./Tabs";
 
@@ -64,7 +66,9 @@ export function MemoryGarden(props: Props) {
   const { agent, agents, world, thinkingTask, canIntervene } = props;
   const { onFocus, onSelectAgent, marksOn, onMarksOn, onMarks, onOpenNetwork } = props;
   const { t } = useI18n();
-  const [view, setView] = useState<"mind" | "relations" | "agenda">("mind");
+  const [view, setView] = useState<"mind" | "relations" | "agenda" | "inventory" | "places">(
+    "mind",
+  );
   const [data, setData] = useState<AgentMemoryResponse | null>(null);
   const [person, setPerson] = useState("");
   const [place, setPlace] = useState("");
@@ -147,6 +151,12 @@ export function MemoryGarden(props: Props) {
       <div className="small">
         📍 {placeName(agent.locationId)}
         {agent.targetId ? ` → ${placeName(agent.targetId)}` : ""} · {agent.action}{" "}
+        {agent.companionId && (
+          <span className="tag">
+            👣{" "}
+            {t("agent.with", { name: agents.find((a) => a.id === agent.companionId)?.name ?? "" })}
+          </span>
+        )}{" "}
         <span className="tag">{agent.activityKind}</span>
       </div>
       <Tabs
@@ -154,6 +164,8 @@ export function MemoryGarden(props: Props) {
           { id: "mind", label: t("inspector.mind") },
           { id: "relations", label: t("inspector.relations") },
           { id: "agenda", label: t("inspector.agenda") },
+          { id: "inventory", label: t("inspector.inventory") },
+          { id: "places", label: t("inspector.places") },
         ]}
         active={view}
         onChange={setView}
@@ -161,6 +173,10 @@ export function MemoryGarden(props: Props) {
       >
         {view === "agenda" ? (
           <AgendaPanel agent={agent} agents={agents} world={world} />
+        ) : view === "inventory" ? (
+          <InventoryPanel agent={agent} agents={agents} world={world} />
+        ) : view === "places" ? (
+          <PlacesPanel agent={agent} agents={agents} world={world} />
         ) : view === "relations" ? (
           <RelationshipsPanel
             agent={agent}
