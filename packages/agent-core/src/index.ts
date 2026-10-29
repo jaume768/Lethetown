@@ -29,3 +29,4 @@ export * from "./agent/activity";
 export * from "./agent/chronicle";
 export * from "./agent/interview";
 export * from "./agent/moderation";
+export * from "./agent/minor-safety";

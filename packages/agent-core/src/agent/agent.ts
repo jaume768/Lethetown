@@ -15,6 +15,7 @@ import { recallText } from "../memory/retrieval";
 import type { MemorySource } from "@lethetown/shared";
 import { WorkingMemory } from "../memory/working-memory";
 import { inferActivityKind } from "./activity";
+import type { MinorInfo } from "./minor-safety";
 import { untrusted } from "./moderation";
 import { DecideResponse, ImportanceResponse, PlanResponse, parseWith } from "./parse";
 import { replanAt } from "./replan";
@@ -76,6 +77,8 @@ export interface AgentDeps {
   social?: SocialProfileStore;
   /** Nombres de los demás agentes, para las notas sociales. */
   names?: Record<string, string>;
+  /** Menores del pueblo, para la regla fija del prompt de identidad. */
+  minors?: MinorInfo[];
   onError?: (agentId: string, task: string, error: unknown) => void;
 }
 
@@ -138,7 +141,7 @@ export class Agent {
     private readonly deps: AgentDeps,
   ) {
     this.id = seed.id;
-    this.system = identityPrompt(seed, deps.places, deps.language);
+    this.system = identityPrompt(seed, deps.places, deps.language, deps.minors);
     this.spots = new Map(deps.places.flatMap((p) => p.objects.map((o) => [o.id, o] as const)));
     const home = deps.places.find((p) => p.id === seed.homeId);
     if (!home) throw new Error(`${seed.id}: casa desconocida ${seed.homeId}`);
@@ -227,7 +230,7 @@ export class Agent {
       -MAX_DONE_TODAY,
     );
     const place = this.deps.places.find((p) => p.id === placeId)?.name ?? placeId;
-    await this.deps.memory.remember(
+    await this.deps.memory.tryRemember(
       {
         agentId: this.id,
         text: `Estuve en ${place}: ${activity}`,
@@ -310,12 +313,15 @@ export class Agent {
         })
         .filter((p): p is PlanItem => p !== null)
         .sort((a, b) => a.startMinute - b.startMinute);
+      for (const p of [...plan]) {
+        if (!(await this.safe(p.activity, "plan"))) plan.splice(plan.indexOf(p), 1);
+      }
       this.state.plan = plan.length ? plan : fallbackPlan(this.seed.homeId);
     } catch (error) {
       this.deps.onError?.(this.id, "plan", error);
       this.state.plan = fallbackPlan(this.seed.homeId);
     }
-    await this.deps.memory.remember(
+    await this.deps.memory.tryRemember(
       {
         agentId: this.id,
         text: `Mi plan para hoy: ${this.state.plan.map((p) => p.activity).join(", ")}`,
@@ -336,7 +342,7 @@ export class Agent {
     for (const [i, p] of perceptions.entries()) {
       const rating = ratings[i] ?? { importance: 2, valence: 0 };
       valenceSum += rating.valence;
-      const record = await this.deps.memory.remember(
+      const record = await this.deps.memory.tryRemember(
         {
           agentId: this.id,
           text: texts[i]!,
@@ -350,7 +356,7 @@ export class Agent {
         },
         now,
       );
-      this.workingMemory.push({ text: record.text, memoryId: record.id, addedAt: now });
+      if (record) this.workingMemory.push({ text: record.text, memoryId: record.id, addedAt: now });
     }
     const v = 0.8 * this.state.mood.valence + 0.2 * (valenceSum / perceptions.length);
     this.state.mood = { valence: clamp(v, -1, 1), label: moodLabel(v) };
@@ -398,7 +404,9 @@ export class Agent {
           workingMemory: this.workingMemory.render(),
         }),
       });
-      return this.toDecision(parseWith(DecideResponse, res.text), input.present);
+      return await this.checked(
+        this.toDecision(parseWith(DecideResponse, res.text), input.present),
+      );
     } catch (error) {
       this.deps.onError?.(this.id, "decide", error);
       return { kind: "follow_plan" };
@@ -413,7 +421,7 @@ export class Agent {
     now: number,
     eventId?: string,
   ) {
-    await this.deps.memory.remember(
+    await this.deps.memory.tryRemember(
       {
         agentId: this.id,
         text: `Le dije a ${toName}: "${utterance}"`,
@@ -425,6 +433,31 @@ export class Agent {
       },
       now,
     );
+  }
+
+  /** ¿Pasa la protección de menores? (sin guardián, siempre). */
+  private async safe(
+    text: string,
+    kind: "speech" | "action" | "plan",
+    actors: string[] = [],
+  ): Promise<boolean> {
+    const guard = this.deps.memory.guard;
+    return !guard || guard.allows(text, { kind, actors: [this.id, ...actors], agentId: this.id });
+  }
+
+  /** Lo que la protección de menores descarta se convierte en seguir el plan. */
+  private async checked(d: Decision): Promise<Decision> {
+    const reason = d.reason ?? "";
+    if (d.kind === "talk" && !(await this.safe(`${d.utterance} ${reason}`, "speech", [d.to]))) {
+      return { kind: "follow_plan" };
+    }
+    if (d.kind === "react" && !(await this.safe(`${d.action} ${reason}`, "action"))) {
+      return { kind: "follow_plan" };
+    }
+    if (d.kind === "follow_plan" && reason && !(await this.safe(reason, "action"))) {
+      return { kind: "follow_plan" };
+    }
+    return d;
   }
 
   private validPlace(id: string | undefined): string | undefined {

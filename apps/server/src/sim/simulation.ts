@@ -1,4 +1,4 @@
-import { Agent, type Decision, type MemoryEffect } from "@lethetown/agent-core";
+import { Agent, minorsOf, type Decision, type MemoryEffect } from "@lethetown/agent-core";
 import type {
   AgentState,
   Chronicle,
@@ -52,6 +52,7 @@ export class Simulation {
     const ctx = new SimContext(deps);
     this.ctx = ctx;
     const names = Object.fromEntries(deps.seeds.map((s) => [s.id, s.name]));
+    const minors = minorsOf(deps.seeds);
     for (const seed of deps.seeds) {
       const agent = new Agent(seed, {
         llm: deps.llm,
@@ -59,6 +60,7 @@ export class Simulation {
         places: deps.world.places,
         social: deps.social,
         names,
+        minors,
         language: deps.language,
         onError: (agentId, task, error) =>
           ctx.emit("system", agentId, `⚠ Error en "${task}": ${errorMessage(error)}`),

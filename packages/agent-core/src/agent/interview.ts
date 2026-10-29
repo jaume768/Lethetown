@@ -64,7 +64,17 @@ PREGUNTA: ${q.question}
 Formato:
 {"answer":"..."}`,
     });
-    out.push({ ...q, answer: parseWith(InterviewResponse, res.text).answer, memories });
+    const answer = parseWith(InterviewResponse, res.text).answer;
+    const safe = await memory.guard?.allows(answer, {
+      kind: "interview",
+      actors: [agent.id],
+      agentId: agent.id,
+    });
+    out.push({
+      ...q,
+      answer: safe === false ? "(respuesta retirada por la protección de menores)" : answer,
+      memories,
+    });
   }
   return out;
 }

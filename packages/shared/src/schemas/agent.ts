@@ -48,8 +48,21 @@ export const AgentSeed = z.object({
   portrait: PortraitRecipe.optional(),
   /** Recuerdos iniciales (semánticos) con los que arranca el agente. */
   initialMemories: z.array(z.string()).default([]),
+  /**
+   * Menor de edad (sin relaciones románticas ni sexuales, ni nadie que flirtee con él o ella).
+   * Si no se indica, se deduce de la edad (`seedIsMinor`).
+   */
+  isMinor: z.boolean().optional(),
 });
 export type AgentSeed = z.infer<typeof AgentSeed>;
+
+/** Edad a partir de la cual un agente es adulto. */
+export const ADULT_AGE = 18;
+
+/** ¿Es menor de edad? El campo explícito manda; si no, la edad. */
+export function seedIsMinor(seed: Pick<AgentSeed, "age" | "isMinor">): boolean {
+  return seed.isMinor ?? seed.age < ADULT_AGE;
+}
 
 export const Needs = z.object({
   energy: z.number().min(0).max(1),

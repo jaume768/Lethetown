@@ -1,6 +1,7 @@
 import { WEATHER_SHELTER, type Weather } from "@lethetown/shared";
 import type { MockResponder } from "../llm/mock";
 import type { CompletionRequest } from "../llm/types";
+import { hasStrongRomance } from "./minor-safety";
 import { WEATHER_LABEL } from "./prompts";
 
 /**
@@ -25,6 +26,7 @@ const HANDLERS: Record<string, (req: CompletionRequest) => string> = {
   chronicle: mockChronicle,
   interview: mockInterview,
   moderate: mockModerate,
+  moderate_minor: mockModerateMinor,
 };
 
 /** Permite a otros módulos (memoria, crónica, entrevistas) registrar su respuesta mock. */
@@ -711,6 +713,21 @@ function mockModerate(req: CompletionRequest): string {
   const text = /Texto del jugador: ⟦([\s\S]*)⟧/.exec(req.prompt)?.[1] ?? "";
   if (MOCK_BLOCKLIST.test(text)) {
     return JSON.stringify({ allowed: false, reason: "parece una instrucción al sistema" });
+  }
+  return JSON.stringify({ allowed: true, reason: "" });
+}
+
+/** Cariño de familia (se acepta) frente a afecto de pareja (se rechaza con un menor). */
+const FAMILY =
+  /(mamá|papá|madre|padre|hij[oa]|abuel[oa]|herman[oa]|tí[oa]|sobrin[oa]|nieto|nieta)/i;
+const COUPLE =
+  /(te quiero|me gustas|guap[oa]|precios[oa]|mi vida|corazón|amor|bes[aeoéó]|darling|love|kiss)/i;
+
+/** Moderación de contenido con menores: rechaza lo romántico; acepta el cariño de familia. */
+function mockModerateMinor(req: CompletionRequest): string {
+  const text = /Texto: ⟦([\s\S]*)⟧/.exec(req.prompt)?.[1] ?? "";
+  if (hasStrongRomance(text) || (COUPLE.test(text) && !FAMILY.test(text))) {
+    return JSON.stringify({ allowed: false, reason: "afecto romántico hacia un menor" });
   }
   return JSON.stringify({ allowed: true, reason: "" });
 }

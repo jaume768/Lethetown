@@ -3,6 +3,7 @@ import type { MemoryAuditEntry } from "@lethetown/shared";
 import { seededRng, type Rng } from "../util/random";
 import { DEFAULT_MEMORY_CONFIG, type MemoryConfig } from "./config";
 import { initialStability, reinforce } from "./decay";
+import type { MinorGuard } from "../agent/minor-safety";
 import type { Reconsolidator } from "./human";
 import {
   rankMemories,
@@ -32,6 +33,16 @@ export interface MemorySystemDeps {
   candidateLimit?: number;
   idGenerator?: () => string;
   rng?: Rng;
+  /** Protección de menores: lo que no pase no se guarda (ver agent/minor-safety.ts). */
+  guard?: MinorGuard;
+}
+
+/** Un recuerdo que no se guarda porque la protección de menores lo descartó. */
+export class BlockedContentError extends Error {
+  constructor() {
+    super("Contenido descartado por la protección de menores");
+    this.name = "BlockedContentError";
+  }
 }
 
 /** Contexto para reconsolidar al recordar (identidad del agente y lo que piensa de otros). */
@@ -58,6 +69,7 @@ export class MemorySystem {
   readonly embedder: Embedder;
   readonly config: MemoryConfig;
   readonly rng: Rng;
+  readonly guard?: MinorGuard;
   private readonly reconsolidator?: Reconsolidator;
   private readonly candidateLimit: number;
   private readonly newId: () => string;
@@ -71,6 +83,7 @@ export class MemorySystem {
     this.candidateLimit = deps.candidateLimit ?? 200;
     this.newId = deps.idGenerator ?? randomUUID;
     this.rng = deps.rng ?? seededRng(Date.now());
+    this.guard = deps.guard;
   }
 
   get retrievalConfig(): RetrievalConfig {
@@ -89,7 +102,21 @@ export class MemorySystem {
     await this.store.addAudit(entry);
   }
 
+  /**
+   * Guarda un recuerdo. Si la protección de menores lo descarta, lanza `BlockedContentError`
+   * (ver `tryRemember`).
+   */
   async remember(input: NewMemory, now: number): Promise<MemoryRecord> {
+    if (
+      this.guard &&
+      !(await this.guard.allows(input.text, {
+        kind: input.type === "reflection" ? "reflection" : "memory",
+        actors: [input.agentId, ...(input.people ?? [])],
+        agentId: input.agentId,
+      }))
+    ) {
+      throw new BlockedContentError();
+    }
     const [embedding] = await this.embedder.embed([input.text]);
     const valence = input.emotionalValence ?? 0;
     const importance = Math.min(10, Math.max(1, Math.round(input.importance)));
@@ -117,6 +144,16 @@ export class MemorySystem {
     };
     await this.store.add(record);
     return record;
+  }
+
+  /** Como `remember`, pero devuelve null si la protección de menores lo descarta. */
+  async tryRemember(input: NewMemory, now: number): Promise<MemoryRecord | null> {
+    try {
+      return await this.remember(input, now);
+    } catch (error) {
+      if (error instanceof BlockedContentError) return null;
+      throw error;
+    }
   }
 
   /** Puntúa todos los recuerdos del agente sin modificarlos (para el inspector). */
@@ -185,6 +222,12 @@ export class MemorySystem {
       socialSummary: await ctx.socialSummary(m.people),
     });
     if (!rewritten || rewritten.text === m.text) return;
+    const safe = await this.guard?.allows(rewritten.text, {
+      kind: "reconsolidation",
+      actors: [m.agentId, ...m.people],
+      agentId: m.agentId,
+    });
+    if (safe === false) return;
     // Versión + cambio + auditoría, todo o nada.
     await this.store.transaction(async (tx) => {
       const previous = await tx.versions(m.id);

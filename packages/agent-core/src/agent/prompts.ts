@@ -1,5 +1,6 @@
 import type { AgentSeed, Needs, Place, PlanItem, Weather } from "@lethetown/shared";
 import { ActivityKind, WEATHER_SHELTER, exposedTo } from "@lethetown/shared";
+import { minorsRule, type MinorInfo } from "./minor-safety";
 
 /** Convierte minutos de juego en "día N, HH:MM". */
 export function formatGameTime(minutes: number): string {
@@ -94,6 +95,8 @@ export function identityPrompt(
   seed: AgentSeed,
   places: Place[],
   language: PromptLanguage = "es",
+  /** Menores del pueblo (regla fija de protección; ver minor-safety.ts). */
+  minors: MinorInfo[] = [],
 ): string {
   return `Eres ${seed.name}, ${seed.age} años, habitante de un pequeño pueblo.
 Rasgos: ${seed.traits.join(", ")}.
@@ -113,7 +116,7 @@ ${places.map(placeLine).join("\n")}
 - No repitas sin motivo lo que ya has hecho hoy (HOY YA HAS HECHO): si cambias de planes, elige algo distinto.
 - Si estás hablando con alguien y según tu plan toca irte, no le dejes con la palabra en la boca: despídete o cierra la conversación ("talk") o quédate un rato más ("react").
 - activityKind es uno de: ${ACTIVITY_KINDS}.
-- Responde SIEMPRE con un único objeto JSON válido, sin texto antes ni después.${languageRule(language)}`;
+- Responde SIEMPRE con un único objeto JSON válido, sin texto antes ni después.${minorsRule(minors, seed.id)}${languageRule(language)}`;
 }
 
 export function planPrompt(opts: {

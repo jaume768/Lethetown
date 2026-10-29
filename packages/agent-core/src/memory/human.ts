@@ -5,6 +5,7 @@
  */
 import type { MemorySource, SocialProfile } from "@lethetown/shared";
 import { z } from "zod";
+import type { MinorGuard } from "../agent/minor-safety";
 import { parseWith } from "../agent/parse";
 import type { LLMClient } from "../llm/client";
 import type { Rng } from "../util/random";
@@ -152,6 +153,8 @@ export async function updateSocialAfterConversation(
     other: { id: string; name: string };
     transcript: string[];
     now: number;
+    /** Protección de menores: si la opinión no pasa, la ficha no cambia. */
+    guard?: MinorGuard;
   },
 ): Promise<SocialProfile> {
   const prev = await store.get(opts.owner.agentId, opts.other.id);
@@ -172,6 +175,18 @@ Formato:
 {"summary":"...","affinityDelta":0.05,"trustDelta":0}`,
   });
   const r = parseWith(SocialResponse, res.text);
+  const safe = await opts.guard?.allows(r.summary, {
+    kind: "social",
+    actors: [opts.owner.agentId, opts.other.id],
+    agentId: opts.owner.agentId,
+  });
+  if (safe === false) {
+    return applySocialUpdate(store, {
+      ownerId: opts.owner.agentId,
+      aboutId: opts.other.id,
+      now: opts.now,
+    });
+  }
   return applySocialUpdate(store, {
     ownerId: opts.owner.agentId,
     aboutId: opts.other.id,
@@ -265,8 +280,7 @@ Formato:
 
     for (const ins of r.insights.slice(0, this.cfg.maxInsights)) {
       const links = idsOf(ins.cites);
-      links.forEach((id) => cited.add(id));
-      const m = await this.memory.remember(
+      const m = await this.memory.tryRemember(
         {
           agentId: owner.agentId,
           text: ins.text,
@@ -281,6 +295,9 @@ Formato:
         },
         now,
       );
+      // Lo que descarta la protección de menores no cuenta como cita.
+      if (!m) continue;
+      links.forEach((id) => cited.add(id));
       result.created.push(m);
       this.memory.emitEffect({
         kind: "consolidate",
@@ -291,20 +308,20 @@ Formato:
     }
     for (const fact of r.facts) {
       const links = idsOf(fact.cites);
-      links.forEach((id) => cited.add(id));
-      result.created.push(
-        await this.memory.remember(
-          {
-            agentId: owner.agentId,
-            text: fact.text,
-            type: "semantic",
-            source: "inferido",
-            importance: 6,
-            links,
-          },
-          now,
-        ),
+      const m = await this.memory.tryRemember(
+        {
+          agentId: owner.agentId,
+          text: fact.text,
+          type: "semantic",
+          source: "inferido",
+          importance: 6,
+          links,
+        },
+        now,
       );
+      if (!m) continue;
+      links.forEach((id) => cited.add(id));
+      result.created.push(m);
     }
 
     // Reforzar lo citado y debilitar lo trivial no citado, con su auditoría, de forma atómica.
@@ -352,6 +369,12 @@ Formato:
 
     const known = new Set(people.map((p) => p.id));
     for (const p of r.people.filter((x) => known.has(x.id))) {
+      const safe = await this.memory.guard?.allows(p.summary, {
+        kind: "social",
+        actors: [owner.agentId, p.id],
+        agentId: owner.agentId,
+      });
+      if (safe === false) continue;
       await applySocialUpdate(this.social, {
         ownerId: owner.agentId,
         aboutId: p.id,

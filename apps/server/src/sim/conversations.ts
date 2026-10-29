@@ -133,6 +133,7 @@ export async function endConversation(ctx: SimContext, key: string, reason: stri
         other: { id: other.id, name: other.seed.name },
         transcript: conv.transcript,
         now,
+        guard: ctx.deps.memory.guard,
       });
     } catch (error) {
       ctx.emit("system", owner.id, `⚠ Error en "social": ${errorMessage(error)}`);

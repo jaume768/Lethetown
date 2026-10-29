@@ -110,6 +110,12 @@ export class MemoryMaintenance {
   ) {
     try {
       const gist = await this.deps.gist!.compress(owner, m);
+      const safe = await this.memory.guard?.allows(gist, {
+        kind: "gist",
+        actors: [owner.agentId, ...m.people],
+        agentId: owner.agentId,
+      });
+      if (safe === false) return;
       await this.memory.store.update(m.id, { gist });
       await this.memory.audit({
         agentId: owner.agentId,
@@ -205,7 +211,7 @@ export class MemoryMaintenance {
         if (tokens() <= cfg.tokensPerAgent) break;
         try {
           const summary = await this.deps.summarizer.summarize(owner, cluster);
-          const created = await this.memory.remember(
+          const created = await this.memory.tryRemember(
             {
               agentId: owner.agentId,
               text: summary,
@@ -219,6 +225,7 @@ export class MemoryMaintenance {
             },
             now,
           );
+          if (!created) continue;
           report.summaries.push(created.id);
           // Archivar el grupo entero (y auditarlo) de forma atómica.
           await this.memory.store.transaction(async (tx) => {
