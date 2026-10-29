@@ -2,6 +2,7 @@ import type { AgentSeed, BigFive, Needs, Place, PlanItem, Weather } from "@lethe
 import {
   ActivityKind,
   WEATHER_SHELTER,
+  ACTION_SPECS,
   actionLine,
   exposedTo,
   type ActionType,
@@ -15,6 +16,8 @@ export function formatGameTime(minutes: number): string {
 }
 
 export function formatClock(minuteOfDay: number): string {
+  // El cierre a medianoche de un horario (no 00:00, que parecería antes de abrir).
+  if (minuteOfDay === 1440) return "24:00";
   const h = Math.floor(minuteOfDay / 60) % 24;
   const m = Math.floor(minuteOfDay % 60);
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
@@ -145,6 +148,9 @@ Tu casa: ${seed.homeId}${seed.workId ? `\nTu trabajo o estudios: ${seed.workId}`
 
 ## Lugares que conoces (id (tipo): nombre · objetos: id[pose])
 ${places.map(placeLine).join("\n")}
+
+## Acciones (type {parámetros}: para qué); en cada momento se te dice cuáles son posibles
+${(Object.keys(ACTION_SPECS) as ActionType[]).map(actionLine).join("\n")}
 
 ## Reglas
 - Vives tu vida con naturalidad; eres coherente con tus rasgos y tus recuerdos.
@@ -286,8 +292,8 @@ ${opts.workingMemory}
 
 Elige una opción:
 - "continue": sigues con tu plan (si estabas conversando, das la conversación por terminada).
-- "act": haces una de estas acciones (action = {"type":"…", …parámetros}):
-${opts.actions.map(actionLine).join("\n")}
+- "act": haces una acción de la lista de tus reglas (action = {"type":"…", …parámetros}).
+Posibles ahora: ${opts.actions.join(", ")}
 Formato:
 {"choice":"continue|act","action":{"type":"…"},"reason":"por qué lo decides, en una frase y en primera persona"}`;
 }

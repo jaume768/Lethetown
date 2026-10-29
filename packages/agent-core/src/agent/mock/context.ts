@@ -251,7 +251,11 @@ export function decideContext(req: CompletionRequest): DecideCtx {
     social: Number(/social (\d\.\d+)\./.exec(p)?.[1] ?? 0.5),
     someone: present[h % Math.max(1, present.length)],
     weatherLabel: weather ? WEATHER_LABEL[weather] : "",
-    available: new Set([...p.matchAll(/^- ([a-z_]+) \{/gm)].map((m) => m[1]!)),
+    // "Posibles ahora: say, explore…" (y, en prompts escritos a mano, líneas "- tipo {…}").
+    available: new Set([
+      ...(/^Posibles ahora: (.+)$/m.exec(p)?.[1]?.split(", ") ?? []),
+      ...[...p.matchAll(/^- ([a-z_]+) \{/gm)].map((m) => m[1]!),
+    ]),
   };
 }
 

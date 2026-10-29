@@ -184,8 +184,11 @@ describe("decisión con el catálogo de acciones", () => {
   it("el prompt solo ofrece las acciones disponibles", async () => {
     const { agent, provider } = setup();
     await agent.decide(9 * 60, { ...EMPTY, salient: true, actions: ["do_activity"] });
-    const prompt = provider.calls.at(-1)!.prompt;
-    expect(prompt).toContain("- do_activity {");
-    expect(prompt).not.toContain("- say {");
+    const { prompt, system } = provider.calls.at(-1)!;
+    expect(prompt).toContain("Posibles ahora: do_activity\n");
+    expect(prompt).not.toContain("say");
+    // Cómo se usa cada acción va en el prompt fijo (cacheable), todas.
+    expect(system).toContain("- do_activity {");
+    expect(system).toContain("- say {");
   });
 });

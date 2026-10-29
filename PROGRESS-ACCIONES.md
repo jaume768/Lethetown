@@ -187,6 +187,18 @@ Sin llamadas nuevas: las notas se leen como percepciones (que ya pasaban por la 
 Sin llamadas nuevas. Las decisiones no cambian; sube la importancia (más percepciones: "No puedo
 ir", "cierra") y la entrada por decisión (avisos de las normas en la memoria de trabajo).
 
+### Ajuste final: el catálogo en el prompt fijo
+
+|          | Llamadas | decide | Entrada no cacheada | Por decisión | Lectura de caché |
+| -------- | -------: | -----: | ------------------: | -----------: | ---------------: |
+| Paso 9   |     3417 |   1077 |           1 271 553 |          762 |        4 320 522 |
+| Catálogo |     3289 |   1054 |           1 070 873 |          600 |        5 734 538 |
+
+La descripción de cada acción (`type {parámetros}: para qué`) pasa al prompt de identidad, que
+no cambia y se cachea; en cada decisión solo va `Posibles ahora: say, invite…`. La entrada no
+cacheada por decisión baja un 21 % y la lectura de caché sube (se cobra a una fracción del precio).
+Es la nota pendiente sobre el catálogo: crecía con cada acción nueva en todas las decisiones.
+
 ## Decisiones tomadas
 
 - **`agent.ts` como fachada**: la clase `Agent` conserva su API pública; el detalle vive en
