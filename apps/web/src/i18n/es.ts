@@ -123,6 +123,7 @@ const es = {
   "memory.audit.weakened": "debilitó",
   "memory.audit.reinforced": "reforzó",
   "memory.audit.habit": "convirtió en hábito",
+  "memory.audit.affect_faded": "suavizó la carga emocional de",
 
   "events.live": "En vivo",
   "events.history": "Historial",

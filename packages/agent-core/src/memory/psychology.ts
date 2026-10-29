@@ -40,6 +40,13 @@ export const ProfileConfig = z.object({
   agreeablenessSuggestibility: z.number().min(0).max(1).default(0.3),
   /** Apertura → estabilidad semántica (aprende y relaciona): × (1 + k·(openness − 0.5)·2). */
   opennessSemantic: z.number().min(0).max(1).default(0.2),
+  /**
+   * Sesgo de negatividad: un recuerdo negativo dura × (1 + |valencia|·(sesgo − 1)) frente a uno
+   * positivo de la misma |valencia|. 1 = sin sesgo.
+   */
+  negativityBias: z.number().min(1).default(1.5),
+  /** Neuroticismo → sesgo de negatividad: (sesgo − 1) × (1 + k·(neuroticism − 0.5)·2). */
+  neuroticismNegativity: z.number().min(0).max(1).default(0.5),
 });
 export type ProfileConfig = z.infer<typeof ProfileConfig>;
 
@@ -57,6 +64,8 @@ export interface MemoryProfile {
   reminiscenceRecall: number;
   /** Multiplicador del peso de la congruencia con el ánimo. */
   moodCongruence: number;
+  /** Sesgo de negatividad (1 = ninguno). */
+  negativityBias: number;
 }
 
 export const NEUTRAL_PROFILE: MemoryProfile = {
@@ -69,6 +78,7 @@ export const NEUTRAL_PROFILE: MemoryProfile = {
   reminiscenceStability: 1,
   reminiscenceRecall: 0,
   moodCongruence: 1,
+  negativityBias: 1,
 };
 
 /** Desplazamiento lineal alrededor de la media: 1 + k·(x − 0.5)·2. */
@@ -106,6 +116,8 @@ export function resolveProfile(
     reminiscenceStability: isOlder ? cfg.reminiscenceStability : 1,
     reminiscenceRecall: isOlder ? cfg.reminiscenceRecallBoost : 0,
     moodCongruence: Math.max(0, around(p.neuroticism, cfg.neuroticismMoodCongruence)),
+    negativityBias:
+      1 + (cfg.negativityBias - 1) * Math.max(0, around(p.neuroticism, cfg.neuroticismNegativity)),
   };
 }
 
@@ -142,10 +154,13 @@ export function isEpisodic(type: MemoryType): boolean {
  */
 export function stabilityFactor(
   profile: MemoryProfile,
-  memory: { type: MemoryType; text: string; youth?: boolean },
+  memory: { type: MemoryType; text: string; youth?: boolean; valence?: number },
 ): number {
   let f = isEpisodic(memory.type) ? profile.episodicStability : profile.semanticStability;
   if (mentionsDate(memory.text)) f /= profile.dateForgetting;
   if (memory.youth) f *= profile.reminiscenceStability;
+  // Sesgo de negatividad: lo malo se graba más hondo que lo bueno de igual intensidad.
+  const v = memory.valence ?? 0;
+  if (v < 0) f *= 1 + Math.abs(v) * (profile.negativityBias - 1);
   return f;
 }

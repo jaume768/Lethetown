@@ -189,6 +189,23 @@ export class AgentView {
     if (this.reducedMotion) return;
     if (kind === "recall") this.flash();
     if (kind === "forget" || kind === "archive") this.dissolve(kind === "forget" ? 10 : 5);
+    if (kind === "intrusive") this.shiver();
+  }
+
+  /** Escalofrío: un recuerdo que vuelve sin querer (sombra y un temblor breve). */
+  private shiver() {
+    this.body.setTint(0x8a8fb0);
+    this.scene.tweens.add({
+      targets: this.body,
+      x: { from: -1, to: 1 },
+      duration: 60,
+      yoyo: true,
+      repeat: 4,
+      onComplete: () => {
+        this.body.setX(0);
+        this.body.clearTint();
+      },
+    });
   }
 
   /** Destello: el cuerpo se pone blanco un instante. */

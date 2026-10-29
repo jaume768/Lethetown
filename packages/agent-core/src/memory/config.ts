@@ -170,6 +170,41 @@ export const MemoryConfig = z.object({
   encoding: EncodingConfig.prefault({}),
   /** Sueño: calidad, deuda y consolidación emocional. */
   sleep: SleepConfig.prefault({}),
+  /** Sesgos que transforman los recuerdos con el tiempo (en el mantenimiento, sin LLM). */
+  biases: z
+    .object({
+      /**
+       * Sesgo de desvanecimiento afectivo: la valencia de un recuerdo se acerca a 0 con esta vida
+       * media (días de juego); la de los negativos, antes que la de los positivos.
+       */
+      fadeNegativeHalfLifeDays: z.number().positive().default(12),
+      fadePositiveHalfLifeDays: z.number().positive().default(40),
+      /** Cambio mínimo de valencia para aplicarlo (cada cambio deja una versión y auditoría). */
+      fadeStep: z.number().positive().max(1).default(0.1),
+      /** Por debajo de esta |valencia| ya no se suaviza más (queda neutro). */
+      fadeFloor: z.number().min(0).max(1).default(0.05),
+    })
+    .prefault({}),
+  /** Recuerdos intrusivos: algo malo e importante vuelve sin buscarlo. */
+  intrusive: z
+    .object({
+      enabled: z.boolean().default(true),
+      /** Probabilidad por hora de juego en calma (ánimo neutro, neuroticismo medio, sin pistas). */
+      basePerHour: z.number().min(0).max(1).default(0.02),
+      /** Con ánimo bajo: × (1 + k·max(0, −valencia)). */
+      lowMoodFactor: z.number().min(0).default(2),
+      /** Neuroticismo: × (1 + k·(neuroticism − 0.5)·2). */
+      neuroticismFactor: z.number().min(0).max(1).default(0.8),
+      /** Si hay una pista (el lugar del recuerdo o alguien que sale en él): × esto. */
+      cueFactor: z.number().min(1).default(4),
+      /** Solo recuerdos de al menos esta importancia (1-10)… */
+      minImportance: z.number().int().min(1).max(10).default(6),
+      /** …y con valencia de como mucho esto (negativos). */
+      maxValence: z.number().min(-1).max(0).default(-0.4),
+      /** Cuánto se acerca el ánimo a la valencia del recuerdo (0..1). */
+      moodPull: z.number().min(0).max(1).default(0.15),
+    })
+    .prefault({}),
   /** Edad y personalidad → perfil de memoria de cada agente (ver psychology.ts). */
   profile: ProfileConfig.prefault({}),
   /** Rutinas repetidas → recuerdos semánticos de hábito ("suelo desayunar en el café…"). */

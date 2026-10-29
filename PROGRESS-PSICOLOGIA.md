@@ -50,9 +50,9 @@ y comprobar que `pnpm dev` arranca en modo mock.
 
 ### Fase 5 — Sesgos y fenómenos
 
-- [ ] Sesgo de negatividad
-- [ ] Desvanecimiento afectivo
-- [ ] Recuerdos intrusivos (+ efecto visual)
+- [x] Sesgo de negatividad
+- [x] Desvanecimiento afectivo
+- [x] Recuerdos intrusivos (+ efecto visual)
 - [ ] Falsos recuerdos controlados
 - [ ] Memoria prospectiva (intenciones)
 
@@ -224,3 +224,20 @@ conversaciones (decide 842 → 916), que son las llamadas con más entrada.
   citen (y no se debilitan aunque sean triviales). Auditoría `reinforced` con el motivo.
 - `AgentMind` guarda `sleepQuality` y `sleepDebt`; `SIM_SNAPSHOT_VERSION` = 7. Test dorado
   regenerado (cambian las fuerzas iniciales y con ellas lo que se recuerda).
+- **Sesgo de negatividad** en la estabilidad inicial: un recuerdo negativo dura
+  × (1 + |valencia|·(sesgo − 1)) frente a uno positivo igual; sesgo 1.5 en la media, modulado
+  por el neuroticismo (forma parte del perfil de memoria).
+- **Desvanecimiento afectivo** en el mantenimiento, sin LLM: la valencia se acerca a 0 con vida
+  media de 12 días si es negativa y 40 si es positiva. Se aplica a saltos de 0.1 (no cada hora)
+  y cada salto deja versión ("desvanecimiento afectivo") y auditoría `affect_faded` con el antes
+  y el después. `meta.affectAt` guarda el último salto.
+- **Recuerdos intrusivos**: en cada tick despierto, probabilidad por hora 0.02 × ánimo bajo ×
+  neuroticismo, × 4 si hay una pista (estar en el lugar del recuerdo o con alguien que sale en
+  él); solo recuerdos de importancia ≥ 6 y valencia ≤ −0.4. Se tira el dado antes de leer la
+  memoria (casi siempre falla, así que no hay consulta). El recuerdo se refuerza (rumiar),
+  entra en la memoria de trabajo como "(sin querer, me vino a la cabeza) …", tiñe el ánimo
+  (más negativo y más activado) y no llama al LLM: lo verá en su próxima decisión. Evento
+  «🌩 A X le viene a la cabeza, sin querer…» y efecto `intrusive` (emote propio de nube de
+  tormenta y un escalofrío; sin temblor con `prefers-reduced-motion`). En 3 días de mock no
+  aparece (el mock no valora nada por debajo de −0.3); con un LLM real sí.
+- Test dorado regenerado (la tirada de los intrusivos consume el rng).

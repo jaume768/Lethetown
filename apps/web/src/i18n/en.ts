@@ -125,6 +125,7 @@ const en: Record<MessageKey, string> = {
   "memory.audit.weakened": "weakened",
   "memory.audit.reinforced": "reinforced",
   "memory.audit.habit": "turned into a habit",
+  "memory.audit.affect_faded": "softened the feelings about",
 
   "events.live": "Live",
   "events.history": "History",

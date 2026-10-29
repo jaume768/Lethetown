@@ -530,6 +530,36 @@ export class Agent {
     return overwhelmed(arousal, cfg) ? { strength, meta: { gistOnly: true } } : { strength };
   }
 
+  /**
+   * Un recuerdo malo que vuelve sin querer (ver MemorySystem.intrude): entra en la memoria de
+   * trabajo y tiñe el ánimo. Devuelve lo que le vino a la cabeza, o null.
+   */
+  async ruminate(now: number, minutes: number, present: string[]): Promise<string | null> {
+    const memory = this.deps.memory;
+    const hit = await memory.intrude({
+      agentId: this.id,
+      now,
+      minutes,
+      moodValence: this.state.mood.valence,
+      neuroticism: this.seed.personality.neuroticism,
+      placeId: this.state.locationId,
+      present,
+    });
+    if (!hit) return null;
+    const text = recallText(hit);
+    this.workingMemory.push({
+      text: `(sin querer, me vino a la cabeza) ${text}`,
+      memoryId: hit.memory.id,
+      addedAt: now,
+    });
+    const pull = memory.config.intrusive.moodPull;
+    this.state.mood = makeMood(
+      this.state.mood.valence + (hit.memory.emotionalValence - this.state.mood.valence) * pull,
+      this.state.mood.arousal + (1 - this.state.mood.arousal) * pull,
+    );
+    return text;
+  }
+
   /** Al acostarse: lo tenso o preocupado que esté decide cómo dormirá esta noche. */
   fallAsleep(): number {
     const cfg = this.deps.memory.config.sleep;

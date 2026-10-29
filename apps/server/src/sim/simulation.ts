@@ -271,7 +271,8 @@ export class Simulation {
     if (rt.travelling) return;
     const now = this.clock.now();
     // Necesidades y ánimo (solo: un introvertido recarga pilas en algo tranquilo).
-    agent.live(this.tickMinutes, presentWith(ctx, agent).length === 0);
+    const around = presentWith(ctx, agent).map((p) => p.id);
+    agent.live(this.tickMinutes, around.length === 0);
     endIdleConversations(ctx, now);
     await maintain(ctx, agent, now);
 
@@ -310,6 +311,16 @@ export class Simulation {
 
     warnOutdoorPlan(ctx, agent, now);
     warnConversationPlan(ctx, agent, now);
+    // Un recuerdo malo que vuelve sin querer (más con el ánimo bajo o si algo se lo recuerda).
+    const intrusive = await agent.ruminate(now, this.tickMinutes, around);
+    if (intrusive) {
+      ctx.emit(
+        "memory",
+        agent.id,
+        `🌩 A ${agent.seed.name} le viene a la cabeza, sin querer: «${intrusive}»`,
+        [agent.id],
+      );
+    }
     // Percibir.
     const { present, heard, place, perceptions } = gatherPerceptions(ctx, agent);
     const innerVoice = perceptions.flatMap((p) => (p.kind === "thought" ? [p.text] : []));

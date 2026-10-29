@@ -17,6 +17,8 @@ export const MemoryMeta = z.object({
   youth: z.boolean().optional(),
   /** Se vivió con una activación extrema: solo se grabó la esencia (sin detalles). */
   gistOnly: z.boolean().optional(),
+  /** Instante (min de juego) del último desvanecimiento afectivo aplicado. */
+  affectAt: z.number().optional(),
 });
 export type MemoryMeta = z.infer<typeof MemoryMeta>;
 
@@ -92,6 +94,8 @@ export const MemoryAuditAction = z.enum([
   "reinforced",
   /** Una rutina repetida se convirtió en hábito (recuerdo semántico). */
   "habit",
+  /** Su carga emocional se suavizó con el tiempo (sesgo de desvanecimiento afectivo). */
+  "affect_faded",
 ]);
 export type MemoryAuditAction = z.infer<typeof MemoryAuditAction>;
 

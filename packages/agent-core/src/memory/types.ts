@@ -51,6 +51,7 @@ export type MemoryPatch = Partial<
     | "source"
     | "status"
     | "forgottenAt"
+    | "meta"
   >
 >;
 

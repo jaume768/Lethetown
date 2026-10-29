@@ -20,6 +20,8 @@ export interface MaintenanceReport {
   deleted: string[];
   archived: string[];
   summaries: string[];
+  /** Recuerdos cuya carga emocional se suavizó (desvanecimiento afectivo). */
+  faded: string[];
 }
 
 const HOUR = 60;
@@ -46,6 +48,7 @@ export class MemoryMaintenance {
       deleted: [],
       archived: [],
       summaries: [],
+      faded: [],
     };
     const cfg = this.memory.config;
     const since = this.lastRun.get(owner.agentId) ?? now;
@@ -79,6 +82,7 @@ export class MemoryMaintenance {
         const next = this.deps.confuser.confuse(m, p, others);
         if (next && next !== m.source) await this.changeSource(owner, m, next, now, report);
       }
+      await this.fadeAffect(owner, m, now, report);
     }
     await this.enforceBudget(owner, now, report);
     return report;
@@ -167,6 +171,50 @@ export class MemoryMaintenance {
       at: now,
     });
     report.sourceChanged.push(m.id);
+  }
+
+  /**
+   * Sesgo de desvanecimiento afectivo (sin LLM): la valencia se acerca a 0 con el tiempo, la de
+   * lo negativo antes que la de lo positivo. Solo se aplica a saltos de `fadeStep`, y cada salto
+   * deja versión y auditoría.
+   */
+  private async fadeAffect(
+    owner: MemoryOwner,
+    m: MemoryRecord,
+    now: number,
+    report: MaintenanceReport,
+  ) {
+    const cfg = this.memory.config.biases;
+    const v = m.emotionalValence;
+    if (Math.abs(v) <= cfg.fadeFloor) return;
+    const days = (now - (m.meta?.affectAt ?? m.createdAt)) / (24 * HOUR);
+    if (days <= 0) return;
+    const halfLife = v < 0 ? cfg.fadeNegativeHalfLifeDays : cfg.fadePositiveHalfLifeDays;
+    const faded = v * Math.pow(0.5, days / halfLife);
+    if (Math.abs(v - faded) < cfg.fadeStep) return;
+    const next = Math.abs(faded) <= cfg.fadeFloor ? 0 : Math.round(faded * 100) / 100;
+    await this.memory.store.transaction(async (tx) => {
+      const versions = await tx.versions(m.id);
+      await tx.addVersion({
+        memoryId: m.id,
+        version: versions.length,
+        text: m.text,
+        emotionalValence: v,
+        source: m.source,
+        at: now,
+        reason: "desvanecimiento afectivo",
+      });
+      await tx.update(m.id, { emotionalValence: next, meta: { ...m.meta, affectAt: now } });
+      await tx.addAudit({
+        agentId: owner.agentId,
+        memoryId: m.id,
+        memoryText: m.text,
+        action: "affect_faded",
+        reason: `con el tiempo ya no le ${v < 0 ? "duele" : "emociona"} tanto: valencia ${v.toFixed(2)} → ${next.toFixed(2)}${v < 0 ? " (lo malo se suaviza antes que lo bueno)" : ""}`,
+        at: now,
+      });
+    });
+    report.faded.push(m.id);
   }
 
   /** Nunca se olvidan los planes recientes ni lo que citan, ni el conocimiento base importante. */

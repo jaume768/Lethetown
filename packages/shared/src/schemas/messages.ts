@@ -32,7 +32,21 @@ export const ServerMessage = z.discriminatedUnion("type", [
     type: z.literal("memory_effect"),
     agentId: z.string(),
     memoryId: z.string(),
-    kind: z.enum(["recall", "vague", "forget", "gist", "reconsolidate", "consolidate", "archive"]),
+    kind: z.enum([
+      "recall",
+      "vague",
+      "forget",
+      "gist",
+      "reconsolidate",
+      "consolidate",
+      "archive",
+      /** Un recuerdo negativo que vuelve sin buscarlo. */
+      "intrusive",
+      /** Al reconsolidar, rellenó huecos con detalles inventados. */
+      "false_memory",
+      /** Se acordó (o se le olvidó) algo que tenía que hacer. */
+      "intention",
+    ]),
     text: z.string(),
     importance: z.number().optional(),
   }),

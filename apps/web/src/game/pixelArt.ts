@@ -130,6 +130,18 @@ const EMOTE_ART: Record<Emote, string[]> = {
     "...kwk...",
     "...kkk...",
   ],
+  /** Nube de tormenta: un recuerdo intrusivo. */
+  storm: [
+    "...kkk...",
+    ".kkgggkk.",
+    "kgggggggk",
+    "kgggggggk",
+    ".kkkykkk.",
+    "...ky....",
+    "..kyk....",
+    "..ky.....",
+    "..k......",
+  ],
   cloud: [
     ".........",
     "...kkk...",

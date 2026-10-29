@@ -18,7 +18,17 @@ import type { Embedder, MemoryRecord, MemoryStore, NewMemory } from "./types";
 
 /** Efectos visibles de la memoria (el servidor los emite por WebSocket). */
 export interface MemoryEffect {
-  kind: "recall" | "vague" | "forget" | "gist" | "reconsolidate" | "consolidate" | "archive";
+  kind:
+    | "recall"
+    | "vague"
+    | "forget"
+    | "gist"
+    | "reconsolidate"
+    | "consolidate"
+    | "archive"
+    | "intrusive"
+    | "false_memory"
+    | "intention";
   agentId: string;
   memoryId: string;
   text: string;
@@ -162,6 +172,7 @@ export class MemorySystem {
           type: input.type,
           text: input.text,
           youth: input.meta?.youth,
+          valence,
         }),
       accessCount: 0,
       source: input.source ?? "vivido",
@@ -247,6 +258,72 @@ export class MemorySystem {
       .filter((s) => s.scores.clarity !== "forgotten");
     await this.strengthen(picked, now, recall);
     return picked;
+  }
+
+  /**
+   * Recuerdo intrusivo: con baja probabilidad, un recuerdo importante y negativo entra en la
+   * mente sin buscarlo. Más probable con el ánimo bajo, con neuroticismo alto o si hay una pista
+   * (el lugar donde pasó o alguien que salía en él). Rumiarlo lo refuerza. Usa el rng inyectado.
+   */
+  async intrude(opts: {
+    agentId: string;
+    now: number;
+    /** Minutos de juego desde la última comprobación. */
+    minutes: number;
+    moodValence: number;
+    neuroticism: number;
+    placeId: string;
+    present: string[];
+  }): Promise<ScoredMemory | null> {
+    const cfg = this.config.intrusive;
+    if (!cfg.enabled || opts.minutes <= 0) return null;
+    const rate =
+      cfg.basePerHour *
+      (1 + cfg.lowMoodFactor * Math.max(0, -opts.moodValence)) *
+      Math.max(0, 1 + cfg.neuroticismFactor * (opts.neuroticism - 0.5) * 2);
+    const chance = (perHour: number) => 1 - Math.pow(1 - Math.min(1, perHour), opts.minutes / 60);
+    // Primero la tirada (casi siempre falla): así no hace falta leer los recuerdos.
+    const roll = this.rng();
+    if (roll >= chance(rate * cfg.cueFactor)) return null;
+    const retrieval = this.retrievalFor(opts.agentId);
+    const candidates = (await this.store.listByAgent(opts.agentId))
+      .filter(
+        (m) =>
+          m.status === "active" &&
+          m.importance >= cfg.minImportance &&
+          m.emotionalValence <= cfg.maxValence,
+      )
+      .map((m) =>
+        scoreMemory(
+          m,
+          { embedding: [], now: opts.now, moodValence: opts.moodValence },
+          retrieval,
+          1,
+        ),
+      )
+      .filter((s) => s.scores.clarity !== "forgotten");
+    if (!candidates.length) return null;
+    const cued = candidates.filter(
+      (s) =>
+        s.memory.placeId === opts.placeId || s.memory.people.some((p) => opts.present.includes(p)),
+    );
+    if (roll >= chance(cued.length ? rate * cfg.cueFactor : rate)) return null;
+    const pool = cued.length ? cued : candidates;
+    const weights = pool.map((s) => s.memory.importance * Math.abs(s.memory.emotionalValence));
+    let pick = this.rng() * weights.reduce((a, b) => a + b, 0);
+    const chosen = pool.find((_, i) => (pick -= weights[i]!) <= 0) ?? pool[0]!;
+    await this.store.update(
+      chosen.memory.id,
+      reinforce(chosen.memory, opts.now, this.config.decay),
+    );
+    this.emitEffect({
+      kind: "intrusive",
+      agentId: opts.agentId,
+      memoryId: chosen.memory.id,
+      text: recallText(chosen),
+      importance: chosen.memory.importance,
+    });
+    return chosen;
   }
 
   /** Recordar fortalece (todos los refuerzos en una operación) y puede reconsolidar. */
