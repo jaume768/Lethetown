@@ -28,6 +28,45 @@ export const PortraitRecipe = z.object({
 });
 export type PortraitRecipe = z.infer<typeof PortraitRecipe>;
 
+const unit = (fallback: number) => z.number().min(0).max(1).default(fallback);
+
+/** Personalidad (Big Five), cada rasgo de 0 a 1 (0.5 = en la media). */
+export const BigFive = z.object({
+  /** Apertura a la experiencia: curiosidad, imaginación. */
+  openness: unit(0.5),
+  /** Responsabilidad: orden, puntualidad, cumplir lo prometido. */
+  conscientiousness: unit(0.5),
+  /** Extraversión: busca compañía y estímulos. */
+  extraversion: unit(0.5),
+  /** Amabilidad: confía, perdona, coopera. */
+  agreeableness: unit(0.5),
+  /** Neuroticismo: inestabilidad emocional, preocupación. */
+  neuroticism: unit(0.5),
+});
+export type BigFive = z.infer<typeof BigFive>;
+
+const factor = z.number().positive().max(5).default(1);
+
+/**
+ * Memoria propia del agente: multiplicadores (1 = normal) que se suman a los efectos de la edad
+ * y la personalidad (ver agent-core/memory/psychology.ts).
+ */
+export const MemoryProfileSeed = z.object({
+  /** Estabilidad de lo vivido (observaciones, planes). >1 = recuerda más tiempo. */
+  episodicStability: factor,
+  /** Estabilidad de lo que sabe (semántico, reflexiones, hábitos). */
+  semanticStability: factor,
+  /** Probabilidad de confundir quién le contó algo. */
+  sourceConfusion: factor,
+  /** Olvido de fechas y horas (aniversarios, citas). >1 = las olvida antes. */
+  dateForgetting: factor,
+  /** Olvido de intenciones (lo que tenía que hacer). >1 = se le olvida más. */
+  intentionForgetting: factor,
+  /** Sugestionabilidad (rellenar huecos, creerse lo que le cuentan). */
+  suggestibility: factor,
+});
+export type MemoryProfileSeed = z.infer<typeof MemoryProfileSeed>;
+
 export const AgentSeed = z.object({
   id: z.string(),
   name: z.string(),
@@ -53,6 +92,10 @@ export const AgentSeed = z.object({
    * Si no se indica, se deduce de la edad (`seedIsMinor`).
    */
   isMinor: z.boolean().optional(),
+  /** Personalidad (Big Five); sin ella, todo en la media. */
+  personality: BigFive.prefault({}),
+  /** Particularidades de su memoria (opcional). */
+  memoryProfile: MemoryProfileSeed.optional(),
 });
 export type AgentSeed = z.infer<typeof AgentSeed>;
 

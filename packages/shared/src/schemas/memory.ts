@@ -11,6 +11,13 @@ export const MemorySource = z.union([
 ]);
 export type MemorySource = z.infer<typeof MemorySource>;
 
+/** Marcas de un recuerdo que cambian cómo se comporta (ver fases de psicología). */
+export const MemoryMeta = z.object({
+  /** Recuerdo de juventud (pico de reminiscencia en los mayores). */
+  youth: z.boolean().optional(),
+});
+export type MemoryMeta = z.infer<typeof MemoryMeta>;
+
 /** Recuerdo tal como viaja por la API (sin el vector de embedding). */
 export const MemoryView = z.object({
   id: z.string(),
@@ -35,6 +42,7 @@ export const MemoryView = z.object({
   status: z.enum(["active", "archived"]),
   /** Instante en que cruzó el umbral de olvido (null si no se ha olvidado). */
   forgottenAt: z.number().nullable(),
+  meta: MemoryMeta.default({}),
 });
 export type MemoryView = z.infer<typeof MemoryView>;
 

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ProfileConfig } from "./psychology";
 
 /**
  * Parámetros de la memoria humana. Todos tienen valor por defecto; el servidor puede
@@ -159,6 +160,8 @@ export const MemoryConfig = z.object({
       dayImportance: z.number().int().min(1).max(10).default(3),
     })
     .prefault({}),
+  /** Edad y personalidad → perfil de memoria de cada agente (ver psychology.ts). */
+  profile: ProfileConfig.prefault({}),
   /** Rutinas repetidas → recuerdos semánticos de hábito ("suelo desayunar en el café…"). */
   habits: z
     .object({

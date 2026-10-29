@@ -12,6 +12,7 @@ const toRecord = ({ worldId: _w, ...r }: Row): MemoryRecord => ({
   source: r.source as MemorySource,
   type: r.type as MemoryType,
   status: r.status === "archived" ? "archived" : "active",
+  meta: r.meta ?? {},
 });
 
 /** La conexión o una transacción abierta (misma API de consultas). */

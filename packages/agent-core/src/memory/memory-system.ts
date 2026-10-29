@@ -5,6 +5,7 @@ import { DEFAULT_MEMORY_CONFIG, type MemoryConfig } from "./config";
 import { initialStability, reinforce } from "./decay";
 import type { MinorGuard } from "../agent/minor-safety";
 import type { Reconsolidator } from "./human";
+import { NEUTRAL_PROFILE, stabilityFactor, type MemoryProfile } from "./psychology";
 import {
   rankMemories,
   scoreMemory,
@@ -35,6 +36,8 @@ export interface MemorySystemDeps {
   rng?: Rng;
   /** Protección de menores: lo que no pase no se guarda (ver agent/minor-safety.ts). */
   guard?: MinorGuard;
+  /** Perfil de memoria de cada agente (ver psychology.ts); sin él, el neutro. */
+  profiles?: Record<string, MemoryProfile>;
 }
 
 /** Un recuerdo que no se guarda porque la protección de menores lo descartó. */
@@ -72,6 +75,7 @@ export class MemorySystem {
   readonly config: MemoryConfig;
   readonly rng: Rng;
   readonly guard?: MinorGuard;
+  private readonly profiles: Record<string, MemoryProfile>;
   private readonly reconsolidator?: Reconsolidator;
   private readonly candidateLimit: number;
   private readonly newId: () => string;
@@ -86,6 +90,23 @@ export class MemorySystem {
     this.newId = deps.idGenerator ?? randomUUID;
     this.rng = deps.rng ?? seededRng(Date.now());
     this.guard = deps.guard;
+    this.profiles = deps.profiles ?? {};
+  }
+
+  /** Perfil de memoria del dueño (edad, personalidad, semilla). */
+  profileOf(agentId: string): MemoryProfile {
+    return this.profiles[agentId] ?? NEUTRAL_PROFILE;
+  }
+
+  /** Pesos y umbrales de recuperación ajustados al perfil del dueño. */
+  retrievalFor(agentId: string): RetrievalConfig {
+    const p = this.profileOf(agentId);
+    const base = this.config.retrieval;
+    return {
+      ...base,
+      weights: { ...base.weights, moodMatch: base.weights.moodMatch * p.moodCongruence },
+      reminiscenceBoost: p.reminiscenceRecall,
+    };
   }
 
   get retrievalConfig(): RetrievalConfig {
@@ -133,7 +154,13 @@ export class MemorySystem {
       importance,
       emotionalValence: valence,
       strength: 1,
-      stability: initialStability(importance, valence, this.config.decay),
+      stability:
+        initialStability(importance, valence, this.config.decay) *
+        stabilityFactor(this.profileOf(input.agentId), {
+          type: input.type,
+          text: input.text,
+          youth: input.meta?.youth,
+        }),
       accessCount: 0,
       source: input.source ?? "vivido",
       type: input.type,
@@ -143,6 +170,7 @@ export class MemorySystem {
       links: input.links ?? [],
       status: "active",
       forgottenAt: null,
+      meta: input.meta ?? {},
     };
     await this.store.add(record);
     return record;
@@ -166,11 +194,11 @@ export class MemorySystem {
       // El almacén calcula la similitud: no hace falta traer los embeddings.
       const rows = await this.store.listForInspection(opts.agentId, query.embedding);
       return rows
-        .map((r) => scoreMemory(r.memory, query, this.config.retrieval, r.relevance))
+        .map((r) => scoreMemory(r.memory, query, this.retrievalFor(opts.agentId), r.relevance))
         .sort((a, b) => b.scores.total - a.scores.total);
     }
     const all = await this.store.listByAgent(opts.agentId);
-    return rankMemories(all, query, this.config.retrieval);
+    return rankMemories(all, query, this.retrievalFor(opts.agentId));
   }
 
   /**
@@ -187,7 +215,7 @@ export class MemorySystem {
     const ranked = rankMemories(
       candidates,
       { embedding: embedding ?? [], now: opts.now, moodValence: opts.moodValence },
-      this.config.retrieval,
+      this.retrievalFor(opts.agentId),
     );
     const picked = ranked
       .filter((s) => s.memory.status === "active" && s.scores.clarity !== "forgotten")
@@ -211,7 +239,9 @@ export class MemorySystem {
     const picked = found
       .filter((m): m is MemoryRecord => m?.status === "active")
       // La relevancia no importa aquí (se piden por id): cuenta como plena.
-      .map((m) => scoreMemory(m, { embedding: [], now, moodValence }, this.config.retrieval, 1))
+      .map((m) =>
+        scoreMemory(m, { embedding: [], now, moodValence }, this.retrievalFor(m.agentId), 1),
+      )
       .filter((s) => s.scores.clarity !== "forgotten");
     await this.strengthen(picked, now, recall);
     return picked;

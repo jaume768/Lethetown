@@ -13,6 +13,7 @@ import { socialNote, type MemoryOwner, type SocialProfileStore } from "../memory
 import { reinforce } from "../memory/decay";
 import type { MemorySystem, RecallContext } from "../memory/memory-system";
 import { dayDiaryText, dueHabits, habitText, recordDay } from "../memory/habits";
+import { isYouthMemory } from "../memory/psychology";
 import { recallText } from "../memory/retrieval";
 import type { MemorySource } from "@lethetown/shared";
 import { WorkingMemory } from "../memory/working-memory";
@@ -222,7 +223,15 @@ export class Agent {
   async seedMemories(now: number): Promise<void> {
     for (const text of this.seed.initialMemories) {
       await this.deps.memory.remember(
-        { agentId: this.id, text, type: "semantic", importance: 6, source: "inferido" },
+        {
+          agentId: this.id,
+          text,
+          type: "semantic",
+          importance: 6,
+          source: "inferido",
+          // Recuerdos de juventud: los mayores los conservan y evocan más (reminiscencia).
+          meta: isYouthMemory(text) ? { youth: true } : {},
+        },
         now,
       );
     }

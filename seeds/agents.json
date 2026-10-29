@@ -28,7 +28,17 @@
       "Carmen me prestó un libro de poemas hace dos semanas y todavía no se lo he devuelto.",
       "Me agobia que se acerque la fecha de entrega del cuento.",
       "Hugo, el músico de la plaza, me dedicó una canción y no supe qué decirle."
-    ]
+    ],
+    "personality": {
+      "openness": 0.75,
+      "conscientiousness": 0.3,
+      "extraversion": 0.5,
+      "agreeableness": 0.7,
+      "neuroticism": 0.65
+    },
+    "memoryProfile": {
+      "intentionForgetting": 1.5
+    }
   },
   {
     "id": "mateo",
@@ -60,7 +70,14 @@
       "Lucía es la clienta más simpática del café; creo que me gusta.",
       "El proveedor de café me ha subido los precios y estoy preocupado por el negocio.",
       "Rafael, el de la taberna, dice que le robo clientes por las tardes."
-    ]
+    ],
+    "personality": {
+      "openness": 0.45,
+      "conscientiousness": 0.7,
+      "extraversion": 0.85,
+      "agreeableness": 0.6,
+      "neuroticism": 0.45
+    }
   },
   {
     "id": "carmen",
@@ -91,7 +108,20 @@
       "Le presté a Lucía mi libro de poemas favorito.",
       "Cada mañana paseo por el parque y doy de comer a las palomas junto a la fuente.",
       "Sofía, la maestra nueva, fue alumna mía; me alegra verla al frente de la escuela."
-    ]
+    ],
+    "personality": {
+      "openness": 0.5,
+      "conscientiousness": 0.65,
+      "extraversion": 0.65,
+      "agreeableness": 0.7,
+      "neuroticism": 0.4
+    },
+    "memoryProfile": {
+      "episodicStability": 1.6,
+      "semanticStability": 1.4,
+      "sourceConfusion": 0.6,
+      "suggestibility": 0.8
+    }
   },
   {
     "id": "julian",
@@ -122,7 +152,17 @@
       "Inés quiere irse a estudiar a la ciudad y no sé cómo decirle que me da miedo quedarme solo.",
       "Aurora siempre me pide una barra y luego olvida pagarla; no me importa.",
       "La receta de las magdalenas era de mi mujer."
-    ]
+    ],
+    "personality": {
+      "openness": 0.45,
+      "conscientiousness": 0.85,
+      "extraversion": 0.25,
+      "agreeableness": 0.75,
+      "neuroticism": 0.6
+    },
+    "memoryProfile": {
+      "intentionForgetting": 0.8
+    }
   },
   {
     "id": "ines",
@@ -153,7 +193,14 @@
       "Mi padre no entiende nada de lo que me importa.",
       "Valentina, la fotógrafa que acaba de llegar, me parece la persona más interesante del pueblo.",
       "Leo me sigue a todas partes como si fuera su hermana mayor."
-    ]
+    ],
+    "personality": {
+      "openness": 0.85,
+      "conscientiousness": 0.3,
+      "extraversion": 0.55,
+      "agreeableness": 0.35,
+      "neuroticism": 0.6
+    }
   },
   {
     "id": "elena",
@@ -184,7 +231,17 @@
       "Nuria se opone a mis planes y quiere convertir la casa vacía en un huerto comunitario.",
       "Las elecciones son dentro de un año y necesito que el pueblo me apoye.",
       "Rafael sabe todos los rumores del pueblo; conviene llevarse bien con él."
-    ]
+    ],
+    "personality": {
+      "openness": 0.5,
+      "conscientiousness": 0.8,
+      "extraversion": 0.65,
+      "agreeableness": 0.4,
+      "neuroticism": 0.45
+    },
+    "memoryProfile": {
+      "sourceConfusion": 0.8
+    }
   },
   {
     "id": "tomas",
@@ -215,7 +272,18 @@
       "Dicen que quien bebe del lago olvida sus penas; yo solo olvido dónde dejo las gafas.",
       "Pilar me ha recordado tres veces que pronto es nuestro aniversario, pero no sé qué día es.",
       "Leo me pregunta siempre por el pez gigante que vi de joven."
-    ]
+    ],
+    "personality": {
+      "openness": 0.35,
+      "conscientiousness": 0.5,
+      "extraversion": 0.55,
+      "agreeableness": 0.45,
+      "neuroticism": 0.45
+    },
+    "memoryProfile": {
+      "dateForgetting": 2.5,
+      "intentionForgetting": 1.3
+    }
   },
   {
     "id": "pilar",
@@ -246,7 +314,17 @@
       "Si Tomás olvida otra vez nuestro aniversario, no le hablo en una semana.",
       "Nuria es la mejor jardinera que he visto, aunque es muy terca.",
       "Una ristra de ajos en la puerta protege la casa; lo decía mi abuela."
-    ]
+    ],
+    "personality": {
+      "openness": 0.35,
+      "conscientiousness": 0.8,
+      "extraversion": 0.6,
+      "agreeableness": 0.55,
+      "neuroticism": 0.6
+    },
+    "memoryProfile": {
+      "suggestibility": 1.2
+    }
   },
   {
     "id": "andres",
@@ -277,7 +355,18 @@
       "Sofía viene los jueves a por libros para sus alumnos; ensayo lo que voy a decirle y luego no digo nada.",
       "Alguien arrancó una página del libro de historia del pueblo y quiero saber quién fue.",
       "Carmen me recomendó un libro de poemas que nunca devolvieron."
-    ]
+    ],
+    "personality": {
+      "openness": 0.6,
+      "conscientiousness": 0.75,
+      "extraversion": 0.2,
+      "agreeableness": 0.6,
+      "neuroticism": 0.55
+    },
+    "memoryProfile": {
+      "dateForgetting": 2.5,
+      "semanticStability": 1.2
+    }
   },
   {
     "id": "sofia",
@@ -308,7 +397,14 @@
       "Leo no para quieto en clase, pero es el niño más listo que conozco.",
       "Andrés, el bibliotecario, siempre se pone nervioso cuando voy a por libros.",
       "Inés falta a clase para hacer fotos con Valentina."
-    ]
+    ],
+    "personality": {
+      "openness": 0.75,
+      "conscientiousness": 0.65,
+      "extraversion": 0.65,
+      "agreeableness": 0.75,
+      "neuroticism": 0.7
+    }
   },
   {
     "id": "rafael",
@@ -339,7 +435,17 @@
       "Mateo me roba clientes con su café de la tarde; algún día se lo diré a la cara.",
       "Marta es mi mejor amiga desde el colegio.",
       "La alcaldesa Elena trama algo con la casa vacía; lo sé por cómo sonríe."
-    ]
+    ],
+    "personality": {
+      "openness": 0.55,
+      "conscientiousness": 0.4,
+      "extraversion": 0.9,
+      "agreeableness": 0.65,
+      "neuroticism": 0.35
+    },
+    "memoryProfile": {
+      "sourceConfusion": 1.2
+    }
   },
   {
     "id": "marta",
@@ -370,7 +476,17 @@
       "Leo quiere un perro y yo no tengo tiempo ni para dormir.",
       "Rafael es mi mejor amigo, aunque cuenta todo lo que le digo.",
       "Ernesto el cartero viene todos los días a comprar pastillas para la tos que no tiene."
-    ]
+    ],
+    "personality": {
+      "openness": 0.45,
+      "conscientiousness": 0.8,
+      "extraversion": 0.5,
+      "agreeableness": 0.5,
+      "neuroticism": 0.65
+    },
+    "memoryProfile": {
+      "episodicStability": 0.85
+    }
   },
   {
     "id": "leo",
@@ -401,7 +517,17 @@
       "Quiero un perro y mamá dice que ya veremos, que significa que no.",
       "Inés es la persona más guay del pueblo.",
       "El tobogán del parque es mi base secreta."
-    ]
+    ],
+    "personality": {
+      "openness": 0.85,
+      "conscientiousness": 0.25,
+      "extraversion": 0.85,
+      "agreeableness": 0.6,
+      "neuroticism": 0.35
+    },
+    "memoryProfile": {
+      "suggestibility": 1.3
+    }
   },
   {
     "id": "nuria",
@@ -432,7 +558,14 @@
       "La alcaldesa Elena quiere vender la casa vacía a una empresa; no lo voy a permitir.",
       "Pilar me enseñó a plantar según la luna, aunque no me lo creo del todo.",
       "Valentina me hizo una foto entre los girasoles que me encanta."
-    ]
+    ],
+    "personality": {
+      "openness": 0.7,
+      "conscientiousness": 0.65,
+      "extraversion": 0.3,
+      "agreeableness": 0.4,
+      "neuroticism": 0.35
+    }
   },
   {
     "id": "hugo",
@@ -463,7 +596,18 @@
       "Le dediqué una canción a Lucía; creo que se sonrojó.",
       "Le debo dinero a Rafael desde el verano.",
       "Estoy componiendo una canción sobre el lago que hace olvidar."
-    ]
+    ],
+    "personality": {
+      "openness": 0.85,
+      "conscientiousness": 0.15,
+      "extraversion": 0.85,
+      "agreeableness": 0.65,
+      "neuroticism": 0.25
+    },
+    "memoryProfile": {
+      "intentionForgetting": 1.4,
+      "dateForgetting": 1.5
+    }
   },
   {
     "id": "valentina",
@@ -493,7 +637,14 @@
       "Mi abuela vivió en este pueblo, pero nadie parece recordarla.",
       "Inés tiene talento con la cámara; le estoy enseñando.",
       "Aurora me miró como si me conociera."
-    ]
+    ],
+    "personality": {
+      "openness": 0.85,
+      "conscientiousness": 0.35,
+      "extraversion": 0.7,
+      "agreeableness": 0.5,
+      "neuroticism": 0.55
+    }
   },
   {
     "id": "ernesto",
@@ -523,7 +674,17 @@
       "Valentina recibe cartas sin remitente desde que llegó.",
       "El doctor Samuel dice que no tengo nada, pero yo noto algo raro en el pecho.",
       "Rafael y yo compartimos los rumores del día en la taberna."
-    ]
+    ],
+    "personality": {
+      "openness": 0.35,
+      "conscientiousness": 0.85,
+      "extraversion": 0.7,
+      "agreeableness": 0.65,
+      "neuroticism": 0.8
+    },
+    "memoryProfile": {
+      "sourceConfusion": 1.2
+    }
   },
   {
     "id": "aurora",
@@ -553,7 +714,19 @@
       "Tuve una amiga que se marchó del pueblo y nunca volvió; se llamaba Alma.",
       "A veces confundo a Clara con mi hija.",
       "Me gusta sentarme en el Jardín del Recuerdo junto a la estatua del ángel."
-    ]
+    ],
+    "personality": {
+      "openness": 0.6,
+      "conscientiousness": 0.4,
+      "extraversion": 0.4,
+      "agreeableness": 0.8,
+      "neuroticism": 0.55
+    },
+    "memoryProfile": {
+      "episodicStability": 0.5,
+      "sourceConfusion": 1.6,
+      "suggestibility": 1.3
+    }
   },
   {
     "id": "clara",
@@ -584,7 +757,17 @@
       "Mi abuela Aurora cada vez olvida más cosas y me da miedo.",
       "El doctor Samuel dice que sería una buena enfermera.",
       "Hugo siempre me pide una manzana gratis y nunca sé decirle que no."
-    ]
+    ],
+    "personality": {
+      "openness": 0.5,
+      "conscientiousness": 0.8,
+      "extraversion": 0.65,
+      "agreeableness": 0.8,
+      "neuroticism": 0.45
+    },
+    "memoryProfile": {
+      "suggestibility": 1.3
+    }
   },
   {
     "id": "samuel",
@@ -615,6 +798,13 @@
       "Me preocupa la memoria de Aurora; cada semana recuerda menos.",
       "Ernesto viene casi todos los días con un síntoma nuevo.",
       "Echo de menos a mi familia de Lagos, sobre todo por las noches."
-    ]
+    ],
+    "personality": {
+      "openness": 0.65,
+      "conscientiousness": 0.75,
+      "extraversion": 0.5,
+      "agreeableness": 0.8,
+      "neuroticism": 0.35
+    }
   }
 ]

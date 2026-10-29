@@ -1,4 +1,4 @@
-import { MemorySystem } from "@lethetown/agent-core";
+import { MemorySystem, profilesFor } from "@lethetown/agent-core";
 import {
   AgentState,
   RUNNING,
@@ -79,6 +79,7 @@ export class RemoteWorldGateway implements WorldGateway {
       store: new PgMemoryStore(db, row.id),
       embedder: services.embedder,
       config: services.memoryConfig,
+      profiles: profilesFor(services.seeds, services.memoryConfig.profile),
     });
     this.social = new PgSocialProfileStore(db, row.id);
     this.events = new PgEventStore(db, row.id);

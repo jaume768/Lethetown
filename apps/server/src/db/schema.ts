@@ -1,3 +1,4 @@
+import type { MemoryMeta } from "@lethetown/shared";
 import {
   doublePrecision,
   index,
@@ -61,6 +62,8 @@ export const memories = pgTable(
     links: text("links").array().notNull().default([]),
     status: text("status").notNull().default("active"),
     forgottenAt: doublePrecision("forgotten_at"),
+    /** Marcas del recuerdo (juventud, falso recuerdo, intención…): ver MemoryMeta. */
+    meta: jsonb("meta").$type<MemoryMeta>().notNull().default({}),
   },
   (t) => [
     index("memories_world_agent_idx").on(t.worldId, t.agentId),

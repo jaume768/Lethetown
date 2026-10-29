@@ -17,6 +17,8 @@ export interface RetrievalConfig {
   forgetThreshold: number;
   /** Por debajo de esta fuerza solo se recuerda la esencia. */
   vagueThreshold: number;
+  /** Bonus (fracción) a la puntuación de los recuerdos de juventud (pico de reminiscencia). */
+  reminiscenceBoost?: number;
 }
 
 export const DEFAULT_RETRIEVAL: RetrievalConfig = {
@@ -89,7 +91,7 @@ export function scoreMemory(
       relevance,
       moodMatch,
       strength,
-      total: weighted * strength,
+      total: weighted * strength * (memory.meta?.youth ? 1 + (config.reminiscenceBoost ?? 0) : 1),
       clarity: clarityFor(strength, config),
     },
   };

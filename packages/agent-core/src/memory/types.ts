@@ -1,5 +1,6 @@
 import type {
   MemoryAuditEntry,
+  MemoryMeta,
   MemorySource,
   MemoryType,
   MemoryVersion,
@@ -32,6 +33,7 @@ export interface NewMemory {
   placeId?: string | null;
   eventId?: string | null;
   links?: string[];
+  meta?: MemoryMeta;
 }
 
 export type MemoryPatch = Partial<

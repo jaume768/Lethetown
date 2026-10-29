@@ -74,7 +74,9 @@ export class MemoryMaintenance {
         confuseP > 0 &&
         now - m.createdAt >= cfg.sourceConfusion.minAgeHours * HOUR
       ) {
-        const next = this.deps.confuser.confuse(m, confuseP, others);
+        // Niños y despistados confunden más la fuente (perfil del dueño).
+        const p = Math.min(1, confuseP * this.memory.profileOf(owner.agentId).sourceConfusion);
+        const next = this.deps.confuser.confuse(m, p, others);
         if (next && next !== m.source) await this.changeSource(owner, m, next, now, report);
       }
     }

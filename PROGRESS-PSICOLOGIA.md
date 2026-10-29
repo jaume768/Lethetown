@@ -31,10 +31,10 @@ y comprobar que `pnpm dev` arranca en modo mock.
 
 ### Fase 2 — Perfil psicológico
 
-- [ ] `personality` (Big Five) y `memoryProfile` en `AgentSeed`
-- [ ] `tools/derive-personality.ts` y valores revisados de los 20 agentes
-- [ ] Efectos por edad (mayores, niños)
-- [ ] Perfil aplicado en decaimiento, recuperación y confusión de fuente
+- [x] `personality` (Big Five) y `memoryProfile` en `AgentSeed`
+- [x] `tools/derive-personality.ts` y valores revisados de los 20 agentes
+- [x] Efectos por edad (mayores, niños)
+- [x] Perfil aplicado en decaimiento, recuperación y confusión de fuente
 
 ### Fase 3 — Ánimo y necesidades
 
@@ -162,3 +162,26 @@ conversaciones (decide 842 → 916), que son las llamadas con más entrada.
   entra otra vez en la de la noche siguiente.
 - **Test dorado regenerado**: el diario ya no crea recuerdos ni consume embeddings, el plan
   recibe otro "ayer" y aparecen los eventos «ya tiene una costumbre».
+- **Perfil = semilla × edad × personalidad** (`resolveProfile`, puro): multiplicadores sobre
+  la estabilidad episódica y semántica, la confusión de fuente, el olvido de fechas e
+  intenciones y la sugestionabilidad, más el pico de reminiscencia y el peso de la congruencia
+  con el ánimo. Los coeficientes están en `MemoryConfig.profile`.
+- **Dónde se aplica**: en la estabilidad inicial al guardar (episódico/semántico, ÷ olvido de
+  fechas si el texto menciona fechas u horas, × reminiscencia si es de juventud); en la
+  recuperación (peso `moodMatch` × congruencia, bonus a los recuerdos de juventud de los
+  mayores); en la confusión de fuente del mantenimiento (probabilidad × perfil). El
+  `MemorySystem` recibe los perfiles de todos los agentes (`profilesFor`), también el del
+  proceso api, para que el inspector puntúe igual que el worker.
+- **Recuerdos de juventud**: se detectan al sembrar (`isYouthMemory`: "nací", "de joven",
+  "hace cincuenta años"…) y se marcan en `meta.youth`. `meta` es una columna jsonb nueva de
+  `memories` (migración 0008) pensada para las marcas de fases siguientes (falso recuerdo,
+  intención…).
+- **Personalidades**: `pnpm personality:derive` propone valores por palabras clave de rasgos y
+  descripción, más una ligera tendencia por edad. Los valores del repo están revisados a mano;
+  el script se equivoca, p. ej., con Pilar (su descripción dice que Tomás es "un desastre con
+  las fechas" y el script se lo atribuye a ella) o con Mateo (lo de "cabezota" le baja demasiado
+  la amabilidad). Un test comprueba que las semillas encajan con su descripción (Carmen
+  memoriosa, Aurora desmemoriada, Andrés y Tomás con las fechas, Hugo impuntual, Ernesto
+  puntual e hipocondríaco, Leo sugestionable…).
+- **Test dorado regenerado**: los perfiles cambian la estabilidad de los recuerdos y con ella lo
+  que se recuerda y se dice.

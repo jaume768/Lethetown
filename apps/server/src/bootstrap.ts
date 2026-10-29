@@ -14,6 +14,7 @@ import {
   MemoryConfig,
   MinorGuard,
   minorsOf,
+  profilesFor,
   MemoryMaintenance,
   MemorySystem,
   RandomSourceConfuser,
@@ -413,6 +414,7 @@ export async function openWorld(services: Services, row: WorldRow): Promise<Worl
     reconsolidator: new LLMReconsolidator(llm),
     rng,
     guard,
+    profiles: profilesFor(services.seeds, memoryConfig.profile),
   });
   const seedNames = new Map(services.seeds.map((s) => [s.id, s.name]));
   // El reloj y la simulación se crean más abajo; el detector los consulta al ocurrir algo.
