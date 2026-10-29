@@ -106,6 +106,7 @@ const es = {
   "memory.audit.source_changed": "confundió la fuente de",
   "memory.audit.weakened": "debilitó",
   "memory.audit.reinforced": "reforzó",
+  "memory.audit.habit": "convirtió en hábito",
 
   "events.live": "En vivo",
   "events.history": "Historial",

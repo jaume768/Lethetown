@@ -195,7 +195,12 @@ function mockPlan(req: CompletionRequest): string {
   const kitchen = home?.objects.find((o) => o.pose === "use")?.id ?? null;
   const me = hash(/^Eres (.+?),/m.exec(req.system)?.[1] ?? req.system);
   const day = Number(/Es día (\d+)/.exec(req.prompt)?.[1] ?? 0);
-  const yesterday = diary(req.prompt, "Ayer hiciste, más o menos (no hace falta repetirlo):");
+  // Lo que recuerda de ayer (texto libre, quizá vago): los lugares que nombra.
+  const yesterdayText =
+    req.prompt.split("Lo que recuerdas de ayer")[1]?.split("\nNecesidades")[0] ?? "";
+  const yesterday = places
+    .filter((p) => yesterdayText.includes(p.name))
+    .map((p) => ({ placeId: p.id }));
   // Menores de edad que "trabajan" en la escuela: son alumnos.
   const age = Number(/^Eres .+?, (\d+) años/m.exec(req.system)?.[1] ?? 99);
   const student = age < 18;

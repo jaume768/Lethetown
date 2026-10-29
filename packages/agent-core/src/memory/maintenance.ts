@@ -60,7 +60,13 @@ export class MemoryMaintenance {
         if (m.forgottenAt === null) await this.markForgotten(owner, m, s, now, report);
         continue;
       }
-      if (s < cfg.retrieval.vagueThreshold && !m.gist && cfg.gist.enabled && this.deps.gist) {
+      if (
+        s < cfg.retrieval.vagueThreshold &&
+        !m.gist &&
+        cfg.gist.enabled &&
+        m.importance >= cfg.gist.minImportance &&
+        this.deps.gist
+      ) {
         await this.makeGist(owner, m, now, report);
       }
       if (

@@ -124,7 +124,7 @@ export function planPrompt(opts: {
   needs: Needs;
   recalled: string;
   weather?: Weather;
-  /** Diario de ayer ("- HH:MM actividad (lugar)"), para no repetir siempre lo mismo. */
+  /** Lo que recuerda de ayer y sus costumbres ("- …", quizá vago), para no repetir siempre lo mismo. */
   yesterday?: string;
 }): string {
   return `TAREA: plan
@@ -132,7 +132,7 @@ Es ${formatGameTime(opts.now)}. Planifica tu día desde las 07:00 hasta las 22:0
 Tiempo esta mañana: ${WEATHER_LABEL[opts.weather ?? "sunny"]}.${
     opts.yesterday
       ? `
-Ayer hiciste, más o menos (no hace falta repetirlo):
+Lo que recuerdas de ayer y tus costumbres (puede ser vago o incompleto; no hace falta repetirlo):
 ${opts.yesterday}`
       : ""
   }

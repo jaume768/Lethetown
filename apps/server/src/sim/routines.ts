@@ -100,6 +100,6 @@ export function setAction(
   // Diario del día: lo que de verdad hace (caminar, dormir y charlar ya se recuerdan aparte).
   const kindNow = agent.state.activityKind;
   if (kindNow !== "walk" && kindNow !== "sleep" && kindNow !== "talk" && !IDLE.has(action)) {
-    void agent.noteActivity(ctx.clock.now(), action, agent.state.locationId).catch(() => {});
+    agent.noteActivity(ctx.clock.now(), action, agent.state.locationId);
   }
 }

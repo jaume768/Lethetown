@@ -1,8 +1,9 @@
+import { AgentMind } from "@lethetown/agent-core";
 import { ActivityKind, AgentState, SimSpeed, TilePoint, Weather } from "@lethetown/shared";
 import { z } from "zod";
 
 /** Sube este número si cambias la forma de la instantánea (las antiguas se ignoran). */
-export const SIM_SNAPSHOT_VERSION = 4;
+export const SIM_SNAPSHOT_VERSION = 5;
 
 /** Percepción pendiente (misma forma que `Perception` de agent-core). */
 const Perception = z.discriminatedUnion("kind", [
@@ -56,6 +57,8 @@ export const SimSnapshot = z.object({
     z.object({
       id: z.string(),
       state: AgentState,
+      /** Estado interno (hábitos, diario…) que no viaja al cliente. */
+      mind: AgentMind,
       workingMemory: z.array(
         z.object({ text: z.string(), memoryId: z.string().optional(), addedAt: z.number() }),
       ),

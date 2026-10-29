@@ -22,12 +22,12 @@ y comprobar que `pnpm dev` arranca en modo mock.
 
 ### Fase 1 — Rutinas como hábitos y diario sujeto a la memoria
 
-- [ ] `noteActivity` sin recuerdo episódico por actividad trivial
-- [ ] Diario de hoy con precisión según la energía
-- [ ] Hábitos semánticos en la consolidación (detectar rutinas repetidas, reforzar)
-- [ ] "Ayer" del plan desde la memoria (con olvido) + hábitos
-- [ ] Sin `gist` del LLM para importancia ≤ 2 (configurable)
-- [ ] Coste después de la fase 1
+- [x] `noteActivity` sin recuerdo episódico por actividad trivial
+- [x] Diario de hoy con precisión según la energía
+- [x] Hábitos semánticos en la consolidación (detectar rutinas repetidas, reforzar)
+- [x] "Ayer" del plan desde la memoria (con olvido) + hábitos
+- [x] Sin `gist` del LLM para importancia ≤ 2 (configurable)
+- [x] Coste después de la fase 1
 
 ### Fase 2 — Perfil psicológico
 
@@ -96,6 +96,25 @@ y comprobar que `pnpm dev` arranca en modo mock.
 | chronicle     |        2 |                  3295 |    102 |               72 |
 | **total**     | **3620** |            **712963** |  84767 |          4476161 |
 
+### Después de la fase 1
+
+| Tarea         | Llamadas | Entrada (no cacheada) | Salida | Lectura de caché |
+| ------------- | -------: | --------------------: | -----: | ---------------: |
+| importance    |      916 |                107151 |  17050 |          1224012 |
+| decide        |      916 |                418698 |  24553 |          1224012 |
+| social        |      402 |                 48351 |   9177 |           537278 |
+| gist          |      401 |                 27812 |   3643 |           536367 |
+| reconsolidate |      278 |                 42415 |   7762 |           363462 |
+| plan          |       40 |                 29058 |   8248 |            34780 |
+| consolidate   |       40 |                 39439 |  11129 |            53492 |
+| chronicle     |        2 |                  3281 |    102 |               72 |
+| **total**     | **2995** |            **716205** |  81664 |          3973475 |
+
+−17 % de llamadas (−625) y −11 % de lectura de caché. Las esencias caen de 1208 a 401: ya no
+hay un recuerdo por actividad y lo de importancia ≤ 2 no se resume. La entrada no cacheada
+queda igual (+0.5 %) porque, con el nuevo orden de los eventos, hay más decisiones y
+conversaciones (decide 842 → 916), que son las llamadas con más entrada.
+
 ## Decisiones tomadas
 
 - **Script de coste** (`pnpm --filter @lethetown/server cost:report [horas]`): siempre en mock,
@@ -124,3 +143,22 @@ y comprobar que `pnpm dev` arranca en modo mock.
   `vetUserText` aunque `MODERATION=off`.
 - **Test dorado regenerado**: cambia el prompt de identidad (regla de menores) y los `await`
   nuevos de la revisión reordenan las tareas asíncronas del mock.
+- **Diario a corto plazo**: `doneToday` sigue en `AgentState` (lo ve el inspector y el prompt de
+  decidir), pero ya no crea un recuerdo por actividad. Con energía por debajo de
+  `diary.lowEnergy`, cada anotación puede perderse o quedar en el lugar de la anterior, con una
+  probabilidad que crece linealmente al bajar la energía. El agente no sabe que se equivoca.
+- **Un recuerdo por día**: al dormirse (antes de la consolidación, que así lo ve) el diario se
+  guarda como "El día N: actividad en lugar, …" (importancia 3, sin LLM). Ese es el "ayer" del
+  plan: se recuerda por id (`recallByIds`) con las reglas de siempre (olvidado no sale, vago sale
+  como esencia, recordar refuerza) y se excluye de la recuperación general del plan para no
+  salir dos veces.
+- **Hábitos sin LLM**: el rastreador (`AgentMind.habits`, en la instantánea) cuenta días por
+  actividad + lugar + franja (mañana, mediodía, tarde, noche) en una ventana de 7 días; con 3 días
+  nace un recuerdo semántico "Suelo … en … por las …" (importancia 4, auditoría `habit`) y cada
+  repetición posterior lo refuerza (auditoría `reinforced`). La frase se compone en código.
+- **`AgentMind`**: estado interno persistente que no viaja al cliente (no infla los deltas del WS).
+  Va en `SimSnapshot.agents[].mind`; `SIM_SNAPSHOT_VERSION` = 5.
+- **`lastConsolidation = now + 1`**: lo creado durante la consolidación (diario, hechos) ya no
+  entra otra vez en la de la noche siguiente.
+- **Test dorado regenerado**: el diario ya no crea recuerdos ni consume embeddings, el plan
+  recibe otro "ayer" y aparecen los eventos «ya tiene una costumbre».

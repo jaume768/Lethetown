@@ -79,8 +79,13 @@ export const MemoryConfig = z.object({
     .object({
       /** Generar la esencia con el LLM al cruzar el umbral de vaguedad. */
       enabled: z.boolean().default(true),
+      /**
+       * Importancia mínima (1-10) para pedir la esencia al LLM. Lo menos importante no se
+       * resume: simplemente se desvanece (en el prompt sale la esencia provisional).
+       */
+      minImportance: z.number().int().min(1).max(10).default(3),
     })
-    .default({ enabled: true }),
+    .prefault({}),
   reconsolidation: z
     .object({
       /** Probabilidad de reescribir un recuerdo al recuperarlo. */
@@ -139,6 +144,35 @@ export const MemoryConfig = z.object({
       idleMinutes: z.number().positive().default(30),
     })
     .default({ safetyMaxTurns: 12, idleMinutes: 30 }),
+  /** Diario de hoy (`doneToday`): memoria a corto plazo del día, imprecisa con poca energía. */
+  diary: z
+    .object({
+      /** Energía (0..1) por debajo de la cual el diario empieza a fallar. */
+      lowEnergy: z.number().min(0).max(1).default(0.35),
+      /** Probabilidad, con energía 0, de no anotar una actividad (crece linealmente al bajar). */
+      maxLossProbability: z.number().min(0).max(1).default(0.4),
+      /** Probabilidad, con energía 0, de anotarla en el lugar de la anterior (mezcla). */
+      maxMixProbability: z.number().min(0).max(1).default(0.3),
+      /** Entradas que caben en el diario de un día (las más recientes). */
+      maxEntries: z.number().int().positive().default(16),
+      /** Importancia (1-10) del recuerdo "El día N: …" que se guarda al dormirse. */
+      dayImportance: z.number().int().min(1).max(10).default(3),
+    })
+    .prefault({}),
+  /** Rutinas repetidas → recuerdos semánticos de hábito ("suelo desayunar en el café…"). */
+  habits: z
+    .object({
+      enabled: z.boolean().default(true),
+      /** Días de juego que se miran hacia atrás para detectar una rutina. */
+      windowDays: z.number().int().positive().default(7),
+      /** Días distintos (dentro de la ventana) con la misma actividad, lugar y franja. */
+      minDays: z.number().int().min(2).default(3),
+      /** Importancia (1-10) de un recuerdo de hábito nuevo. */
+      importance: z.number().int().min(1).max(10).default(4),
+      /** Hábitos que entran como mucho en el prompt del plan (los más claros). */
+      maxInPlan: z.number().int().nonnegative().default(4),
+    })
+    .prefault({}),
 });
 export type MemoryConfig = z.infer<typeof MemoryConfig>;
 

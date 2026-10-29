@@ -10,11 +10,14 @@ import type {
 } from "@lethetown/shared";
 import type { LLMClient } from "../llm/client";
 import { socialNote, type MemoryOwner, type SocialProfileStore } from "../memory/human";
+import { reinforce } from "../memory/decay";
 import type { MemorySystem, RecallContext } from "../memory/memory-system";
+import { dayDiaryText, dueHabits, habitText, recordDay } from "../memory/habits";
 import { recallText } from "../memory/retrieval";
 import type { MemorySource } from "@lethetown/shared";
 import { WorkingMemory } from "../memory/working-memory";
 import { inferActivityKind } from "./activity";
+import { newMind, type AgentMind } from "./mind";
 import type { MinorInfo } from "./minor-safety";
 import { untrusted } from "./moderation";
 import { DecideResponse, ImportanceResponse, PlanResponse, parseWith } from "./parse";
@@ -103,9 +106,14 @@ export type DecideInput = Omit<
 };
 
 const SLEEP_START = 22 * 60;
-/** Entradas del diario de hoy que se guardan (las más recientes). */
-const MAX_DONE_TODAY = 16;
 const DAY_START = 7 * 60;
+
+/** Lo que deja el cierre del día (al dormirse): diario y hábitos. */
+export interface DayEndReport {
+  diaryMemoryId: string | null;
+  habitsFormed: string[];
+  habitsReinforced: string[];
+}
 
 export function moodLabel(valence: number): string {
   if (valence > 0.5) return "contento";
@@ -134,6 +142,8 @@ export class Agent {
   readonly system: string;
   readonly workingMemory = new WorkingMemory();
   state: AgentState;
+  /** Estado interno persistente que no viaja al cliente (hábitos, diario). */
+  mind: AgentMind = newMind();
   private readonly spots: Map<string, Spot>;
 
   constructor(
@@ -219,27 +229,126 @@ export class Agent {
   }
 
   /**
-   * Anota en el diario de hoy una actividad que empieza (si no es la misma que la anterior) y la
-   * guarda como recuerdo rutinario, sin LLM: con el olvido, días después solo queda más o menos.
+   * Anota en el diario de hoy (memoria a corto plazo, sin LLM ni recuerdo episódico) una
+   * actividad que empieza, si no es la misma que la anterior. Con poca energía el diario falla:
+   * a veces no la anota y a veces la anota en el lugar de la anterior (la mezcla).
    */
-  async noteActivity(now: number, activity: string, placeId: string): Promise<void> {
+  noteActivity(now: number, activity: string, placeId: string): void {
     const log = this.state.doneToday ?? [];
     const last = log.at(-1);
     if (last && last.activity === activity && last.placeId === placeId) return;
-    this.state.doneToday = [...log, { minute: Math.floor(now % 1440), activity, placeId }].slice(
-      -MAX_DONE_TODAY,
-    );
-    const place = this.deps.places.find((p) => p.id === placeId)?.name ?? placeId;
-    await this.deps.memory.tryRemember(
+    const cfg = this.deps.memory.config.diary;
+    const energy = this.state.needs.energy;
+    let where = placeId;
+    if (energy < cfg.lowEnergy) {
+      const tiredness = 1 - energy / cfg.lowEnergy;
+      const r = this.deps.memory.rng();
+      if (r < cfg.maxLossProbability * tiredness) return;
+      if (last && r < (cfg.maxLossProbability + cfg.maxMixProbability) * tiredness) {
+        where = last.placeId;
+      }
+    }
+    this.state.doneToday = [
+      ...log,
+      { minute: Math.floor(now % 1440), activity, placeId: where },
+    ].slice(-cfg.maxEntries);
+  }
+
+  /**
+   * Cierre del día (al dormirse, sin LLM): el diario de hoy se guarda como un único recuerdo
+   * ("El día N: …", con el olvido de siempre) y alimenta el rastreador de rutinas; lo que se
+   * repite en varios días se convierte en un recuerdo semántico de hábito o lo refuerza.
+   */
+  async endDay(now: number, day: number): Promise<DayEndReport> {
+    const report: DayEndReport = { diaryMemoryId: null, habitsFormed: [], habitsReinforced: [] };
+    const entries = this.state.doneToday ?? [];
+    if (!entries.length) return report;
+    const memory = this.deps.memory;
+    const cfg = memory.config;
+    const placeName = (id: string) => this.deps.places.find((p) => p.id === id)?.name ?? id;
+    const diary = await memory.tryRemember(
       {
         agentId: this.id,
-        text: `Estuve en ${place}: ${activity}`,
+        text: dayDiaryText(day, entries, placeName),
         type: "observation",
-        importance: 2,
-        placeId,
+        importance: cfg.diary.dayImportance,
       },
       now,
     );
+    if (diary) {
+      report.diaryMemoryId = diary.id;
+      this.mind.diaryMemoryIds = [...this.mind.diaryMemoryIds, diary.id].slice(-7);
+    }
+    if (!cfg.habits.enabled) return report;
+    this.mind.habits = recordDay(this.mind.habits, entries, day, cfg.habits.windowDays);
+    for (const h of dueHabits(this.mind.habits, day, cfg.habits.minDays)) {
+      const existing = h.memoryId ? await memory.store.get(h.memoryId) : undefined;
+      if (existing?.status === "active") {
+        await memory.store.update(existing.id, {
+          ...reinforce(existing, now, cfg.decay),
+          forgottenAt: null,
+        });
+        await memory.audit({
+          agentId: this.id,
+          memoryId: existing.id,
+          memoryText: existing.text,
+          action: "reinforced",
+          reason: `el hábito se repitió otra vez (${h.days.length} de los últimos ${cfg.habits.windowDays} días)`,
+          at: now,
+        });
+        report.habitsReinforced.push(existing.text);
+        continue;
+      }
+      const created = await memory.tryRemember(
+        {
+          agentId: this.id,
+          text: habitText(h, placeName(h.placeId)),
+          type: "semantic",
+          source: "inferido",
+          importance: cfg.habits.importance,
+          placeId: h.placeId,
+        },
+        now,
+      );
+      if (!created) continue;
+      h.memoryId = created.id;
+      await memory.audit({
+        agentId: this.id,
+        memoryId: created.id,
+        memoryText: created.text,
+        action: "habit",
+        reason: `"${h.activity}" en ${placeName(h.placeId)} se repitió ${h.days.length} de los últimos ${cfg.habits.windowDays} días: ya es una costumbre`,
+        at: now,
+      });
+      report.habitsFormed.push(created.text);
+    }
+    return report;
+  }
+
+  /**
+   * Lo que recuerda de ayer y de sus costumbres para planificar: el recuerdo del diario de ayer
+   * y los hábitos, recordados con olvido y vaguedad (lo vago sale como esencia; lo olvidado, no).
+   */
+  private async recallYesterday(now: number): Promise<{ text: string; ids: string[] }> {
+    const cfg = this.deps.memory.config.habits;
+    const diary = this.mind.diaryMemoryIds.at(-1);
+    const habits = Object.values(this.mind.habits)
+      .map((h) => h.memoryId)
+      .filter((id): id is string => Boolean(id));
+    const recalled = await this.deps.memory.recallByIds(
+      [...(diary ? [diary] : []), ...habits],
+      now,
+      this.state.mood.valence,
+    );
+    const yesterday = recalled.filter((s) => s.memory.id === diary);
+    const customs = recalled
+      .filter((s) => s.memory.id !== diary)
+      .sort((a, b) => b.scores.strength - a.scores.strength)
+      .slice(0, cfg.maxInPlan);
+    return {
+      text: [...yesterday, ...customs].map((s) => `- ${recallText(s)}`).join("\n"),
+      ids: [...(diary ? [diary] : []), ...habits],
+    };
   }
 
   /** "- HH:MM actividad (lugar)" de lo hecho hoy (o del diario que se le pase). */
@@ -270,8 +379,8 @@ export class Agent {
 
   /** Planifica el día con el modelo de reflexión. */
   async planDay(now: number, weather: Weather = "sunny"): Promise<PlanItem[]> {
-    // El diario de ayer orienta el plan de hoy (para no repetir lo mismo) y se empieza otro.
-    const yesterday = this.diaryText();
+    // Lo que recuerda de ayer y sus costumbres orientan el plan de hoy; se empieza otro diario.
+    const yesterday = await this.recallYesterday(now);
     this.state.doneToday = [];
     const recalled = await this.deps.memory.retrieve({
       agentId: this.id,
@@ -280,6 +389,7 @@ export class Agent {
       moodValence: this.state.mood.valence,
       k: 5,
       recall: this.recallContext(),
+      exclude: yesterday.ids,
     });
     try {
       const res = await this.deps.llm.run({
@@ -292,7 +402,7 @@ export class Agent {
           needs: this.state.needs,
           recalled: recalled.map((s) => `- ${recallText(s)}`).join("\n") || "- (nada en especial)",
           weather,
-          yesterday,
+          yesterday: yesterday.text,
         }),
       });
       const plan = parseWith(PlanResponse, res.text)

@@ -157,6 +157,7 @@ export class Simulation {
         return {
           id: a.id,
           state: structuredClone(a.state),
+          mind: structuredClone(a.mind),
           workingMemory: structuredClone([...a.workingMemory.contents]),
           runtime: {
             ...structuredClone({ ...rt, seenHere: [], knownStates: [] }),
@@ -185,6 +186,7 @@ export class Simulation {
       const agent = this.agents.get(saved.id);
       if (!agent) continue;
       agent.state = saved.state;
+      agent.mind = saved.mind;
       agent.workingMemory.replace(saved.workingMemory);
       const r = saved.runtime;
       this.ctx.runtime.set(saved.id, {

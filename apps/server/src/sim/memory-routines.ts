@@ -30,8 +30,16 @@ export async function consolidate(ctx: SimContext, agent: Agent, now: number): P
   if (!ctx.deps.consolidator || rt.consolidatedNight === night) return;
   rt.consolidatedNight = night;
   try {
+    // Primero el cierre del día (diario y hábitos, sin LLM): el diario entra en la reflexión.
+    const end = await agent.endDay(now, night);
+    for (const habit of end.habitsFormed) {
+      ctx.emit("memory", agent.id, `🔁 ${agent.seed.name} ya tiene una costumbre: «${habit}»`, [
+        agent.id,
+      ]);
+    }
     const r = await ctx.deps.consolidator.consolidate(agent.owner, rt.lastConsolidation, now);
-    rt.lastConsolidation = now;
+    // +1: lo creado ahora (diario, hechos) no vuelve a entrar en la consolidación de mañana.
+    rt.lastConsolidation = now + 1;
     // Nada que consolidar (p. ej. al arrancar de madrugada): no ensuciar el log.
     if (!r.created.length && !r.reinforced.length && !r.weakened.length) return;
     ctx.emit(

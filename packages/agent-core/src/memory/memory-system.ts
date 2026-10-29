@@ -61,6 +61,8 @@ export interface RetrieveOptions {
   k?: number;
   /** Si se pasa, los recuerdos recuperados pueden reconsolidarse (reescribirse). */
   recall?: RecallContext;
+  /** Recuerdos que no deben salir (p. ej. porque ya se han recordado por otra vía). */
+  exclude?: string[];
 }
 
 /** Orquesta almacén + embeddings + puntuación + decaimiento/refuerzo + reconsolidación. */
@@ -189,12 +191,38 @@ export class MemorySystem {
     );
     const picked = ranked
       .filter((s) => s.memory.status === "active" && s.scores.clarity !== "forgotten")
+      .filter((s) => !opts.exclude?.includes(s.memory.id))
       .slice(0, opts.k ?? 5);
-    // Recordar fortalece: todos los refuerzos en una sola operación.
+    await this.strengthen(picked, opts.now, opts.recall);
+    return picked;
+  }
+
+  /**
+   * Recuerda unos recuerdos concretos (p. ej. el diario de ayer y los hábitos) con las mismas
+   * reglas que `retrieve`: lo olvidado no sale, lo vago sale como esencia y recordar refuerza.
+   */
+  async recallByIds(
+    ids: string[],
+    now: number,
+    moodValence: number,
+    recall?: RecallContext,
+  ): Promise<ScoredMemory[]> {
+    const found = await Promise.all([...new Set(ids)].map((id) => this.store.get(id)));
+    const picked = found
+      .filter((m): m is MemoryRecord => m?.status === "active")
+      // La relevancia no importa aquí (se piden por id): cuenta como plena.
+      .map((m) => scoreMemory(m, { embedding: [], now, moodValence }, this.config.retrieval, 1))
+      .filter((s) => s.scores.clarity !== "forgotten");
+    await this.strengthen(picked, now, recall);
+    return picked;
+  }
+
+  /** Recordar fortalece (todos los refuerzos en una operación) y puede reconsolidar. */
+  private async strengthen(picked: ScoredMemory[], now: number, recall?: RecallContext) {
     await this.store.updateMany(
       picked.map((s) => ({
         id: s.memory.id,
-        patch: reinforce(s.memory, opts.now, this.config.decay),
+        patch: reinforce(s.memory, now, this.config.decay),
       })),
     );
     for (const s of picked) {
@@ -204,9 +232,8 @@ export class MemorySystem {
         memoryId: s.memory.id,
         text: recallText(s),
       });
-      if (opts.recall) await this.maybeReconsolidate(s, opts.recall, opts.now);
+      if (recall) await this.maybeReconsolidate(s, recall, now);
     }
-    return picked;
   }
 
   private async maybeReconsolidate(s: ScoredMemory, ctx: RecallContext, now: number) {

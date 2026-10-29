@@ -80,6 +80,8 @@ export const MemoryAuditAction = z.enum([
   "source_changed",
   "weakened",
   "reinforced",
+  /** Una rutina repetida se convirtió en hábito (recuerdo semántico). */
+  "habit",
 ]);
 export type MemoryAuditAction = z.infer<typeof MemoryAuditAction>;
 

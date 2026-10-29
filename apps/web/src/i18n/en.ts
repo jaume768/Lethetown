@@ -108,6 +108,7 @@ const en: Record<MessageKey, string> = {
   "memory.audit.source_changed": "mixed up the source of",
   "memory.audit.weakened": "weakened",
   "memory.audit.reinforced": "reinforced",
+  "memory.audit.habit": "turned into a habit",
 
   "events.live": "Live",
   "events.history": "History",
