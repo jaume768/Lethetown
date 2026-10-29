@@ -1,4 +1,10 @@
 import { describe, expect, it } from "vitest";
+import { agentMockResponder } from "../agent/mock-responder";
+import { LLMClient } from "../llm/client";
+import { CostTracker } from "../llm/cost-tracker";
+import { MockProvider } from "../llm/mock";
+import { ModelRouter } from "../llm/router";
+import { LLMGistCompressor, LLMReconsolidator } from "../memory/human";
 import { MemoryConfig } from "../memory/config";
 import { HashEmbedder } from "../memory/hash-embedder";
 import { InMemoryStore } from "../memory/in-memory-store";
@@ -150,5 +156,113 @@ describe("recuerdos intrusivos", () => {
     };
     expect(await s.memory.intrude(s.base)).toBeNull();
     expect(reads).toBe(0);
+  });
+});
+
+describe("falsos recuerdos controlados", () => {
+  async function setup(roll: number, suggestibility: number) {
+    const store = new InMemoryStore();
+    const llm = new LLMClient(
+      new MockProvider(agentMockResponder),
+      new ModelRouter({ fast: "mock-fast", reflection: "mock-reflection" }),
+      new CostTracker({}),
+    );
+    const memory = new MemorySystem({
+      store,
+      embedder: new HashEmbedder(),
+      reconsolidator: new LLMReconsolidator(llm),
+      rng: () => roll,
+      profiles: { x: { ...NEUTRAL_PROFILE, suggestibility } },
+    });
+    const effects: string[] = [];
+    memory.onEffect((e) => effects.push(e.kind));
+    // Importancia 5, fuerza 0.2: un recuerdo ya vago.
+    const m = await memory.remember(
+      {
+        agentId: "x",
+        text: "Hablé con Rafael en la plaza sobre el lago",
+        type: "observation",
+        importance: 5,
+        strength: 0.2,
+      },
+      0,
+    );
+    const recall = { system: "x", moodLabel: "neutral", socialSummary: async () => "" };
+    // Un día después (antigüedad mínima): fuerza ≈ 0.2 · e^(−24/16.6) ≈ 0.05.
+    await memory.recallByIds([m.id], 24 * 60, 0, recall);
+    return { store, m, effects };
+  }
+
+  it("con baja probabilidad (× sugestionabilidad) rellena huecos y queda marcado", async () => {
+    // p = 0.015 × sugestionabilidad × (1 − fuerza ≈ 0.95): 0.018 queda por encima con 1 y
+    // por debajo con 1.5.
+    const neutral = await setup(0.018, 1);
+    expect((await neutral.store.get(neutral.m.id))!.meta.falseMemory).toBeUndefined();
+    const { store, m, effects } = await setup(0.018, 1.5);
+    const after = (await store.get(m.id))!;
+    expect(after.meta.falseMemory).toBe(true);
+    expect(after.text).not.toBe(m.text);
+    expect(after.text).toMatch(/^Hablé con Rafael en la plaza, y /);
+    expect(effects).toContain("false_memory");
+    const [v] = await store.versions(m.id);
+    expect(v).toMatchObject({ text: m.text, reason: expect.stringMatching(/falso recuerdo/) });
+    const audit = await store.audit("x");
+    expect(audit[0]).toMatchObject({ action: "false_memory" });
+  });
+
+  it("lo reciente no se rellena (solo puede reconsolidarse)", async () => {
+    const store = new InMemoryStore();
+    const memory = new MemorySystem({
+      store,
+      embedder: new HashEmbedder(),
+      reconsolidator: {
+        reconsolidate: async () => null,
+        confabulate: async () => ({ text: "x", emotionalValence: 0 }),
+      },
+      rng: () => 0,
+    });
+    const m = await memory.remember(
+      { agentId: "x", text: "algo nítido", type: "observation", importance: 5 },
+      0,
+    );
+    await memory.recallByIds([m.id], 1, 0, {
+      system: "x",
+      moodLabel: "",
+      socialSummary: async () => "",
+    });
+    expect((await store.get(m.id))!.meta.falseMemory).toBeUndefined();
+  });
+
+  it("al volverse vago en el mantenimiento, a veces se reconstruye en vez de quedarse con la esencia", async () => {
+    const store = new InMemoryStore();
+    const llm = new LLMClient(
+      new MockProvider(agentMockResponder),
+      new ModelRouter({ fast: "mock-fast", reflection: "mock-reflection" }),
+      new CostTracker({}),
+    );
+    const memory = new MemorySystem({
+      store,
+      embedder: new HashEmbedder(),
+      reconsolidator: new LLMReconsolidator(llm),
+      rng: () => 0,
+    });
+    const m = await memory.remember(
+      {
+        agentId: "x",
+        text: "Vi a Rafael discutir en la plaza",
+        type: "observation",
+        importance: 5,
+      },
+      0,
+    );
+    const maintenance = new MemoryMaintenance({ memory, gist: new LLMGistCompressor(llm) });
+    await maintenance.run(owner, 0, []);
+    const r = await maintenance.run(owner, 40 * 60, []);
+    expect(r.falseMemories).toEqual([m.id]);
+    expect(r.gists).toEqual([]);
+    expect((await store.get(m.id))!.meta.falseMemory).toBe(true);
+    // La hora siguiente, la esencia sale ya del recuerdo reconstruido.
+    const next = await maintenance.run(owner, 41 * 60, []);
+    expect(next.gists).toEqual([m.id]);
   });
 });

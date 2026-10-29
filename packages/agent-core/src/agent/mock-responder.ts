@@ -21,6 +21,7 @@ const HANDLERS: Record<string, (req: CompletionRequest) => string> = {
   consolidate: mockConsolidate,
   gist: mockGist,
   reconsolidate: mockReconsolidate,
+  confabulate: mockConfabulate,
   summarize: mockSummarize,
   social: mockSocial,
   chronicle: mockChronicle,
@@ -661,6 +662,24 @@ function mockReconsolidate(req: CompletionRequest): string {
   return JSON.stringify({
     text: already ? text : `${text}${suffix}`,
     valence: sad ? -0.2 : happy ? 0.3 : 0,
+  });
+}
+
+/** Detalles plausibles con los que el mock "rellena" un recuerdo vago. */
+const INVENTED = [
+  "y recuerdo que estaba lloviendo",
+  "y que alguien se rió al fondo",
+  "y que olía a pan recién hecho",
+  "y que fue justo después de comer",
+  "y que llevaba una bufanda roja",
+];
+
+function mockConfabulate(req: CompletionRequest): string {
+  const vague = /apenas te acuerdas: "(.+)"$/m.exec(req.prompt)?.[1] ?? "algo";
+  const base = vague.replace(/^\(vagamente\) /, "").replace(/…$/, "");
+  return JSON.stringify({
+    text: `${base}, ${INVENTED[hash(vague) % INVENTED.length]}`,
+    valence: 0,
   });
 }
 

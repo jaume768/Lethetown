@@ -341,8 +341,79 @@ export class MemorySystem {
         memoryId: s.memory.id,
         text: recallText(s),
       });
-      if (recall) await this.maybeReconsolidate(s, recall, now);
+      if (!recall) continue;
+      // Puede rellenar huecos (falso recuerdo); si no, lo nítido puede reconsolidarse.
+      if (!(await this.maybeConfabulate(s, recall, now))) {
+        await this.maybeReconsolidate(s, recall, now);
+      }
     }
+  }
+
+  /**
+   * Falso recuerdo controlado: al recordar algo vago, con baja probabilidad (más si es
+   * sugestionable) rellena los huecos con detalles que no vivió. Queda marcado (`meta`,
+   * versión y auditoría) para el inspector y Rashomon, aunque el agente no lo sabe.
+   */
+  async maybeConfabulate(s: ScoredMemory, ctx: RecallContext, now: number): Promise<boolean> {
+    const cfg = this.config.falseMemory;
+    const m = s.memory;
+    if (!cfg.enabled || !this.reconsolidator?.confabulate) return false;
+    if (m.importance < cfg.minImportance || m.type === "plan" || m.meta?.gistOnly) return false;
+    // Una sola reconstrucción por recuerdo (no se vuelve a rellenar lo ya rellenado).
+    if (m.meta?.falseMemory) return false;
+    if (now - m.createdAt < cfg.minAgeHours * 60) return false;
+    const holes = 1 - s.scores.strength;
+    const p = Math.min(1, cfg.probability * this.profileOf(m.agentId).suggestibility * holes);
+    if (this.rng() >= p) return false;
+    const vague = recallText(s);
+    const filled = await this.reconsolidator.confabulate(m, vague, {
+      now,
+      system: ctx.system,
+      moodLabel: ctx.moodLabel,
+      socialSummary: await ctx.socialSummary(m.people),
+    });
+    if (!filled || filled.text === m.text) return false;
+    const safe = await this.guard?.allows(filled.text, {
+      kind: "reconsolidation",
+      actors: [m.agentId, ...m.people],
+      agentId: m.agentId,
+    });
+    if (safe === false) return false;
+    await this.store.transaction(async (tx) => {
+      const previous = await tx.versions(m.id);
+      await tx.addVersion({
+        memoryId: m.id,
+        version: previous.length,
+        text: m.text,
+        emotionalValence: m.emotionalValence,
+        source: m.source,
+        at: now,
+        reason: "falso recuerdo: rellenó los huecos al recordarlo",
+      });
+      await tx.update(m.id, {
+        text: filled.text,
+        gist: null,
+        emotionalValence: filled.emotionalValence,
+        meta: { ...m.meta, falseMemory: true },
+      });
+      await tx.addAudit({
+        agentId: m.agentId,
+        memoryId: m.id,
+        memoryText: m.text,
+        action: "false_memory",
+        reason: `solo recordaba «${vague}» y su mente rellenó los huecos: «${filled.text}»`,
+        at: now,
+      });
+    });
+    s.memory.text = filled.text;
+    this.emitEffect({
+      kind: "false_memory",
+      agentId: m.agentId,
+      memoryId: m.id,
+      text: filled.text,
+      importance: m.importance,
+    });
+    return true;
   }
 
   private async maybeReconsolidate(s: ScoredMemory, ctx: RecallContext, now: number) {

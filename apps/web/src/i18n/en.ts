@@ -59,6 +59,10 @@ const en: Record<MessageKey, string> = {
   "dramas.kind.friendship": "Friendship",
   "dramas.kind.reconsolidation": "Rewritten memory",
   "dramas.kind.forgetting": "Forgetting",
+  "dramas.kind.false_memory": "False memory",
+  "dramas.kind.intention_kept": "Remembered",
+  "dramas.kind.intention_forgotten": "Forgot",
+  "dramas.kind.relationship": "Relationship",
 
   "agent.pick": "Tap or click an agent on the map to see what they remember.",
   "agent.thinking": "thinking… ({task})",
@@ -126,6 +130,8 @@ const en: Record<MessageKey, string> = {
   "memory.audit.reinforced": "reinforced",
   "memory.audit.habit": "turned into a habit",
   "memory.audit.affect_faded": "softened the feelings about",
+  "memory.audit.false_memory": "filled in with invented details",
+  "memory.falseMemory": "false memory",
 
   "events.live": "Live",
   "events.history": "History",

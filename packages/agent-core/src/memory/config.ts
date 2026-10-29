@@ -185,6 +185,22 @@ export const MemoryConfig = z.object({
       fadeFloor: z.number().min(0).max(1).default(0.05),
     })
     .prefault({}),
+  /** Falsos recuerdos: al recordar algo vago, a veces la mente rellena los huecos. */
+  falseMemory: z
+    .object({
+      enabled: z.boolean().default(true),
+      /**
+       * Probabilidad de rellenar huecos al recuperar un recuerdo, × sugestionabilidad × (1 −
+       * fuerza): cuanto más desvaído, más huecos. (Lo recuperado suele estar fuerte, así que en
+       * la práctica es bastante menor.)
+       */
+      probability: z.number().min(0).max(1).default(0.015),
+      /** Antigüedad mínima (horas de juego): lo reciente no tiene huecos que rellenar. */
+      minAgeHours: z.number().nonnegative().default(24),
+      /** Importancia mínima (1-10) para que merezca la pena reconstruirlo. */
+      minImportance: z.number().int().min(1).max(10).default(3),
+    })
+    .prefault({}),
   /** Recuerdos intrusivos: algo malo e importante vuelve sin buscarlo. */
   intrusive: z
     .object({

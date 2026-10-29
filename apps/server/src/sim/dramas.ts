@@ -62,6 +62,15 @@ export class DramaDetector {
         this.ctx.placeOf(e.agentId),
         null,
       );
+    } else if (e.kind === "false_memory") {
+      this.publish(
+        "false_memory",
+        dramaScore.falseMemory(importance),
+        `${this.ctx.name(e.agentId)} «recuerda» algo que no pasó así: «${clip(e.text)}»`,
+        [e.agentId],
+        this.ctx.placeOf(e.agentId),
+        null,
+      );
     } else if (e.kind === "forget") {
       this.publish(
         "forgetting",

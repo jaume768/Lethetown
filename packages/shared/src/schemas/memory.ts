@@ -19,6 +19,8 @@ export const MemoryMeta = z.object({
   gistOnly: z.boolean().optional(),
   /** Instante (min de juego) del último desvanecimiento afectivo aplicado. */
   affectAt: z.number().optional(),
+  /** Al reconsolidarlo rellenó huecos con detalles que no vivió (falso recuerdo). */
+  falseMemory: z.boolean().optional(),
 });
 export type MemoryMeta = z.infer<typeof MemoryMeta>;
 
@@ -96,6 +98,8 @@ export const MemoryAuditAction = z.enum([
   "habit",
   /** Su carga emocional se suavizó con el tiempo (sesgo de desvanecimiento afectivo). */
   "affect_faded",
+  /** Al recordarlo vagamente rellenó los huecos con detalles inventados. */
+  "false_memory",
 ]);
 export type MemoryAuditAction = z.infer<typeof MemoryAuditAction>;
 

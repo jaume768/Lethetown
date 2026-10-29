@@ -46,6 +46,15 @@ export interface Reconsolidator {
     memory: MemoryRecord,
     context: { now: number; system: string; moodLabel: string; socialSummary: string },
   ): Promise<{ text: string; emotionalValence: number } | null>;
+  /**
+   * Falso recuerdo: a partir de lo poco que recuerda (`vague`), la mente rellena huecos con
+   * detalles plausibles que no vivió. Solo lo pide el código, con baja probabilidad.
+   */
+  confabulate?(
+    memory: MemoryRecord,
+    vague: string,
+    context: { now: number; system: string; moodLabel: string; socialSummary: string },
+  ): Promise<{ text: string; emotionalValence: number } | null>;
 }
 
 /** Confusión de fuente: con el tiempo, "me lo contó X" puede pasar a "lo viví" o a otra persona. */
@@ -461,6 +470,28 @@ export class LLMReconsolidator implements Reconsolidator {
 Estás recordando esto: "${memory.text}"
 Tu ánimo ahora: ${ctx.moodLabel}. Lo que piensas de los implicados: ${ctx.socialSummary || "(nada)"}
 Los recuerdos cambian un poco cada vez que se evocan. Reescríbelo con UN cambio sutil coherente con tu ánimo y tus opiniones (un matiz, un detalle que exageras o suavizas). Mantén la longitud y la primera persona.
+Formato:
+{"text":"...","valence":0.1}`,
+    });
+    const r = parseWith(ReconsolidateResponse, res.text);
+    return { text: r.text, emotionalValence: clamp(r.valence, -1, 1) };
+  }
+
+  async confabulate(
+    memory: MemoryRecord,
+    vague: string,
+    ctx: { now: number; system: string; moodLabel: string; socialSummary: string },
+  ) {
+    const res = await this.llm.run({
+      kind: "fast",
+      task: "confabulate",
+      agentId: memory.agentId,
+      system: ctx.system,
+      maxTokens: 300,
+      prompt: `TAREA: confabulate
+Intentas recordar algo de lo que apenas te acuerdas: "${vague}"
+Tu ánimo ahora: ${ctx.moodLabel}. Lo que piensas de los implicados: ${ctx.socialSummary || "(nada)"}
+Sin darte cuenta, tu mente rellena los huecos: reescribe el recuerdo en primera persona añadiendo uno o dos detalles concretos y plausibles (un lugar, una frase, un gesto) que en realidad no recuerdas, pero que ahora crees ciertos. Que encaje con lo poco que sí recuerdas, con tu ánimo y con lo que piensas de los demás.
 Formato:
 {"text":"...","valence":0.1}`,
     });

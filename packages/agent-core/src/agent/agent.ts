@@ -355,6 +355,8 @@ export class Agent {
       [...(diary ? [diary] : []), ...habits],
       now,
       this.state.mood.valence,
+      // Lo vago de ayer puede reconstruirse (y rellenarse) al recordarlo.
+      this.recallContext(),
     );
     const yesterday = recalled.filter((s) => s.memory.id === diary);
     const customs = recalled

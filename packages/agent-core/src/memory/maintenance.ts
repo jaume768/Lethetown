@@ -2,7 +2,7 @@ import { estimateTextTokens } from "../util/random";
 import { currentStrength } from "./decay";
 import type { EpisodeSummarizer, GistCompressor, MemoryOwner, SourceConfuser } from "./human";
 import type { MemorySystem } from "./memory-system";
-import { cosine } from "./retrieval";
+import { cosine, scoreMemory } from "./retrieval";
 import type { MemoryRecord } from "./types";
 
 export interface MaintenanceDeps {
@@ -22,6 +22,8 @@ export interface MaintenanceReport {
   summaries: string[];
   /** Recuerdos cuya carga emocional se suavizó (desvanecimiento afectivo). */
   faded: string[];
+  /** Recuerdos que, al volverse vagos, se rellenaron con detalles inventados. */
+  falseMemories: string[];
 }
 
 const HOUR = 60;
@@ -49,6 +51,7 @@ export class MemoryMaintenance {
       archived: [],
       summaries: [],
       faded: [],
+      falseMemories: [],
     };
     const cfg = this.memory.config;
     const since = this.lastRun.get(owner.agentId) ?? now;
@@ -70,7 +73,32 @@ export class MemoryMaintenance {
         m.importance >= cfg.gist.minImportance &&
         this.deps.gist
       ) {
-        await this.makeGist(owner, m, now, report);
+        // Al volverse vago, a veces la mente lo reconstruye con detalles que no vivió (falso
+        // recuerdo) en vez de quedarse con la esencia; la esencia llegará después.
+        const filled = await this.memory
+          .maybeConfabulate(
+            {
+              memory: m,
+              scores: scoreMemory(
+                m,
+                { embedding: [], now, moodValence: 0 },
+                this.memory.retrievalFor(owner.agentId),
+                1,
+              ).scores,
+            },
+            {
+              system: owner.system,
+              moodLabel: "neutral (activación baja)",
+              socialSummary: async () => "",
+            },
+            now,
+          )
+          .catch((error: unknown) => {
+            this.deps.onError?.("confabulate", error);
+            return false;
+          });
+        if (filled) report.falseMemories.push(m.id);
+        else await this.makeGist(owner, m, now, report);
       }
       if (
         this.deps.confuser &&

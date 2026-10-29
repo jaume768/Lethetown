@@ -53,7 +53,7 @@ y comprobar que `pnpm dev` arranca en modo mock.
 - [x] Sesgo de negatividad
 - [x] Desvanecimiento afectivo
 - [x] Recuerdos intrusivos (+ efecto visual)
-- [ ] Falsos recuerdos controlados
+- [x] Falsos recuerdos controlados
 - [ ] Memoria prospectiva (intenciones)
 
 ### Fase 6 — Lo social
@@ -241,3 +241,19 @@ conversaciones (decide 842 → 916), que son las llamadas con más entrada.
   tormenta y un escalofrío; sin temblor con `prefers-reduced-motion`). En 3 días de mock no
   aparece (el mock no valora nada por debajo de −0.3); con un LLM real sí.
 - Test dorado regenerado (la tirada de los intrusivos consume el rng).
+- **Falsos recuerdos controlados**: nueva tarea `confabulate` (modelo `fast`) que, a partir de
+  lo poco que se recuerda, rellena uno o dos detalles plausibles. Nunca la decide el LLM: el
+  código la pide con probabilidad `falseMemory.probability` (0.015) × sugestionabilidad ×
+  (1 − fuerza), solo para recuerdos de importancia ≥ 3, de más de 24 h y no rellenados antes.
+  Dos momentos: al recuperarlo (en lugar de la reconsolidación de siempre) y, sobre todo, en el
+  mantenimiento cuando cruza el umbral de vaguedad (en vez de la esencia de esa hora; la
+  esencia sale después del texto ya reconstruido). Lo segundo es necesario porque la
+  recuperación (puntuación × fuerza) casi nunca elige recuerdos desvaídos: en 96 h de mock solo
+  6 recuperaciones vagas, y lo recuperado tiene fuerza ≈ 0.9.
+- Queda marcado en `meta.falseMemory`, con versión ("falso recuerdo: rellenó los huecos…") y
+  auditoría `false_memory` con el antes y el después; el inspector y Rashomon lo señalan
+  (⚠ falso recuerdo), sale un efecto `false_memory` y un drama. El agente no lo sabe.
+- La regla del prompt fijo sigue siendo "no inventes detalles que no recuerdas", con la
+  salvedad explícita de la tarea `confabulate`.
+- Frecuencia en mock: 10 en 96 h para 20 agentes (≈ 2-3 al día en el pueblo), sin cambiar el
+  número de llamadas (sustituyen a una esencia o a una reconsolidación).

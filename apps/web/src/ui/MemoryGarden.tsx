@@ -298,6 +298,7 @@ export function MemoryGarden({ agent, agents, world, thinkingTask, canIntervene 
               {s.clarity !== "clear" && (
                 <span className="tag">{t(`memory.clarity.${s.clarity}` as MessageKey)}</span>
               )}
+              {m.meta.falseMemory && <span className="tag warn">⚠ {t("memory.falseMemory")}</span>}
               {m.links.length > 0 && <span className="tag">🔗 {m.links.length}</span>}
               <span className="tag num">{formatGameTime(m.createdAt)}</span>
             </div>

@@ -57,6 +57,10 @@ const es = {
   "dramas.kind.friendship": "Amistad",
   "dramas.kind.reconsolidation": "Recuerdo reescrito",
   "dramas.kind.forgetting": "Olvido",
+  "dramas.kind.false_memory": "Falso recuerdo",
+  "dramas.kind.intention_kept": "Se acordó",
+  "dramas.kind.intention_forgotten": "Se le olvidó",
+  "dramas.kind.relationship": "Relación",
 
   "agent.pick": "Toca o haz clic en un agente del mapa para ver qué recuerda.",
   "agent.thinking": "pensando… ({task})",
@@ -124,6 +128,8 @@ const es = {
   "memory.audit.reinforced": "reforzó",
   "memory.audit.habit": "convirtió en hábito",
   "memory.audit.affect_faded": "suavizó la carga emocional de",
+  "memory.audit.false_memory": "rellenó con detalles inventados",
+  "memory.falseMemory": "falso recuerdo",
 
   "events.live": "En vivo",
   "events.history": "Historial",
