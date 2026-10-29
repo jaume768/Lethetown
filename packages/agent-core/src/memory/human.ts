@@ -117,6 +117,26 @@ export class InMemorySocialProfileStore implements SocialProfileStore {
     this.changes.push({ ...change });
   }
 
+  /**
+   * Retención del historial anterior a `before` (minutos de juego): "delete" lo borra y
+   * "summarize" deja solo el último cambio de cada pareja y día de juego. Devuelve cuántos quitó.
+   */
+  pruneHistory(before: number, mode: "delete" | "summarize"): number {
+    const lastOfDay = new Map<string, SocialProfileChange>();
+    for (const c of this.changes) {
+      if (c.at < before) lastOfDay.set(`${c.ownerId}|${c.aboutId}|${Math.floor(c.at / 1440)}`, c);
+    }
+    const kept = this.changes.filter(
+      (c) =>
+        c.at >= before ||
+        (mode === "summarize" &&
+          lastOfDay.get(`${c.ownerId}|${c.aboutId}|${Math.floor(c.at / 1440)}`) === c),
+    );
+    const removed = this.changes.length - kept.length;
+    this.changes.splice(0, this.changes.length, ...kept);
+    return removed;
+  }
+
   async history(
     ownerId: string | null,
     aboutId?: string,

@@ -71,6 +71,37 @@ export class InMemoryStore implements MemoryStore {
       .reverse();
   }
 
+  /**
+   * Retención: borra los recuerdos olvidados o archivados desde antes de `memoriesBefore`
+   * (minutos de juego), la auditoría anterior a `auditBefore` y las versiones anteriores a
+   * `versionsBefore` (y las de recuerdos que ya no existen). Devuelve cuántos borró de cada.
+   */
+  prune(cut: { memoriesBefore: number; auditBefore: number; versionsBefore: number }): {
+    memories: number;
+    audit: number;
+    versions: number;
+  } {
+    let memories = 0;
+    for (const [id, m] of this.byId) {
+      const gone = m.status === "archived" || m.forgottenAt !== null;
+      if (gone && (m.forgottenAt ?? m.createdAt) < cut.memoriesBefore) {
+        this.byId.delete(id);
+        memories++;
+      }
+    }
+    let versions = 0;
+    for (const [id, list] of this.versionsById) {
+      const kept = this.byId.has(id) ? list.filter((v) => v.at >= cut.versionsBefore) : [];
+      versions += list.length - kept.length;
+      if (kept.length) this.versionsById.set(id, kept);
+      else this.versionsById.delete(id);
+    }
+    const before = this.auditLog.length;
+    const keptAudit = this.auditLog.filter((e) => e.at >= cut.auditBefore);
+    this.auditLog.splice(0, this.auditLog.length, ...keptAudit);
+    return { memories, audit: before - keptAudit.length, versions };
+  }
+
   async byEvent(eventId: string): Promise<MemoryRecord[]> {
     return [...this.byId.values()].filter((m) => m.eventId === eventId).map((m) => ({ ...m }));
   }

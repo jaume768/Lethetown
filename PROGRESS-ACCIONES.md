@@ -17,7 +17,7 @@ y comprobar que `pnpm dev` arranca en modo mock.
 - [x] 0.2 `mock-responder.ts` declarativo (registro de respondedores con reglas pequeñas)
 - [x] 0.3 `bootstrap.ts` en factorías por área
 - [x] 0.4 `MemoryStore.listActive(agentId, { withEmbedding })`
-- [ ] 0.5 Retención de datos configurable por tabla + job + test
+- [x] 0.5 Retención de datos configurable por tabla + job + test
 - [ ] 0.6 `gist.minImportance` = 4 (y medir)
 - [ ] 0.7 `docs/decisiones/` (ADR breves), CLAUDE.md corto, sin PROGRESS antiguos
 - [ ] 0.8 Tests unitarios de la lógica no visual de la web
@@ -127,3 +127,14 @@ y comprobar que `pnpm dev` arranca en modo mock.
   por similitud). En Postgres, sin `withEmbedding` no se selecciona la columna `embedding`
   (384 floats por fila); en RAM se devuelven siempre (ya están en memoria). Tests de que el
   resultado es el mismo que `listByAgent` filtrado. El dorado no cambia.
+- **Retención** (`apps/server/src/retention.ts`, sobrescribible con `config/retention.json`): una
+  política por tabla con días de juego (tablas de un mundo) o reales (costes, moderación, bus,
+  instantáneas) y modo. Por defecto: recuerdos olvidados o archivados, 14 días de juego (los
+  activos nunca); auditoría y versiones, 30 (y las versiones huérfanas); historial social, 30 días
+  **resumido** a un cambio por pareja y día de juego (la red y la mini gráfica siguen viéndose);
+  eventos, 14 salvo las crónicas; `llm_calls`, 62 días reales **resumidos** a una fila por día,
+  mundo, modelo y tarea (`agent_id = "*"`, sin perder el gasto); moderación, 90; bus, 1;
+  instantáneas, 7 (siempre queda la última de cada mundo). Cada mundo tiene `prune()` y el proceso
+  (todo en uno o worker) lo llama cada `everyMinutes` minutos **reales** con un intervalo `unref`:
+  el reloj de juego no se toca y el dorado no cambia. En RAM se podan los almacenes en memoria con
+  los mismos criterios. Tests en RAM, en Postgres y del inspector y Rashomon tras podar.

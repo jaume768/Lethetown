@@ -6,11 +6,11 @@ import type { AppConfig } from "./config";
 import { DEFAULT_WORLD_ID } from "./db/schema";
 import { createServices } from "./factories/services";
 import type { App, WorldRuntime } from "./factories/types";
-import { attachWorlds, MAP_FILE, openWorld } from "./factories/worlds";
+import { attachWorlds, MAP_FILE, openWorld, startRetention } from "./factories/worlds";
 
 export type { App, Services, WorldRuntime } from "./factories/types";
 export { createServices } from "./factories/services";
-export { attachWorlds, MAP_FILE, openWorld, safeMapPath } from "./factories/worlds";
+export { attachWorlds, MAP_FILE, openWorld, safeMapPath, startRetention } from "./factories/worlds";
 export { createProvider, loadPricing } from "./factories/llm";
 export { loadMemoryConfig } from "./factories/memory";
 
@@ -32,6 +32,7 @@ export async function bootstrap(
   const worlds = new Map<string, WorldRuntime>();
   for (const row of rows) worlds.set(row.id, await openWorld(services, row));
   attachWorlds(services, () => worlds.values());
+  const stopRetention = startRetention(services, () => worlds.values());
   const defaultWorld = worlds.get(DEFAULT_WORLD_ID) ?? [...worlds.values()][0];
   if (!defaultWorld) throw new Error("No hay ningún mundo que abrir");
   return {
@@ -39,6 +40,7 @@ export async function bootstrap(
     worlds,
     defaultWorld,
     async close() {
+      stopRetention();
       for (const w of worlds.values()) await w.close();
       await services.flush();
       await services.db?.pool.end();

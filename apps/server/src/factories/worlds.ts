@@ -35,6 +35,7 @@ import { parseSnapshot } from "../sim/snapshot";
 import { describeBreach } from "../security/budget";
 import { WorldMap } from "../sim/world";
 import { readJson } from "./files";
+import { describeReport, pruneGlobalPg, pruneWorldPg, pruneWorldRam } from "../retention";
 import { createWorldLlm } from "./llm";
 import { createMaintenance, createWorldMemory } from "./memory";
 import { createUserTextVetter } from "./security";
@@ -73,9 +74,8 @@ export async function openWorld(services: Services, row: WorldRow): Promise<Worl
     placeOf: (id) => placeOf(id),
   });
   // La ficha social se observa para detectar discusiones y amistades.
-  const social: SocialProfileStore = detector.observe(
-    db ? new PgSocialProfileStore(db.db, row.id) : new InMemorySocialProfileStore(),
-  );
+  const rawSocial = db ? new PgSocialProfileStore(db.db, row.id) : new InMemorySocialProfileStore();
+  const social: SocialProfileStore = detector.observe(rawSocial);
   const dramas: DramaStore = db ? new PgDramaStore(db.db, row.id) : new InMemoryDramaStore();
   const events: EventStore = db ? new PgEventStore(db.db, row.id) : new InMemoryEventStore();
   const chronicles: ChronicleStore = db
@@ -204,6 +204,16 @@ export async function openWorld(services: Services, row: WorldRow): Promise<Worl
       scheduleHourly(clock.now());
     },
     saveSnapshot,
+    async prune() {
+      // Retención: lo más antiguo se borra o se resume (ver retention.ts).
+      return db
+        ? pruneWorldPg(db.db, row.id, clock.now(), services.retention)
+        : pruneWorldRam(
+            { memory: store, social: rawSocial, events },
+            clock.now(),
+            services.retention,
+          );
+    },
     async close() {
       clock.stop();
       await saveSnapshot("shutdown").catch((e: unknown) =>
@@ -235,4 +245,35 @@ async function resumeTime(store: MemoryStore): Promise<number> {
   // Los recuerdos sembrados llevan la hora de inicio: solo reanudamos si hubo simulación real.
   if (latest <= START_MINUTE_OF_DAY) return START_MINUTE_OF_DAY;
   return (Math.floor(latest / 1440) + 1) * 1440 + START_MINUTE_OF_DAY;
+}
+
+/**
+ * Job de retención del proceso: cada `everyMinutes` minutos reales poda cada mundo y, con
+ * Postgres, las tablas globales. Devuelve con qué pararlo.
+ */
+export function startRetention(
+  services: Services,
+  worlds: () => Iterable<WorldRuntime>,
+): () => void {
+  const cfg = services.retention;
+  if (!cfg.enabled) return () => {};
+  const run = async () => {
+    try {
+      for (const w of worlds()) {
+        const r = await w.prune();
+        if (Object.values(r).some((n) => n > 0))
+          services.log(`[${w.id}] 🧹 Retención: ${describeReport(r)}`);
+      }
+      if (services.db) {
+        const g = await pruneGlobalPg(services.db.db, cfg);
+        if (Object.values(g).some((n) => n > 0))
+          services.log(`🧹 Retención global: ${describeReport(g)}`);
+      }
+    } catch (e) {
+      services.log(`⚠ Error en la retención: ${String(e)}`);
+    }
+  };
+  const timer = setInterval(() => void run(), cfg.everyMinutes * 60_000);
+  timer.unref();
+  return () => clearInterval(timer);
 }

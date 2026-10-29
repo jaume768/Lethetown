@@ -16,6 +16,7 @@ import { Metrics } from "../observability";
 import { readJson } from "./files";
 import { createLlmStack, loadPricing } from "./llm";
 import { loadMemoryConfig } from "./memory";
+import { loadRetentionConfig } from "../retention";
 import { createBudget, devUsers } from "./security";
 import type { Services } from "./types";
 
@@ -64,6 +65,7 @@ export async function createServices(
     pricing,
     embedder,
     memoryConfig: await loadMemoryConfig(log),
+    retention: await loadRetentionConfig(log),
     seeds,
     db,
     storeKind: db ? "postgres" : "memory",

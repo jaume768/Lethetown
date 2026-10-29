@@ -25,6 +25,7 @@ import {
 } from "../db/stores";
 import { type SnapshotStore, type WorldRepo } from "../db/worlds";
 import type { Metrics } from "../observability";
+import type { RetentionConfig, RetentionReport } from "../retention";
 import type { GameClock } from "../sim/clock";
 import type { LimitedProvider } from "../sim/llm-queue";
 import type { Simulation } from "../sim/simulation";
@@ -46,6 +47,8 @@ export interface Services {
   pricing: PricingTable;
   embedder: Embedder;
   memoryConfig: MemoryConfig;
+  /** Política de retención de datos (ver retention.ts). */
+  retention: RetentionConfig;
   seeds: AgentSeed[];
   db?: DbHandle;
   storeKind: "postgres" | "memory";
@@ -98,6 +101,8 @@ export interface WorldRuntime {
   /** Programa la simulación y las instantáneas horarias (no arranca el reloj real). */
   start(): void;
   saveSnapshot(reason: string): Promise<void>;
+  /** Retención: poda lo más antiguo de este mundo (ver retention.ts). */
+  prune(): Promise<RetentionReport>;
   /** Guarda una instantánea de apagado y para el reloj. */
   close(): Promise<void>;
 }

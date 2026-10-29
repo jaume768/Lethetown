@@ -52,6 +52,14 @@ export class InMemoryEventStore implements EventStore {
   async get(id: string) {
     return this.events.find((e) => e.id === id);
   }
+
+  /** Retención: borra los eventos anteriores a `before` salvo los de `keepKinds`. */
+  prune(before: number, keepKinds: string[]): number {
+    const kept = this.events.filter((e) => e.time >= before || keepKinds.includes(e.kind));
+    const removed = this.events.length - kept.length;
+    this.events.splice(0, this.events.length, ...kept);
+    return removed;
+  }
 }
 
 export class InMemoryChronicleStore implements ChronicleStore {
