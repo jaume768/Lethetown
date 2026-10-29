@@ -8,6 +8,7 @@ import type { Agent } from "@lethetown/agent-core";
 import type { SimContext } from "./context";
 import { minorMeetingRule } from "./actions/meetings";
 import { travel } from "./routines";
+import { grantGuest, GUEST_MINUTES, mayEnter } from "./norms";
 
 /** Minutos que dura una invitación sin respuesta. */
 export const INVITE_MINUTES = 30;
@@ -63,12 +64,17 @@ export function companyTick(ctx: SimContext, now: number): void {
     }
     const dest = whereTo(leader);
     if (rt.travelling || whereTo(agent) === dest) continue;
-    const blocked = minorMeetingRule(ctx, [agent.id, leader.id], dest);
+    const blocked =
+      minorMeetingRule(ctx, [agent.id, leader.id], dest) ?? mayEnter(ctx, agent, dest, now);
     if (blocked) {
       stopFollowing(ctx, agent.id, `No seguí a ${nameOf(ctx, leader.id)}: ${blocked}.`);
       continue;
     }
     agent.learnPlace(dest, "seen", now);
+    // Acompañar a alguien a su casa es ir de invitado.
+    if (ctx.world.place(dest).private && leader.seed.homeId === dest) {
+      grantGuest(ctx, dest, agent.id, now + GUEST_MINUTES);
+    }
     travel(ctx, agent, dest, null, `acompañando a ${nameOf(ctx, leader.id)}`, "idle");
   }
 }

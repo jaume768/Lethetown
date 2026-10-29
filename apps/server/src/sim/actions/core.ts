@@ -3,6 +3,7 @@ import { inferActivityKind } from "@lethetown/agent-core";
 import type { DoActivityAction, SayAction } from "@lethetown/shared";
 import type { z } from "zod";
 import { joinBlocked, talk } from "../conversations";
+import { mayEnter } from "../norms";
 import { goOrDo } from "../routines";
 import { registerAction } from "./registry";
 
@@ -12,11 +13,12 @@ export const REPLAN_MINUTES = 60;
 registerAction<z.infer<typeof DoActivityAction>>({
   type: "do_activity",
   available: () => true,
-  check: ({ ctx, agent }, a) => {
+  check: ({ ctx, agent, now }, a) => {
     if (!ctx.world.places.some((p) => p.id === a.placeId)) {
       return `no conozco ningún sitio llamado "${a.placeId}"`;
     }
-    return agent.knows(a.placeId) ? null : `no sé dónde está "${a.placeId}"`;
+    if (!agent.knows(a.placeId)) return `no sé dónde está "${a.placeId}"`;
+    return a.placeId === agent.state.locationId ? null : mayEnter(ctx, agent, a.placeId, now);
   },
   describe: ({ ctx }, a) =>
     `${a.activity} en ${ctx.world.places.find((p) => p.id === a.placeId)?.name ?? a.placeId}`,

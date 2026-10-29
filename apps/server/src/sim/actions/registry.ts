@@ -4,7 +4,7 @@
  * si no es posible, el agente se entera del motivo como percepción y queda en la línea de tiempo.
  */
 import type { Agent } from "@lethetown/agent-core";
-import type { ActionType, AgentAction } from "@lethetown/shared";
+import { ACTION_SPECS, type ActionType, type AgentAction } from "@lethetown/shared";
 import type { SimContext } from "../context";
 
 export interface ActionContext {
@@ -41,7 +41,8 @@ export function registeredActions(): ActionType[] {
 
 /** Acciones que se le ofrecen ahora, en el orden del registro. */
 export function availableActions(c: ActionContext): ActionType[] {
-  return [...HANDLERS.values()].filter((h) => h.available(c)).map((h) => h.type);
+  // En el orden del catálogo (no en el de registro, que depende de los imports).
+  return (Object.keys(ACTION_SPECS) as ActionType[]).filter((t) => HANDLERS.get(t)?.available(c));
 }
 
 /**

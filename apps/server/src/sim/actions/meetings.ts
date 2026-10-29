@@ -1,6 +1,7 @@
 /** Acciones de citas: proponer, aceptar, rechazar y anular (ver sim/meetings.ts). */
 import { applySocialUpdate, parseClock } from "@lethetown/agent-core";
 import {
+  isOpen,
   seedIsMinor,
   type AcceptMeetingAction,
   type CancelMeetingAction,
@@ -12,6 +13,7 @@ import type { z } from "zod";
 import type { SimContext } from "../context";
 import {
   acceptedOf,
+  MEETING_WINDOW,
   newMeetingId,
   openMeetingsOf,
   releaseSlot,
@@ -20,6 +22,7 @@ import {
   whenText,
 } from "../meetings";
 import { learn } from "../places";
+import { grantGuest } from "../norms";
 import { registerAction, type ActionContext } from "./registry";
 
 /** Citas abiertas que puede tener alguien a la vez (para que no llene la agenda). */
@@ -87,6 +90,13 @@ registerAction<z.infer<typeof ProposeMeetingAction>>({
     const minute = at % 1440;
     if (minute < DAY_START || minute >= DAY_END) return "a esas horas estaremos durmiendo";
     if (openMeetingsOf(ctx, agent.id).length >= MAX_OPEN) return "ya tengo demasiadas citas";
+    // Normas: una casa, solo si es de alguno; con horario, abierto a esa hora.
+    const place = placeOf(ctx, a.placeId)!;
+    const everyone = [agent.id, ...a.with];
+    if (place.private && !everyone.some((id) => ctx.agents.get(id)?.seed.homeId === place.id)) {
+      return `${place.name} no es la casa de ninguno de nosotros`;
+    }
+    if (!isOpen(place, at)) return `${place.name} está cerrado a esa hora`;
     return minorMeetingRule(ctx, [agent.id, ...a.with], a.placeId);
   },
   describe: ({ ctx }, a) =>
@@ -172,6 +182,14 @@ registerAction<z.infer<typeof AcceptMeetingAction>>({
       text: `ir a la cita con ${others.join(" y ")} en ${where} (${m.reason})`,
     });
     if (id) m.intentions[agent.id] = id;
+    // En una casa: quienes no viven allí son invitados durante la cita.
+    if (placeOf(ctx, m.placeId)?.private) {
+      for (const p of acceptedOf(m)) {
+        if (ctx.agents.get(p)?.seed.homeId !== m.placeId) {
+          grantGuest(ctx, m.placeId, p, m.at + MEETING_WINDOW + 60);
+        }
+      }
+    }
     // El hueco en el plan: el suyo y, la primera vez que alguien acepta, el de quien la propuso.
     reserveSlot(ctx, agent, m, now);
     const organizer = ctx.agents.get(m.organizerId);

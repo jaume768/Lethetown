@@ -37,6 +37,7 @@ import { inventorySections, itemsTick, loadItems } from "./items";
 import { objectsTick } from "./actions/objects";
 import { companySections, companyTick, stopFollowing } from "./company";
 import { loadNotes, notesTick } from "./notes";
+import { mayEnter, normsTick } from "./norms";
 import { goOrDo, scheduleArrival, setAction, travel } from "./routines";
 import { SIM_SNAPSHOT_VERSION, type SimSnapshot } from "./snapshot";
 import type { WorldMap } from "./world";
@@ -155,6 +156,7 @@ export class Simulation {
       objectsTick(this.ctx, next);
       companyTick(this.ctx, next);
       notesTick(this.ctx, next);
+      await normsTick(this.ctx, next);
       this.scheduleMeetings(next);
     });
   }
@@ -237,6 +239,9 @@ export class Simulation {
       invitationSeq: this.ctx.invitationSeq,
       notes: structuredClone([...this.ctx.notes.values()]),
       noteSeq: this.ctx.noteSeq,
+      guests: Object.fromEntries(
+        [...this.ctx.guests].map(([placeId, g]) => [placeId, Object.fromEntries(g)]),
+      ),
       objectTimers: Object.fromEntries(structuredClone([...this.ctx.objectTimers])),
     };
   }
@@ -280,6 +285,10 @@ export class Simulation {
     this.ctx.notes.clear();
     for (const n of s.notes) this.ctx.notes.set(n.id, n);
     this.ctx.noteSeq = s.noteSeq;
+    this.ctx.guests.clear();
+    for (const [placeId, g] of Object.entries(s.guests)) {
+      this.ctx.guests.set(placeId, new Map(Object.entries(g)));
+    }
     this.ctx.objectTimers.clear();
     for (const [id, t] of Object.entries(s.objectTimers)) this.ctx.objectTimers.set(id, t);
     this.restored = true;
@@ -476,6 +485,17 @@ export class Simulation {
         if (now < rt.overrideUntil) return;
         const item = agent.currentPlanItem(now);
         if (!item) return setAction(ctx, agent, "tiempo libre", "idle");
+        // Las normas: una casa ajena sin invitación o un sitio cerrado no entran en el plan.
+        const barred =
+          item.placeId !== agent.state.locationId && mayEnter(ctx, agent, item.placeId, now);
+        if (barred) {
+          const key = `${item.startMinute}:${item.placeId}`;
+          if (rt.normWarned !== key) {
+            rt.normWarned = key;
+            rt.pending.push({ kind: "world", text: `No puedo ir: ${barred}.`, placeId: null });
+          }
+          return setAction(ctx, agent, "tiempo libre", "idle");
+        }
         // Si se va a otro sitio a media conversación, la conversación se cierra (no queda colgada).
         const conv = activeConversationOf(ctx, agent.id);
         if (conv && item.placeId !== agent.state.locationId) {

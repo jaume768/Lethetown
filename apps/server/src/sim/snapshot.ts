@@ -13,7 +13,7 @@ import {
 import { z } from "zod";
 
 /** Sube este número si cambias la forma de la instantánea (las antiguas se ignoran). */
-export const SIM_SNAPSHOT_VERSION = 15;
+export const SIM_SNAPSHOT_VERSION = 16;
 
 /** Percepción pendiente (misma forma que `Perception` de agent-core). */
 const Perception = z.discriminatedUnion("kind", [
@@ -98,6 +98,7 @@ export const SimSnapshot = z.object({
         weatherChecked: z.string().nullable(),
         convWarned: z.string().nullable(),
         following: z.object({ who: z.string(), until: z.number() }).nullable().default(null),
+        normWarned: z.string().nullable().default(null),
       }),
     }),
   ),
@@ -124,6 +125,8 @@ export const SimSnapshot = z.object({
   /** Notas vivas y el contador de ids. */
   notes: z.array(Note).default([]),
   noteSeq: z.number().int().nonnegative().default(0),
+  /** Invitados de cada casa (lugar → agente → hasta cuándo). */
+  guests: z.record(z.string(), z.record(z.string(), z.number())).default({}),
   objectTimers: z
     .record(z.string(), z.object({ at: z.number(), state: z.string(), from: z.string() }))
     .default({}),

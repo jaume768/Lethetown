@@ -5,6 +5,7 @@ import {
   WORK_BY_ID,
   hash,
   outingFor,
+  openAt,
   parsePlaces,
   weatherIn,
   type MockPlace,
@@ -71,8 +72,9 @@ function mockPlan(req: CompletionRequest): string {
     spotId: spotIn(place, o.pose),
   });
   const outing = (start: string, durationMin: number, slot: number, pool = outings): Block => {
-    // Si ayer ya estuvo en alguno de los sitios de reunión, prefiere los otros.
-    const all = hubs(slot, pool);
+    // Si ayer ya estuvo en alguno de los sitios de reunión, prefiere los otros (y abiertos).
+    const open = pool.filter((p) => openAt(p, start));
+    const all = hubs(slot, open);
     const notYesterday = all.filter((x) => !yesterday.some((d) => d.placeId === x!.id));
     const options = notYesterday.length ? notYesterday : all;
     const fav = favorites[(me + day) % Math.max(1, favorites.length)];

@@ -103,9 +103,9 @@ describe("ir con otros", () => {
   it("acompañar: va donde vaya la otra persona y lo deja al cabo de un rato", async () => {
     at("cafe_ola", "lucia", "carmen");
     expect(await act("lucia", { type: "follow", who: "carmen" })).toBe(true);
-    agent("carmen").state.targetId = "biblioteca";
+    agent("carmen").state.targetId = "plaza";
     companyTick(ctx, now());
-    expect(agent("lucia").state.targetId).toBe("biblioteca");
+    expect(agent("lucia").state.targetId).toBe("plaza");
     companyTick(ctx, now() + FOLLOW_MINUTES + 1);
     expect(ctx.rt("lucia").following).toBeNull();
     expect(agent("lucia").state.companionId).toBeNull();

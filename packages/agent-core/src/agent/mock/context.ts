@@ -22,6 +22,13 @@ export interface MockPlace {
   name: string;
   outdoor: boolean;
   objects: { id: string; pose: string; shelter: boolean }[];
+  /** Horario ("HH:MM" de apertura y cierre), si tiene. */
+  hours?: { opens: string; closes: string };
+}
+
+/** ¿Está abierto a esa hora ("HH:MM")? */
+export function openAt(p: MockPlace, at: string): boolean {
+  return !p.hours || (at >= p.hours.opens.padStart(5, "0") && at < p.hours.closes.padStart(5, "0"));
 }
 
 /** Entradas "- HH:MM actividad (lugar)" de un diario del prompt que empieza con `header`. */
@@ -46,19 +53,20 @@ export function weatherIn(text: string): Weather | null {
 /** Qué hace quien se ve afectado por el tiempo: dónde se refugia y cómo lo cuenta. */
 
 export function parsePlaces(system: string): MockPlace[] {
-  return [...system.matchAll(/^- (\S+) \((\w+)(, exterior)?\): (.+?)(?: · objetos: (.+))?$/gm)].map(
-    (m) => ({
-      id: m[1]!,
-      kind: m[2]!,
-      outdoor: Boolean(m[3]),
-      name: m[4]!,
-      objects: [...(m[5] ?? "").matchAll(/(\w+)\[(\w+)(,refugio)?\]/g)].map((o) => ({
-        id: o[1]!,
-        pose: o[2]!,
-        shelter: Boolean(o[3]),
-      })),
-    }),
-  );
+  const line =
+    /^- (\S+) \((\w+)(, exterior)?(?:, abre (\d\d:\d\d)-(\d\d:\d\d))?\): (.+?)(?: · objetos: (.+))?$/gm;
+  return [...system.matchAll(line)].map((m) => ({
+    id: m[1]!,
+    kind: m[2]!,
+    outdoor: Boolean(m[3]),
+    ...(m[4] ? { hours: { opens: m[4], closes: m[5]! } } : {}),
+    name: m[6]!,
+    objects: [...(m[7] ?? "").matchAll(/(\w+)\[(\w+)(,refugio)?\]/g)].map((o) => ({
+      id: o[1]!,
+      pose: o[2]!,
+      shelter: Boolean(o[3]),
+    })),
+  }));
 }
 
 export interface Outing {

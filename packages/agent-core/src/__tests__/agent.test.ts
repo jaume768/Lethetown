@@ -55,7 +55,8 @@ describe("Agent con MockProvider", () => {
     const before = agent.system;
     agent.state.action = "otra cosa";
     expect(agent.system).toBe(before);
-    expect(before).not.toMatch(/\d{2}:\d{2}/);
+    // Sin la hora (los horarios de los lugares son fijos: "abre 07:00-22:00").
+    expect(before.replace(/abre \d{2}:\d{2}-\d{2}:\d{2}/g, "")).not.toMatch(/\d{2}:\d{2}/);
     expect(before).toContain("barra[sit]");
   });
 

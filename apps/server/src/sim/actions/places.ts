@@ -1,17 +1,14 @@
 /** Explorar el pueblo: la IA decide salir a explorar; el motor elige la ruta (ver sim/places.ts). */
-import type { ExploreAction } from "@lethetown/shared";
+import { isOpen, type ExploreAction } from "@lethetown/shared";
 import type { z } from "zod";
 import { nextToExplore } from "../places";
 import { travel } from "../routines";
 import { REPLAN_MINUTES } from "./core";
 import { registerAction, type ActionContext } from "./registry";
 
-/** Las casas no son destino de una exploración (se ven al pasar, no se entra). */
-const target = (c: ActionContext, zone?: string | null) => {
-  const homes = new Set(c.ctx.world.places.filter((p) => p.kind === "home").map((p) => p.id));
-  const next = nextToExplore(c.ctx, c.agent, zone);
-  return next && !homes.has(next.id) ? next : undefined;
-};
+/** Destino de una exploración: ni casas (se ven al pasar, no se entra) ni sitios cerrados. */
+const target = (c: ActionContext, zone?: string | null) =>
+  nextToExplore(c.ctx, c.agent, zone, (p) => p.kind !== "home" && isOpen(p, c.now));
 
 registerAction<z.infer<typeof ExploreAction>>({
   type: "explore",

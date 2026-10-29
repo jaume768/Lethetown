@@ -10,6 +10,7 @@ import type { z } from "zod";
 import type { SimContext } from "../context";
 import { INVITE_MINUTES, startFollowing } from "../company";
 import { learn } from "../places";
+import { grantGuest, GUEST_MINUTES, mayEnter } from "../norms";
 import { setAction, travel, travelTogether } from "../routines";
 import { minorMeetingRule } from "./meetings";
 import { registerAction, type ActionContext } from "./registry";
@@ -53,6 +54,10 @@ registerAction<z.infer<typeof InviteAction>>({
       return `no conozco ningún sitio llamado "${a.placeId}"`;
     }
     if (a.placeId === c.agent.state.locationId) return "ya estamos aquí";
+    const place = c.ctx.world.place(a.placeId);
+    if (place.private && c.agent.seed.homeId !== place.id) return "solo puedo invitar a mi casa";
+    const barred = mayEnter(c.ctx, c.agent, a.placeId, c.now);
+    if (barred) return barred;
     return minorMeetingRule(c.ctx, [c.agent.id, ...a.with], a.placeId);
   },
   describe: ({ ctx }, a) =>
@@ -117,6 +122,8 @@ registerAction<z.infer<typeof AcceptInviteAction>>({
     const host = ctx.agents.get(v.fromId)!;
     const place = ctx.world.place(v.placeId);
     learn(ctx, agent, place, "told", now, host);
+    // Invitado a casa de quien invita: puede estar allí un rato.
+    if (place.private) grantGuest(ctx, place.id, agent.id, now + GUEST_MINUTES);
     // Van juntos: la ruta de quien invita, y quien acepta le acompaña un rato al llegar.
     const activity = v.activity;
     if (host.state.targetId === v.placeId) {

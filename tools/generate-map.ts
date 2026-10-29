@@ -159,6 +159,19 @@ const point = (name: string, type: string, x: number, y: number): TiledObject =>
 
 type Rect = { x: number; y: number; w: number; h: number };
 
+/** Horarios de apertura (los lugares que no aparecen, siempre abiertos). */
+const HOURS: Record<string, string> = {
+  ayuntamiento: "08:00-15:00",
+  escuela: "08:00-17:00",
+  biblioteca: "09:00-20:00",
+  consultorio: "08:00-15:00",
+  cafe_ola: "07:00-22:00",
+  panaderia: "07:00-14:30",
+  tienda: "09:00-21:00",
+  taberna: "12:00-24:00",
+  mercado: "08:00-14:00",
+};
+
 function addPlace(id: string, name: string, kind: string, r: Rect, indoor: boolean) {
   places.push({
     id: nextObjectId++,
@@ -175,6 +188,9 @@ function addPlace(id: string, name: string, kind: string, r: Rect, indoor: boole
       str("name", name),
       str("kind", kind),
       { name: "indoor", type: "bool", value: indoor },
+      // Las casas son privadas: solo entran quienes viven ahí y sus invitados.
+      ...(kind === "home" ? [{ name: "private", type: "bool", value: true }] : []),
+      ...(HOURS[id] ? [str("hours", HOURS[id])] : []),
     ],
   });
 }

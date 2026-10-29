@@ -66,8 +66,8 @@ y comprobar que `pnpm dev` arranca en modo mock.
 
 ### Paso 8 — Normas del mundo
 
-- [ ] Lugares privados con dueños e invitados; intrusos
-- [ ] Horarios de apertura; abrir y cerrar
+- [x] Lugares privados con dueños e invitados; intrusos
+- [x] Horarios de apertura; abrir y cerrar
 
 ### Paso 9 — Interfaz
 
@@ -176,6 +176,16 @@ la nota sobre el catálogo al final).
 | Paso 7 |     3277 |   1078 |           1 192 204 |                  727 |
 
 Sin llamadas nuevas: las notas se leen como percepciones (que ya pasaban por la importancia).
+
+### Tras el paso 8 (normas)
+
+|        | Llamadas | decide | Entrada no cacheada | Entrada por decisión |
+| ------ | -------: | -----: | ------------------: | -------------------: |
+| Paso 7 |     3277 |   1078 |           1 192 204 |                  727 |
+| Paso 8 |     3417 |   1077 |           1 271 553 |                  762 |
+
+Sin llamadas nuevas. Las decisiones no cambian; sube la importancia (más percepciones: "No puedo
+ir", "cierra") y la entrada por decisión (avisos de las normas en la memoria de trabajo).
 
 ## Decisiones tomadas
 
@@ -366,3 +376,25 @@ text }` dejaría la nota en un buzón del destinatario (`placeId = null`) que se
   decisión, con un retraso y un coste (batería, cobertura) y la misma regla de menores. El motor ya
   tiene todo lo necesario (notas, lectura como percepción, caducidad); faltaría decidir cuántos
   mensajes al día para que no sustituyan a hablar en persona, que es lo que da vida al pueblo.
+- **Normas en el mapa** (`tools/generate-map.ts` → `seeds/town.tmj`): las casas llevan
+  `private = true` y los lugares con horario, `hours = "HH:MM-HH:MM"` (ayuntamiento, escuela,
+  biblioteca, consultorio, café, panadería, tienda, taberna y mercadillo). `Place.private` y
+  `Place.hours`; `isOpen(place, minuto)`. El horario va en la línea del lugar del prompt fijo
+  ("cafe, abre 07:00-22:00"): no cambia nunca, así que sigue siendo cacheable.
+- **Casas privadas** (`sim/norms.ts`): entra quien vive allí, sus invitados (aceptar una invitación
+  a la casa de quien invita da permiso 3 h; una cita en la casa de un participante, durante la cita)
+  y quien acompaña a alguien de la casa (al seguirle hasta allí queda de invitado). Solo se invita a
+  la casa propia, y solo se queda en una casa si es de alguno.
+- **`mayEnter`** lo comprueban `do_activity`, `invite`, acompañar y el plan del día (si el plan
+  lleva a una casa ajena o a un sitio cerrado, se avisa una vez por bloque y se queda: "No puedo
+  ir: …"). `explore` solo va a sitios abiertos. Quien trabaja en un sitio entra a cualquier hora.
+- **Revisión periódica** (`normsTick`, cada 5 min, sin LLM): avisa al abrir y cerrar (🔓/🔒, "Mateo
+  cierra el Café La Ola" si hay alguien trabajando), saca a quien se queda dentro al cerrar (salvo
+  quien trabaja allí), caduca los permisos y detecta **intrusos**: alguien en una casa sin permiso.
+  Si quien vive allí le ve, lo percibe y pierde afinidad (−0.1) y confianza (−0.05) con motivo;
+  evento 🚪 y drama `intruder`. El intruso se va a su casa.
+- **Menores**: un menor no se queda en una casa ajena con adultos aunque esté invitado (la misma
+  regla que las citas); la revisión le manda a casa. Se suma a las comprobaciones al invitar,
+  quedar, acompañar y prestar.
+- **Orden de las acciones** en el prompt: el del catálogo (`ACTION_SPECS`), no el de registro (un
+  import circular nuevo lo había cambiado).

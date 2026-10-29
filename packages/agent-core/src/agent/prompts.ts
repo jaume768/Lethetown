@@ -39,7 +39,10 @@ export function placeLine(p: Place): string {
   const objects = p.objects
     .map((o) => `${o.id}[${o.pose}${o.shelter && !p.indoor ? ",refugio" : ""}]`)
     .join(", ");
-  const kind = p.indoor ? p.kind : `${p.kind}, exterior`;
+  const hours = p.hours
+    ? `, abre ${formatClock(p.hours.opens)}-${formatClock(p.hours.closes)}`
+    : "";
+  const kind = `${p.indoor ? p.kind : `${p.kind}, exterior`}${hours}`;
   return `- ${p.id} (${kind}): ${p.name}${objects ? ` · objetos: ${objects}` : ""}`;
 }
 

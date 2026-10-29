@@ -94,12 +94,15 @@ describe("lugares conocidos", () => {
     v.state.tile = { ...ctx.world.place("plaza").anchor };
     v.state.activityKind = "idle";
     ctx.rt("valentina").travelling = false;
-    const dest = nextToExplore(ctx, v)!;
-    expect(dest.kind).not.toBe("home");
+    expect(nextToExplore(ctx, v)).toBeDefined();
     expect(
       await runAction({ ctx, agent: v, now: ctx.clock.now() }, { type: "explore", zone: null }),
     ).toBe(true);
     expect(ctx.rt("valentina").travelling).toBe(true);
+    // El motor elige un sitio desconocido, abierto y que no es una casa.
+    const dest = ctx.world.place(v.state.targetId!);
+    expect(dest.kind).not.toBe("home");
+    expect(v.knows(dest.id)).toBe(false);
     await ctx.clock.runUntil(ctx.rt("valentina").arrival!.at);
     expect(v.mind.knownPlaces[dest.id]?.source).toBe("explored");
     expect(v.state.locationId).toBe(dest.id);

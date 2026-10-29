@@ -49,6 +49,18 @@ export class DramaDetector {
       );
       return;
     }
+    // Alguien se mete en una casa sin permiso (y le ven).
+    if (e.meta?.action === "intruder") {
+      this.publish(
+        "intruder",
+        dramaScore.intruder(),
+        e.text.replace(/^🚪 /, ""),
+        e.participants,
+        e.agentId ? this.ctx.placeOf(e.agentId) : null,
+        e.id,
+      );
+      return;
+    }
     // Un préstamo que no se devuelve a tiempo.
     if (e.meta?.action === "loan" && e.meta.ok === false) {
       this.publish(

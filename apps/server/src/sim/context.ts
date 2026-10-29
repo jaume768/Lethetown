@@ -74,6 +74,8 @@ export interface Runtime {
   convWarned: string | null;
   /** A quién acompaña (va donde vaya) y hasta cuándo. */
   following: { who: string; until: number } | null;
+  /** Bloque del plan ya avisado de que no puede ir (casa ajena, cerrado): "inicio:lugar". */
+  normWarned: string | null;
 }
 
 export function newRuntime(): Runtime {
@@ -93,6 +95,7 @@ export function newRuntime(): Runtime {
     weatherChecked: null,
     convWarned: null,
     following: null,
+    normWarned: null,
   };
 }
 
@@ -168,6 +171,10 @@ export class SimContext {
   /** Notas vivas (tablón y privadas) y su contador ("n1"…). */
   readonly notes = new Map<string, Note>();
   noteSeq = 0;
+  /** Invitados de cada casa (lugar → agente → hasta cuándo puede estar). */
+  readonly guests = new Map<string, Map<string, number>>();
+  /** Lugares con horario: abiertos o no en la última revisión (para avisar al abrir y cerrar). */
+  readonly openPlaces = new Map<string, boolean>();
   readonly noteStore: NoteStore;
   /** Objetos del mapa en un estado que dura (la cafetera "en uso"): cuándo vuelven y a qué. */
   readonly objectTimers = new Map<string, { at: number; state: string; from: string }>();

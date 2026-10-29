@@ -101,9 +101,11 @@ export function nextToExplore(
   ctx: SimContext,
   agent: Agent,
   zone?: string | null,
+  /** Solo los que cumplan esto (p. ej. abiertos y que no sean casas). */
+  accept: (p: Place) => boolean = () => true,
 ): Place | undefined {
   const here = agent.state.tile;
-  const unknown = ctx.world.places.filter((p) => !agent.knows(p.id));
+  const unknown = ctx.world.places.filter((p) => !agent.knows(p.id) && accept(p));
   const dist = (p: Place) => {
     const c = centerOf(p);
     return Math.abs(c.x - here.x) + Math.abs(c.y - here.y) + (p.kind === "home" ? 1000 : 0);
