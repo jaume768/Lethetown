@@ -1,0 +1,1 @@
+ALTER TABLE "sim_events" ADD COLUMN "meta" jsonb;

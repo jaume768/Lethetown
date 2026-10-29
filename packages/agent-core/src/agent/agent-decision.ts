@@ -1,13 +1,18 @@
+import { AgentAction, actionPeople, actionText, type ActionType } from "@lethetown/shared";
 import { recallText } from "../memory/retrieval";
-import { inferActivityKind } from "./activity";
 import { describeMood } from "./mood";
 import { untrusted } from "./moderation";
-import { DecideResponse, parseWith } from "./parse";
+import { DecideResponse, decideAction, parseWith } from "./parse";
 import { decidePrompt } from "./prompts";
 import type { Agent } from "./agent";
 import type { Decision, DecideInput } from "./agent-types";
 
-/** Decidir: seguir el plan, reaccionar o hablar. Solo llama al LLM si hay algo saliente. */
+/** Acciones si el motor no dice otra cosa: cambiar de actividad, y hablar si hay alguien. */
+export function defaultActions(present: { id: string }[]): ActionType[] {
+  return present.length ? ["do_activity", "say"] : ["do_activity"];
+}
+
+/** Decidir: seguir el plan o una acción del catálogo. Solo llama al LLM si hay algo saliente. */
 export async function decide(a: Agent, now: number, input: DecideInput): Promise<Decision> {
   if (!input.salient) return { kind: "follow_plan" };
 
@@ -29,7 +34,7 @@ export async function decide(a: Agent, now: number, input: DecideInput): Promise
   }
 
   try {
-    const { salient: _salient, ...context } = input;
+    const { salient: _salient, actions, ...context } = input;
     const res = await a.deps.llm.run({
       kind: "fast",
       task: "decide",
@@ -38,6 +43,7 @@ export async function decide(a: Agent, now: number, input: DecideInput): Promise
       prompt: decidePrompt({
         ...context,
         weather: a.weatherHere(input.weather),
+        actions: actions ?? defaultActions(input.present),
         innerVoice: (input.innerVoice ?? []).map(untrusted),
         doneToday: a.diaryText(),
         now,
@@ -52,7 +58,7 @@ export async function decide(a: Agent, now: number, input: DecideInput): Promise
     const parsed = parseWith(DecideResponse, res.text);
     // Algo que se propone hacer más adelante (memoria prospectiva).
     if (parsed.intention?.text) await a.intend(now, parsed.intention);
-    return await checked(a, toDecision(a, parsed, input.present));
+    return await checked(a, toDecision(parsed));
   } catch (error) {
     a.deps.onError?.(a.id, "decide", error);
     return { kind: "follow_plan" };
@@ -73,11 +79,10 @@ export async function safe(
 /** Lo que la protección de menores descarta se convierte en seguir el plan. */
 export async function checked(a: Agent, d: Decision): Promise<Decision> {
   const reason = d.reason ?? "";
-  if (d.kind === "talk" && !(await safe(a, `${d.utterance} ${reason}`, "speech", [d.to]))) {
-    return { kind: "follow_plan" };
-  }
-  if (d.kind === "react" && !(await safe(a, `${d.action} ${reason}`, "action"))) {
-    return { kind: "follow_plan" };
+  if (d.kind === "act") {
+    const kind = d.action.type === "say" ? "speech" : "action";
+    const text = `${actionText(d.action)} ${reason}`;
+    if (!(await safe(a, text, kind, actionPeople(d.action)))) return { kind: "follow_plan" };
   }
   if (d.kind === "follow_plan" && reason && !(await safe(a, reason, "action"))) {
     return { kind: "follow_plan" };
@@ -85,23 +90,21 @@ export async function checked(a: Agent, d: Decision): Promise<Decision> {
   return d;
 }
 
-export function toDecision(a: Agent, r: DecideResponse, present: { id: string }[]): Decision {
+/**
+ * Respuesta → decisión. Solo se comprueba la forma (el catálogo); si la acción es posible
+ * (el lugar existe, la persona está…) lo decide el motor.
+ */
+export function toDecision(r: DecideResponse): Decision {
   const why = r.reason?.trim().slice(0, 240);
   const reason = why ? { reason: why } : {};
-  if (r.choice === "talk" && r.to && r.say && present.some((p) => p.id === r.to)) {
-    return { kind: "talk", to: r.to, utterance: r.say, ...reason };
+  if (r.choice === "continue") return { kind: "follow_plan", ...reason };
+  const parsed = AgentAction.safeParse(decideAction(r));
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0];
+    const error = issue
+      ? `${issue.path.join(".") || "acción"}: ${issue.message}`
+      : "acción no válida";
+    return { kind: "invalid", error, ...reason };
   }
-  if (r.choice === "react" && r.action) {
-    const placeId = a.validPlace(r.placeId) ?? a.state.locationId;
-    const spot = a.spot(r.spotId);
-    return {
-      kind: "react",
-      action: r.action,
-      placeId,
-      spotId: spot && spot.placeId === placeId ? spot.id : null,
-      activityKind: r.activityKind ?? inferActivityKind(r.action, spot?.pose),
-      ...reason,
-    };
-  }
-  return { kind: "follow_plan", ...reason };
+  return { kind: "act", action: parsed.data, ...reason };
 }

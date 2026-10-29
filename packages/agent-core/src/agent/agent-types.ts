@@ -1,5 +1,5 @@
 /** Tipos del agente (percepciones, decisiones, dependencias). */
-import type { ActivityKind, Place, Weather } from "@lethetown/shared";
+import type { ActionType, AgentAction, Place, Weather } from "@lethetown/shared";
 import type { LLMClient } from "../llm/client";
 import { type SocialProfileStore } from "../memory/human";
 import type { MemorySystem } from "../memory/memory-system";
@@ -33,14 +33,10 @@ export type Perception =
 /** Decisión del agente; `reason` es su razonamiento (si lo dio). */
 export type Decision = (
   | { kind: "follow_plan" }
-  | {
-      kind: "react";
-      action: string;
-      activityKind: ActivityKind;
-      placeId: string;
-      spotId: string | null;
-    }
-  | { kind: "talk"; to: string; utterance: string }
+  /** Una acción del catálogo, ya con sus parámetros validados (el motor comprueba el resto). */
+  | { kind: "act"; action: AgentAction }
+  /** Pidió algo que no encaja con el catálogo: el motor se lo hace saber como percepción. */
+  | { kind: "invalid"; error: string }
 ) & { reason?: string };
 
 export interface AgentDeps {
@@ -72,12 +68,18 @@ export type DecideInput = Omit<
   | "weather"
   | "innerVoice"
   | "doneToday"
+  | "actions"
 > & {
   salient: boolean;
   /** El tiempo que hace; el agente describe cómo le afecta según dónde está. */
   weather: Weather;
   /** Voz interior recién recibida (texto del jugador, sin delimitar). */
   innerVoice?: string[];
+  /**
+   * Acciones del catálogo posibles ahora (las calcula el motor según el contexto). Sin ellas:
+   * `do_activity`, y `say` si hay alguien.
+   */
+  actions?: ActionType[];
 };
 
 /** Qué ha pasado con una intención en este tick. */

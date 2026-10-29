@@ -24,10 +24,10 @@ y comprobar que `pnpm dev` arranca en modo mock.
 
 ### Paso 1 — Catálogo de acciones
 
-- [ ] `AgentAction` + `ActionRegistry` en shared
-- [ ] `DecideResponse` → `{ choice: "continue" | "act", action, reason }` (`do_activity`, `say`)
-- [ ] Prompt con solo las acciones disponibles
-- [ ] Errores → percepción "No pude …" + recuerdo; acciones en `sim_events`
+- [x] `AgentAction` + `ActionRegistry` en shared
+- [x] `DecideResponse` → `{ choice: "continue" | "act", action, reason }` (`do_activity`, `say`)
+- [x] Prompt con solo las acciones disponibles
+- [x] Errores → percepción "No pude …" + recuerdo; acciones en `sim_events`
 
 ### Paso 2 — Citas y compromisos
 
@@ -105,6 +105,17 @@ Esencias 847 → 346 (−59 %); llamadas 3613 → 3041 (−16 %); entrada no cac
 (−6 %). Lo de importancia 3 (el diario del día, lo que se dice uno mismo) ya no se resume con el
 LLM: se desvanece con la esencia provisional.
 
+### Tras el paso 1 (catálogo: `do_activity` y `say`)
+
+|          | Llamadas | decide | Entrada no cacheada | Entrada por decisión |
+| -------- | -------: | -----: | ------------------: | -------------------: |
+| Tras 0.6 |     3041 |    939 |             801 988 |                  483 |
+| Paso 1   |     3468 |   1094 |             946 351 |                  507 |
+
+Sin llamadas nuevas. La entrada por decisión sube un 5 % (la lista de acciones). El total sube porque
+el mock elige con el hash del prompt: al cambiar el texto cambian sus "dados" y en estas 48 h hubo más
+conversaciones (más decisiones). Es ruido del mock, no del diseño.
+
 ## Decisiones tomadas
 
 - **`agent.ts` como fachada**: la clase `Agent` conserva su API pública; el detalle vive en
@@ -155,3 +166,20 @@ LLM: se desvanece con la esencia provisional.
   servidor, más `worldApiPath`) y `ui/filters.ts` (jardín de recuerdos, relaciones, búsqueda sin
   tildes); `store.ts` solo conecta el WebSocket y los efectos. i18n no toca `document` fuera del
   navegador. El estimador de reloj ya estaba en shared con sus tests.
+- **Registro de acciones en tres capas** unidas por el `type`: en shared el esquema zod
+  (`AgentAction`, unión discriminada) y su presentación en el prompt (`ACTION_SPECS`); en el
+  servidor (`sim/actions/`) el manejador con disponibilidad, precondiciones, ejecución, efectos y
+  descripción ("No pude …"); en agent-core la regla del mock. Un test comprueba que el esquema, las
+  descripciones y los manejadores cubren las mismas acciones.
+- **`Decision` = `follow_plan | act(action) | invalid(error)`**. agent-core solo comprueba la forma
+  (zod); si es posible lo decide el motor. El formato antiguo (`react`/`talk`) se sigue aceptando y
+  se traduce a `do_activity`/`say`; las reglas antiguas del mock se traducen igual (`asAction`).
+- **Lo que no es posible** (lugar desconocido, alguien que no está, parámetros no válidos) llega como
+  percepción "No pude …: motivo." (la recuerda al percibirla y puede reconsiderarlo) y deja un evento
+  `✗ … no pudo …` con `meta = { action, ok: false }`. Los eventos de acciones llevan
+  `meta.action` (columna jsonb nueva en `sim_events`, migración 0010) para iconos y filtros.
+- **Solo las acciones disponibles van al prompt** (`availableActions`): hablar, solo si hay alguien
+  despierto en el mismo sitio. Sin lista del motor (tests), agent-core usa `do_activity` (+ `say` si
+  hay alguien).
+- **La protección de menores** revisa cualquier acción: todo su texto libre (`actionText`) con las
+  personas que nombra (`actionPeople`) como actores.

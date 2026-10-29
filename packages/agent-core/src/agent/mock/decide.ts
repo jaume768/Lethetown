@@ -298,13 +298,35 @@ for (const [name, respond] of [
   registerDecideRule({ name, respond });
 }
 
+/**
+ * Las reglas de siempre responden con atajos (`react` y `talk`); aquí se traducen al formato del
+ * catálogo (`act` con `do_activity` o `say`). Las reglas de acciones nuevas ya responden con `act`.
+ */
+function asAction(r: Record<string, unknown>): Record<string, unknown> {
+  if (r.choice === "react") {
+    const { action, activityKind, placeId, spotId } = r;
+    return {
+      choice: "act",
+      action: {
+        type: "do_activity",
+        activity: action,
+        activityKind,
+        placeId,
+        spotId: spotId ?? null,
+      },
+    };
+  }
+  if (r.choice === "talk") return { choice: "act", action: { type: "say", to: r.to, text: r.say } };
+  return r;
+}
+
 /** Primera regla que responde; si ninguna, sigue con su plan. */
 export function mockDecide(req: CompletionRequest): string {
   const c = decideContext(req);
   const hit = decideRules().reduce<DecideReply | null>((r, rule) => r ?? rule.respond(c), null);
   const { response, reason } =
     hit ?? say({ choice: "continue" }, "Sigo con lo que tenía previsto.");
-  return JSON.stringify({ ...response, reason, ...c.intention });
+  return JSON.stringify({ ...asAction(response), reason, ...c.intention });
 }
 
 registerMockHandler("decide", mockDecide);

@@ -17,11 +17,12 @@ import {
   type SimSignal,
   type SimulationDeps,
 } from "./context";
-import { activeConversationOf, endConversation, endIdleConversations, talk } from "./conversations";
+import { activeConversationOf, endConversation, endIdleConversations } from "./conversations";
 import { startDemo } from "./demo";
 import * as intervention from "./intervention";
 import { WEATHER_NOW } from "./intervention";
 import { consolidate, maintain, scheduleChronicle, writeChronicle } from "./memory-routines";
+import { availableActions, failAction, runAction } from "./actions";
 import { gatherPerceptions, presentWith } from "./perception";
 import { goOrDo, scheduleArrival, setAction, travel } from "./routines";
 import { SIM_SNAPSHOT_VERSION, type SimSnapshot } from "./snapshot";
@@ -30,8 +31,6 @@ import type { WorldMap } from "./world";
 export type { SimSignal, SimulationDeps } from "./context";
 
 const SPEECH_BUBBLE_MINUTES = 20;
-/** Lo que dura un cambio de planes antes de volver al plan del día (minutos de juego). */
-const REPLAN_MINUTES = 60;
 
 /**
  * Orquesta la simulación de un mundo: el bucle de cada agente (percibir → guardar → decidir →
@@ -368,6 +367,7 @@ export class Simulation {
       socialNotes: await agent.socialNotes(present.map((p) => p.id)),
       innerVoice,
       salient: perceptions.length > 0,
+      actions: availableActions({ ctx, agent, now: this.clock.now() }),
     });
     if (decision.reason) {
       agent.state.reasoning = {
@@ -378,17 +378,20 @@ export class Simulation {
     }
     if (innerVoice.length) reportInnerVoice(ctx, agent, decision);
     // Fin de conversación natural: le hablaron y decidió no contestar a esa persona.
-    if (speaker && !(decision.kind === "talk" && decision.to === speaker)) {
+    const answered =
+      decision.kind === "act" && decision.action.type === "say" && decision.action.to === speaker;
+    if (speaker && !answered) {
       await endConversation(ctx, convKey(agent.id, speaker), "decidió no seguir");
     }
-    this.apply(agent, decision);
+    await this.apply(agent, decision);
   }
 
-  /** Actuar: seguir el plan, reaccionar o hablar. */
-  private apply(agent: Agent, decision: Decision): void {
+  /** Actuar: seguir el plan o una acción del catálogo (que el motor comprueba y ejecuta). */
+  private async apply(agent: Agent, decision: Decision): Promise<void> {
     const ctx = this.ctx;
     const rt = ctx.rt(agent.id);
     const now = this.clock.now();
+    const c = { ctx, agent, now };
     switch (decision.kind) {
       case "follow_plan": {
         if (now < rt.overrideUntil) return;
@@ -406,45 +409,26 @@ export class Simulation {
         }
         return goOrDo(ctx, agent, item.placeId, item.spotId, item.activity, item.activityKind);
       }
-      case "react": {
-        rt.overrideUntil = now + REPLAN_MINUTES;
-        // El cambio entra en el plan del día: el inspector muestra lo que hace de verdad.
-        agent.replan(
-          now,
-          {
-            activity: decision.action,
-            activityKind: decision.activityKind,
-            placeId: decision.placeId,
-            spotId: decision.spotId,
-          },
-          REPLAN_MINUTES,
-        );
-        ctx.emit("action", agent.id, `${agent.seed.name} cambia de planes: ${decision.action}`, [
-          agent.id,
-        ]);
-        return goOrDo(
-          ctx,
-          agent,
-          decision.placeId,
-          decision.spotId,
-          decision.action,
-          decision.activityKind,
-        );
-      }
-      case "talk":
-        return talk(ctx, agent, decision.to, decision.utterance);
+      case "act":
+        await runAction(c, decision.action);
+        return;
+      case "invalid":
+        return failAction(c, "hacer eso", decision.error, "invalid");
     }
   }
 }
 
 /** Respuesta a la voz interior en el log: si le hace caso o no, y por qué. */
 function reportInnerVoice(ctx: SimContext, agent: Agent, decision: Decision): void {
+  const a = decision.kind === "act" ? decision.action : null;
   const outcome =
-    decision.kind === "react"
-      ? `le hace caso: ${decision.action}`
-      : decision.kind === "talk"
-        ? `se lo comenta a ${ctx.agents.get(decision.to)?.seed.name ?? decision.to}`
-        : "no le hace caso";
+    a?.type === "do_activity"
+      ? `le hace caso: ${a.activity}`
+      : a?.type === "say"
+        ? `se lo comenta a ${ctx.agents.get(a.to)?.seed.name ?? a.to}`
+        : a
+          ? "le hace caso"
+          : "no le hace caso";
   const why = decision.reason ? ` — «${decision.reason}»` : "";
   ctx.emit("action", agent.id, `💭 ${agent.seed.name} ${outcome}${why}`, [agent.id]);
 }

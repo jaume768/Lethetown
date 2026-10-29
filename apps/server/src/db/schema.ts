@@ -178,6 +178,8 @@ export const simEvents = pgTable(
     kind: text("kind").notNull(),
     text: text("text").notNull(),
     participants: text("participants").array().notNull().default([]),
+    /** Acción del catálogo que lo produjo y si salió bien ({ action, ok }). */
+    meta: jsonb("meta").$type<{ action?: string; ok?: boolean }>(),
   },
   (t) => [index("sim_events_world_time_idx").on(t.worldId, t.time)],
 );

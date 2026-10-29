@@ -158,6 +158,8 @@ export interface DecideCtx {
   /** Alguien presente (elegido con el hash). */
   someone: string | undefined;
   weatherLabel: string;
+  /** Acciones del catálogo que se le ofrecen (líneas "- tipo {…}" del prompt). */
+  available: Set<string>;
 }
 
 export function decideContext(req: CompletionRequest): DecideCtx {
@@ -238,5 +240,6 @@ export function decideContext(req: CompletionRequest): DecideCtx {
     social: Number(/social (\d\.\d+)\./.exec(p)?.[1] ?? 0.5),
     someone: present[h % Math.max(1, present.length)],
     weatherLabel: weather ? WEATHER_LABEL[weather] : "",
+    available: new Set([...p.matchAll(/^- ([a-z_]+) \{/gm)].map((m) => m[1]!)),
   };
 }

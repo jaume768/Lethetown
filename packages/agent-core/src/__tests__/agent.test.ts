@@ -4,7 +4,8 @@ import { describe, expect, it } from "vitest";
 import { inferActivityKind } from "../agent/activity";
 import { Agent, type DecideInput } from "../agent/agent";
 import { agentMockResponder } from "../agent/mock-responder";
-import { extractJson } from "../agent/parse";
+import { DecideResponse, extractJson } from "../agent/parse";
+import { toDecision } from "../agent/agent-decision";
 import { LLMClient } from "../llm/client";
 import { CostTracker } from "../llm/cost-tracker";
 import { MockProvider } from "../llm/mock";
@@ -122,10 +123,10 @@ describe("Agent con MockProvider", () => {
         conversationWith: "luis",
         salient: true,
       });
-      kinds.add(d.kind);
-      if (d.kind === "talk") expect(d.to).toBe("luis");
+      kinds.add(d.kind === "act" ? d.action.type : d.kind);
+      if (d.kind === "act" && d.action.type === "say") expect(d.action.to).toBe("luis");
     }
-    expect(kinds.has("talk")).toBe(true);
+    expect(kinds.has("say")).toBe(true);
   });
 
   it("reacciona a un objeto roto del lugar", async () => {
@@ -137,10 +138,11 @@ describe("Agent con MockProvider", () => {
         objectStates: [{ id: "cafetera", state: "rota" }],
         salient: true,
       });
-      kinds.add(d.kind);
-      if (d.kind === "react") expect(d.activityKind).toBe("work");
+      kinds.add(d.kind === "act" ? d.action.type : d.kind);
+      if (d.kind === "act" && d.action.type === "do_activity")
+        expect(d.action.activityKind).toBe("work");
     }
-    expect(kinds.has("react")).toBe(true);
+    expect(kinds.has("do_activity")).toBe(true);
   });
 });
 
@@ -156,5 +158,33 @@ describe("extractJson", () => {
   it("tolera bloques de código y texto alrededor", () => {
     expect(extractJson('Claro:\n```json\n{"a":1}\n```')).toEqual({ a: 1 });
     expect(() => extractJson("sin json")).toThrow();
+  });
+});
+
+describe("decisión con el catálogo de acciones", () => {
+  const parse = (o: unknown) => toDecision(DecideResponse.parse(o));
+
+  it("formato nuevo, formato antiguo y acciones no válidas", () => {
+    expect(
+      parse({ choice: "act", action: { type: "say", to: "mateo", text: "Hola" }, reason: "x" }),
+    ).toEqual({ kind: "act", action: { type: "say", to: "mateo", text: "Hola" }, reason: "x" });
+    expect(parse({ choice: "talk", to: "mateo", say: "Hola" })).toMatchObject({
+      kind: "act",
+      action: { type: "say", to: "mateo", text: "Hola" },
+    });
+    expect(parse({ choice: "react", action: "leer", placeId: "biblioteca" })).toMatchObject({
+      kind: "act",
+      action: { type: "do_activity", activity: "leer", placeId: "biblioteca", spotId: null },
+    });
+    expect(parse({ choice: "act", action: { type: "volar" } })).toMatchObject({ kind: "invalid" });
+    expect(parse({ choice: "continue" })).toEqual({ kind: "follow_plan" });
+  });
+
+  it("el prompt solo ofrece las acciones disponibles", async () => {
+    const { agent, provider } = setup();
+    await agent.decide(9 * 60, { ...EMPTY, salient: true, actions: ["do_activity"] });
+    const prompt = provider.calls.at(-1)!.prompt;
+    expect(prompt).toContain("- do_activity {");
+    expect(prompt).not.toContain("- say {");
   });
 });

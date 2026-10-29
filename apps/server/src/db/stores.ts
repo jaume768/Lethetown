@@ -74,9 +74,10 @@ export class InMemoryChronicleStore implements ChronicleStore {
 
 // --- Postgres ------------------------------------------------------------------------------
 
-const toEvent = ({ worldId: _w, ...r }: typeof simEvents.$inferSelect): SimEvent => ({
+const toEvent = ({ worldId: _w, meta, ...r }: typeof simEvents.$inferSelect): SimEvent => ({
   ...r,
   kind: SimEventKind.parse(r.kind),
+  ...(meta ? { meta } : {}),
 });
 
 export class PgEventStore implements EventStore {

@@ -164,8 +164,18 @@ export class SimContext {
     text: string,
     participants: string[] = [],
     id: string = randomUUID(),
+    /** Datos del evento (p. ej. la acción del catálogo y si salió bien). */
+    meta?: SimEvent["meta"],
   ): void {
-    const event: SimEvent = { id, time: this.clock.now(), agentId, kind, text, participants };
+    const event: SimEvent = {
+      id,
+      time: this.clock.now(),
+      agentId,
+      kind,
+      text,
+      participants,
+      ...(meta ? { meta } : {}),
+    };
     for (const l of this.eventListeners) l(event);
     this.signal({ type: "event", event });
   }

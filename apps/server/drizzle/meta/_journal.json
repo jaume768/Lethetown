@@ -71,6 +71,13 @@
       "when": 1793263104191,
       "tag": "0009_social_relationships",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1793278204706,
+      "tag": "0010_event_meta",
+      "breakpoints": true
     }
   ]
 }
