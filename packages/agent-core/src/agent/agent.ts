@@ -1,4 +1,11 @@
-import type { AgentSeed, AgentState, PlanItem, Spot, Weather } from "@lethetown/shared";
+import type {
+  AgentSeed,
+  AgentState,
+  KnownPlaceSource,
+  PlanItem,
+  Spot,
+  Weather,
+} from "@lethetown/shared";
 import { type MemoryOwner } from "../memory/human";
 import type { RecallContext } from "../memory/memory-system";
 import { WorkingMemory } from "../memory/working-memory";
@@ -13,6 +20,8 @@ import * as _planning from "./agent-planning";
 import * as _body from "./agent-body";
 import * as _perception from "./agent-perception";
 import * as _decision from "./agent-decision";
+import * as _places from "./places";
+import { seedKnownPlaces } from "./places";
 import { fallbackPlan, SLEEP_START, DAY_START } from "./agent-planning";
 import type {
   Perception,
@@ -45,7 +54,9 @@ export class Agent {
     readonly deps: AgentDeps,
   ) {
     this.id = seed.id;
-    this.system = identityPrompt(seed, deps.places, deps.language, deps.minors);
+    const known = seedKnownPlaces(seed, deps.places);
+    this.system = identityPrompt(seed, known, deps.language, deps.minors);
+    for (const p of known) this.mind.knownPlaces[p.id] = { source: "seed", at: 0, toldBy: null };
     this.spots = new Map(deps.places.flatMap((p) => p.objects.map((o) => [o.id, o] as const)));
     const home = deps.places.find((p) => p.id === seed.homeId);
     if (!home) throw new Error(`${seed.id}: casa desconocida ${seed.homeId}`);
@@ -249,7 +260,22 @@ export class Agent {
     return _perception.rememberOwnSpeech(this, to, toName, utterance, now, eventId);
   }
 
+  /** El id si es un lugar que conoce (si no, undefined). */
   validPlace(id: string | undefined): string | undefined {
-    return id && this.deps.places.some((p) => p.id === id) ? id : undefined;
+    return id && _places.knows(this, id) ? id : undefined;
+  }
+
+  knows(placeId: string): boolean {
+    return _places.knows(this, placeId);
+  }
+
+  /** Aprende un lugar (verlo, explorar, que se lo cuenten); true si no lo conocía. */
+  learnPlace(placeId: string, source: KnownPlaceSource, now: number, toldBy?: string): boolean {
+    return _places.learnPlace(this, placeId, source, now, toldBy ?? null);
+  }
+
+  /** Líneas de los lugares descubiertos (van en el prompt de usuario, no en el fijo). */
+  discoveredPlaces(): string[] {
+    return _places.discoveredLines(this);
   }
 }

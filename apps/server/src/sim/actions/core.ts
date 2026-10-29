@@ -12,10 +12,12 @@ export const REPLAN_MINUTES = 60;
 registerAction<z.infer<typeof DoActivityAction>>({
   type: "do_activity",
   available: () => true,
-  check: ({ ctx }, a) =>
-    ctx.world.places.some((p) => p.id === a.placeId)
-      ? null
-      : `no conozco ningún sitio llamado "${a.placeId}"`,
+  check: ({ ctx, agent }, a) => {
+    if (!ctx.world.places.some((p) => p.id === a.placeId)) {
+      return `no conozco ningún sitio llamado "${a.placeId}"`;
+    }
+    return agent.knows(a.placeId) ? null : `no sé dónde está "${a.placeId}"`;
+  },
   describe: ({ ctx }, a) =>
     `${a.activity} en ${ctx.world.places.find((p) => p.id === a.placeId)?.name ?? a.placeId}`,
   execute: ({ ctx, agent, now }, a) => {

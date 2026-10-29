@@ -1,4 +1,10 @@
-import { Agent, minorsOf, type Decision, type MemoryEffect } from "@lethetown/agent-core";
+import {
+  Agent,
+  defaultKnownPlaces,
+  minorsOf,
+  type Decision,
+  type MemoryEffect,
+} from "@lethetown/agent-core";
 import type {
   AgentState,
   Chronicle,
@@ -25,6 +31,7 @@ import { consolidate, maintain, scheduleChronicle, writeChronicle } from "./memo
 import { availableActions, failAction, runAction } from "./actions";
 import { agendaLines, fixedPlanFor, meetingsTick, rehearseAgenda } from "./meetings";
 import { gatherPerceptions, presentWith } from "./perception";
+import { syncKnownPlaces } from "./places";
 import { goOrDo, scheduleArrival, setAction, travel } from "./routines";
 import { SIM_SNAPSHOT_VERSION, type SimSnapshot } from "./snapshot";
 import type { WorldMap } from "./world";
@@ -59,7 +66,12 @@ export class Simulation {
     const gossips = new Set(
       deps.seeds.filter((s) => s.traits.some((t) => /chism|cotill/i.test(t))).map((s) => s.id),
     );
-    for (const seed of deps.seeds) {
+    for (const raw of deps.seeds) {
+      // Sin lista en la semilla: lo de quien vive aquí de siempre.
+      const seed = {
+        ...raw,
+        knownPlaces: raw.knownPlaces ?? defaultKnownPlaces(raw, deps.seeds, deps.world.places),
+      };
       const agent = new Agent(seed, {
         llm: deps.llm,
         memory: deps.memory,
@@ -139,6 +151,11 @@ export class Simulation {
   }
 
   /** Primer id libre de cita (si no se restauró una instantánea, los guardados mandan). */
+  /** Guarda lo que conoce cada agente (al arrancar). */
+  syncKnownPlaces(): Promise<void> {
+    return syncKnownPlaces(this.ctx);
+  }
+
   setMeetingSeq(seq: number): void {
     this.ctx.meetingSeq = Math.max(this.ctx.meetingSeq, seq);
   }

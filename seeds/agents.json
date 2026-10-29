@@ -1112,6 +1112,7 @@
     "traits": ["curiosa", "extrovertida", "impulsiva", "misteriosa con su pasado"],
     "description": "Valentina es fotógrafa y acaba de llegar al pueblo. Alquila la casa de la colina y pregunta a todo el mundo por la historia de Lethetown, sin contar mucho de la suya.",
     "homeId": "casa_colina",
+    "knownPlaces": ["casa_colina", "plaza", "cafe_ola", "tienda"],
     "appearance": {
       "sheet": "default",
       "skin": "#c89070",

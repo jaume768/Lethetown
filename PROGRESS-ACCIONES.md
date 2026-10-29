@@ -39,10 +39,10 @@ y comprobar que `pnpm dev` arranca en modo mock.
 
 ### Paso 3 — Conocer el pueblo y explorar
 
-- [ ] `known_places` + semillas
-- [ ] Prompt con lugares conocidos + visibles
-- [ ] Acción `explore` y descubrimientos (también por conversación)
-- [ ] Apertura → tendencia a explorar; lugares conocidos en el inspector
+- [x] `known_places` + semillas
+- [x] Prompt con lugares conocidos + descubiertos
+- [x] Acción `explore` y descubrimientos (también por conversación)
+- [x] Apertura → tendencia a explorar (mock); API de lugares conocidos (pestaña: paso 9)
 
 ### Paso 4 — Conversaciones en grupo
 
@@ -125,6 +125,17 @@ conversaciones (más decisiones). Es ruido del mock, no del diseño.
 
 Sin llamadas nuevas (las citas van en la misma decisión). La entrada por decisión sube un 9 % (más
 acciones en la lista y la AGENDA cuando la hay); el total vuelve a moverse por el ruido del mock.
+
+### Tras el paso 3 (lugares conocidos)
+
+|        | Llamadas | decide | Entrada no cacheada | Entrada por decisión | Caché por llamada |
+| ------ | -------: | -----: | ------------------: | -------------------: | ----------------: |
+| Paso 2 |     2991 |    959 |             873 374 |                  552 |              1293 |
+| Paso 3 |     2695 |    859 |             830 956 |                  605 |              1225 |
+
+Sin llamadas nuevas. El prompt fijo es un poco más corto (sin las casas que no conoce) y la
+entrada por decisión sube por la acción `explore` y, para quien descubre sitios, la lista de
+descubiertos. El total, de nuevo, es sobre todo ruido del mock.
 
 ## Decisiones tomadas
 
@@ -217,3 +228,28 @@ acciones en la lista y la AGENDA cuando la hay); el total vuelve a moverse por e
 - **Anular a última hora** (menos de 3 h) molesta un poco a los demás (−0.03).
 - **Menores**: si en la cita hay un menor y algún adulto, solo en un lugar público (o en la casa
   del propio menor, con su familia). La protección de menores revisa además el texto del motivo.
+- **Lugares conocidos** (`agent-core/agent/places.ts`, `sim/places.ts`): cada agente lleva en
+  `AgentMind.knownPlaces` (instantánea v11) los lugares que conoce, con cómo (`seed`, `seen`,
+  `explored`, `told`), cuándo y quién se lo contó; se escriben también en `known_places` (Postgres
+  o RAM, migración 0012) para la API (`GET /agents/:id/places`). Sin `knownPlaces` en la semilla,
+  quien vive aquí de siempre conoce todo lo que no es una casa, la suya, su trabajo y las casas de
+  quienes conoce bien (vínculo o familiaridad ≥ 0.5). Valentina, recién llegada, solo su casa, la
+  plaza, el café y la tienda.
+- **Prompt**: el fijo (`identityPrompt`) lista solo los lugares de partida, así sigue siendo
+  cacheable; lo descubierto después va en el prompt de usuario (`LUGARES QUE HAS DESCUBIERTO`) de
+  decidir y planificar. El mock lee lugares de los dos. Planes, `do_activity` y `propose_meeting`
+  solo aceptan lugares conocidos ("no sé dónde está …"; en el plan, se cambia por casa).
+- **Descubrir**: al llegar a un sitio, el agente aprende los lugares a menos de
+  `SIM_DISCOVERY_RADIUS` baldosas (4) del camino recorrido y el destino. Cada descubrimiento es una
+  percepción ("Descubrí …", que se recuerda), un evento 🧭 (`meta.action = discover`) y un drama
+  `discovery` de bajo interés. Las casas vistas al pasar se aprenden en silencio: en la primera
+  versión eran el 90 % del ruido del log.
+- **`explore` `{ zone? }`**: la IA decide explorar; el motor elige el lugar desconocido más cercano
+  (en la zona pedida si queda alguno), nunca una casa, y lo lleva. Lo descubierto así cuenta como
+  `explored`. Solo se ofrece si queda algo por descubrir.
+- **Que te lo cuenten**: si en una conversación alguien nombra (nombre o id, sin tildes) un sitio que
+  quien escucha no conoce, lo aprende si confía en quien habla (confianza ≥ 0.35; ≥ 0.5 si es un
+  chismoso). Sin azar, para no mover el resto de la simulación. Proponer una cita le dice a los
+  invitados dónde es.
+- **Apertura**: en el mock, quien tiene la curiosidad alta ("te mueven la curiosidad y lo nuevo")
+  explora con más frecuencia; con un LLM real lo decide su personalidad, que ya está en el prompt.

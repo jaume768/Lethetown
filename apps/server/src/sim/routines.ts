@@ -1,6 +1,7 @@
 import { inferActivityKind, type Agent } from "@lethetown/agent-core";
 import { facingOf, pathLength, type ActivityKind } from "@lethetown/shared";
 import type { Arrival, SimContext } from "./context";
+import { discoverAlong } from "./places";
 import { tileKey } from "./world";
 
 /** Rutinas sin LLM: desplazarse, hacer la actividad, necesidades. */
@@ -54,6 +55,10 @@ export function travel(
 export function scheduleArrival(ctx: SimContext, agent: Agent, arrival: Arrival): void {
   const rt = ctx.rt(agent.id);
   ctx.clock.schedule(arrival.at, () => {
+    // Lo que ha visto por el camino (y el sitio al que llega, si no lo conocía).
+    const path = agent.state.movement?.waypoints ?? [arrival.goal];
+    const source = arrival.thenAction.startsWith("explorando") ? "explored" : "seen";
+    discoverAlong(ctx, agent, path, arrival.destId, arrival.at, source);
     const prev = agent.state.movement?.waypoints.at(-2);
     if (prev) agent.state.facing = facingOf(prev, arrival.goal);
     agent.state.tile = arrival.goal;

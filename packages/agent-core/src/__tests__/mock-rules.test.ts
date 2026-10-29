@@ -56,6 +56,7 @@ describe("mock declarativo: reglas de decisión", () => {
       "propose-meeting",
       "greet",
       "cancel-meeting",
+      "explore",
       "ponder",
     ]);
   });
@@ -121,6 +122,21 @@ describe("mock declarativo: reglas de decisión", () => {
     );
     expect(out.intention).toEqual({ text: "llamar a mi madre" });
     expect(out.reason).toBeTruthy();
+  });
+
+  it("explorar: solo si se le ofrece, está solo y hace buen tiempo (curiosos, más a menudo)", () => {
+    const offer = "\n- explore {}: sales a explorar.\nPRESENTES: nadie";
+    expect(rule("explore").respond(ctx(offer, 47))?.response).toMatchObject({
+      choice: "act",
+      action: { type: "explore" },
+    });
+    expect(rule("explore").respond(ctx(offer, 11))).toBeNull();
+    expect(rule("explore").respond(ctx("PRESENTES: nadie", 47))).toBeNull();
+    // Los lugares descubiertos (prompt de usuario) también cuentan como conocidos.
+    const found = decideContext(
+      req(base("LUGARES QUE HAS DESCUBIERTO:\n- biblioteca (other): Biblioteca Mnemósine")),
+    );
+    expect(found.places.map((p) => p.id)).toContain("biblioteca");
   });
 
   it("una acción nueva añade su regla donde quiere (y se puede sustituir)", () => {

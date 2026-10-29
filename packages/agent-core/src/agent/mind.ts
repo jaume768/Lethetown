@@ -1,3 +1,4 @@
+import { KnownPlaceInfo } from "@lethetown/shared";
 import { z } from "zod";
 import { HabitTracker } from "../memory/habits";
 import { IntentionState } from "../memory/prospective";
@@ -18,6 +19,8 @@ export const AgentMind = z.object({
   exposure: z.record(z.string(), z.number()).default({}),
   /** Intenciones abiertas (memoria prospectiva), con su pista y su estado. */
   intentions: z.array(IntentionState).default([]),
+  /** Lugares que conoce (id → cómo y cuándo lo conoció). */
+  knownPlaces: z.record(z.string(), KnownPlaceInfo).default({}),
 });
 export type AgentMind = z.infer<typeof AgentMind>;
 

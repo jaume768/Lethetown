@@ -19,6 +19,7 @@ import {
   saveMeeting,
   whenText,
 } from "../meetings";
+import { learn } from "../places";
 import { registerAction, type ActionContext } from "./registry";
 
 /** Citas abiertas que puede tener alguien a la vez (para que no llene la agenda). */
@@ -77,7 +78,9 @@ registerAction<z.infer<typeof ProposeMeetingAction>>({
     const { ctx, agent, now } = c;
     const away = a.with.filter((id) => !here(c, id));
     if (away.length) return `${away.map((id) => nameOf(ctx, id)).join(" y ")} no está aquí`;
-    if (!placeOf(ctx, a.placeId)) return `no conozco ningún sitio llamado "${a.placeId}"`;
+    if (!placeOf(ctx, a.placeId) || !agent.knows(a.placeId)) {
+      return `no conozco ningún sitio llamado "${a.placeId}"`;
+    }
     const at = absoluteTime(now, a.at, a.day);
     if (at === null) return `"${a.at}" no es una hora`;
     if (at < now + MIN_NOTICE) return "esa hora ya ha pasado o es demasiado pronto";
@@ -125,6 +128,9 @@ registerAction<z.infer<typeof ProposeMeetingAction>>({
       { action: "propose_meeting", ok: true },
     );
     for (const p of a.with) {
+      // Quien la propone le dice dónde es (si no lo conocía, ya lo sabe).
+      const other = ctx.agents.get(p);
+      if (other) learn(ctx, other, placeOf(ctx, a.placeId)!, "told", now, agent);
       ctx.rt(p).pending.push({
         kind: "world",
         text: `${agent.seed.name} te propone quedar en ${where} ${whenText(at, now)} (cita ${meeting.id}): ${a.reason}.`,

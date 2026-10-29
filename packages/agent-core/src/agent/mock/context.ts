@@ -165,7 +165,7 @@ export interface DecideCtx {
 export function decideContext(req: CompletionRequest): DecideCtx {
   const h = hash(req.prompt);
   const p = req.prompt;
-  const places = parsePlaces(req.system);
+  const places = parsePlaces(`${req.system}\n${req.prompt}`);
   const here = /^Es .+?\. Estás en (\S+) haciendo/m.exec(p)?.[1] ?? "";
   const weather = weatherIn(p);
   const need = weather ? WEATHER_SHELTER[weather] : null;

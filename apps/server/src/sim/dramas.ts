@@ -49,6 +49,18 @@ export class DramaDetector {
       );
       return;
     }
+    // Alguien descubre un sitio del pueblo.
+    if (e.meta?.action === "discover") {
+      this.publish(
+        "discovery",
+        dramaScore.discovery(),
+        e.text.replace(/^🧭 /, ""),
+        e.participants,
+        e.agentId ? this.ctx.placeOf(e.agentId) : null,
+        e.id,
+      );
+      return;
+    }
     if (e.kind !== "speech" || !e.agentId) return;
     const listeners = e.participants.length - 2;
     const rumor = looksLikeRumor(e.text);

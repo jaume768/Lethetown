@@ -3,6 +3,7 @@ import { updateSocialAfterConversation, type Agent } from "@lethetown/agent-core
 import { facingOf } from "@lethetown/shared";
 import { convKey, errorMessage, type Conversation, type SimContext } from "./context";
 import { setAction } from "./routines";
+import { learnFromSpeech } from "./places";
 
 /** Conversaciones: turnos, rumores oídos a escondidas y cierre con actualización social. */
 
@@ -58,6 +59,8 @@ export function talk(ctx: SimContext, agent: Agent, toId: string, utterance: str
     eventId: conv.id,
   });
   const overhearers = eavesdrop(ctx, agent, target, utterance, conv.id);
+  // Si nombra un sitio que quien escucha no conoce, quizá se lo crea y lo aprenda.
+  ctx.deps.track?.(learnFromSpeech(ctx, target, agent, utterance, now));
   ctx.emit(
     "speech",
     agent.id,

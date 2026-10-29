@@ -70,6 +70,7 @@ export type DecideInput = Omit<
   | "doneToday"
   | "actions"
   | "agenda"
+  | "discovered"
 > & {
   salient: boolean;
   /** El tiempo que hace; el agente describe cómo le afecta según dónde está. */

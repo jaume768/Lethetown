@@ -71,6 +71,12 @@ export const CancelMeetingAction = z.object({
   reason: z.string().trim().max(160).optional(),
 });
 
+/** Explorar el pueblo: el motor elige una ruta hacia lo que no conoce (zona opcional). */
+export const ExploreAction = z.object({
+  type: z.literal("explore"),
+  zone: z.enum(["norte", "sur", "este", "oeste"]).nullish().catch(null),
+});
+
 export const AgentAction = z.discriminatedUnion("type", [
   DoActivityAction,
   SayAction,
@@ -78,6 +84,7 @@ export const AgentAction = z.discriminatedUnion("type", [
   AcceptMeetingAction,
   DeclineMeetingAction,
   CancelMeetingAction,
+  ExploreAction,
 ]);
 export type AgentAction = z.infer<typeof AgentAction>;
 export type ActionType = AgentAction["type"];
@@ -122,6 +129,11 @@ export const ACTION_SPECS: Record<ActionType, ActionSpec> = {
     type: "cancel_meeting",
     params: '{"meetingId":"…","reason":"…"}',
     description: "anulas una cita de tu agenda",
+  },
+  explore: {
+    type: "explore",
+    params: '{"zone":"norte|sur|este|oeste o null"}',
+    description: "sales a explorar el pueblo y descubrir sitios que no conoces",
   },
 };
 

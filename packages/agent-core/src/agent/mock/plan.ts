@@ -22,7 +22,7 @@ type Block = {
 };
 
 function mockPlan(req: CompletionRequest): string {
-  const places = parsePlaces(req.system);
+  const places = parsePlaces(`${req.system}\n${req.prompt}`);
   const homeId = /^Tu casa: (\S+)$/m.exec(req.system)?.[1] ?? places[0]?.id ?? "home";
   const workId = /^Tu trabajo o estudios: (\S+)$/m.exec(req.system)?.[1];
   const home = places.find((p) => p.id === homeId);

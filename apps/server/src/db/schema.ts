@@ -345,3 +345,19 @@ export const commitments = pgTable(
     index("commitments_world_at_idx").on(t.worldId, t.at),
   ],
 );
+
+/** Lugares que conoce cada agente (y cómo los conoció). */
+export const knownPlaces = pgTable(
+  "known_places",
+  {
+    worldId: worldId(),
+    agentId: text("agent_id").notNull(),
+    placeId: text("place_id").notNull(),
+    /** seed | seen | explored | told. */
+    source: text("source").notNull(),
+    /** Minuto de juego en que lo conoció. */
+    learnedAt: doublePrecision("learned_at").notNull(),
+    toldBy: text("told_by"),
+  },
+  (t) => [primaryKey({ columns: [t.worldId, t.agentId, t.placeId] })],
+);

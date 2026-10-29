@@ -77,6 +77,11 @@ export const AgentSeed = z.object({
   homeId: z.string(),
   /** Lugar donde trabaja o estudia (opcional): forma parte de la identidad fija del prompt. */
   workId: z.string().optional(),
+  /**
+   * Lugares que conoce al empezar. Sin indicar: los de toda la vida (todo lo público, su casa y
+   * su trabajo). Quien acaba de llegar conoce menos y tiene que explorar.
+   */
+  knownPlaces: z.array(z.string()).optional(),
   appearance: Appearance.default({
     sheet: "default",
     skin: "#f1c27d",

@@ -40,6 +40,11 @@ import {
   PgCommitmentStore,
   type CommitmentStore,
 } from "../db/commitments";
+import {
+  InMemoryKnownPlaceStore,
+  PgKnownPlaceStore,
+  type KnownPlaceStore,
+} from "../db/known-places";
 import { describeReport, pruneGlobalPg, pruneWorldPg, pruneWorldRam } from "../retention";
 import { createWorldLlm } from "./llm";
 import { createMaintenance, createWorldMemory } from "./memory";
@@ -86,6 +91,9 @@ export async function openWorld(services: Services, row: WorldRow): Promise<Worl
   const commitments: CommitmentStore = db
     ? new PgCommitmentStore(db.db, row.id)
     : new InMemoryCommitmentStore();
+  const knownPlaces: KnownPlaceStore = db
+    ? new PgKnownPlaceStore(db.db, row.id)
+    : new InMemoryKnownPlaceStore();
   const chronicles: ChronicleStore = db
     ? new PgChronicleStore(db.db, row.id)
     : new InMemoryChronicleStore();
@@ -119,6 +127,8 @@ export async function openWorld(services: Services, row: WorldRow): Promise<Worl
     language: row.language,
     demoEveryMinutes: config.SIM_DEMO === "on" ? config.SIM_DEMO_EVERY_MINUTES : undefined,
     commitments,
+    knownPlaces,
+    discoveryRadius: config.SIM_DISCOVERY_RADIUS,
     track: (w) => services.track(w),
   });
   placeOf = (id) => sim.agents.get(id)?.state.locationId ?? null;
@@ -146,6 +156,7 @@ export async function openWorld(services: Services, row: WorldRow): Promise<Worl
     sim.restore(snapshot);
     worldLog(`Estado restaurado de la instantánea de ${formatGameTime(snapshot.time)}.`);
   }
+  await sim.syncKnownPlaces();
 
   const saveSnapshot = (reason: string) =>
     services.snapshots.save(row.id, clock.now(), reason, sim.snapshot());
@@ -191,6 +202,7 @@ export async function openWorld(services: Services, row: WorldRow): Promise<Worl
     chronicles,
     dramas,
     commitments,
+    knownPlaces,
     costs,
     restoredFrom: snapshot?.time ?? null,
     status: () => status,

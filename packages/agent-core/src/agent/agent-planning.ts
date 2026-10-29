@@ -211,6 +211,7 @@ export async function planDay(
         weather,
         mood: describeMood(a.state.mood),
         yesterday: yesterday.text,
+        discovered: a.discoveredPlaces(),
         fixed: fixed.map(
           (f) =>
             `- ${formatClock(f.startMinute)} ${f.activity} (${f.placeId}, ${f.durationMin} min)`,

@@ -45,6 +45,7 @@ export async function decide(a: Agent, now: number, input: DecideInput): Promise
         weather: a.weatherHere(input.weather),
         actions: actions ?? defaultActions(input.present),
         agenda,
+        discovered: a.discoveredPlaces(),
         innerVoice: (input.innerVoice ?? []).map(untrusted),
         doneToday: a.diaryText(),
         now,

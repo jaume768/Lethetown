@@ -21,6 +21,7 @@ import type {
 } from "@lethetown/shared";
 import type { ChronicleStore, EventStore } from "../db/stores";
 import { InMemoryCommitmentStore, type CommitmentStore } from "../db/commitments";
+import { InMemoryKnownPlaceStore, type KnownPlaceStore } from "../db/known-places";
 import type { GameClock } from "./clock";
 import type { WorldMap } from "./world";
 
@@ -115,6 +116,10 @@ export interface SimulationDeps {
   demoEveryMinutes?: number;
   /** Citas entre agentes (si no se pasa, en RAM). */
   commitments?: CommitmentStore;
+  /** Lugares que conoce cada agente (si no se pasa, en RAM). */
+  knownPlaces?: KnownPlaceStore;
+  /** Radio (baldosas) en que se ven los lugares al pasar (por defecto, 4). */
+  discoveryRadius?: number;
   /** Escrituras en segundo plano (para esperarlas al cerrar). */
   track?: (write: Promise<unknown>) => void;
 }
@@ -138,11 +143,13 @@ export class SimContext {
   /** Contador de ids cortos de cita ("c1", "c2"…). */
   meetingSeq = 0;
   readonly commitments: CommitmentStore;
+  readonly knownPlaces: KnownPlaceStore;
   private readonly eventListeners: ((e: SimEvent) => void)[] = [];
   private readonly signalListeners: ((s: SimSignal) => void)[] = [];
 
   constructor(readonly deps: SimulationDeps) {
     this.commitments = deps.commitments ?? new InMemoryCommitmentStore();
+    this.knownPlaces = deps.knownPlaces ?? new InMemoryKnownPlaceStore();
   }
 
   get clock(): GameClock {

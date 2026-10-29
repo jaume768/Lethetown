@@ -2,6 +2,7 @@ import { clarityFor, currentStrength, type MemoryRecord } from "@lethetown/agent
 import type {
   AgentMemoryResponse,
   CommitmentsResponse,
+  KnownPlacesResponse,
   MemoryView,
   RashomonAccount,
   RashomonResponse,
@@ -319,6 +320,20 @@ export function registerWorldRest(server: FastifyInstance, ctx: ApiContext): voi
       agentId: req.params.id,
       now: live.time,
       items: await w.commitments.listFor(req.params.id, Math.min(limit, 200)),
+    };
+    return body;
+  });
+
+  /** Lugares que conoce el agente y cómo los conoció. */
+  server.get<{ Params: { id: string } }>("/agents/:id/places", async (req, reply) => {
+    const w = worldOf(ctx, req, reply);
+    if (!w) return reply;
+    if (!w.live().agents.some((a) => a.id === req.params.id)) {
+      return reply.code(404).send({ error: "Agente no encontrado" });
+    }
+    const body: KnownPlacesResponse = {
+      agentId: req.params.id,
+      items: await w.knownPlaces.list(req.params.id),
     };
     return body;
   });
