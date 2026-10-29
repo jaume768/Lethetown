@@ -3,6 +3,7 @@ import {
   ActivityKind,
   AgentState,
   Commitment,
+  Item,
   SimSpeed,
   TilePoint,
   Weather,
@@ -10,7 +11,7 @@ import {
 import { z } from "zod";
 
 /** Sube este número si cambias la forma de la instantánea (las antiguas se ignoran). */
-export const SIM_SNAPSHOT_VERSION = 12;
+export const SIM_SNAPSHOT_VERSION = 13;
 
 /** Percepción pendiente (misma forma que `Perception` de agent-core). */
 const Perception = z.discriminatedUnion("kind", [
@@ -108,6 +109,13 @@ export const SimSnapshot = z.object({
   /** Citas vivas y recientes, y el contador de ids. */
   meetings: z.array(Commitment).default([]),
   meetingSeq: z.number().int().nonnegative().default(0),
+  /** Objetos del inventario y el contador de ids. */
+  items: z.array(Item).default([]),
+  itemSeq: z.number().int().nonnegative().default(0),
+  /** Objetos del mapa que volverán solos a otro estado (spotId → cuándo, a qué y desde cuál). */
+  objectTimers: z
+    .record(z.string(), z.object({ at: z.number(), state: z.string(), from: z.string() }))
+    .default({}),
 });
 export type SimSnapshot = z.infer<typeof SimSnapshot>;
 

@@ -51,10 +51,10 @@ y comprobar que `pnpm dev` arranca en modo mock.
 
 ### Paso 5 — Objetos e inventario
 
-- [ ] Máquinas de estados de objetos y `use_object`
-- [ ] `inventory_items` y acciones de objetos (dar, prestar, devolver, coger, dejar)
-- [ ] Préstamos → intención de devolución; el libro de Carmen
-- [ ] Inventario en el inspector e icono en el mapa; economía preparada
+- [x] Máquinas de estados de objetos y `use_object`
+- [x] `inventory_items` y acciones de objetos (dar, prestar, devolver, coger, dejar)
+- [x] Préstamos → intención de devolución; el libro de Carmen
+- [x] API de inventario; economía preparada (pestaña e icono: paso 9)
 
 ### Paso 6 — Invitar y acompañar
 
@@ -146,6 +146,16 @@ descubiertos. El total, de nuevo, es sobre todo ruido del mock.
 
 Sin llamadas nuevas por acción. En grupo se habla más (más decisiones) y la revisión social lleva
 la transcripción del grupo (más larga); se limita a `socialPartners` fichas por persona.
+
+### Tras el paso 5 (objetos e inventario)
+
+|        | Llamadas | decide | Entrada no cacheada | Entrada por decisión |
+| ------ | -------: | -----: | ------------------: | -------------------: |
+| Paso 4 |     2949 |    959 |             988 762 |                  630 |
+| Paso 5 |     3000 |    983 |           1 039 530 |                  657 |
+
+Sin llamadas nuevas. La entrada por decisión sube un 4 % (acciones de objetos y las secciones
+LLEVAS / HAS PRESTADO / AQUÍ HAY / PUEDES USAR, que solo aparecen si tienen algo).
 
 ## Decisiones tomadas
 
@@ -279,3 +289,28 @@ la transcripción del grupo (más larga); se limita a `socialPartners` fichas po
   `socialPartners` (2) personas con quienes más habló (`pairs`, frases en cada sentido), no de todo
   el grupo: el coste crece con las personas, no con las parejas. En una conversación de dos es lo
   de siempre (una revisión por cada lado). Instantánea v12 (conversaciones con `members` y `pairs`).
+- **Objetos con estados** (`shared/objects/machines.ts`): cada tipo de objeto del mapa (cafetera,
+  cocinas, horno, bancales, botiquín) tiene verbos con estados de origen y destino; los que duran
+  vuelven solos (`objectTimers`, en la instantánea, revisados cada 5 min). Cualquier objeto roto
+  admite `arreglar` (70 % de éxito por intento, con el `Rng`). `use_object { objectId, verb }` solo
+  se ofrece si hay algo usable aquí; la sección PUEDES USAR lista `objeto: verbo (para qué)`. El
+  cambio de estado no genera percepciones para quien está delante (lo ve, sin más).
+- **Inventario** (`shared/schemas/items.ts`, `sim/items.ts`, `sim/actions/items.ts`): cada `Item`
+  tiene dueño, quién lo lleva, dónde está si se dejó, préstamo (de, a, desde, vence) y `value`. Vive
+  en el runtime (`ctx.items`, instantánea v13) y se escribe en `inventory_items` (migración 0013) en
+  cada cambio; al restaurar se vuelve a escribir todo (el almacén sigue a la instantánea). Las
+  semillas traen objetos (`items`, con `lentTo`): el libro de poemas de Carmen lo tiene Lucía.
+- **Acciones**: `give_item` (regalar lo propio: pasa a ser suyo, +afinidad), `lend_item` (prestar lo
+  propio unos días: quien lo recibe se propone devolverlo, memoria prospectiva), `return_item` (con
+  el dueño delante; cumple la intención y suma afinidad y confianza, menos si fue tarde),
+  `take_item` (lo propio o lo de nadie, que pasa a ser suyo) y `leave_item` (lo propio). Lo
+  prestado no se regala, ni se presta, ni se deja. Con un adulto y un menor, solo en un sitio público.
+- **Plazos**: cuando vence un préstamo, el dueño lo percibe una vez, pierde un poco de afinidad
+  (−0.05, con motivo) y sale un evento 📕 con drama `loan_unreturned`.
+- **Prompt**: secciones LLEVAS, HAS PRESTADO, AQUÍ HAY y PUEDES USAR (un campo genérico `sections`
+  de `DecideContext` que escribe el motor; vacías, no aparecen). El mock las lee con `sectionLines`.
+- **Economía (preparada, no implementada)**: `Item.value` ya existe y se guarda. Una economía
+  añadiría `money` en `AgentMind`, objetos a la venta en los puestos (spots `puesto_*`, `estanteria`,
+  `vitrina`: `ownerId` = quien atiende, `placeId` = la tienda) y dos acciones del mismo estilo,
+  `buy_item` (el motor comprueba dinero y que el vendedor esté) y `sell_item`; el precio sería
+  `value` y el registro, eventos con `meta.action`.

@@ -92,6 +92,13 @@
       "when": 1793279520687,
       "tag": "0012_known_places",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1793280388711,
+      "tag": "0013_inventory_items",
+      "breakpoints": true
     }
   ]
 }

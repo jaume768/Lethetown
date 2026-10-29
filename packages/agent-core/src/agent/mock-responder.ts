@@ -13,6 +13,7 @@ import "./mock/decide";
 import "./mock/meetings";
 import "./mock/places";
 import "./mock/groups";
+import "./mock/items";
 
 export {
   agentMockResponder,

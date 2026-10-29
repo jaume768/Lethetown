@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { TilePoint } from "./world";
+import { SeedItem } from "./items";
 
 /** Aspecto del personaje: hoja de sprites del manifest y colores para recolorear el placeholder. */
 export const Appearance = z.object({
@@ -129,6 +130,8 @@ export const AgentSeed = z.object({
       }),
     )
     .default([]),
+  /** Objetos suyos al empezar (quizá prestados a alguien). */
+  items: z.array(SeedItem).default([]),
   /** Cosas que tiene pensado hacer cuando surja (memoria prospectiva). */
   initialIntentions: z
     .array(

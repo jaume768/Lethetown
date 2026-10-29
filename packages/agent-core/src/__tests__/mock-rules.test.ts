@@ -43,21 +43,26 @@ describe("mock declarativo: reglas de decisión", () => {
   it("están registradas en orden", () => {
     expect(decideRules().map((r) => r.name)).toEqual([
       "remembered",
+      "repair-object",
       "broken-object",
       "inner-voice",
       "shelter",
       "plan-clash",
       "no-mood",
       "answer-invitation",
+      "return-item",
       "reply",
       "chime-in",
       "spread-rumor",
       "confide",
       "follow-idea",
       "propose-meeting",
+      "lend-item",
       "greet",
       "cancel-meeting",
       "explore",
+      "take-own-item",
+      "use-appliance",
       "ponder",
     ]);
   });
@@ -150,6 +155,30 @@ describe("mock declarativo: reglas de decisión", () => {
       action: { type: "say", to: "mateo" },
     });
     expect(rule("chime-in").respond(ctx(group, 16))).toBeNull();
+  });
+
+  it("objetos: devolver lo prestado, arreglar lo roto y recoger lo suyo", () => {
+    const lines = [
+      "- return_item {}: devuelves algo.",
+      "- use_object {}: usas algo.",
+      "- take_item {}: coges algo.",
+      "LLEVAS:",
+      "- i1 libro de poemas (de Carmen; te lo prestó: devuélveselo antes del día 1)",
+      "PUEDES USAR:",
+      "- cafetera: arreglar (intentar arreglarlo)",
+      "AQUÍ HAY:",
+      "- i4 paraguas negro (tuyo)",
+      "PRESENTES: carmen=Carmen (leyendo)",
+    ].join("\n");
+    expect(rule("return-item").respond(ctx(`\n${lines}`, 4))?.response).toMatchObject({
+      action: { type: "return_item", itemId: "i1" },
+    });
+    expect(rule("repair-object").respond(ctx(`\n${lines}`, 4))?.response).toMatchObject({
+      action: { type: "use_object", objectId: "cafetera", verb: "arreglar" },
+    });
+    expect(rule("take-own-item").respond(ctx(`\n${lines}`, 4))?.response).toMatchObject({
+      action: { type: "take_item", itemId: "i4" },
+    });
   });
 
   it("una acción nueva añade su regla donde quiere (y se puede sustituir)", () => {

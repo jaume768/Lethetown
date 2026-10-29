@@ -14,6 +14,7 @@ import type {
   ActivityKind,
   AgentSeed,
   Commitment,
+  Item,
   ServerMessage,
   SimEvent,
   SimEventKind,
@@ -22,6 +23,7 @@ import type {
 import type { ChronicleStore, EventStore } from "../db/stores";
 import { InMemoryCommitmentStore, type CommitmentStore } from "../db/commitments";
 import { InMemoryKnownPlaceStore, type KnownPlaceStore } from "../db/known-places";
+import { InMemoryItemStore, type ItemStore } from "../db/items";
 import type { GameClock } from "./clock";
 import type { WorldMap } from "./world";
 
@@ -121,6 +123,8 @@ export interface SimulationDeps {
   demoEveryMinutes?: number;
   /** Citas entre agentes (si no se pasa, en RAM). */
   commitments?: CommitmentStore;
+  /** Objetos del inventario (si no se pasa, en RAM). */
+  items?: ItemStore;
   /** Lugares que conoce cada agente (si no se pasa, en RAM). */
   knownPlaces?: KnownPlaceStore;
   /** Radio (baldosas) en que se ven los lugares al pasar (por defecto, 4). */
@@ -147,6 +151,12 @@ export class SimContext {
   readonly meetings = new Map<string, Commitment>();
   /** Contador de ids cortos de cita ("c1", "c2"…). */
   meetingSeq = 0;
+  /** Objetos del inventario (también en la instantánea) y su contador ("i1", "i2"…). */
+  readonly items = new Map<string, Item>();
+  itemSeq = 0;
+  /** Objetos del mapa en un estado que dura (la cafetera "en uso"): cuándo vuelven y a qué. */
+  readonly objectTimers = new Map<string, { at: number; state: string; from: string }>();
+  readonly itemStore: ItemStore;
   readonly commitments: CommitmentStore;
   readonly knownPlaces: KnownPlaceStore;
   private readonly eventListeners: ((e: SimEvent) => void)[] = [];
@@ -155,6 +165,7 @@ export class SimContext {
   constructor(readonly deps: SimulationDeps) {
     this.commitments = deps.commitments ?? new InMemoryCommitmentStore();
     this.knownPlaces = deps.knownPlaces ?? new InMemoryKnownPlaceStore();
+    this.itemStore = deps.items ?? new InMemoryItemStore();
   }
 
   get clock(): GameClock {

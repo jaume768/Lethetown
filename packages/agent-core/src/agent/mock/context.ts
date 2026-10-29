@@ -246,3 +246,14 @@ export function decideContext(req: CompletionRequest): DecideCtx {
     available: new Set([...p.matchAll(/^- ([a-z_]+) \{/gm)].map((m) => m[1]!)),
   };
 }
+
+/** Líneas "- …" de una sección del prompt ("LLEVAS:", "AGENDA:"…), sin el guion. */
+export function sectionLines(prompt: string, title: string): string[] {
+  const block = prompt.split(`\n${title}:\n`)[1] ?? "";
+  const out: string[] = [];
+  for (const line of block.split("\n")) {
+    if (!line.startsWith("- ")) break;
+    out.push(line.slice(2));
+  }
+  return out;
+}

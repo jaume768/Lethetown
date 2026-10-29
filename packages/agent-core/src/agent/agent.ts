@@ -10,7 +10,7 @@ import { type MemoryOwner } from "../memory/human";
 import type { RecallContext } from "../memory/memory-system";
 import { WorkingMemory } from "../memory/working-memory";
 import { newMind, type AgentMind } from "./mind";
-import { type IntentionInput } from "../memory/prospective";
+import { type IntentionInput, type IntentionState } from "../memory/prospective";
 import { baselineMood, describeMood, makeMood } from "./mood";
 import { replanAt } from "./replan";
 import { formatClock, identityPrompt, weatherLine } from "./prompts";
@@ -143,6 +143,11 @@ export class Agent {
   }
 
   /** Repasa una intención (mirar la agenda la refuerza). */
+  /** Da por cumplida una intención pendiente que encaje (hacer lo que tenía pensado). */
+  fulfillIntention(test: (i: IntentionState) => boolean, now: number, why: string) {
+    return _intentions.fulfillIntention(this, test, now, why);
+  }
+
   rehearseIntention(memoryId: string, now: number): Promise<boolean> {
     return _intentions.rehearseIntention(this, memoryId, now);
   }

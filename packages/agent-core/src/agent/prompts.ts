@@ -232,6 +232,8 @@ export interface DecideContext {
   agenda?: string[];
   /** Lugares que ha descubierto (líneas `placeLine`; los de siempre están en el prompt fijo). */
   discovered?: string[];
+  /** Secciones que añade el motor (LLEVAS, AQUÍ HAY, PUEDES USAR…), ya escritas. */
+  sections?: { title: string; lines: string[] }[];
   workingMemory: string;
 }
 
@@ -264,7 +266,12 @@ Es ${formatGameTime(opts.now)}. Estás en ${opts.locationId} haciendo: ${opts.ac
 Tu plan ahora: ${plan}
 HOY YA HAS HECHO:
 ${opts.doneToday || "- (nada todavía)"}
-${opts.agenda?.length ? `AGENDA:\n${opts.agenda.map((l) => `- ${l}`).join("\n")}\n` : ""}${discoveredSection(opts.discovered)}OBJETOS: ${objects}
+${opts.agenda?.length ? `AGENDA:\n${opts.agenda.map((l) => `- ${l}`).join("\n")}\n` : ""}${discoveredSection(opts.discovered)}${(
+    opts.sections ?? []
+  )
+    .filter((x) => x.lines.length)
+    .map((x) => `${x.title}:\n${x.lines.map((l) => `- ${l}`).join("\n")}\n`)
+    .join("")}OBJETOS: ${objects}
 PRESENTES: ${present}
 CONVERSACIÓN: ${opts.conversationWith ?? "ninguna"}
 HABLAN:

@@ -49,6 +49,18 @@ export class DramaDetector {
       );
       return;
     }
+    // Un préstamo que no se devuelve a tiempo.
+    if (e.meta?.action === "loan" && e.meta.ok === false) {
+      this.publish(
+        "loan_unreturned",
+        dramaScore.loanUnreturned(),
+        e.text.replace(/^📕 /, ""),
+        e.participants,
+        e.agentId ? this.ctx.placeOf(e.agentId) : null,
+        e.id,
+      );
+      return;
+    }
     // Alguien descubre un sitio del pueblo.
     if (e.meta?.action === "discover") {
       this.publish(

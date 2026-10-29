@@ -27,6 +27,7 @@ import { type SnapshotStore, type WorldRepo } from "../db/worlds";
 import type { Metrics } from "../observability";
 import type { CommitmentStore } from "../db/commitments";
 import type { KnownPlaceStore } from "../db/known-places";
+import type { ItemStore } from "../db/items";
 import type { RetentionConfig, RetentionReport } from "../retention";
 import type { GameClock } from "../sim/clock";
 import type { LimitedProvider } from "../sim/llm-queue";
@@ -106,6 +107,7 @@ export interface WorldRuntime {
   /** Citas de los agentes de este mundo. */
   commitments: CommitmentStore;
   knownPlaces: KnownPlaceStore;
+  items: ItemStore;
   /** Retención: poda lo más antiguo de este mundo (ver retention.ts). */
   prune(): Promise<RetentionReport>;
   /** Guarda una instantánea de apagado y para el reloj. */

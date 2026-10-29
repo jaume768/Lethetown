@@ -151,6 +151,15 @@
     "traits": ["observadora", "cariñosa", "memoriosa", "chismosa"],
     "description": "Carmen fue maestra en la escuela del pueblo durante treinta años. Ahora jubilada, cuida su huerto, pasea por el parque y sabe la vida de todos.",
     "homeId": "casa_roja",
+    "items": [
+      {
+        "kind": "libro",
+        "name": "el libro de poemas",
+        "description": "Su libro de poemas favorito, con anotaciones a lápiz.",
+        "lentTo": "lucia",
+        "dueInDays": 1
+      }
+    ],
     "appearance": {
       "sheet": "default",
       "skin": "#eac3a0",
@@ -1035,6 +1044,13 @@
     "traits": ["bohemio", "alegre", "impuntual", "coqueto"],
     "description": "Hugo es músico callejero: toca la guitarra en la plaza mayor casi todos los días. Vive en la casa del río y le debe dinero a medio pueblo.",
     "homeId": "casa_rio",
+    "items": [
+      {
+        "kind": "guitarra",
+        "name": "la guitarra",
+        "description": "Una guitarra gastada con una pegatina de un festival."
+      }
+    ],
     "workId": "plaza",
     "appearance": {
       "sheet": "default",
@@ -1112,6 +1128,13 @@
     "traits": ["curiosa", "extrovertida", "impulsiva", "misteriosa con su pasado"],
     "description": "Valentina es fotógrafa y acaba de llegar al pueblo. Alquila la casa de la colina y pregunta a todo el mundo por la historia de Lethetown, sin contar mucho de la suya.",
     "homeId": "casa_colina",
+    "items": [
+      {
+        "kind": "camara",
+        "name": "la cámara de fotos",
+        "description": "Una cámara analógica vieja que no suelta nunca."
+      }
+    ],
     "knownPlaces": ["casa_colina", "plaza", "cafe_ola", "tienda"],
     "appearance": {
       "sheet": "default",
@@ -1390,6 +1413,13 @@
     "traits": ["sereno", "empático", "adicto al trabajo", "nostálgico de su tierra"],
     "description": "Samuel es el médico del consultorio del pueblo. Llegó hace tres años desde Lagos y se ha ganado a todos con su paciencia, aunque a veces echa de menos su casa.",
     "homeId": "casa_faro",
+    "items": [
+      {
+        "kind": "paraguas",
+        "name": "el paraguas negro",
+        "description": "Un paraguas grande y negro."
+      }
+    ],
     "workId": "consultorio",
     "appearance": {
       "sheet": "default",

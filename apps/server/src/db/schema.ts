@@ -361,3 +361,33 @@ export const knownPlaces = pgTable(
   },
   (t) => [primaryKey({ columns: [t.worldId, t.agentId, t.placeId] })],
 );
+
+/** Objetos que se llevan encima (inventario), con dueño, quién lo tiene y préstamo. */
+export const inventoryItems = pgTable(
+  "inventory_items",
+  {
+    worldId: worldId(),
+    /** Id corto dentro del mundo ("i3"). */
+    id: text("id").notNull(),
+    kind: text("kind").notNull(),
+    name: text("name").notNull(),
+    description: text("description").notNull().default(""),
+    ownerId: text("owner_id"),
+    holderId: text("holder_id"),
+    placeId: text("place_id"),
+    loan: jsonb("loan").$type<{
+      from: string;
+      to: string;
+      since: number;
+      dueAt: number;
+      overdueNoticed: boolean;
+    }>(),
+    value: doublePrecision("value").notNull().default(0),
+    createdAt: doublePrecision("created_at").notNull(),
+    updatedAt: doublePrecision("updated_at").notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.worldId, t.id] }),
+    index("inventory_items_holder_idx").on(t.worldId, t.holderId),
+  ],
+);

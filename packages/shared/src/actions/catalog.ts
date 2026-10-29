@@ -77,6 +77,46 @@ export const ExploreAction = z.object({
   zone: z.enum(["norte", "sur", "este", "oeste"]).nullish().catch(null),
 });
 
+/** Usar un objeto de aquí con uno de sus verbos (ver PUEDES USAR). */
+export const UseObjectAction = z.object({
+  type: z.literal("use_object"),
+  objectId: z.string().min(1),
+  verb: z.string().min(1),
+});
+
+/** Regalar algo tuyo a alguien presente (o devolverle lo suyo). */
+export const GiveItemAction = z.object({
+  type: z.literal("give_item"),
+  itemId: z.string().min(1),
+  to: z.string().min(1),
+});
+
+/** Prestar algo tuyo a alguien presente durante unos días. */
+export const LendItemAction = z.object({
+  type: z.literal("lend_item"),
+  itemId: z.string().min(1),
+  to: z.string().min(1),
+  days: z.coerce.number().int().min(1).max(14).catch(3).default(3),
+});
+
+/** Devolver algo prestado a su dueño (que tiene que estar aquí). */
+export const ReturnItemAction = z.object({
+  type: z.literal("return_item"),
+  itemId: z.string().min(1),
+});
+
+/** Coger algo que está aquí (tuyo o de nadie). */
+export const TakeItemAction = z.object({
+  type: z.literal("take_item"),
+  itemId: z.string().min(1),
+});
+
+/** Dejar aquí algo tuyo que llevas. */
+export const LeaveItemAction = z.object({
+  type: z.literal("leave_item"),
+  itemId: z.string().min(1),
+});
+
 export const AgentAction = z.discriminatedUnion("type", [
   DoActivityAction,
   SayAction,
@@ -85,6 +125,12 @@ export const AgentAction = z.discriminatedUnion("type", [
   DeclineMeetingAction,
   CancelMeetingAction,
   ExploreAction,
+  UseObjectAction,
+  GiveItemAction,
+  LendItemAction,
+  ReturnItemAction,
+  TakeItemAction,
+  LeaveItemAction,
 ]);
 export type AgentAction = z.infer<typeof AgentAction>;
 export type ActionType = AgentAction["type"];
@@ -134,6 +180,36 @@ export const ACTION_SPECS: Record<ActionType, ActionSpec> = {
     type: "explore",
     params: '{"zone":"norte|sur|este|oeste o null"}',
     description: "sales a explorar el pueblo y descubrir sitios que no conoces",
+  },
+  use_object: {
+    type: "use_object",
+    params: '{"objectId":"…","verb":"…"}',
+    description: "usas un objeto de aquí (ver PUEDES USAR)",
+  },
+  give_item: {
+    type: "give_item",
+    params: '{"itemId":"…","to":"id de alguien presente"}',
+    description: "le regalas algo tuyo que llevas (ver LLEVAS)",
+  },
+  lend_item: {
+    type: "lend_item",
+    params: '{"itemId":"…","to":"id de alguien presente","days":3}',
+    description: "le prestas algo tuyo unos días",
+  },
+  return_item: {
+    type: "return_item",
+    params: '{"itemId":"…"}',
+    description: "devuelves algo prestado a su dueño, que está aquí",
+  },
+  take_item: {
+    type: "take_item",
+    params: '{"itemId":"…"}',
+    description: "coges algo de aquí (ver AQUÍ HAY)",
+  },
+  leave_item: {
+    type: "leave_item",
+    params: '{"itemId":"…"}',
+    description: "dejas aquí algo tuyo que llevas",
   },
 };
 

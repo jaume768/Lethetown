@@ -12,6 +12,7 @@ import { z } from "zod";
 import type { WorldRuntime } from "../bootstrap";
 import type { CommitmentStore } from "../db/commitments";
 import type { KnownPlaceStore } from "../db/known-places";
+import type { ItemStore } from "../db/items";
 import type { ChronicleStore, DramaStore, EventStore } from "../db/stores";
 import type { SimSignal } from "../sim/simulation";
 
@@ -67,6 +68,7 @@ export interface WorldGateway {
   dramas: DramaStore;
   commitments: CommitmentStore;
   knownPlaces: KnownPlaceStore;
+  items: ItemStore;
   costs(): CostSummary & { unpricedModels: string[] };
   command(cmd: WorldCommand): Promise<CommandResult>;
   onSignal(listener: (s: SimSignal | { type: "cost"; summary: CostSummary }) => void): () => void;
@@ -169,6 +171,10 @@ export class LocalWorldGateway implements WorldGateway {
 
   get knownPlaces() {
     return this.w.knownPlaces;
+  }
+
+  get items() {
+    return this.w.items;
   }
 
   live() {

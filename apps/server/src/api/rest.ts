@@ -2,6 +2,7 @@ import { clarityFor, currentStrength, type MemoryRecord } from "@lethetown/agent
 import type {
   AgentMemoryResponse,
   CommitmentsResponse,
+  InventoryResponse,
   KnownPlacesResponse,
   MemoryView,
   RashomonAccount,
@@ -320,6 +321,22 @@ export function registerWorldRest(server: FastifyInstance, ctx: ApiContext): voi
       agentId: req.params.id,
       now: live.time,
       items: await w.commitments.listFor(req.params.id, Math.min(limit, 200)),
+    };
+    return body;
+  });
+
+  /** Inventario del agente: lo que lleva y lo suyo (aunque lo tenga otro). */
+  server.get<{ Params: { id: string } }>("/agents/:id/inventory", async (req, reply) => {
+    const w = worldOf(ctx, req, reply);
+    if (!w) return reply;
+    const live = w.live();
+    if (!live.agents.some((a) => a.id === req.params.id)) {
+      return reply.code(404).send({ error: "Agente no encontrado" });
+    }
+    const body: InventoryResponse = {
+      agentId: req.params.id,
+      now: live.time,
+      items: await w.items.listFor(req.params.id),
     };
     return body;
   });

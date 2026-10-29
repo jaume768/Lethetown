@@ -9,6 +9,7 @@ import type {
   AgentState,
   Chronicle,
   Drama,
+  Item,
   SimEvent,
   Weather,
   WorldRunStatus,
@@ -31,6 +32,8 @@ import { availableActions, failAction, runAction } from "./actions";
 import { agendaLines, fixedPlanFor, meetingsTick, rehearseAgenda } from "./meetings";
 import { gatherPerceptions, presentWith } from "./perception";
 import { syncKnownPlaces } from "./places";
+import { inventorySections, itemsTick, loadItems } from "./items";
+import { objectsTick } from "./actions/objects";
 import { goOrDo, scheduleArrival, setAction, travel } from "./routines";
 import { SIM_SNAPSHOT_VERSION, type SimSnapshot } from "./snapshot";
 import type { WorldMap } from "./world";
@@ -145,16 +148,23 @@ export class Simulation {
     const next = (Math.floor(from / MEETINGS_EVERY) + 1) * MEETINGS_EVERY;
     this.clock.schedule(next, async () => {
       await meetingsTick(this.ctx, next);
+      await itemsTick(this.ctx, next);
+      objectsTick(this.ctx, next);
       this.scheduleMeetings(next);
     });
   }
 
-  /** Primer id libre de cita (si no se restauró una instantánea, los guardados mandan). */
   /** Guarda lo que conoce cada agente (al arrancar). */
   syncKnownPlaces(): Promise<void> {
     return syncKnownPlaces(this.ctx);
   }
 
+  /** Objetos al arrancar (si no vienen de la instantánea): los guardados o los de las semillas. */
+  loadItems(stored: Item[]): void {
+    loadItems(this.ctx, stored, this.clock.now());
+  }
+
+  /** Primer id libre de cita (si no se restauró una instantánea, los guardados mandan). */
   setMeetingSeq(seq: number): void {
     this.ctx.meetingSeq = Math.max(this.ctx.meetingSeq, seq);
   }
@@ -211,6 +221,9 @@ export class Simulation {
       conversations: [...this.ctx.conversations.values()].map((c) => structuredClone(c)),
       meetings: structuredClone([...this.ctx.meetings.values()]),
       meetingSeq: this.ctx.meetingSeq,
+      items: structuredClone([...this.ctx.items.values()]),
+      itemSeq: this.ctx.itemSeq,
+      objectTimers: Object.fromEntries(structuredClone([...this.ctx.objectTimers])),
     };
   }
 
@@ -244,6 +257,11 @@ export class Simulation {
     this.ctx.meetings.clear();
     for (const m of s.meetings) this.ctx.meetings.set(m.id, m);
     this.ctx.meetingSeq = s.meetingSeq;
+    this.ctx.items.clear();
+    for (const i of s.items) this.ctx.items.set(i.id, i);
+    this.ctx.itemSeq = s.itemSeq;
+    this.ctx.objectTimers.clear();
+    for (const [id, t] of Object.entries(s.objectTimers)) this.ctx.objectTimers.set(id, t);
     this.restored = true;
   }
 
@@ -409,6 +427,7 @@ export class Simulation {
       salient: perceptions.length > 0,
       actions: availableActions({ ctx, agent, now: this.clock.now() }),
       agenda: agendaLines(ctx, agent.id, this.clock.now()),
+      sections: inventorySections(ctx, agent),
     });
     if (decision.reason) {
       agent.state.reasoning = {

@@ -281,3 +281,21 @@ export async function recallIntentionNow(
   });
   return kept;
 }
+
+/**
+ * Da por cumplida una intención pendiente que encaje (p. ej. al devolver algo: "devolverle a
+ * Carmen su libro"). Devuelve si había alguna.
+ */
+export async function fulfillIntention(
+  a: Agent,
+  test: (i: IntentionState) => boolean,
+  now: number,
+  why: string,
+): Promise<boolean> {
+  const i = a.mind.intentions.find((x) => x.status === "pending" && test(x));
+  if (!i) return false;
+  const rec = await a.deps.memory.store.get(i.memoryId);
+  if (rec) await closeIntention(a, i, rec, "done", now, why);
+  else i.status = "done";
+  return true;
+}
