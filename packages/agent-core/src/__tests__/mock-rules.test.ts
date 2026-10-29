@@ -66,6 +66,7 @@ describe("mock declarativo: reglas de decisión", () => {
       "explore",
       "take-own-item",
       "use-appliance",
+      "post-note",
       "ponder",
     ]);
   });

@@ -62,7 +62,7 @@ y comprobar que `pnpm dev` arranca en modo mock.
 
 ### Paso 7 — Notas y mensajes
 
-- [ ] Tablón (`post_note`) y notas privadas (`leave_note`), con caducidad y moderación
+- [x] Tablón (`post_note`) y notas privadas (`leave_note`), con caducidad y moderación
 
 ### Paso 8 — Normas del mundo
 
@@ -167,6 +167,15 @@ LLEVAS / HAS PRESTADO / AQUÍ HAY / PUEDES USAR, que solo aparecen si tienen alg
 Sin llamadas nuevas por acción. La entrada por decisión sube un 10 %: con alguien delante se
 ofrecen `invite` y `follow`, y las líneas de acción son ya la parte que más crece del prompt (ver
 la nota sobre el catálogo al final).
+
+### Tras el paso 7 (notas)
+
+|        | Llamadas | decide | Entrada no cacheada | Entrada por decisión |
+| ------ | -------: | -----: | ------------------: | -------------------: |
+| Paso 6 |     3258 |   1046 |           1 176 463 |                  723 |
+| Paso 7 |     3277 |   1078 |           1 192 204 |                  727 |
+
+Sin llamadas nuevas: las notas se leen como percepciones (que ya pasaban por la importancia).
 
 ## Decisiones tomadas
 
@@ -341,3 +350,19 @@ la nota sobre el catálogo al final).
 - **Menores**: no se puede invitar a un menor (siendo adulto) a una casa que no sea la suya, ni
   aceptar esa invitación, ni seguir a alguien (o ser seguido) a un sitio así: la misma regla que las
   citas (`minorMeetingRule`), comprobada al invitar, al aceptar y en cada paso de acompañar.
+- **Notas** (`sim/notes.ts`, `sim/actions/notes.ts`): `post_note { text }` en el tablón de la
+  plaza (spot `tablon`, añadido con `tools/generate-map.ts`; como mucho 2 notas vivas por autor,
+  duran 3 días) y `leave_note { to, text }` en una casa (duran 2 días; `leave_note` solo se ofrece
+  en una casa, para no alargar todas las decisiones). Viven en el runtime (instantánea v15) y en
+  `notes` (migración 0014; API `GET /notes`); la retención borra las caducadas y las citas cerradas.
+- **Leer**: al percibir, el agente lee las notas de su sitio que no ha leído: las suyas privadas y
+  las tres más nuevas del tablón. Entran como percepción (y se recuerdan) con el texto entre ⟦ ⟧:
+  lo escribió otro agente y puede venir, a través de la voz interior, de un jugador. Es la
+  **moderación**: el texto de la nota ya pasó por la protección de menores en la decisión de quien
+  la escribió (`actionText`), y al leerla es un dato, nunca una instrucción.
+- **Menores**: nada de notas privadas entre un adulto y un menor (el tablón, que es público, sí).
+- **Teléfonos (no implementados)**: encajarían como un `leave_note` sin lugar: `send_message { to,
+text }` dejaría la nota en un buzón del destinatario (`placeId = null`) que se lee en su siguiente
+  decisión, con un retraso y un coste (batería, cobertura) y la misma regla de menores. El motor ya
+  tiene todo lo necesario (notas, lectura como percepción, caducidad); faltaría decidir cuántos
+  mensajes al día para que no sustituyan a hablar en persona, que es lo que da vida al pueblo.

@@ -10,6 +10,7 @@ import type {
   Chronicle,
   Drama,
   Item,
+  Note,
   SimEvent,
   Weather,
   WorldRunStatus,
@@ -35,6 +36,7 @@ import { syncKnownPlaces } from "./places";
 import { inventorySections, itemsTick, loadItems } from "./items";
 import { objectsTick } from "./actions/objects";
 import { companySections, companyTick, stopFollowing } from "./company";
+import { loadNotes, notesTick } from "./notes";
 import { goOrDo, scheduleArrival, setAction, travel } from "./routines";
 import { SIM_SNAPSHOT_VERSION, type SimSnapshot } from "./snapshot";
 import type { WorldMap } from "./world";
@@ -152,6 +154,7 @@ export class Simulation {
       await itemsTick(this.ctx, next);
       objectsTick(this.ctx, next);
       companyTick(this.ctx, next);
+      notesTick(this.ctx, next);
       this.scheduleMeetings(next);
     });
   }
@@ -164,6 +167,11 @@ export class Simulation {
   /** Objetos al arrancar (si no vienen de la instantánea): los guardados o los de las semillas. */
   loadItems(stored: Item[]): void {
     loadItems(this.ctx, stored, this.clock.now());
+  }
+
+  /** Notas al arrancar (si no vienen de la instantánea). */
+  loadNotes(stored: Note[]): void {
+    loadNotes(this.ctx, stored);
   }
 
   /** Primer id libre de cita (si no se restauró una instantánea, los guardados mandan). */
@@ -227,6 +235,8 @@ export class Simulation {
       itemSeq: this.ctx.itemSeq,
       invitations: structuredClone([...this.ctx.invitations.values()]),
       invitationSeq: this.ctx.invitationSeq,
+      notes: structuredClone([...this.ctx.notes.values()]),
+      noteSeq: this.ctx.noteSeq,
       objectTimers: Object.fromEntries(structuredClone([...this.ctx.objectTimers])),
     };
   }
@@ -267,6 +277,9 @@ export class Simulation {
     this.ctx.invitations.clear();
     for (const v of s.invitations) this.ctx.invitations.set(v.id, v);
     this.ctx.invitationSeq = s.invitationSeq;
+    this.ctx.notes.clear();
+    for (const n of s.notes) this.ctx.notes.set(n.id, n);
+    this.ctx.noteSeq = s.noteSeq;
     this.ctx.objectTimers.clear();
     for (const [id, t] of Object.entries(s.objectTimers)) this.ctx.objectTimers.set(id, t);
     this.restored = true;

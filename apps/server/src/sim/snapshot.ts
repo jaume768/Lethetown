@@ -4,6 +4,7 @@ import {
   AgentState,
   Commitment,
   Invitation,
+  Note,
   Item,
   SimSpeed,
   TilePoint,
@@ -12,7 +13,7 @@ import {
 import { z } from "zod";
 
 /** Sube este número si cambias la forma de la instantánea (las antiguas se ignoran). */
-export const SIM_SNAPSHOT_VERSION = 14;
+export const SIM_SNAPSHOT_VERSION = 15;
 
 /** Percepción pendiente (misma forma que `Perception` de agent-core). */
 const Perception = z.discriminatedUnion("kind", [
@@ -120,6 +121,9 @@ export const SimSnapshot = z.object({
   /** Invitaciones a ir juntos ahora mismo (caducan enseguida). */
   invitations: z.array(Invitation).default([]),
   invitationSeq: z.number().int().nonnegative().default(0),
+  /** Notas vivas y el contador de ids. */
+  notes: z.array(Note).default([]),
+  noteSeq: z.number().int().nonnegative().default(0),
   objectTimers: z
     .record(z.string(), z.object({ at: z.number(), state: z.string(), from: z.string() }))
     .default({}),

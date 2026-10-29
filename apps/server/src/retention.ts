@@ -13,11 +13,13 @@ import { z } from "zod";
 import type { Db } from "./db/client";
 import {
   busMessages,
+  commitments,
   llmCalls,
   memories,
   memoryAudit,
   memoryVersions,
   moderationLog,
+  notes,
   simEvents,
   socialProfileHistory,
   worldSnapshots,
@@ -58,6 +60,10 @@ export const RetentionConfig = z.object({
   /** summarize: queda el último cambio de cada pareja y día de juego (la red sigue viéndose). */
   socialHistory: policy(30, "game", ["delete", "summarize"], "summarize"),
   simEvents: policy(14, "game", ["delete"], "delete"),
+  /** Notas caducadas (por su fecha de caducidad). */
+  notes: policy(7, "game", ["delete"], "delete"),
+  /** Citas cerradas (cumplidas, fallidas o anuladas), por su hora. */
+  commitments: policy(30, "game", ["delete"], "delete"),
   /** Tipos de evento que no se borran nunca (las crónicas, p. ej.). */
   keepEventKinds: z.array(z.string()).default(["chronicle"]),
   /**
@@ -168,6 +174,28 @@ export async function pruneWorldPg(
       )
       .returning({ id: simEvents.id });
     report.simEvents = rows.length;
+  }
+  const nt = gameCut(cfg.notes, gameNow);
+  if (nt !== null) {
+    const rows = await db
+      .delete(notes)
+      .where(and(inWorld(notes), lt(notes.expiresAt, nt)))
+      .returning({ id: notes.id });
+    report.notes = rows.length;
+  }
+  const cm = gameCut(cfg.commitments, gameNow);
+  if (cm !== null) {
+    const rows = await db
+      .delete(commitments)
+      .where(
+        and(
+          inWorld(commitments),
+          lt(commitments.at, cm),
+          notInArray(commitments.status, ["proposed", "accepted"]),
+        ),
+      )
+      .returning({ id: commitments.id });
+    report.commitments = rows.length;
   }
   const snap = cutoff(cfg.worldSnapshots, gameNow, realNow).real;
   if (snap) {

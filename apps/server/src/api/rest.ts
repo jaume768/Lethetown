@@ -4,6 +4,7 @@ import type {
   CommitmentsResponse,
   InventoryResponse,
   KnownPlacesResponse,
+  NotesResponse,
   MemoryView,
   RashomonAccount,
   RashomonResponse,
@@ -338,6 +339,15 @@ export function registerWorldRest(server: FastifyInstance, ctx: ApiContext): voi
       now: live.time,
       items: await w.items.listFor(req.params.id),
     };
+    return body;
+  });
+
+  /** Notas vivas (tablón y privadas), de la más nueva a la más vieja. */
+  server.get("/notes", async (req, reply) => {
+    const w = worldOf(ctx, req, reply);
+    if (!w) return reply;
+    const now = w.live().time;
+    const body: NotesResponse = { now, items: await w.notes.active(now, 100) };
     return body;
   });
 

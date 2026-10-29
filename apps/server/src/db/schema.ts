@@ -391,3 +391,26 @@ export const inventoryItems = pgTable(
     index("inventory_items_holder_idx").on(t.worldId, t.holderId),
   ],
 );
+
+/** Notas: en el tablón (públicas) o dejadas para alguien (privadas); caducan. */
+export const notes = pgTable(
+  "notes",
+  {
+    worldId: worldId(),
+    /** Id corto dentro del mundo ("n3"). */
+    id: text("id").notNull(),
+    authorId: text("author_id").notNull(),
+    /** public | private. */
+    kind: text("kind").notNull(),
+    toId: text("to_id"),
+    placeId: text("place_id").notNull(),
+    text: text("text").notNull(),
+    createdAt: doublePrecision("created_at").notNull(),
+    expiresAt: doublePrecision("expires_at").notNull(),
+    readBy: text("read_by").array().notNull().default([]),
+  },
+  (t) => [
+    primaryKey({ columns: [t.worldId, t.id] }),
+    index("notes_world_expires_idx").on(t.worldId, t.expiresAt),
+  ],
+);

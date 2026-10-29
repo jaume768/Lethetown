@@ -143,6 +143,19 @@ export const FollowAction = z.object({
   who: z.string().min(1),
 });
 
+/** Colgar una nota en el tablón de la plaza (la puede leer cualquiera). */
+export const PostNoteAction = z.object({
+  type: z.literal("post_note"),
+  text: z.string().trim().min(1).max(280),
+});
+
+/** Dejar aquí una nota para alguien (la leerá cuando pase por aquí). */
+export const LeaveNoteAction = z.object({
+  type: z.literal("leave_note"),
+  to: z.string().min(1),
+  text: z.string().trim().min(1).max(280),
+});
+
 export const AgentAction = z.discriminatedUnion("type", [
   DoActivityAction,
   SayAction,
@@ -161,6 +174,8 @@ export const AgentAction = z.discriminatedUnion("type", [
   AcceptInviteAction,
   DeclineInviteAction,
   FollowAction,
+  PostNoteAction,
+  LeaveNoteAction,
 ]);
 export type AgentAction = z.infer<typeof AgentAction>;
 export type ActionType = AgentAction["type"];
@@ -260,6 +275,16 @@ export const ACTION_SPECS: Record<ActionType, ActionSpec> = {
     type: "follow",
     params: '{"who":"id de alguien presente"}',
     description: "acompañas a alguien de aquí un rato, vaya donde vaya",
+  },
+  post_note: {
+    type: "post_note",
+    params: '{"text":"…"}',
+    description: "cuelgas una nota en el tablón de la plaza (la leerá quien pase)",
+  },
+  leave_note: {
+    type: "leave_note",
+    params: '{"to":"id de alguien","text":"…"}',
+    description: "dejas aquí una nota para alguien (la leerá cuando pase por aquí)",
   },
 };
 

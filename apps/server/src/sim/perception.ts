@@ -1,6 +1,7 @@
 import { untrusted, type Agent, type Perception } from "@lethetown/agent-core";
 import type { Place } from "@lethetown/shared";
 import type { Heard, SimContext } from "./context";
+import { readNotes } from "./notes";
 
 export interface Present {
   id: string;
@@ -32,6 +33,7 @@ export function gatherPerceptions(
   const arrivals = present.filter((p) => !rt.seenHere.has(p.id));
   rt.seenHere = new Set(present.map((p) => p.id));
   const heard = rt.inbox.splice(0);
+  readNotes(ctx, agent);
   const place = ctx.world.place(agent.state.locationId);
   for (const o of place.objects) {
     const known = rt.knownStates.get(o.id) ?? "idle";

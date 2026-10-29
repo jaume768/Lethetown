@@ -46,6 +46,7 @@ import {
   type KnownPlaceStore,
 } from "../db/known-places";
 import { InMemoryItemStore, PgItemStore, type ItemStore } from "../db/items";
+import { InMemoryNoteStore, PgNoteStore, type NoteStore } from "../db/notes";
 import { describeReport, pruneGlobalPg, pruneWorldPg, pruneWorldRam } from "../retention";
 import { createWorldLlm } from "./llm";
 import { createMaintenance, createWorldMemory } from "./memory";
@@ -92,6 +93,7 @@ export async function openWorld(services: Services, row: WorldRow): Promise<Worl
   const commitments: CommitmentStore = db
     ? new PgCommitmentStore(db.db, row.id)
     : new InMemoryCommitmentStore();
+  const notes: NoteStore = db ? new PgNoteStore(db.db, row.id) : new InMemoryNoteStore();
   const items: ItemStore = db ? new PgItemStore(db.db, row.id) : new InMemoryItemStore();
   const knownPlaces: KnownPlaceStore = db
     ? new PgKnownPlaceStore(db.db, row.id)
@@ -131,6 +133,7 @@ export async function openWorld(services: Services, row: WorldRow): Promise<Worl
     commitments,
     knownPlaces,
     items,
+    notes,
     discoveryRadius: config.SIM_DISCOVERY_RADIUS,
     track: (w) => services.track(w),
   });
@@ -161,6 +164,7 @@ export async function openWorld(services: Services, row: WorldRow): Promise<Worl
   }
   await sim.syncKnownPlaces();
   sim.loadItems(snapshot ? [] : await items.listAll());
+  sim.loadNotes(snapshot ? [] : await notes.active(startTime));
 
   const saveSnapshot = (reason: string) =>
     services.snapshots.save(row.id, clock.now(), reason, sim.snapshot());
@@ -208,6 +212,7 @@ export async function openWorld(services: Services, row: WorldRow): Promise<Worl
     commitments,
     knownPlaces,
     items,
+    notes,
     costs,
     restoredFrom: snapshot?.time ?? null,
     status: () => status,

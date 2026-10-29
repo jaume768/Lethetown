@@ -679,6 +679,7 @@ addSpot("banco_plaza", "banco de la plaza", "plaza", "sit", 54, 50);
 place("decor", "bench", 65, 50);
 addSpot("banco_plaza_2", "banco junto al mercadillo", "plaza", "sit", 65, 50);
 addSpot("escenario", "rincón del músico", "plaza", "stand", 59, 53);
+addSpot("tablon", "tablón de anuncios", "plaza", "stand", 60, 41);
 addShelter("sombra_plaza", "bajo los árboles de la plaza", "plaza", 54, 43);
 for (const [x, y] of [
   [53, 42],

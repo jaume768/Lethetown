@@ -13,6 +13,7 @@ import type { WorldRuntime } from "../bootstrap";
 import type { CommitmentStore } from "../db/commitments";
 import type { KnownPlaceStore } from "../db/known-places";
 import type { ItemStore } from "../db/items";
+import type { NoteStore } from "../db/notes";
 import type { ChronicleStore, DramaStore, EventStore } from "../db/stores";
 import type { SimSignal } from "../sim/simulation";
 
@@ -69,6 +70,7 @@ export interface WorldGateway {
   commitments: CommitmentStore;
   knownPlaces: KnownPlaceStore;
   items: ItemStore;
+  notes: NoteStore;
   costs(): CostSummary & { unpricedModels: string[] };
   command(cmd: WorldCommand): Promise<CommandResult>;
   onSignal(listener: (s: SimSignal | { type: "cost"; summary: CostSummary }) => void): () => void;
@@ -175,6 +177,10 @@ export class LocalWorldGateway implements WorldGateway {
 
   get items() {
     return this.w.items;
+  }
+
+  get notes() {
+    return this.w.notes;
   }
 
   live() {
