@@ -18,7 +18,7 @@ y comprobar que `pnpm dev` arranca en modo mock.
 - [x] 0.3 `bootstrap.ts` en factorías por área
 - [x] 0.4 `MemoryStore.listActive(agentId, { withEmbedding })`
 - [x] 0.5 Retención de datos configurable por tabla + job + test
-- [ ] 0.6 `gist.minImportance` = 4 (y medir)
+- [x] 0.6 `gist.minImportance` = 4 (y medir)
 - [ ] 0.7 `docs/decisiones/` (ADR breves), CLAUDE.md corto, sin PROGRESS antiguos
 - [ ] 0.8 Tests unitarios de la lógica no visual de la web
 
@@ -98,6 +98,12 @@ y comprobar que `pnpm dev` arranca en modo mock.
 | chronicle     |        2 |                  3517 |    102 |               72 |
 | confabulate   |        1 |                   140 |     21 |             1489 |
 | **total**     |     3613 |                854232 |  94030 |          5349411 |
+
+### Tras el paso 0.6 (`gist.minImportance` = 4)
+
+Esencias 847 → 346 (−59 %); llamadas 3613 → 3041 (−16 %); entrada no cacheada 854 232 → 801 988
+(−6 %). Lo de importancia 3 (el diario del día, lo que se dice uno mismo) ya no se resume con el
+LLM: se desvanece con la esencia provisional.
 
 ## Decisiones tomadas
 

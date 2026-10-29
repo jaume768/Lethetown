@@ -141,7 +141,8 @@ describe("Mantenimiento: olvido, esencia y confusión de fuente", () => {
         agentId: "lucia",
         text: 'Carmen me dijo: "El jueves llega el cartero a las 10"',
         type: "observation",
-        importance: 3,
+        // Lo de importancia < gist.minImportance (4) no se resume con el LLM.
+        importance: 4,
       },
       0,
     );

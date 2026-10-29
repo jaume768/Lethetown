@@ -88,7 +88,7 @@ export const MemoryConfig = z.object({
        * Importancia mínima (1-10) para pedir la esencia al LLM. Lo menos importante no se
        * resume: simplemente se desvanece (en el prompt sale la esencia provisional).
        */
-      minImportance: z.number().int().min(1).max(10).default(3),
+      minImportance: z.number().int().min(1).max(10).default(4),
     })
     .prefault({}),
   reconsolidation: z
