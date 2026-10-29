@@ -6,6 +6,7 @@ import type {
   Place,
   PlanItem,
   Spot,
+  Weather,
 } from "@lethetown/shared";
 import type { LLMClient } from "../llm/client";
 import { socialNote, type MemoryOwner, type SocialProfileStore } from "../memory/human";
@@ -16,13 +17,16 @@ import { WorkingMemory } from "../memory/working-memory";
 import { inferActivityKind } from "./activity";
 import { untrusted } from "./moderation";
 import { DecideResponse, ImportanceResponse, PlanResponse, parseWith } from "./parse";
+import { replanAt } from "./replan";
 import {
   decidePrompt,
+  formatClock,
   identityPrompt,
   importancePrompt,
   type PromptLanguage,
   parseClock,
   planPrompt,
+  weatherLine,
   type DecideContext,
 } from "./prompts";
 
@@ -49,7 +53,8 @@ export type Perception =
   | { kind: "thought"; text: string }
   | { kind: "world"; text: string; placeId: string | null; eventId?: string };
 
-export type Decision =
+/** Decisión del agente; `reason` es su razonamiento (si lo dio). */
+export type Decision = (
   | { kind: "follow_plan" }
   | {
       kind: "react";
@@ -58,7 +63,8 @@ export type Decision =
       placeId: string;
       spotId: string | null;
     }
-  | { kind: "talk"; to: string; utterance: string };
+  | { kind: "talk"; to: string; utterance: string }
+) & { reason?: string };
 
 export interface AgentDeps {
   llm: LLMClient;
@@ -75,10 +81,27 @@ export interface AgentDeps {
 
 export type DecideInput = Omit<
   DecideContext,
-  "now" | "locationId" | "action" | "moodLabel" | "needs" | "planItem" | "workingMemory"
-> & { salient: boolean };
+  | "now"
+  | "locationId"
+  | "action"
+  | "moodLabel"
+  | "needs"
+  | "planItem"
+  | "workingMemory"
+  | "weather"
+  | "innerVoice"
+  | "doneToday"
+> & {
+  salient: boolean;
+  /** El tiempo que hace; el agente describe cómo le afecta según dónde está. */
+  weather: Weather;
+  /** Voz interior recién recibida (texto del jugador, sin delimitar). */
+  innerVoice?: string[];
+};
 
 const SLEEP_START = 22 * 60;
+/** Entradas del diario de hoy que se guardan (las más recientes). */
+const MAX_DONE_TODAY = 16;
 const DAY_START = 7 * 60;
 
 export function moodLabel(valence: number): string {
@@ -171,6 +194,13 @@ export class Agent {
     return beds.find((b) => b.owner === this.id) ?? beds.find((b) => !b.owner);
   }
 
+  /** El tiempo y cómo le afecta donde está ahora (bajo techo, a cubierto o a la intemperie). */
+  weatherHere(weather: Weather): string {
+    const place = this.deps.places.find((p) => p.id === this.state.locationId);
+    const spot = this.spot(this.state.spotId);
+    return weatherLine(weather, place?.indoor ?? true, spot?.shelter ?? false);
+  }
+
   spot(id: string | null): Spot | undefined {
     return id ? this.spots.get(id) : undefined;
   }
@@ -183,6 +213,44 @@ export class Agent {
         now,
       );
     }
+  }
+
+  /**
+   * Anota en el diario de hoy una actividad que empieza (si no es la misma que la anterior) y la
+   * guarda como recuerdo rutinario, sin LLM: con el olvido, días después solo queda más o menos.
+   */
+  async noteActivity(now: number, activity: string, placeId: string): Promise<void> {
+    const log = this.state.doneToday ?? [];
+    const last = log.at(-1);
+    if (last && last.activity === activity && last.placeId === placeId) return;
+    this.state.doneToday = [...log, { minute: Math.floor(now % 1440), activity, placeId }].slice(
+      -MAX_DONE_TODAY,
+    );
+    const place = this.deps.places.find((p) => p.id === placeId)?.name ?? placeId;
+    await this.deps.memory.remember(
+      {
+        agentId: this.id,
+        text: `Estuve en ${place}: ${activity}`,
+        type: "observation",
+        importance: 2,
+        placeId,
+      },
+      now,
+    );
+  }
+
+  /** "- HH:MM actividad (lugar)" de lo hecho hoy (o del diario que se le pase). */
+  diaryText(log = this.state.doneToday ?? []): string {
+    return log.map((d) => `- ${formatClock(d.minute)} ${d.activity} (${d.placeId})`).join("\n");
+  }
+
+  /** Cambio de planes: la nueva actividad entra en el plan del día desde ahora. */
+  replan(
+    now: number,
+    change: Pick<PlanItem, "activity" | "activityKind" | "placeId" | "spotId">,
+    minutes: number,
+  ): void {
+    this.state.plan = replanAt(this.state.plan, now % 1440, change, minutes);
   }
 
   currentPlanItem(now: number): PlanItem | undefined {
@@ -198,7 +266,10 @@ export class Agent {
   }
 
   /** Planifica el día con el modelo de reflexión. */
-  async planDay(now: number): Promise<PlanItem[]> {
+  async planDay(now: number, weather: Weather = "sunny"): Promise<PlanItem[]> {
+    // El diario de ayer orienta el plan de hoy (para no repetir lo mismo) y se empieza otro.
+    const yesterday = this.diaryText();
+    this.state.doneToday = [];
     const recalled = await this.deps.memory.retrieve({
       agentId: this.id,
       query: `${this.seed.name}: qué quiero hacer hoy, mis rutinas y mis planes`,
@@ -217,6 +288,8 @@ export class Agent {
           now,
           needs: this.state.needs,
           recalled: recalled.map((s) => `- ${recallText(s)}`).join("\n") || "- (nada en especial)",
+          weather,
+          yesterday,
         }),
       });
       const plan = parseWith(PlanResponse, res.text)
@@ -313,6 +386,9 @@ export class Agent {
         system: this.system,
         prompt: decidePrompt({
           ...context,
+          weather: this.weatherHere(input.weather),
+          innerVoice: (input.innerVoice ?? []).map(untrusted),
+          doneToday: this.diaryText(),
           now,
           locationId: this.state.locationId,
           action: this.state.action,
@@ -356,8 +432,10 @@ export class Agent {
   }
 
   private toDecision(r: DecideResponse, present: { id: string }[]): Decision {
+    const why = r.reason?.trim().slice(0, 240);
+    const reason = why ? { reason: why } : {};
     if (r.choice === "talk" && r.to && r.say && present.some((p) => p.id === r.to)) {
-      return { kind: "talk", to: r.to, utterance: r.say };
+      return { kind: "talk", to: r.to, utterance: r.say, ...reason };
     }
     if (r.choice === "react" && r.action) {
       const placeId = this.validPlace(r.placeId) ?? this.state.locationId;
@@ -368,9 +446,10 @@ export class Agent {
         placeId,
         spotId: spot && spot.placeId === placeId ? spot.id : null,
         activityKind: r.activityKind ?? inferActivityKind(r.action, spot?.pose),
+        ...reason,
       };
     }
-    return { kind: "follow_plan" };
+    return { kind: "follow_plan", ...reason };
   }
 
   private async rate(texts: string[]): Promise<{ importance: number; valence: number }[]> {

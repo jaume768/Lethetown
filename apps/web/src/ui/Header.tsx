@@ -1,5 +1,5 @@
-import type { ClockState } from "@lethetown/shared";
-import { LANGS, useI18n, type Lang } from "../i18n";
+import type { ClockState, Weather } from "@lethetown/shared";
+import { LANGS, useI18n, type Lang, type MessageKey } from "../i18n";
 import type { User } from "../net/auth";
 import { formatGameTime } from "./format";
 
@@ -7,6 +7,7 @@ export type Mode = "spectator" | "director";
 
 interface Props {
   clock: ClockState;
+  weather: Weather;
   connected: boolean;
   mode: Mode;
   user: User | null;
@@ -25,6 +26,9 @@ export function Header(p: Props) {
       <span className="clock" aria-live="off">
         {formatGameTime(p.clock.time)}
         {p.clock.speed !== 1 && <span className="muted small"> · x{p.clock.speed}</span>}
+      </span>
+      <span className="badge weather" title={t("header.weather")} aria-label={t("header.weather")}>
+        {t(`director.weather.${p.weather}` as MessageKey)}
       </span>
       <span className={p.connected ? "badge ok" : "badge off"} role="status">
         {p.connected ? t("conn.connected") : t("conn.reconnecting")}

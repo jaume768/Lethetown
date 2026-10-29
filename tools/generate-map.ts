@@ -187,6 +187,8 @@ function addSpot(
   x: number,
   y: number,
   owner?: string,
+  /** A cubierto en un lugar exterior (árbol, toldo): refugio con lluvia o calor. */
+  shelter = false,
 ) {
   spots.push({
     ...point(name, "spot", x, y),
@@ -197,8 +199,14 @@ function addSpot(
       str("pose", pose),
       str("state", "idle"),
       ...(owner ? [str("owner", owner)] : []),
+      ...(shelter ? [{ name: "shelter", type: "bool", value: true }] : []),
     ],
   });
+}
+
+/** Spot a cubierto (bajo un árbol, un toldo...) de un lugar exterior. */
+function addShelter(id: string, name: string, placeId: string, x: number, y: number) {
+  addSpot(id, name, placeId, "stand", x, y, undefined, true);
 }
 
 type Wall = "wall_blue" | "wall_red" | "wall_wood" | "wall_grey";
@@ -671,6 +679,7 @@ addSpot("banco_plaza", "banco de la plaza", "plaza", "sit", 54, 50);
 place("decor", "bench", 65, 50);
 addSpot("banco_plaza_2", "banco junto al mercadillo", "plaza", "sit", 65, 50);
 addSpot("escenario", "rincón del músico", "plaza", "stand", 59, 53);
+addShelter("sombra_plaza", "bajo los árboles de la plaza", "plaza", 54, 43);
 for (const [x, y] of [
   [53, 42],
   [66, 42],
@@ -692,7 +701,7 @@ const carts = [
 ] as const;
 for (const [id, name, x, cart] of carts) {
   place("decor", has(cart) ? cart : "counter", x, 45);
-  addSpot(id, name, "mercado", "use", x, 45);
+  addSpot(id, name, "mercado", "use", x, 45, undefined, true); // bajo el toldo del puesto
 }
 place("decor", "bench", 77, 52);
 addSpot("banco_mercado", "banco del mercadillo", "mercado", "sit", 77, 52);
@@ -721,7 +730,8 @@ addSpot("columpios", "columpios", "parque", "sit", 15, 73);
 place("decor", "sandbox", 7, 76);
 place("decor", "trampoline", 21, 63);
 place("decor", "swing_tree", 27, 67);
-addSpot("arbol_columpio", "árbol del columpio", "parque", "stand", 27, 68);
+addShelter("arbol_columpio", "bajo el árbol del columpio", "parque", 27, 68);
+addShelter("bajo_cipres", "bajo el ciprés del parque", "parque", 3, 62);
 
 // --- Lago Leteo (x 34..75, y 59..78) ----------------------------------------------------------
 
@@ -734,6 +744,7 @@ addSpot("orilla", "orilla de pesca", "lago", "use", 46, 62);
 addSpot("orilla_este", "orilla del este", "lago", "stand", 70, 62);
 place("decor", "bench", 62, 60);
 addSpot("mirador", "banco del mirador", "lago", "sit", 62, 60);
+addShelter("cipreses_lago", "bajo los cipreses del lago", "lago", 36, 71);
 
 // --- Jardín del Recuerdo (x 78..93, y 59..78) -------------------------------------------------
 
@@ -750,6 +761,7 @@ place("decor", "bench", 82, 74);
 addSpot("banco_jardin", "banco del jardín", "jardin_recuerdo", "sit", 82, 74);
 place("decor", "bench", 89, 74);
 addSpot("banco_jardin_2", "banco de los cipreses", "jardin_recuerdo", "sit", 89, 74);
+addShelter("cipreses_jardin", "bajo los cipreses del jardín", "jardin_recuerdo", 80, 63);
 const FLOWERS = [
   "flowers_blue",
   "flowers_pink",
@@ -790,7 +802,7 @@ addSpot("bancal_tomates", "bancal de tomates", "huerto", "use", 100, 65);
 addSpot("bancal_lechugas", "bancal de lechugas", "huerto", "use", 105, 65);
 addSpot("bancal_hierbas", "bancal de hierbas", "huerto", "use", 110, 70);
 place("decor", "greenhouse", 115, 66);
-addSpot("invernadero", "invernadero", "huerto", "use", 115, 66);
+addSpot("invernadero", "invernadero", "huerto", "use", 115, 66, undefined, true);
 for (let x = 98; x <= 112; x += 2) place("decor", "sunflower", x, 75);
 
 // --- Árboles, flores y farolas ----------------------------------------------------------------

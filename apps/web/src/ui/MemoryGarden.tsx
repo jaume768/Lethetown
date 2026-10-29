@@ -2,7 +2,7 @@ import type { AgentMemoryResponse, AgentState, World } from "@lethetown/shared";
 import { useEffect, useMemo, useState } from "react";
 import { useI18n, type MessageKey } from "../i18n";
 import { useAssets } from "../net/assets";
-import { api } from "../net/store";
+import { api, gameTimeNow } from "../net/store";
 import { formatGameTime, formatMinuteOfDay } from "./format";
 import { Portrait } from "./Portrait";
 
@@ -99,6 +99,11 @@ export function MemoryGarden({ agent, agents, world, thinkingTask, canIntervene 
     }
   };
 
+  const placeName = (id: string) => world?.places.find((p) => p.id === id)?.name ?? id;
+  const spotName = (id: string) =>
+    world?.places.flatMap((p) => p.objects).find((o) => o.id === id)?.name ?? id;
+  const minuteNow = Math.floor(gameTimeNow() % 1440);
+
   return (
     <div className="inspector">
       <div className="row inspector-head">
@@ -118,8 +123,8 @@ export function MemoryGarden({ agent, agents, world, thinkingTask, canIntervene 
         </div>
       </div>
       <div className="small">
-        📍 {agent.locationId}
-        {agent.targetId ? ` → ${agent.targetId}` : ""} · {agent.action}{" "}
+        📍 {placeName(agent.locationId)}
+        {agent.targetId ? ` → ${placeName(agent.targetId)}` : ""} · {agent.action}{" "}
         <span className="tag">{agent.activityKind}</span>
       </div>
       {agent.lastUtterance && (
@@ -131,6 +136,19 @@ export function MemoryGarden({ agent, agents, world, thinkingTask, canIntervene 
       <Bar label={t("agent.energy")} value={agent.needs.energy} />
       <Bar label={t("agent.hunger")} value={agent.needs.hunger} />
       <Bar label={t("agent.social")} value={agent.needs.social} />
+
+      {agent.reasoning && (
+        <section
+          className={`reasoning ${agent.reasoning.innerVoice ? "voice" : ""}`}
+          aria-label={t("agent.reasoning")}
+        >
+          <h4>
+            {t(agent.reasoning.innerVoice ? "agent.reasoningVoice" : "agent.reasoning")}{" "}
+            <span className="muted small num">{formatGameTime(agent.reasoning.at)}</span>
+          </h4>
+          <p className="readable">💭 {agent.reasoning.text}</p>
+        </section>
+      )}
 
       {canIntervene && (
         <>
@@ -161,13 +179,37 @@ export function MemoryGarden({ agent, agents, world, thinkingTask, canIntervene 
 
       <h4>{t("agent.plan")}</h4>
       <ul className="plan readable">
-        {agent.plan.map((p) => (
-          <li key={p.startMinute}>
-            {formatMinuteOfDay(p.startMinute)} · {p.activity}{" "}
-            <span className="muted">
-              ({p.placeId}
-              {p.spotId ? `/${p.spotId}` : ""})
-            </span>
+        {agent.plan.map((p) => {
+          const end = p.startMinute + p.durationMin;
+          const now = minuteNow >= p.startMinute && minuteNow < end;
+          const past = minuteNow >= end;
+          return (
+            <li
+              key={`${p.startMinute}:${p.activity}`}
+              className={now ? "now" : past ? "past" : ""}
+              aria-current={now ? "true" : undefined}
+            >
+              {now ? "▶ " : ""}
+              <span className="num">{formatMinuteOfDay(p.startMinute)}</span> · {p.activity}{" "}
+              <span className="muted">
+                ({placeName(p.placeId)}
+                {p.spotId ? ` · ${spotName(p.spotId)}` : ""})
+              </span>
+              {p.replanned && <span className="tag changed">{t("agent.planChanged")}</span>}
+            </li>
+          );
+        })}
+      </ul>
+
+      <h4>{t("agent.doneToday")}</h4>
+      <ul className="plan readable done-today">
+        {(agent.doneToday ?? []).length === 0 && (
+          <li className="muted">{t("agent.doneTodayNone")}</li>
+        )}
+        {(agent.doneToday ?? []).map((d) => (
+          <li key={`${d.minute}:${d.activity}`}>
+            <span className="num">{formatMinuteOfDay(d.minute)}</span> · {d.activity}{" "}
+            <span className="muted">({placeName(d.placeId)})</span>
           </li>
         ))}
       </ul>

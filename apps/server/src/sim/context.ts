@@ -58,6 +58,10 @@ export interface Runtime {
   /** Instante de la última consolidación (los recuerdos posteriores entran en la siguiente). */
   lastConsolidation: number;
   consolidatedNight: number;
+  /** Última vez que se le avisó de que su plan es al aire libre con mal tiempo ("hora:tiempo"). */
+  weatherChecked: string | null;
+  /** Bloque del plan ya avisado de que choca con una conversación ("inicio:conversación"). */
+  convWarned: string | null;
 }
 
 export function newRuntime(): Runtime {
@@ -74,6 +78,8 @@ export function newRuntime(): Runtime {
     lastMaintenance: -Infinity,
     lastConsolidation: 0,
     consolidatedNight: -1,
+    weatherChecked: null,
+    convWarned: null,
   };
 }
 

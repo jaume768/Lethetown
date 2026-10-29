@@ -56,5 +56,7 @@ export const DecideResponse = z.object({
   spotId: NullableId,
   to: z.string().optional(),
   say: z.string().optional(),
+  /** Por qué lo decide (una frase, en primera persona): se muestra en el inspector. */
+  reason: z.string().optional(),
 });
 export type DecideResponse = z.infer<typeof DecideResponse>;

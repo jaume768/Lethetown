@@ -1,4 +1,5 @@
 import {
+  ClockEstimator,
   RUNNING,
   ServerMessage,
   type AgentState,
@@ -24,8 +25,6 @@ export interface GameState {
   retries: number;
   status: WorldRunStatus;
   dramas: Drama[];
-  /** performance.now() al recibir el último reloj, para extrapolar el tiempo de juego. */
-  clockReceivedAt: number;
   world: World | null;
   provider: string;
   clock: ClockState;
@@ -47,7 +46,6 @@ let state: GameState = {
   retries: 0,
   status: RUNNING,
   dramas: [],
-  clockReceivedAt: 0,
   world: null,
   provider: "",
   clock: { time: 0, speed: 0 },
@@ -67,7 +65,15 @@ function set(patch: Partial<GameState>) {
   for (const l of listeners) l();
 }
 
+/** Tiempo de juego entre mensajes: sin saltos atrás aunque los mensajes lleguen con retraso. */
+const clockEstimate = new ClockEstimator();
+
 function handle(msg: ServerMessage) {
+  if (msg.type === "snapshot") {
+    clockEstimate.sync(msg.snapshot.clock.time, msg.snapshot.clock.speed, performance.now());
+  } else if (msg.type === "tick" || msg.type === "delta") {
+    clockEstimate.sync(msg.clock.time, msg.clock.speed, performance.now());
+  }
   switch (msg.type) {
     case "snapshot":
       loadRecentEvents(msg.snapshot.clock.time);
@@ -75,14 +81,13 @@ function handle(msg: ServerMessage) {
         world: msg.snapshot.world,
         provider: msg.snapshot.provider,
         clock: msg.snapshot.clock,
-        clockReceivedAt: performance.now(),
         agents: msg.snapshot.agents,
         weather: msg.snapshot.weather,
         status: msg.snapshot.status,
         loaded: true,
       });
     case "tick":
-      return set({ clock: msg.clock, clockReceivedAt: performance.now(), agents: msg.agents });
+      return set({ clock: msg.clock, agents: msg.agents });
     case "delta": {
       // Mezcla los agentes que cambiaron con los que ya teníamos.
       const changed = new Map(msg.agents.map((a) => [a.id, a]));
@@ -93,7 +98,6 @@ function handle(msg: ServerMessage) {
       for (const a of msg.agents) if (!state.agents.some((x) => x.id === a.id)) agents.push(a);
       return set({
         clock: msg.clock,
-        clockReceivedAt: performance.now(),
         ...(msg.agents.length || removed.size ? { agents } : {}),
       });
     }
@@ -208,10 +212,9 @@ export function onMemoryEffect(listener: (e: MemoryEffectMessage) => void): () =
   return () => effectListeners.delete(listener);
 }
 
-/** Tiempo de juego estimado ahora mismo (entre ticks del servidor). */
+/** Tiempo de juego estimado ahora mismo (entre ticks del servidor; nunca retrocede). */
 export function gameTimeNow(): number {
-  const elapsedMin = (performance.now() - state.clockReceivedAt) / 60_000;
-  return state.clock.time + elapsedMin * state.clock.speed;
+  return clockEstimate.now(performance.now());
 }
 
 export function getState(): GameState {

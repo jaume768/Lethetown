@@ -91,6 +91,8 @@ export const PlanItem = z.object({
   placeId: z.string(),
   /** Objeto concreto del lugar (cama, barra...), si aplica. */
   spotId: z.string().nullable().default(null),
+  /** Cambio de planes sobre la marcha (no estaba en el plan de la mañana). */
+  replanned: z.boolean().optional(),
 });
 export type PlanItem = z.infer<typeof PlanItem>;
 
@@ -121,5 +123,14 @@ export const AgentState = z.object({
   plan: z.array(PlanItem),
   /** Lo último que ha dicho, para el bocadillo. */
   lastUtterance: z.string().nullable(),
+  /** Diario de hoy: lo que ha ido haciendo (minuto del día, actividad, lugar). */
+  doneToday: z
+    .array(z.object({ minute: z.number().int(), activity: z.string(), placeId: z.string() }))
+    .optional(),
+  /** Su último razonamiento al decidir (y si era sobre la voz interior), para el inspector. */
+  reasoning: z
+    .object({ text: z.string(), at: z.number(), innerVoice: z.boolean() })
+    .nullable()
+    .optional(),
 });
 export type AgentState = z.infer<typeof AgentState>;

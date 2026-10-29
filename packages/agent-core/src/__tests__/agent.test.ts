@@ -32,7 +32,7 @@ const EMPTY: Omit<DecideInput, "salient"> = {
   heard: [],
   conversationWith: null,
   objectStates: [],
-  weather: "soleado",
+  weather: "sunny",
   socialNotes: [],
 };
 

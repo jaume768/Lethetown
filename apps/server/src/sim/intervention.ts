@@ -9,6 +9,30 @@ const WEATHER_TEXT: Record<Weather, string> = {
   sunny: "Salió el sol",
   cloudy: "Se nubló el cielo",
   rain: "Empezó a llover",
+  storm: "Estalló una tormenta con rayos y truenos",
+  snow: "Empezó a nevar",
+  fog: "Bajó una niebla espesa",
+  wind: "Se levantó un viento fuerte",
+  heat: "Empezó a hacer un calor sofocante",
+};
+
+/** Cómo se dice que sigue haciendo mal tiempo (aviso de un plan al aire libre). */
+export const WEATHER_NOW: Partial<Record<Weather, string>> = {
+  rain: "Está lloviendo",
+  storm: "Hay tormenta",
+  snow: "Está nevando",
+  heat: "Hace un calor sofocante",
+};
+
+const WEATHER_ICON: Record<Weather, string> = {
+  sunny: "☀",
+  cloudy: "☁",
+  rain: "🌧",
+  storm: "⛈",
+  snow: "❄",
+  fog: "🌫",
+  wind: "💨",
+  heat: "🥵",
 };
 
 /** "Voz interior": un pensamiento que el agente percibe como propio. */
@@ -54,7 +78,13 @@ export function setWeather(ctx: SimContext, weather: Weather): void {
     if (ctx.agents.get(id)!.state.activityKind === "sleep") continue;
     rt.pending.push({ kind: "world", text: WEATHER_TEXT[weather], placeId: null, eventId });
   }
-  ctx.emit("world", null, `🌦 ${WEATHER_TEXT[weather]}`, [...ctx.agents.keys()], eventId);
+  ctx.emit(
+    "world",
+    null,
+    `${WEATHER_ICON[weather]} ${WEATHER_TEXT[weather]}`,
+    [...ctx.agents.keys()],
+    eventId,
+  );
   ctx.signalWorld();
 }
 

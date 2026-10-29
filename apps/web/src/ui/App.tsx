@@ -192,6 +192,7 @@ export function App() {
       </a>
       <Header
         clock={game.clock}
+        weather={game.weather}
         connected={game.connected}
         mode={director ? "director" : "spectator"}
         user={user}

@@ -1,4 +1,4 @@
-import { SIM_SPEEDS, type Weather } from "@lethetown/shared";
+import { SIM_SPEEDS, Weather } from "@lethetown/shared";
 import { useEffect, useState } from "react";
 import { useI18n, type MessageKey } from "../i18n";
 import { useAssets } from "../net/assets";
@@ -7,7 +7,7 @@ import { api, type GameState } from "../net/store";
 import { NonCommercialNotice } from "./Credits";
 import { formatUsd } from "./format";
 
-const WEATHERS: Weather[] = ["sunny", "cloudy", "rain"];
+const WEATHERS = Weather.options;
 const PRESETS = ["rota", "recién arreglada", "humeante", "vacía", "idle"];
 
 interface Props {

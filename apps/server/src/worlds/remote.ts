@@ -20,6 +20,12 @@ import { WorldMap } from "../sim/world";
 import type { CommandResult, LiveState, WorldCommand, WorldGateway } from "./gateway";
 
 const COMMAND_TIMEOUT_MS = 15_000;
+/**
+ * El estado vivo del worker llega cada medio segundo; entre medias se extrapola el reloj (si no,
+ * se mandaría a los clientes un tiempo atrasado). Más allá de este margen no se extrapola: el
+ * worker pudo pararse.
+ */
+const MAX_EXTRAPOLATION_MS = 5_000;
 
 const emptyCosts = (): CostSummary => ({
   total: {
@@ -52,6 +58,8 @@ export class RemoteWorldGateway implements WorldGateway {
   readonly dramas: PgDramaStore;
   private readonly map: WorldMap;
   private state: LiveState;
+  /** Date.now() al recibir el último estado vivo. */
+  private stateAt = Date.now();
   private costSummary = emptyCosts();
   private unpriced: string[] = [];
   private readonly listeners = new Set<Listener>();
@@ -110,7 +118,12 @@ export class RemoteWorldGateway implements WorldGateway {
   }
 
   live(): LiveState {
-    return this.state;
+    const elapsed = Math.min(MAX_EXTRAPOLATION_MS, Math.max(0, Date.now() - this.stateAt));
+    const running = this.state.status.state === "running";
+    const time = running
+      ? this.state.time + (elapsed / 60_000) * this.state.speed
+      : this.state.time;
+    return { ...this.state, time };
   }
 
   costs() {
@@ -144,6 +157,7 @@ export class RemoteWorldGateway implements WorldGateway {
     const msg = parsed.data;
     if (msg.kind === "live") {
       const l = msg.live;
+      this.stateAt = Date.now();
       this.state = {
         time: l.time,
         speed: SimSpeed.catch(0).parse(l.speed),

@@ -77,3 +77,11 @@ export function pickFrame(
   const i = lying ? 0 : Math.floor(opts.realSeconds * anim[1].frameRate);
   return { key: anim[0], frame: frameOf(sheet, anim[1], i), lying };
 }
+
+/**
+ * Segundos reales que se ve un bocadillo una vez escrito: lo justo para leerlo (unos 20
+ * caracteres por segundo), entre 4 y 9 s, sea cual sea la velocidad del juego.
+ */
+export function bubbleSeconds(text: string): number {
+  return Math.min(9, Math.max(4, 1.5 + text.length / 20));
+}

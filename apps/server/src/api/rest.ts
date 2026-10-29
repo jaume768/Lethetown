@@ -11,6 +11,7 @@ import {
   SetSpeedRequest,
   SpotStateRequest,
   ThoughtRequest,
+  Weather,
   WeatherRequest,
 } from "@lethetown/shared";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
@@ -330,7 +331,8 @@ export function registerWorldRest(server: FastifyInstance, ctx: ApiContext): voi
 
   server.post("/world/weather", director, async (req, reply) => {
     const parsed = WeatherRequest.safeParse(req.body);
-    if (!parsed.success) return reply.code(400).send({ error: "weather: sunny | cloudy | rain" });
+    if (!parsed.success)
+      return reply.code(400).send({ error: `weather: ${Weather.options.join(" | ")}` });
     return command(req, reply, { type: "weather", weather: parsed.data.weather });
   });
 

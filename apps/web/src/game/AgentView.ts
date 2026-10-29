@@ -1,4 +1,5 @@
 import {
+  bubbleSeconds,
   emoteFor,
   emoteForMemoryEffect,
   pickFrame,
@@ -39,6 +40,8 @@ export class AgentView {
   private portraitColumns = 1;
   private utterance: string | null = null;
   private typed = 0;
+  /** Segundos reales desde que se terminó de escribir el bocadillo. */
+  private readFor = 0;
   private transient: TransientEmote | null = null;
   private selected = false;
   private hovered = false;
@@ -174,6 +177,7 @@ export class AgentView {
     if (state.lastUtterance !== this.utterance) {
       this.utterance = state.lastUtterance;
       this.typed = 0;
+      this.readFor = 0;
     }
   }
 
@@ -262,6 +266,14 @@ export class AgentView {
       this.typed = this.utterance.length - 1;
     }
     const typing = this.typed < this.utterance.length;
+    // Ya escrito: se ve el tiempo justo para leerlo (en segundos reales) y se oculta.
+    if (!typing) {
+      this.readFor += opts.dtSeconds;
+      if (this.readFor > bubbleSeconds(this.utterance)) {
+        this.bubble.setVisible(false);
+        return;
+      }
+    }
     if (typing) {
       this.typed = Math.min(this.utterance.length, this.typed + opts.dtSeconds * TYPE_SPEED);
       this.bubbleText.setText(this.utterance.slice(0, Math.ceil(this.typed)));

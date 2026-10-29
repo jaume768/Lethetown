@@ -544,6 +544,34 @@ textarea.field {
   background: var(--accent);
   height: 100%;
 }
+.plan li.past {
+  opacity: 0.55;
+}
+/* Bloque en curso: mismo color de texto (legible sobre cualquier piel), en negrita y resaltado. */
+.plan li.now {
+  font-weight: 700;
+  background: rgba(127, 127, 127, 0.16);
+  box-shadow: inset 3px 0 0 currentColor;
+  padding-left: 6px;
+}
+.tag.changed {
+  margin-left: 4px;
+  font-style: italic;
+}
+.reasoning {
+  border-left: 3px solid var(--accent-2);
+  padding: 2px 0 2px 8px;
+  margin: 8px 0;
+}
+.reasoning.voice {
+  border-left-color: var(--accent);
+}
+.reasoning h4 {
+  margin: 0 0 2px;
+}
+.reasoning p {
+  margin: 0;
+}
 .plan {
   margin: 0;
   padding-left: 18px;

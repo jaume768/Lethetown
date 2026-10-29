@@ -180,6 +180,7 @@ export function parseTiledMap(input: unknown): World {
       tile: { x: toTile(o.x), y: toTile(o.y) },
       state: typeof prop(o, "state") === "string" ? String(prop(o, "state")) : "idle",
       owner: typeof owner === "string" && owner ? owner : null,
+      shelter: prop(o, "shelter") === true,
     };
     if (collision[spot.tile.y * map.width + spot.tile.x]) {
       throw new Error(`El spot "${spot.id}" está sobre una baldosa bloqueada`);

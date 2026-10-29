@@ -9,12 +9,15 @@
  * con las de 16x16 (frames de 32 px, junto a los bocadillos del mapa). También genera
  * preview.png con todos los agentes para revisarlos.
  *
+ * La piel y el pelo se recolorean con los colores de `appearance` (los mismos del personaje del
+ * mapa), conservando el sombreado: así el retrato y el sprite coinciden.
+ *
  *   pnpm portraits:compose
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { AgentSeed } from "@lethetown/shared";
+import { AgentSeed, paletteShift } from "@lethetown/shared";
 import { PNG } from "pngjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -64,6 +67,37 @@ function over(base: PNG, top: PNG) {
   }
 }
 
+const hex = (d: Buffer | Uint8Array, i: number) =>
+  "#" + [0, 1, 2].map((c) => d[i + c]!.toString(16).padStart(2, "0")).join("");
+
+/**
+ * Lleva los colores de una capa al tono `target` (paletteShift), tomando como referencia el
+ * color más frecuente y sin tocar el contorno (los colores muy oscuros).
+ */
+function tint(png: PNG, target: string) {
+  const counts = new Map<string, number>();
+  for (let i = 0; i < png.data.length; i += 4) {
+    if (png.data[i + 3] === 0) continue;
+    const c = hex(png.data, i);
+    counts.set(c, (counts.get(c) ?? 0) + 1);
+  }
+  const luma = (c: string) =>
+    0.2126 * parseInt(c.slice(1, 3), 16) +
+    0.7152 * parseInt(c.slice(3, 5), 16) +
+    0.0722 * parseInt(c.slice(5, 7), 16);
+  const colors = [...counts.entries()]
+    .filter(([c]) => luma(c) > 55)
+    .sort((a, b) => b[1] - a[1])
+    .map(([c]) => c);
+  if (!colors.length) return;
+  const table = paletteShift(colors, target);
+  for (let i = 0; i < png.data.length; i += 4) {
+    if (png.data[i + 3] === 0) continue;
+    const to = table.get(hex(png.data, i));
+    if (to) png.data.set(to, i);
+  }
+}
+
 const seeds = AgentSeed.array().parse(
   JSON.parse(readFileSync(path.join(ROOT, "seeds/agents.json"), "utf8")),
 );
@@ -78,8 +112,11 @@ for (const seed of seeds) {
   }
   for (const { size, suffix } of VARIANTS) {
     const png = read(size, `Skins/Skin ${r.skin}.png`);
+    tint(png, seed.appearance.skin);
     over(png, read(size, `Eyes/Eyes ${pad(r.eyes)}.png`));
-    over(png, read(size, `Hairstyles/Hairstyle ${pad(r.hair.style)} ${r.hair.color}.png`));
+    const hair = read(size, `Hairstyles/Hairstyle ${pad(r.hair.style)} ${r.hair.color}.png`);
+    tint(hair, seed.appearance.hair);
+    over(png, hair);
     for (const acc of r.accessories) over(png, read(size, `Accessories/${acc}.png`));
     const file = path.join(OUT, `${seed.id}${suffix}.png`);
     writeFileSync(file, PNG.sync.write(png));

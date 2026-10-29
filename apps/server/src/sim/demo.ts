@@ -1,3 +1,4 @@
+import type { Weather } from "@lethetown/shared";
 import type { SimContext } from "./context";
 import { injectThought, setSpotState, setWeather } from "./intervention";
 
@@ -23,6 +24,18 @@ const IDEAS = [
   "Siento que se me olvida algo importante.",
 ];
 
+/** Cambios de tiempo verosímiles: de cada tiempo, a cuáles puede pasar. */
+const NEXT_WEATHER: Record<Weather, Weather[]> = {
+  sunny: ["cloudy", "cloudy", "heat", "wind", "fog"],
+  cloudy: ["rain", "rain", "sunny", "wind", "fog", "snow"],
+  rain: ["storm", "cloudy", "cloudy", "sunny"],
+  storm: ["rain", "rain", "cloudy"],
+  snow: ["cloudy", "snow", "sunny"],
+  fog: ["sunny", "cloudy"],
+  wind: ["sunny", "cloudy", "rain"],
+  heat: ["sunny", "sunny", "storm"],
+};
+
 const DAY_START = 8 * 60;
 const DAY_END = 21 * 60;
 
@@ -42,8 +55,8 @@ export function startDemo(ctx: SimContext, everyMinutes: number): void {
   };
 
   const weather = () => {
-    const now = ctx.world.weather;
-    setWeather(ctx, now === "rain" ? "sunny" : rng() < 0.6 ? "rain" : "cloudy");
+    const next = pick(NEXT_WEATHER[ctx.world.weather]);
+    if (next) setWeather(ctx, next);
   };
 
   /** Arregla lo que estropeó antes o, si no hay nada roto, estropea algo de un lugar público. */

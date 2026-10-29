@@ -7,6 +7,7 @@ import type {
   Weather,
   WorldRunStatus,
 } from "@lethetown/shared";
+import { exposedTo } from "@lethetown/shared";
 import type { GameClock } from "./clock";
 import {
   SimContext,
@@ -19,6 +20,7 @@ import {
 import { activeConversationOf, endConversation, endIdleConversations, talk } from "./conversations";
 import { startDemo } from "./demo";
 import * as intervention from "./intervention";
+import { WEATHER_NOW } from "./intervention";
 import { consolidate, maintain, scheduleChronicle, writeChronicle } from "./memory-routines";
 import { gatherPerceptions } from "./perception";
 import { goOrDo, scheduleArrival, setAction, travel, updateNeeds } from "./routines";
@@ -28,6 +30,8 @@ import type { WorldMap } from "./world";
 export type { SimSignal, SimulationDeps } from "./context";
 
 const SPEECH_BUBBLE_MINUTES = 20;
+/** Lo que dura un cambio de planes antes de volver al plan del día (minutos de juego). */
+const REPLAN_MINUTES = 60;
 
 /**
  * Orquesta la simulación de un mundo: el bucle de cada agente (percibir → guardar → decidir →
@@ -286,12 +290,15 @@ export class Simulation {
     if (rt.plannedDay !== day) {
       rt.plannedDay = day;
       setAction(ctx, agent, "pensando en el día", "idle");
-      const plan = await agent.planDay(now);
+      const plan = await agent.planDay(now, ctx.world.weather);
       ctx.emit("plan", agent.id, `Plan: ${plan.map((p) => p.activity).join(" → ")}`, [agent.id]);
     }
 
+    warnOutdoorPlan(ctx, agent, now);
+    warnConversationPlan(ctx, agent, now);
     // Percibir.
     const { present, heard, place, perceptions } = gatherPerceptions(ctx, agent);
+    const innerVoice = perceptions.flatMap((p) => (p.kind === "thought" ? [p.text] : []));
     // Guardar.
     await agent.perceive(perceptions, this.clock.now());
     // Decidir.
@@ -305,8 +312,17 @@ export class Simulation {
         .map((o) => ({ id: o.id, state: o.state })),
       weather: ctx.world.weather,
       socialNotes: await agent.socialNotes(present.map((p) => p.id)),
+      innerVoice,
       salient: perceptions.length > 0,
     });
+    if (decision.reason) {
+      agent.state.reasoning = {
+        text: decision.reason,
+        at: this.clock.now(),
+        innerVoice: innerVoice.length > 0,
+      };
+    }
+    if (innerVoice.length) reportInnerVoice(ctx, agent, decision);
     // Fin de conversación natural: le hablaron y decidió no contestar a esa persona.
     if (speaker && !(decision.kind === "talk" && decision.to === speaker)) {
       await endConversation(ctx, convKey(agent.id, speaker), "decidió no seguir");
@@ -324,10 +340,31 @@ export class Simulation {
         if (now < rt.overrideUntil) return;
         const item = agent.currentPlanItem(now);
         if (!item) return setAction(ctx, agent, "tiempo libre", "idle");
+        // Si se va a otro sitio a media conversación, la conversación se cierra (no queda colgada).
+        const conv = activeConversationOf(ctx, agent.id);
+        if (conv && item.placeId !== agent.state.locationId) {
+          const place = ctx.world.place(item.placeId).name;
+          void endConversation(
+            ctx,
+            convKey(agent.id, conv.other),
+            `${agent.seed.name} se fue a ${place}`,
+          );
+        }
         return goOrDo(ctx, agent, item.placeId, item.spotId, item.activity, item.activityKind);
       }
       case "react": {
-        rt.overrideUntil = now + 60;
+        rt.overrideUntil = now + REPLAN_MINUTES;
+        // El cambio entra en el plan del día: el inspector muestra lo que hace de verdad.
+        agent.replan(
+          now,
+          {
+            activity: decision.action,
+            activityKind: decision.activityKind,
+            placeId: decision.placeId,
+            spotId: decision.spotId,
+          },
+          REPLAN_MINUTES,
+        );
         ctx.emit("action", agent.id, `${agent.seed.name} cambia de planes: ${decision.action}`, [
           agent.id,
         ]);
@@ -344,6 +381,64 @@ export class Simulation {
         return talk(ctx, agent, decision.to, decision.utterance);
     }
   }
+}
+
+/** Respuesta a la voz interior en el log: si le hace caso o no, y por qué. */
+function reportInnerVoice(ctx: SimContext, agent: Agent, decision: Decision): void {
+  const outcome =
+    decision.kind === "react"
+      ? `le hace caso: ${decision.action}`
+      : decision.kind === "talk"
+        ? `se lo comenta a ${ctx.agents.get(decision.to)?.seed.name ?? decision.to}`
+        : "no le hace caso";
+  const why = decision.reason ? ` — «${decision.reason}»` : "";
+  ctx.emit("action", agent.id, `💭 ${agent.seed.name} ${outcome}${why}`, [agent.id]);
+}
+
+/**
+ * Si está conversando y su plan dice que toca irse a otro sitio, se le avisa una vez por bloque
+ * del plan: así decide (con el LLM y según sus necesidades) si se despide, se queda un rato más
+ * (y cambia el plan) o se va ya, en vez de dejar la conversación a medias sin más.
+ */
+function warnConversationPlan(ctx: SimContext, agent: Agent, now: number): void {
+  const conv = activeConversationOf(ctx, agent.id);
+  if (!conv) return;
+  const item = agent.currentPlanItem(now);
+  if (!item || item.placeId === agent.state.locationId) return;
+  const rt = ctx.rt(agent.id);
+  const key = `${item.startMinute}:${conv.conv.id}`;
+  if (rt.convWarned === key) return;
+  rt.convWarned = key;
+  const other = ctx.agents.get(conv.other)?.seed.name ?? conv.other;
+  rt.pending.push({
+    kind: "world",
+    text: `Según tu plan ahora toca ${item.activity} en ${ctx.world.place(item.placeId).name}, pero estás hablando con ${other}.`,
+    placeId: null,
+  });
+}
+
+/**
+ * Con mal tiempo, si lo que toca en su plan es al aire libre (y no a cubierto), se le avisa
+ * una vez por hora de juego: así decide (con el LLM) si va igualmente, se queda o cambia de sitio.
+ */
+function warnOutdoorPlan(ctx: SimContext, agent: Agent, now: number): void {
+  const weather = ctx.world.weather;
+  const say = WEATHER_NOW[weather];
+  const rt = ctx.rt(agent.id);
+  if (!say || now < rt.overrideUntil) return;
+  const item = agent.currentPlanItem(now);
+  if (!item) return;
+  const dest = ctx.world.place(item.placeId);
+  const spot = item.spotId ? ctx.world.spot(item.spotId) : undefined;
+  if (!exposedTo(weather, dest.indoor, spot?.shelter ?? false)) return;
+  const key = `${Math.floor(now / 60)}:${weather}`;
+  if (rt.weatherChecked === key) return;
+  rt.weatherChecked = key;
+  rt.pending.push({
+    kind: "world",
+    text: `${say} y lo que tenías previsto (${item.activity}) es al aire libre, en ${dest.name}.`,
+    placeId: null,
+  });
 }
 
 function finiteOrNull(x: number): number | null {

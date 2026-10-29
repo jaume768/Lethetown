@@ -102,6 +102,23 @@ Todos los parámetros (pesos, umbrales, probabilidades, presupuesto) están en `
 | Rumores                | Al hablar                            | Quien esté cerca capta fragmentos, con fuente difusa.                                                                                                              |
 | Fin de conversación    | Al recibir una frase                 | Cada agente decide si sigue (con un máximo de seguridad de 12 turnos); al terminar se actualizan las fichas sociales.                                              |
 
+### Tiempo, voz interior y cambios de planes
+
+- **Tiempo**: sol, nubes, lluvia, tormenta, nieve, niebla, viento y calor (`Weather`). Cada uno dice qué refugio
+  pide (`WEATHER_SHELTER`): techo de verdad (tormenta, nieve), techo o algo que cubra (lluvia) o sombra (calor).
+  Los lugares exteriores van marcados en el prompt y los objetos a cubierto (árboles, toldos del mercadillo,
+  invernadero) llevan `[refugio]`. En cada decisión el agente sabe si está bajo techo, a cubierto o
+  mojándose; al planificar sabe el tiempo de la mañana; y si con mal tiempo lo que toca en su plan es al aire
+  libre, se le avisa (una vez por hora) para que decida si va, se queda o cambia de sitio.
+- **Voz interior**: llega en una sección propia del prompt (`VOZ INTERIOR`) y el agente responde siempre con
+  un `reason` (por qué le hace caso o no). El inspector muestra «Lo que piensa» y el log, «le hace caso / no le
+  hace caso — «…»».
+- **Cambios de planes**: cada reacción reescribe el plan del día desde ese minuto (`replanAt`), así que el
+  inspector muestra lo que el agente hace de verdad (marcado como «cambio de planes»).
+- **Diario del día**: cada actividad que empieza se anota (`doneToday`) y se guarda como recuerdo rutinario
+  (importancia 2, sin LLM, con el mismo olvido que el resto). Al decidir ve «HOY YA HAS HECHO» y al planificar,
+  «Ayer hiciste, más o menos», para no repetir lo mismo.
+
 ### Agentes y coste
 
 - La **identidad** del agente (rasgos, lugares, objetos y reglas) es un prefijo fijo del prompt, para el _prompt caching_.

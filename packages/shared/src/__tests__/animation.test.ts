@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CharacterSheet, pickFrame } from "../index";
+import { CharacterSheet, bubbleSeconds, pickFrame } from "../index";
 
 const sheet = CharacterSheet.parse({
   image: "x.png",
@@ -54,5 +54,13 @@ describe("pickFrame", () => {
     const f0 = pickFrame(sheet, { ...base, realSeconds: 0 }).frame;
     const f1 = pickFrame(sheet, { ...base, realSeconds: 1 / 8 }).frame;
     expect(f1).toBe(f0 + 1);
+  });
+});
+
+describe("bubbleSeconds", () => {
+  it("da tiempo a leer, con un mínimo y un máximo", () => {
+    expect(bubbleSeconds("¡Hola!")).toBe(4);
+    expect(bubbleSeconds("x".repeat(100))).toBeCloseTo(6.5);
+    expect(bubbleSeconds("x".repeat(400))).toBe(9);
   });
 });

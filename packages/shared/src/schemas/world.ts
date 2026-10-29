@@ -33,6 +33,8 @@ export const Spot = z.object({
   state: z.string().default("idle"),
   /** Dueño, p. ej. de una cama. */
   owner: z.string().nullable().default(null),
+  /** A cubierto aunque el lugar sea exterior (bajo un árbol, un toldo...). */
+  shelter: z.boolean().default(false),
 });
 export type Spot = z.infer<typeof Spot>;
 
@@ -69,8 +71,33 @@ export const World = z.object({
 });
 export type World = z.infer<typeof World>;
 
-export const Weather = z.enum(["sunny", "cloudy", "rain"]);
+export const Weather = z.enum(["sunny", "cloudy", "rain", "storm", "snow", "fog", "wind", "heat"]);
 export type Weather = z.infer<typeof Weather>;
+
+/**
+ * Qué busca quien está al aire libre con cada tiempo:
+ * - `roof`: un techo de verdad (casa o local); un árbol no sirve (tormenta, nieve).
+ * - `cover`: techo o algo que cubra (árbol, toldo): lluvia.
+ * - `shade`: sombra (árbol, toldo) o interior: calor.
+ * - `null`: se puede estar fuera sin problema.
+ */
+export const WEATHER_SHELTER: Record<Weather, "roof" | "cover" | "shade" | null> = {
+  sunny: null,
+  cloudy: null,
+  rain: "cover",
+  storm: "roof",
+  snow: "roof",
+  fog: null,
+  wind: null,
+  heat: "shade",
+};
+
+/** ¿Le afecta el tiempo a quien está en un lugar (interior o no) y en un spot (a cubierto o no)? */
+export function exposedTo(weather: Weather, indoor: boolean, spotShelter = false): boolean {
+  const need = WEATHER_SHELTER[weather];
+  if (!need || indoor) return false;
+  return need === "roof" || !spotShelter;
+}
 
 export const SimSpeed = z.union([
   z.literal(0),
