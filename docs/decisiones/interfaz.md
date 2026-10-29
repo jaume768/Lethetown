@@ -14,3 +14,7 @@
   el mapa con emotes propios.
 - **Accesibilidad**: roles y `aria-*`, teclado, alternativa en texto para el grafo y respeto de
   `prefers-reduced-motion`. `localStorage` siempre con try/catch.
+- **Inspector con cinco pestañas** (Estado y recuerdos, Relaciones, Agenda, Inventario, Lugares)
+  que se desplazan en horizontal en móvil (`min-width: 0` para no ensanchar el panel). Insignia por
+  acción en el log y Rashomon (icono con nombre accesible y ✗ si falló); en el mapa, 📅 (cita), 👣
+  (acompaña a alguien) y 📌 con las notas del tablón.

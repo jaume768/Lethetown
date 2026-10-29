@@ -19,3 +19,6 @@
   solo no comercial). Las capturas de la documentación se hacen sin esos packs (Playwright bloquea
   `assets/vendor/`); el aviso de assets no comerciales se calcula en el cliente.
 - **Phaser 4** con `pixelArt` y `roundPixels: true` explícito (en v4 es false por defecto).
+- **Normas en el mapa**: las casas llevan `private = true` y los lugares públicos con horario,
+  `hours = "HH:MM-HH:MM"` (lo escribe `tools/generate-map.ts`; cierre a medianoche = 24:00). El
+  tablón de anuncios es el spot `tablon` de la plaza. Ver [acciones.md](acciones.md).

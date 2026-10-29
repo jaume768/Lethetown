@@ -77,9 +77,28 @@ y comprobar que `pnpm dev` arranca en modo mock.
 
 ### Final
 
-- [ ] README, CLAUDE.md, `docs/decisiones/`, este archivo
-- [ ] Coste y entrevistas antes/después (Lucía, Carmen, Hugo)
-- [ ] Push y PR
+- [x] README, CLAUDE.md, `docs/decisiones/`, este archivo
+- [x] Coste y entrevistas antes/después (Lucía, Carmen, Hugo)
+- [x] Push (el PR, desde el enlace de GitHub: `gh` no tiene sesión en esta máquina)
+
+## Resultado
+
+| 48 h de mock                 | Llamadas | decide | Entrada no cacheada | Por decisión | Lectura de caché |
+| ---------------------------- | -------: | -----: | ------------------: | -----------: | ---------------: |
+| Antes (`main`)               |     3613 |    963 |             854 232 |          481 |        5 349 411 |
+| Después (todas las acciones) |     3289 |   1054 |           1 070 873 |          600 |        5 734 538 |
+
+Entrevistas (`pnpm interview --advance 48`, mock), qué recuerdan:
+
+- **Lucía**: antes, casi todo era el saludo de Nuria; después, su trabajo de ilustradora, que
+  quiere volver a quedar con Tomás, lo que dijo Hugo y que Mateo hace el mejor café con leche.
+- **Carmen**: antes, siempre que Mateo trabaja demasiado; después, que Lucía le debía el libro de
+  poemas, que quiere volver a quedar con Lucía y lo que le contó Marta.
+- **Hugo**: antes, siempre la canción que le dedicó a Lucía; después, conversaciones con varios
+  vecinos (rumores de Aurora, planes de Valentina, la cita de Samuel con Ernesto).
+
+El mock elige con el hash del prompt, así que esto muestra que los recuerdos nuevos (citas,
+préstamos, grupos) llegan a la memoria y se recuperan, no que las respuestas sean más humanas.
 
 ## Coste (mock, 48 h, SIM_SEED=7)
 

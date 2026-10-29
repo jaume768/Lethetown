@@ -26,3 +26,9 @@
 - **Azar** siempre por el `Rng` inyectado (`seededRng`), nunca `Math.random()`.
 - **Modo demostración** (`SIM_DEMO`): lluvia, averías e ideas de la voz interior para ver
   reaccionar a los agentes sin director.
+- **Conversaciones de dos o más** (grupos de hasta 5): unirse es hablarle a quien conversa;
+  marcharse, no contestar. Las fichas sociales se revisan con las 2 personas con quienes más se
+  habló. Ver [acciones.md](acciones.md).
+- **Revisiones periódicas sin LLM** cada 5 min de juego: citas, préstamos vencidos, objetos que
+  vuelven a su estado, acompañar e invitaciones, notas caducadas y normas (abrir y cerrar,
+  intrusos, menores). Las llegadas programadas solo se ejecutan si siguen vigentes.

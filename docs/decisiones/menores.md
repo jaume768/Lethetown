@@ -15,3 +15,6 @@
   apagada.
 - **Relaciones**: nunca `romantic` con un menor. **Acciones** (ver [acciones.md](acciones.md)): un
   adulto no invita a un menor a una casa privada ni queda a solas con él fuera de sitios públicos.
+  La misma regla (`minorMeetingRule`) vale para citas, invitaciones, acompañar, regalar y prestar;
+  la revisión de normas saca a un menor de una casa ajena con adultos aunque esté invitado; nada de
+  notas privadas entre un adulto y un menor (el tablón, que es público, sí).

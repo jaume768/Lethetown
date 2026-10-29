@@ -13,9 +13,95 @@ Parte de [_Generative Agents: Interactive Simulacra of Human Behavior_](https://
 - **Confusión de fuente**: con el tiempo, "me lo contó X" puede pasar a "lo viví".
 - **Fichas sociales** por persona, **rumores** que se propagan al escuchar a escondidas y **olvido por presupuesto**. Cada decisión de olvido queda registrada con su motivo.
 - **Psicología**: personalidad (Big Five) y memoria propia por agente, ánimo bidimensional, hábitos, sueño, sesgos, falsos recuerdos, memoria prospectiva y relaciones que evolucionan (ver [Psicología](#psicología)).
-- **Protección de menores**: ningún menor tiene ni recibe contenido romántico o sexual, ni en los prompts ni en lo que escribe el LLM.
+- **Acciones con consecuencias**: quedar (y dar plantón), explorar y descubrir el pueblo, conversar en grupo, usar objetos, prestar y devolver cosas, invitar a casa, acompañar a alguien y dejar notas. La IA decide qué hacer; el motor comprueba si es posible y lo ejecuta (ver [Qué pueden hacer](#qué-pueden-hacer-los-habitantes)).
+- **Normas del mundo**: casas privadas con sus invitados (y quien se cuela), horarios de apertura.
+- **Protección de menores**: ningún menor tiene ni recibe contenido romántico o sexual, ni en los prompts ni en lo que escribe el LLM, y ningún adulto puede quedar a solas con un menor fuera de un sitio público.
 
 Todo funciona **sin API keys** gracias a un proveedor LLM simulado (mock).
+
+La pregunta que guía el proyecto: **¿qué pasa cuando la memoria de los habitantes deja de ser un
+registro fiable e ilimitado?** La hipótesis es que el olvido, la reconstrucción de los recuerdos y
+las diferencias psicológicas producen historias individuales y dinámicas sociales más variadas y
+verosímiles. Es una hipótesis abierta, no un resultado medido (ver [Evaluación](#evaluación-y-coste)).
+
+## Un habitante, por dentro
+
+Cada vecino percibe, recuerda, siente, decide y actúa. Hay **dos capas**: reglas programadas
+(reloj, rutas, umbrales de memoria, ánimo, necesidades, normas, validación de acciones) y el
+modelo de lenguaje, solo donde el lenguaje y el contexto aportan (decidir, conversar, resumir,
+reflexionar). Así se controla el coste, se puede auditar cada decisión y las pruebas son
+reproducibles.
+
+```mermaid
+flowchart LR
+  P["Percepción<br/>quién está · qué se dice · objetos<br/>notas · el tiempo · lo que descubre"]
+  M["Memoria<br/>fuerza · esencia · fuente · emoción<br/>intenciones · fichas sociales"]
+  E["Estado interno<br/>personalidad · ánimo · energía<br/>hambre · necesidad social · sueño"]
+  D["Decisión (LLM, un JSON)<br/>seguir el plan o una acción<br/>del catálogo, con su porqué"]
+  V["Motor<br/>valida (normas, menores, presencia)<br/>y ejecuta, o explica por qué no"]
+  C["Consecuencias<br/>movimiento · diálogo · relaciones<br/>dramas · nuevos recuerdos"]
+  P --> M --> D
+  E --> D
+  D --> V --> C --> P
+  C --> E
+```
+
+| Capacidad                   | Qué tiene cada habitante                                                                                                                                                                                                                                                                                                                                                                                                      |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Identidad**               | Nombre, edad, rasgos, historia, forma de hablar (registro, muletillas, temas), casa y trabajo. Prompt fijo y cacheable.                                                                                                                                                                                                                                                                                                       |
+| **Personalidad**            | Big Five (apertura, responsabilidad, extraversión, amabilidad, neuroticismo) y un perfil de memoria propio: cuánto olvida, cuánto confunde la fuente, lo sugestionable que es, la edad.                                                                                                                                                                                                                                       |
+| **Emociones**               | Ánimo en dos dimensiones, valencia (agradable–desagradable) y activación (calma–tensión), con etiqueta («contento», «irritable», «preocupado»…). Cada uno tiene su nivel base y vuelve a él con el tiempo; el hambre irrita, el cansancio apaga, la soledad entristece. Lo mueven las conversaciones, los plantones, los préstamos sin devolver, los regalos, los intrusos, el tiempo y los recuerdos que vuelven sin querer. |
+| **Necesidades**             | Energía, hambre y necesidad social (que depende de la extraversión: un introvertido recarga a solas). Dormir recupera según la calidad del sueño.                                                                                                                                                                                                                                                                             |
+| **Memoria**                 | Recuerdos con fuerza que decae, esencia cuando se vuelven vagos, reconsolidación al evocarlos, confusión de fuente, consolidación al dormir, olvido por presupuesto, hábitos, diario del día, recuerdos intrusivos y falsos recuerdos marcados.                                                                                                                                                                               |
+| **Intenciones**             | Memoria prospectiva: «tengo que devolverle el libro a Carmen» con pistas de persona, lugar u hora. Se acuerda, se le olvida o cae en la cuenta tarde. Las citas se apoyan en ella.                                                                                                                                                                                                                                            |
+| **Relaciones**              | Ficha por persona (afinidad, confianza, familiaridad, tipo de vínculo) con historial, no necesariamente recíproca. Rumores con credibilidad según quién los cuenta, mera exposición, perdón y rencor.                                                                                                                                                                                                                         |
+| **Conocimiento del pueblo** | No todos conocen todo: sitios de siempre, vistos al pasar, explorados o que alguien les contó.                                                                                                                                                                                                                                                                                                                                |
+| **Pertenencias**            | Inventario con dueño y préstamos (y la intención de devolverlos).                                                                                                                                                                                                                                                                                                                                                             |
+| **Acciones**                | Un catálogo cerrado que el motor valida (siguiente sección).                                                                                                                                                                                                                                                                                                                                                                  |
+
+## Qué pueden hacer los habitantes
+
+**La IA decide, el motor valida y ejecuta.** En cada decisión el modelo elige «seguir con el plan»
+o una acción del catálogo con sus parámetros y explica por qué, en la misma llamada. El motor solo
+le ofrece las acciones posibles en ese momento; si aun así algo no se puede (un sitio que no
+conoce, una casa ajena, un local cerrado, alguien que ya se fue), el agente lo percibe con el
+motivo («No pude…»), lo recuerda y puede reconsiderarlo. El estado nuevo se guarda en Postgres
+(con `world_id`), en las instantáneas y también funciona en RAM.
+
+| Acción                                                                   | Qué hace                                                            | Qué comprueba el motor                                                             |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `do_activity`                                                            | Cambiar de actividad o ir a otro sitio                              | Que conozca el sitio, que pueda entrar (casa propia o invitado) y que esté abierto |
+| `say`                                                                    | Hablar a alguien; si está conversando, unirse a su grupo            | Que esté aquí y despierto; grupos de hasta 5                                       |
+| `propose_meeting`, `accept_meeting`, `decline_meeting`, `cancel_meeting` | Quedar un día a una hora en un sitio                                | Hora razonable, sitio conocido y abierto; con un menor, solo en sitios públicos    |
+| `explore`                                                                | Salir a descubrir sitios                                            | Queda algo abierto por descubrir; el motor elige la ruta                           |
+| `use_object`                                                             | Preparar café, cocinar, hornear, regar, arreglar algo roto…         | Que el verbo valga en el estado actual del objeto                                  |
+| `give_item`, `lend_item`, `return_item`, `take_item`, `leave_item`       | Regalar, prestar, devolver, coger, dejar                            | De quién es, quién lo lleva y quién está delante                                   |
+| `invite`, `accept_invite`, `decline_invite`                              | Ir juntos ahora (a tomar algo, a casa)                              | Solo a la casa propia; comparten la ruta                                           |
+| `follow`                                                                 | Acompañar a alguien un rato                                         | En cada paso, normas y protección de menores                                       |
+| `post_note`, `leave_note`                                                | Colgar una nota en el tablón de la plaza o dejar una nota a alguien | En la plaza / en una casa; nada privado entre adulto y menor                       |
+
+Y lo que pasa sin que nadie lo pida: los **plantones** (quien esperaba pierde afinidad y confianza y
+se le nota en el ánimo), los **préstamos vencidos** (el dueño lo nota), los **intrusos** (quien
+vive en la casa lo ve), los locales que **abren y cierran** (y echan a quien se queda), los
+**descubrimientos** al pasar cerca de un sitio y los sitios que se aprenden **porque alguien de
+confianza los nombra**. Todo queda en el log con su icono y en el feed de dramas.
+
+<p>
+  <img src="docs/capturas/inventario.png" alt="Inventario de Carmen: ha prestado el libro de poemas a Lucía" width="260">
+  <img src="docs/capturas/lugares-conocidos.png" alt="Lugares que conoce Valentina y cómo los descubrió" width="260">
+  <img src="docs/capturas/agenda.png" alt="Agenda de citas en el inspector" width="260">
+</p>
+
+![Log con insignias de acciones](docs/capturas/log-acciones.png)
+
+**Añadir una acción** (detalle en [docs/decisiones/acciones.md](docs/decisiones/acciones.md#cómo-añadir-una-acción)):
+
+1. Esquema zod y su `ActionSpec` (parámetros y para qué) en `packages/shared/src/actions/catalog.ts`.
+2. Manejador en `apps/server/src/sim/actions/`: `registerAction({ type, available, check, describe, execute })`.
+3. Protección de menores (`minorMeetingRule`) y normas (`mayEnter`) si implica a alguien o un lugar.
+4. Regla del mock con `registerDecideRule` en `packages/agent-core/src/agent/mock/`.
+5. Icono en `apps/web/src/ui/icons.ts` y textos en `i18n`.
+6. Tests, dorado regenerado y explicado, y `cost:report 48` antes y después.
 
 ## Arquitectura
 
@@ -81,6 +167,7 @@ flowchart LR
 
 - **`seeds/town.tmj`** es la fuente única de verdad: un mapa [Tiled](https://www.mapeditor.org/) de 120×80 baldosas de 16 px con 20 vecinos, 16 casas, ocho edificios públicos (ayuntamiento, escuela, biblioteca, consultorio, café, panadería, ultramarinos y taberna), la plaza Mayor, el mercadillo, el parque con columpios, el lago Leteo, el Jardín del Recuerdo y el huerto comunitario. Tiene capas `ground`, `paths`, `buildings`, `decor`, `roofs` y `collision`, y objetos `places`, `spots` (con `pose` y dueño), `lights` y `windows`. Lo genera `pnpm map:generate` y se puede editar a mano en Tiled.
 - El servidor calcula la ruta A* (que prefiere los caminos) y su duración, y envía los waypoints. El cliente interpola la posición con el reloj de juego y elige el frame según la distancia recorrida, así a x360 se saltan frames en vez de ir a trompicones.
+- **Normas**: las casas son privadas (entran quienes viven allí y sus invitados) y los locales tienen horario (`private` y `hours` en el `.tmj`, desde `tools/generate-map.ts`); el tablón de anuncios es un spot de la plaza.
 - Los agentes van a **spots** concretos (dormir en su cama, sentarse en la barra) y su `activityKind` decide la animación y el emote.
 
 ### Memoria
@@ -123,6 +210,8 @@ Todos los parámetros (pesos, umbrales, probabilidades, presupuesto) están en `
   al planificar recuerda ayer y sus costumbres desde la memoria (con olvido y vaguedad).
 
 ### Agentes y coste
+
+- **Sin llamadas extra por acción**: todas van en la misma decisión. Cómo se usa cada acción va en el prompt fijo (cacheado); en cada decisión solo «Posibles ahora: …».
 
 - La **identidad** del agente (rasgos, lugares, objetos y reglas) es un prefijo fijo del prompt, para el _prompt caching_.
 - **Rutinas sin LLM**: dormir, desplazarse y seguir el plan cuando no pasa nada nuevo.
@@ -259,6 +348,9 @@ Todas las rutas de un mundo cuelgan de `/api/worlds/:worldId/…`; `/api/…` es
 | 👁 GET   | `/social/graph` · `/social/history?since=&limit=`   | Red del pueblo ahora y su historial (paginado).                    |
 | 👁 GET   | `/events?day=` · `?from=&to=`                       | Línea de tiempo.                                                   |
 | 👁 GET   | `/dramas?limit=` · `/chronicles`                    | Feed de dramas y crónicas.                                         |
+| 👁 GET   | `/agents/:id/commitments?limit=`                    | Agenda: citas del agente y cómo acabaron.                          |
+| 👁 GET   | `/agents/:id/inventory` · `/agents/:id/places`      | Inventario (con préstamos) y lugares que conoce.                   |
+| 👁 GET   | `/notes`                                            | Notas vivas (tablón y privadas).                                   |
 | 🎬 POST | `/agents/:id/thought`                               | Voz interior `{ text }` (moderada).                                |
 | 🎬 POST | `/world/spots/:id` · `/world/weather`               | Estado de un objeto `{ state }` (moderado) y clima.                |
 | 🎬 POST | `/speed` · `/pause` · `/resume`                     | Velocidad (0, 1, 10, 60, 360) y pausa.                             |
@@ -274,6 +366,48 @@ Todas las rutas de un mundo cuelgan de `/api/worlds/:worldId/…`; `/api/…` es
 | 🔑 GET/POST | `/api/admin/worlds` · `/:id/status` · `/:id/moderation` | Gestión de mundos (crear con `language`) y textos rechazados.                                                                           |
 | 🔑 GET      | `/metrics`                                              | Prometheus (o `Authorization: Bearer METRICS_TOKEN`).                                                                                   |
 | WS          | `/ws?world=`                                            | `snapshot` al conectar y luego `delta`, `event`, `drama`, `thinking`, `memory_effect`, `chronicle`, `world`, `status` y (admin) `cost`. |
+
+## Evaluación y coste
+
+Medido con el proveedor simulado (`pnpm --filter @lethetown/server cost:report 48`: 48 h de juego,
+20 agentes, `SIM_SEED=7`, en RAM). Es reproducible, pero el mock solo ejercita los caminos del
+programa: **no es una medida del coste ni del comportamiento con un modelo real**.
+
+| Fase                           | Llamadas | Decidir | Entrada no cacheada | Por decisión | Lectura de caché |
+| ------------------------------ | -------: | ------: | ------------------: | -----------: | ---------------: |
+| Antes de las acciones (`main`) |     3613 |     963 |             854 232 |          481 |        5 349 411 |
+| Con todas las acciones         |     3289 |    1054 |           1 070 873 |          600 |        5 734 538 |
+
+Ninguna acción añade llamadas: van en la misma decisión. Se decide algo más (hay más con quién
+hablar y qué hacer) y cada decisión lleva más contexto (agenda, inventario, invitaciones, lugares
+descubiertos), aunque el catálogo vive en el prompt fijo cacheado. Bajaron las esencias
+(`gist.minImportance` = 4: 847 → 261). Por fases, en [PROGRESS-ACCIONES.md](PROGRESS-ACCIONES.md).
+
+Otros registros: en 72 h de mock hubo 74 intenciones nuevas, 41 cumplidas, 4 olvidadas y 2
+recordadas tarde (antes de las acciones); con las citas, alrededor de una de cada cuatro se olvida.
+Las entrevistas (`pnpm interview --advance 48`) muestran qué recuerda cada uno: tras las acciones,
+Carmen recuerda que Lucía le debía el libro de poemas, Lucía que quiere volver a quedar con
+Tomás y Hugo conversaciones con varios vecinos (los rumores de Aurora, los planes de Valentina, la
+cita de Samuel con Ernesto); antes, cada uno repetía casi siempre el mismo recuerdo.
+
+Qué falta para afirmar algo: comparar configuraciones con los mismos personajes y semillas (A sin
+memoria imperfecta, B con olvido y vaguedad, C con personalidad y ánimo, D completa), con varias
+semillas y al menos dos modelos reales, y una evaluación humana ciega de verosimilitud,
+diversidad y coherencia. Las cinco familias de métricas propuestas: precisión y degradación de
+los recuerdos frente a lo que pasó, consistencia de decisiones y compromisos, evolución de los
+vínculos, coste y latencia por día de juego, y juicio humano.
+
+### Limitaciones
+
+- No reproduce la memoria humana: son analogías computacionales con parámetros de diseño
+  (configurables en `MemoryConfig`), no valores clínicos validados.
+- La calibración con el mock puede no trasladarse a modelos reales; el resultado depende de los
+  personajes, los prompts, el modelo y la escala de tiempo.
+- Rumores, reconstrucciones y falsos recuerdos implican atribuciones erróneas a propósito: por eso
+  todo se audita y el inspector separa lo que pasó de lo que cada uno cree recordar.
+- Es una simulación experimental, no una representación de personas, poblaciones o trastornos.
+  La protección de menores y la moderación necesitan pruebas continuas; no son una garantía
+  universal frente a todos los fallos de los modelos.
 
 ## Cambiar de proveedor
 
@@ -364,4 +498,5 @@ El cliente elige automáticamente el pack con el que se generó el mapa (propied
 4. **Mundo visual 2D** ✅ (en gran parte). Pendiente: colisión de muebles y animaciones con el Character Generator completo (cuando se compre Modern Interiors).
 5. **Producción** ✅ multi-mundo con instantáneas, seguridad, api + workers, observabilidad, Docker con Caddy e interfaz para espectadores, directores y streaming.
 6. **Psicología** ✅ protección de menores, hábitos, perfiles, ánimo, sueño, sesgos, memoria prospectiva y relaciones visibles.
-7. **Siguiente**: OAuth, editor de mundos y agentes desde la web, traducción de los prompts (hoy se pide al modelo que responda en el idioma del mundo).
+7. **Acciones** ✅ catálogo validado por el motor: citas, explorar, grupos, objetos e inventario, invitar y acompañar, notas, normas del mundo; agenda, inventario y lugares en el inspector.
+8. **Siguiente**: economía (`buy_item` / `sell_item`, ya preparada con `Item.value`), mensajes a distancia (teléfonos), la evaluación comparativa con modelos reales, OAuth, editor de mundos y agentes desde la web, traducción de los prompts (hoy se pide al modelo que responda en el idioma del mundo).

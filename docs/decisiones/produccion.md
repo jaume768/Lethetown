@@ -24,3 +24,5 @@
   gasto); moderación 90; bus 1; instantáneas 7 (siempre queda la última). Corre cada hora real
   (intervalo `unref`), no en el reloj de juego, para no alterar la simulación. También en RAM.
 - **tsx en producción** (los paquetes se consumen como TypeScript); Docker multi-stage con Caddy.
+- **Tablas de las acciones** (`commitments`, `known_places`, `inventory_items`, `notes`), todas con
+  `world_id`; la retención borra notas caducadas (7 días) y citas cerradas (30 días de juego).

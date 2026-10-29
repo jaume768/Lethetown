@@ -29,7 +29,11 @@ TypeScript estricto. El porqué de cada decisión está en [docs/decisiones/](do
 - **Psicología y memoria**: lógica pura en agent-core; todo parámetro en `MemoryConfig` con valor
   por defecto y unidades; nada de lógica psicológica en prompts si se puede calcular. Cada olvido o
   transformación, con `memory.audit(...)` y motivo legible. Fichas sociales con `applySocialUpdate`.
-- **Acciones**: el LLM elige del catálogo; el motor valida y ejecuta (ver [acciones](docs/decisiones/acciones.md)).
+- **Acciones**: el LLM elige del catálogo (`ACTION_SPECS`, en el prompt fijo); el motor valida y
+  ejecuta (`sim/actions/`, `registerAction`) y, si no puede, el agente lo percibe con el motivo.
+  Cada acción: esquema en shared, manejador, regla del mock, icono en la web y tests; con alguien
+  o un lugar de por medio, `minorMeetingRule`; para ir a un sitio, `mayEnter` (casas privadas y
+  horarios). Pasos en [acciones](docs/decisiones/acciones.md#cómo-añadir-una-acción).
 - **Azar** solo por el `Rng` inyectado (`seededRng`); nunca `Math.random()` (salvo efectos visuales).
 - **Datos**: Drizzle (`db/schema.ts`); tras cambiar el esquema, `pnpm db:generate` y commit de la
   migración. Todo dato persistente lleva `world_id` y funciona también en RAM. Embeddings de 384.
@@ -40,7 +44,7 @@ TypeScript estricto. El porqué de cada decisión está en [docs/decisiones/](do
 - **Seguridad**: rutas que mutan o gastan con `requireRole` (y `rateLimit` si gastan); texto de
   usuario por `vetUserText` y en los prompts con `untrusted()`. Nunca loguees cookies ni cuerpos.
 - **Mapa**: `seeds/town.tmj` se genera con `pnpm map:generate` (`tools/generate-map.ts` y el
-  manifest); los spots, transitables y alcanzables.
+  manifest); los spots, transitables y alcanzables. Normas del mapa (`private`, `hours`) ahí.
 - **Assets**: nada de `apps/web/public/assets/vendor/` al repo ni a Docker (`git check-ignore`);
   todo asset del manifest con `license` y `source`. Capturas de docs sin vendor.
 - **Cliente**: textos en `i18n/es.ts` y `en.ts`; accesible (rol, `aria-*`, teclado,
