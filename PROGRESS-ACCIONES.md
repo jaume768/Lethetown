@@ -14,7 +14,7 @@ y comprobar que `pnpm dev` arranca en modo mock.
 ### Paso 0 — Saneamiento
 
 - [x] 0.1 `agent.ts` dividido en módulos (dorado sin cambios)
-- [ ] 0.2 `mock-responder.ts` declarativo (registro de respondedores con reglas pequeñas)
+- [x] 0.2 `mock-responder.ts` declarativo (registro de respondedores con reglas pequeñas)
 - [ ] 0.3 `bootstrap.ts` en factorías por área
 - [ ] 0.4 `MemoryStore.listActive(agentId, { withEmbedding })`
 - [ ] 0.5 Retención de datos configurable por tabla + job + test
@@ -109,3 +109,10 @@ y comprobar que `pnpm dev` arranca en modo mock.
   el orden de los eventos (y el test dorado) no cambia. `deps` y `spots` pasan a ser públicos
   (de solo lectura) para que los módulos los usen; `validPlace` también. La división se hizo con
   un script (sin reescribir a mano la lógica).
+- **Mock declarativo** (`agent/mock/`): `registry.ts` guarda un respondedor por tarea y las reglas
+  de `decide` en orden (`registerDecideRule(regla, { before | after })`, que sustituye si el
+  nombre ya existe). `context.ts` lee el prompt una sola vez (`decideContext`) y las reglas son
+  funciones pequeñas `respond(ctx) → { response, reason } | null` (`decide.ts`); el resto de
+  tareas va en `plan.ts`, `memory.ts` y `narrative.ts`, movidas sin cambios. `mock-responder.ts`
+  solo carga los módulos y reexporta. Las respuestas son idénticas (el dorado no cambia). Cada
+  acción del catálogo registrará su regla en su propio módulo.
