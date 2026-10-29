@@ -2,6 +2,7 @@ import type { SimEvent } from "@lethetown/shared";
 import { useEffect, useRef, useState } from "react";
 import { useI18n } from "../i18n";
 import { api } from "../net/store";
+import { EventText } from "./EventText";
 import { formatGameTime } from "./format";
 
 const RASHOMON_KINDS = new Set(["speech", "world", "thought"]);
@@ -117,7 +118,7 @@ export function EventLog({ events, today, onOpenEvent, collapsible = false }: Pr
           const clickable = RASHOMON_KINDS.has(e.kind);
           const content = (
             <>
-              <span className="muted num">{formatGameTime(e.time)}</span> {e.text}
+              <span className="muted num">{formatGameTime(e.time)}</span> <EventText event={e} />
             </>
           );
           return clickable ? (

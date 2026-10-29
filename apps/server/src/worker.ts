@@ -6,7 +6,13 @@
  */
 import { hostname } from "node:os";
 import { randomUUID } from "node:crypto";
-import { attachWorlds, createServices, openWorld, type WorldRuntime } from "./bootstrap";
+import {
+  attachWorlds,
+  createServices,
+  openWorld,
+  startRetention,
+  type WorldRuntime,
+} from "./bootstrap";
 import { CHANNELS, PgBus } from "./bus/pg-bus";
 import { AdminBusMessage, CommandBusMessage, ViewersBusMessage } from "./bus/protocol";
 import { isProduction, loadConfig } from "./config";
@@ -46,6 +52,8 @@ const running = new Map<string, WorldRuntime>();
 const viewers = new Map<string, { count: number; at: number }>();
 const policy = new ViewerPolicy(config);
 attachWorlds(services, () => running.values());
+// Retención de datos de los mundos que corre este worker (y de las tablas globales).
+startRetention(services, () => running.values());
 services.budget.setKilled(await loadKillSwitch(db.db));
 await refreshBudget(services);
 

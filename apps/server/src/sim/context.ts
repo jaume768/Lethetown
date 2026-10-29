@@ -13,12 +13,20 @@ import type {
 import type {
   ActivityKind,
   AgentSeed,
+  Commitment,
+  Invitation,
+  Item,
+  Note,
   ServerMessage,
   SimEvent,
   SimEventKind,
   TilePoint,
 } from "@lethetown/shared";
 import type { ChronicleStore, EventStore } from "../db/stores";
+import { InMemoryCommitmentStore, type CommitmentStore } from "../db/commitments";
+import { InMemoryKnownPlaceStore, type KnownPlaceStore } from "../db/known-places";
+import { InMemoryItemStore, type ItemStore } from "../db/items";
+import { InMemoryNoteStore, type NoteStore } from "../db/notes";
 import type { GameClock } from "./clock";
 import type { WorldMap } from "./world";
 
@@ -27,6 +35,8 @@ export interface Heard {
   fromName: string;
   text: string;
   eventId: string;
+  /** En un grupo: a quién iba dirigido (si no era a quien lo oye). */
+  toName?: string;
 }
 
 /** Llegada pendiente de un viaje (se reprograma al restaurar una instantánea). */
@@ -62,6 +72,10 @@ export interface Runtime {
   weatherChecked: string | null;
   /** Bloque del plan ya avisado de que choca con una conversación ("inicio:conversación"). */
   convWarned: string | null;
+  /** A quién acompaña (va donde vaya) y hasta cuándo. */
+  following: { who: string; until: number } | null;
+  /** Bloque del plan ya avisado de que no puede ir (casa ajena, cerrado): "inicio:lugar". */
+  normWarned: string | null;
 }
 
 export function newRuntime(): Runtime {
@@ -80,16 +94,21 @@ export function newRuntime(): Runtime {
     consolidatedNight: -1,
     weatherChecked: null,
     convWarned: null,
+    following: null,
+    normWarned: null,
   };
 }
 
+/** Una conversación de dos o más (un grupo). */
 export interface Conversation {
   id: string;
-  a: string;
-  b: string;
+  /** Quienes están en ella, por orden de llegada. */
+  members: string[];
   turns: number;
   lastAt: number;
   transcript: string[];
+  /** Frases de cada uno a cada otro ("a>b" → n): con quién habló más (fichas sociales). */
+  pairs: Record<string, number>;
 }
 
 export interface SimulationDeps {
@@ -111,6 +130,18 @@ export interface SimulationDeps {
   language?: PromptLanguage;
   /** Modo demostración: minutos de juego entre sucesos (sin definir = apagado). */
   demoEveryMinutes?: number;
+  /** Citas entre agentes (si no se pasa, en RAM). */
+  commitments?: CommitmentStore;
+  /** Notas (si no se pasa, en RAM). */
+  notes?: NoteStore;
+  /** Objetos del inventario (si no se pasa, en RAM). */
+  items?: ItemStore;
+  /** Lugares que conoce cada agente (si no se pasa, en RAM). */
+  knownPlaces?: KnownPlaceStore;
+  /** Radio (baldosas) en que se ven los lugares al pasar (por defecto, 4). */
+  discoveryRadius?: number;
+  /** Escrituras en segundo plano (para esperarlas al cerrar). */
+  track?: (write: Promise<unknown>) => void;
 }
 
 /** Señales que la simulación emite hacia los clientes (además de los eventos del log). */
@@ -127,10 +158,38 @@ export class SimContext {
   readonly agents = new Map<string, Agent>();
   readonly runtime = new Map<string, Runtime>();
   readonly conversations = new Map<string, Conversation>();
+  /** Citas vivas (propuestas o aceptadas) y recientes; también en la instantánea. */
+  readonly meetings = new Map<string, Commitment>();
+  /** Contador de ids cortos de cita ("c1", "c2"…). */
+  meetingSeq = 0;
+  /** Objetos del inventario (también en la instantánea) y su contador ("i1", "i2"…). */
+  readonly items = new Map<string, Item>();
+  itemSeq = 0;
+  /** Invitaciones a ir juntos (vivas unos minutos) y su contador ("v1", "v2"…). */
+  readonly invitations = new Map<string, Invitation>();
+  invitationSeq = 0;
+  /** Notas vivas (tablón y privadas) y su contador ("n1"…). */
+  readonly notes = new Map<string, Note>();
+  noteSeq = 0;
+  /** Invitados de cada casa (lugar → agente → hasta cuándo puede estar). */
+  readonly guests = new Map<string, Map<string, number>>();
+  /** Lugares con horario: abiertos o no en la última revisión (para avisar al abrir y cerrar). */
+  readonly openPlaces = new Map<string, boolean>();
+  readonly noteStore: NoteStore;
+  /** Objetos del mapa en un estado que dura (la cafetera "en uso"): cuándo vuelven y a qué. */
+  readonly objectTimers = new Map<string, { at: number; state: string; from: string }>();
+  readonly itemStore: ItemStore;
+  readonly commitments: CommitmentStore;
+  readonly knownPlaces: KnownPlaceStore;
   private readonly eventListeners: ((e: SimEvent) => void)[] = [];
   private readonly signalListeners: ((s: SimSignal) => void)[] = [];
 
-  constructor(readonly deps: SimulationDeps) {}
+  constructor(readonly deps: SimulationDeps) {
+    this.commitments = deps.commitments ?? new InMemoryCommitmentStore();
+    this.knownPlaces = deps.knownPlaces ?? new InMemoryKnownPlaceStore();
+    this.itemStore = deps.items ?? new InMemoryItemStore();
+    this.noteStore = deps.notes ?? new InMemoryNoteStore();
+  }
 
   get clock(): GameClock {
     return this.deps.clock;
@@ -164,8 +223,18 @@ export class SimContext {
     text: string,
     participants: string[] = [],
     id: string = randomUUID(),
+    /** Datos del evento (p. ej. la acción del catálogo y si salió bien). */
+    meta?: SimEvent["meta"],
   ): void {
-    const event: SimEvent = { id, time: this.clock.now(), agentId, kind, text, participants };
+    const event: SimEvent = {
+      id,
+      time: this.clock.now(),
+      agentId,
+      kind,
+      text,
+      participants,
+      ...(meta ? { meta } : {}),
+    };
     for (const l of this.eventListeners) l(event);
     this.signal({ type: "event", event });
   }
@@ -183,10 +252,6 @@ export class SimContext {
 function remove<T>(list: T[], item: T): void {
   const i = list.indexOf(item);
   if (i >= 0) list.splice(i, 1);
-}
-
-export function convKey(a: string, b: string): string {
-  return [a, b].sort().join("|");
 }
 
 export function clamp01(x: number): number {

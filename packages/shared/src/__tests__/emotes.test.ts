@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { emoteFor, emoteForMemoryEffect } from "../index";
+import { agentBadge, emoteFor, emoteForMemoryEffect, type AgentState } from "../index";
 
 const s = (activityKind: string, valence = 0) =>
   ({ activityKind, mood: { valence, label: "" } }) as Parameters<typeof emoteFor>[0];
@@ -19,5 +19,31 @@ describe("emotes", () => {
     expect(emoteForMemoryEffect("vague")).toBe("cloud");
     expect(emoteForMemoryEffect("consolidate")).toBe("idea");
     expect(emoteForMemoryEffect("forget")).toBeNull();
+  });
+});
+
+describe("indicador del mapa", () => {
+  const plan = [
+    {
+      startMinute: 600,
+      durationMin: 80,
+      activity: "cita con Mateo: café",
+      activityKind: "eat",
+      placeId: "cafe_ola",
+      spotId: null,
+    },
+    {
+      startMinute: 700,
+      durationMin: 60,
+      activity: "pasear",
+      activityKind: "walk",
+      placeId: "parque",
+      spotId: null,
+    },
+  ] as AgentState["plan"];
+  it("cita si toca un bloque de cita; si no, acompañando; si no, nada", () => {
+    expect(agentBadge({ plan, companionId: "lucia" }, 1440 + 620)).toBe("meeting");
+    expect(agentBadge({ plan, companionId: "lucia" }, 1440 + 690)).toBe("companion");
+    expect(agentBadge({ plan, companionId: null }, 1440 + 690)).toBeNull();
   });
 });

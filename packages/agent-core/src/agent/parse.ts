@@ -48,9 +48,15 @@ export const ImportanceResponse = z.object({
   ),
 });
 
+/**
+ * Respuesta de `decide`: `{"choice":"continue"|"act","action":{"type":…},"reason":…}`. También se
+ * acepta el formato anterior (`react` con action/placeId… y `talk` con to/say), que se traduce a
+ * `do_activity` y `say` (`decideAction`).
+ */
 export const DecideResponse = z.object({
-  choice: z.enum(["continue", "react", "talk"]),
-  action: z.string().optional(),
+  choice: z.enum(["continue", "act", "react", "talk"]),
+  /** La acción (objeto con `type`); en el formato antiguo de "react", el texto de la actividad. */
+  action: z.unknown().optional(),
   activityKind: LooseActivityKind,
   placeId: z.string().optional(),
   spotId: NullableId,
@@ -70,3 +76,18 @@ export const DecideResponse = z.object({
     .catch(null),
 });
 export type DecideResponse = z.infer<typeof DecideResponse>;
+
+/** La acción que pide la respuesta (sin validar), traduciendo el formato antiguo. */
+export function decideAction(r: DecideResponse): unknown {
+  if (r.choice === "react") {
+    return {
+      type: "do_activity",
+      activity: r.action,
+      activityKind: r.activityKind,
+      placeId: r.placeId,
+      spotId: r.spotId,
+    };
+  }
+  if (r.choice === "talk") return { type: "say", to: r.to, text: r.say };
+  return r.action;
+}

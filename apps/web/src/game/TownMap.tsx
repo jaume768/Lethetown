@@ -22,6 +22,8 @@ interface Props {
   followId: string | null;
   weather: Weather;
   minimap: boolean;
+  /** Notas vivas en el tablón de la plaza. */
+  boardNotes?: number;
   /** Lo que el seleccionado piensa de los demás, como marca sobre cada uno (o nada). */
   affinityMarks?: Record<string, AffinityIcon> | null;
   onSelect: (id: string) => void;
@@ -33,7 +35,7 @@ interface Props {
 
 function sync(
   scene: TownScene,
-  { world, agents, selectedId, weather, minimap, affinityMarks }: Props,
+  { world, agents, selectedId, weather, minimap, affinityMarks, boardNotes }: Props,
 ) {
   if (!scene.ready || !world) return;
   scene.setWorld(world);
@@ -42,6 +44,7 @@ function sync(
   scene.setAffinityMarks(affinityMarks ?? null);
   scene.setWeather(weather);
   scene.setMinimapVisible(minimap);
+  scene.setBoardNotes(boardNotes ?? 0);
 }
 
 export function TownMap(props: Props) {

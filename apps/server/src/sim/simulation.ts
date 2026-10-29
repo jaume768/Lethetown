@@ -1,8 +1,16 @@
-import { Agent, minorsOf, type Decision, type MemoryEffect } from "@lethetown/agent-core";
+import {
+  Agent,
+  defaultKnownPlaces,
+  minorsOf,
+  type Decision,
+  type MemoryEffect,
+} from "@lethetown/agent-core";
 import type {
   AgentState,
   Chronicle,
   Drama,
+  Item,
+  Note,
   SimEvent,
   Weather,
   WorldRunStatus,
@@ -11,18 +19,25 @@ import { exposedTo } from "@lethetown/shared";
 import type { GameClock } from "./clock";
 import {
   SimContext,
-  convKey,
   errorMessage,
   newRuntime,
   type SimSignal,
   type SimulationDeps,
 } from "./context";
-import { activeConversationOf, endConversation, endIdleConversations, talk } from "./conversations";
+import { activeConversationOf, endIdleConversations, leaveConversation } from "./conversations";
 import { startDemo } from "./demo";
 import * as intervention from "./intervention";
 import { WEATHER_NOW } from "./intervention";
 import { consolidate, maintain, scheduleChronicle, writeChronicle } from "./memory-routines";
+import { availableActions, failAction, runAction } from "./actions";
+import { agendaLines, fixedPlanFor, meetingsTick, rehearseAgenda } from "./meetings";
 import { gatherPerceptions, presentWith } from "./perception";
+import { syncKnownPlaces } from "./places";
+import { inventorySections, itemsTick, loadItems } from "./items";
+import { objectsTick } from "./actions/objects";
+import { companySections, companyTick, stopFollowing } from "./company";
+import { loadNotes, notesTick } from "./notes";
+import { mayEnter, normsTick } from "./norms";
 import { goOrDo, scheduleArrival, setAction, travel } from "./routines";
 import { SIM_SNAPSHOT_VERSION, type SimSnapshot } from "./snapshot";
 import type { WorldMap } from "./world";
@@ -30,8 +45,8 @@ import type { WorldMap } from "./world";
 export type { SimSignal, SimulationDeps } from "./context";
 
 const SPEECH_BUBBLE_MINUTES = 20;
-/** Lo que dura un cambio de planes antes de volver al plan del día (minutos de juego). */
-const REPLAN_MINUTES = 60;
+/** Cada cuántos minutos de juego se revisan las citas. */
+const MEETINGS_EVERY = 5;
 
 /**
  * Orquesta la simulación de un mundo: el bucle de cada agente (percibir → guardar → decidir →
@@ -57,7 +72,12 @@ export class Simulation {
     const gossips = new Set(
       deps.seeds.filter((s) => s.traits.some((t) => /chism|cotill/i.test(t))).map((s) => s.id),
     );
-    for (const seed of deps.seeds) {
+    for (const raw of deps.seeds) {
+      // Sin lista en la semilla: lo de quien vive aquí de siempre.
+      const seed = {
+        ...raw,
+        knownPlaces: raw.knownPlaces ?? defaultKnownPlaces(raw, deps.seeds, deps.world.places),
+      };
       const agent = new Agent(seed, {
         llm: deps.llm,
         memory: deps.memory,
@@ -122,8 +142,43 @@ export class Simulation {
       this.clock.schedule(now + i, () => this.agentTick(agent));
     });
     scheduleChronicle(this.ctx, now);
+    this.scheduleMeetings(now);
     if (this.ctx.deps.demoEveryMinutes) startDemo(this.ctx, this.ctx.deps.demoEveryMinutes);
     this.ctx.emit("system", null, `Simulación iniciada con ${this.agents.size} agentes`);
+  }
+
+  /** Revisión de las citas cada pocos minutos de juego (quién sale, quién llega, plantones). */
+  private scheduleMeetings(from: number): void {
+    const next = (Math.floor(from / MEETINGS_EVERY) + 1) * MEETINGS_EVERY;
+    this.clock.schedule(next, async () => {
+      await meetingsTick(this.ctx, next);
+      await itemsTick(this.ctx, next);
+      objectsTick(this.ctx, next);
+      companyTick(this.ctx, next);
+      notesTick(this.ctx, next);
+      await normsTick(this.ctx, next);
+      this.scheduleMeetings(next);
+    });
+  }
+
+  /** Guarda lo que conoce cada agente (al arrancar). */
+  syncKnownPlaces(): Promise<void> {
+    return syncKnownPlaces(this.ctx);
+  }
+
+  /** Objetos al arrancar (si no vienen de la instantánea): los guardados o los de las semillas. */
+  loadItems(stored: Item[]): void {
+    loadItems(this.ctx, stored, this.clock.now());
+  }
+
+  /** Notas al arrancar (si no vienen de la instantánea). */
+  loadNotes(stored: Note[]): void {
+    loadNotes(this.ctx, stored);
+  }
+
+  /** Primer id libre de cita (si no se restauró una instantánea, los guardados mandan). */
+  setMeetingSeq(seq: number): void {
+    this.ctx.meetingSeq = Math.max(this.ctx.meetingSeq, seq);
   }
 
   onEvent(listener: (e: SimEvent) => void): () => void {
@@ -175,10 +230,19 @@ export class Simulation {
           },
         };
       }),
-      conversations: [...this.ctx.conversations.entries()].map(([key, c]) => ({
-        key,
-        ...structuredClone(c),
-      })),
+      conversations: [...this.ctx.conversations.values()].map((c) => structuredClone(c)),
+      meetings: structuredClone([...this.ctx.meetings.values()]),
+      meetingSeq: this.ctx.meetingSeq,
+      items: structuredClone([...this.ctx.items.values()]),
+      itemSeq: this.ctx.itemSeq,
+      invitations: structuredClone([...this.ctx.invitations.values()]),
+      invitationSeq: this.ctx.invitationSeq,
+      notes: structuredClone([...this.ctx.notes.values()]),
+      noteSeq: this.ctx.noteSeq,
+      guests: Object.fromEntries(
+        [...this.ctx.guests].map(([placeId, g]) => [placeId, Object.fromEntries(g)]),
+      ),
+      objectTimers: Object.fromEntries(structuredClone([...this.ctx.objectTimers])),
     };
   }
 
@@ -205,9 +269,28 @@ export class Simulation {
       });
     }
     this.ctx.conversations.clear();
-    for (const { key, ...c } of s.conversations) {
-      if (this.agents.has(c.a) && this.agents.has(c.b)) this.ctx.conversations.set(key, c);
+    for (const c of s.conversations) {
+      const members = c.members.filter((m) => this.agents.has(m));
+      if (members.length >= 2) this.ctx.conversations.set(c.id, { ...c, members });
     }
+    this.ctx.meetings.clear();
+    for (const m of s.meetings) this.ctx.meetings.set(m.id, m);
+    this.ctx.meetingSeq = s.meetingSeq;
+    this.ctx.items.clear();
+    for (const i of s.items) this.ctx.items.set(i.id, i);
+    this.ctx.itemSeq = s.itemSeq;
+    this.ctx.invitations.clear();
+    for (const v of s.invitations) this.ctx.invitations.set(v.id, v);
+    this.ctx.invitationSeq = s.invitationSeq;
+    this.ctx.notes.clear();
+    for (const n of s.notes) this.ctx.notes.set(n.id, n);
+    this.ctx.noteSeq = s.noteSeq;
+    this.ctx.guests.clear();
+    for (const [placeId, g] of Object.entries(s.guests)) {
+      this.ctx.guests.set(placeId, new Map(Object.entries(g)));
+    }
+    this.ctx.objectTimers.clear();
+    for (const [id, t] of Object.entries(s.objectTimers)) this.ctx.objectTimers.set(id, t);
     this.restored = true;
   }
 
@@ -314,7 +397,7 @@ export class Simulation {
         );
       }
       setAction(ctx, agent, "pensando en el día", "idle");
-      const plan = await agent.planDay(now, ctx.world.weather);
+      const plan = await agent.planDay(now, ctx.world.weather, fixedPlanFor(ctx, agent.id, day));
       ctx.emit("plan", agent.id, `Plan: ${plan.map((p) => p.activity).join(" → ")}`, [agent.id]);
     }
 
@@ -355,8 +438,11 @@ export class Simulation {
     const innerVoice = perceptions.flatMap((p) => (p.kind === "thought" ? [p.text] : []));
     // Guardar.
     await agent.perceive(perceptions, this.clock.now());
+    // Al pararse a pensar, repasa su agenda (las citas que tiene presentes se olvidan menos).
+    if (perceptions.length) await rehearseAgenda(ctx, agent, this.clock.now());
     // Decidir.
-    const speaker = heard[0]?.fromId ?? null;
+    // Quien le habla a él o ella (en un grupo, lo que se dice a otros no pide respuesta).
+    const speaker = heard.find((h) => !h.toName)?.fromId ?? null;
     const decision = await agent.decide(this.clock.now(), {
       present,
       heard,
@@ -368,6 +454,9 @@ export class Simulation {
       socialNotes: await agent.socialNotes(present.map((p) => p.id)),
       innerVoice,
       salient: perceptions.length > 0,
+      actions: availableActions({ ctx, agent, now: this.clock.now() }),
+      agenda: agendaLines(ctx, agent.id, this.clock.now()),
+      sections: [...companySections(ctx, agent), ...inventorySections(ctx, agent)],
     });
     if (decision.reason) {
       agent.state.reasoning = {
@@ -377,74 +466,68 @@ export class Simulation {
       };
     }
     if (innerVoice.length) reportInnerVoice(ctx, agent, decision);
-    // Fin de conversación natural: le hablaron y decidió no contestar a esa persona.
-    if (speaker && !(decision.kind === "talk" && decision.to === speaker)) {
-      await endConversation(ctx, convKey(agent.id, speaker), "decidió no seguir");
+    // Fin de conversación natural: le hablaron y decidió no contestar a nadie (se marcha).
+    const answered = decision.kind === "act" && decision.action.type === "say";
+    if (speaker && !answered) {
+      await leaveConversation(ctx, agent.id, "decidió no seguir");
     }
-    this.apply(agent, decision);
+    await this.apply(agent, decision);
   }
 
-  /** Actuar: seguir el plan, reaccionar o hablar. */
-  private apply(agent: Agent, decision: Decision): void {
+  /** Actuar: seguir el plan o una acción del catálogo (que el motor comprueba y ejecuta). */
+  private async apply(agent: Agent, decision: Decision): Promise<void> {
     const ctx = this.ctx;
     const rt = ctx.rt(agent.id);
     const now = this.clock.now();
+    const c = { ctx, agent, now };
     switch (decision.kind) {
       case "follow_plan": {
         if (now < rt.overrideUntil) return;
         const item = agent.currentPlanItem(now);
         if (!item) return setAction(ctx, agent, "tiempo libre", "idle");
+        // Las normas: una casa ajena sin invitación o un sitio cerrado no entran en el plan.
+        const barred =
+          item.placeId !== agent.state.locationId && mayEnter(ctx, agent, item.placeId, now);
+        if (barred) {
+          const key = `${item.startMinute}:${item.placeId}`;
+          if (rt.normWarned !== key) {
+            rt.normWarned = key;
+            rt.pending.push({ kind: "world", text: `No puedo ir: ${barred}.`, placeId: null });
+          }
+          return setAction(ctx, agent, "tiempo libre", "idle");
+        }
         // Si se va a otro sitio a media conversación, la conversación se cierra (no queda colgada).
         const conv = activeConversationOf(ctx, agent.id);
         if (conv && item.placeId !== agent.state.locationId) {
           const place = ctx.world.place(item.placeId).name;
-          void endConversation(
-            ctx,
-            convKey(agent.id, conv.other),
-            `${agent.seed.name} se fue a ${place}`,
-          );
+          void leaveConversation(ctx, agent.id, `${agent.seed.name} se fue a ${place}`);
         }
         return goOrDo(ctx, agent, item.placeId, item.spotId, item.activity, item.activityKind);
       }
-      case "react": {
-        rt.overrideUntil = now + REPLAN_MINUTES;
-        // El cambio entra en el plan del día: el inspector muestra lo que hace de verdad.
-        agent.replan(
-          now,
-          {
-            activity: decision.action,
-            activityKind: decision.activityKind,
-            placeId: decision.placeId,
-            spotId: decision.spotId,
-          },
-          REPLAN_MINUTES,
-        );
-        ctx.emit("action", agent.id, `${agent.seed.name} cambia de planes: ${decision.action}`, [
-          agent.id,
-        ]);
-        return goOrDo(
-          ctx,
-          agent,
-          decision.placeId,
-          decision.spotId,
-          decision.action,
-          decision.activityKind,
-        );
-      }
-      case "talk":
-        return talk(ctx, agent, decision.to, decision.utterance);
+      case "act":
+        // Irse por su cuenta deja de acompañar a quien acompañaba.
+        if (["do_activity", "explore", "invite"].includes(decision.action.type)) {
+          stopFollowing(ctx, agent.id, null);
+        }
+        await runAction(c, decision.action);
+        return;
+      case "invalid":
+        return failAction(c, "hacer eso", decision.error, "invalid");
     }
   }
 }
 
 /** Respuesta a la voz interior en el log: si le hace caso o no, y por qué. */
 function reportInnerVoice(ctx: SimContext, agent: Agent, decision: Decision): void {
+  const a = decision.kind === "act" ? decision.action : null;
   const outcome =
-    decision.kind === "react"
-      ? `le hace caso: ${decision.action}`
-      : decision.kind === "talk"
-        ? `se lo comenta a ${ctx.agents.get(decision.to)?.seed.name ?? decision.to}`
-        : "no le hace caso";
+    a?.type === "do_activity"
+      ? `le hace caso: ${a.activity}`
+      : a?.type === "say"
+        ? `se lo comenta a ${ctx.agents.get(a.to)?.seed.name ?? a.to}`
+        : a
+          ? "le hace caso"
+          : "no le hace caso";
   const why = decision.reason ? ` — «${decision.reason}»` : "";
   ctx.emit("action", agent.id, `💭 ${agent.seed.name} ${outcome}${why}`, [agent.id]);
 }
@@ -463,7 +546,7 @@ function warnConversationPlan(ctx: SimContext, agent: Agent, now: number): void 
   const key = `${item.startMinute}:${conv.conv.id}`;
   if (rt.convWarned === key) return;
   rt.convWarned = key;
-  const other = ctx.agents.get(conv.other)?.seed.name ?? conv.other;
+  const other = conv.others.map((id) => ctx.agents.get(id)?.seed.name ?? id).join(", ");
   rt.pending.push({
     kind: "world",
     text: `Según tu plan ahora toca ${item.activity} en ${ctx.world.place(item.placeId).name}, pero estás hablando con ${other}.`,

@@ -37,12 +37,63 @@ export class DramaDetector {
 
   /** Frases con oyentes de más: alguien escuchaba; si además cuenta algo oído, es un rumor. */
   onEvent(e: SimEvent): void {
+    // Plantón en una cita.
+    if (e.meta?.action === "meeting" && e.meta.ok === false && e.text.startsWith("💔")) {
+      this.publish(
+        "meeting_failed",
+        dramaScore.meetingFailed(e.participants.length - 1),
+        e.text.replace(/^💔 /, ""),
+        e.participants,
+        e.agentId ? this.ctx.placeOf(e.agentId) : null,
+        e.id,
+      );
+      return;
+    }
+    // Alguien se mete en una casa sin permiso (y le ven).
+    if (e.meta?.action === "intruder") {
+      this.publish(
+        "intruder",
+        dramaScore.intruder(),
+        e.text.replace(/^🚪 /, ""),
+        e.participants,
+        e.agentId ? this.ctx.placeOf(e.agentId) : null,
+        e.id,
+      );
+      return;
+    }
+    // Un préstamo que no se devuelve a tiempo.
+    if (e.meta?.action === "loan" && e.meta.ok === false) {
+      this.publish(
+        "loan_unreturned",
+        dramaScore.loanUnreturned(),
+        e.text.replace(/^📕 /, ""),
+        e.participants,
+        e.agentId ? this.ctx.placeOf(e.agentId) : null,
+        e.id,
+      );
+      return;
+    }
+    // Alguien descubre un sitio del pueblo.
+    if (e.meta?.action === "discover") {
+      this.publish(
+        "discovery",
+        dramaScore.discovery(),
+        e.text.replace(/^🧭 /, ""),
+        e.participants,
+        e.agentId ? this.ctx.placeOf(e.agentId) : null,
+        e.id,
+      );
+      return;
+    }
     if (e.kind !== "speech" || !e.agentId) return;
-    const listeners = e.participants.length - 2;
+    // En un grupo, los demás del grupo están en la conversación: no escuchan a escondidas.
+    const group = new Set(e.meta?.group ?? []);
+    const hidden = e.participants.slice(2).filter((id) => !group.has(id));
+    const listeners = hidden.length;
     const rumor = looksLikeRumor(e.text);
     if (listeners <= 0 && !rumor) return;
     const kind: DramaKind = rumor ? "rumor" : "eavesdrop";
-    const others = e.participants.slice(2).map((id) => this.ctx.name(id));
+    const others = hidden.map((id) => this.ctx.name(id));
     const speaker = this.ctx.name(e.agentId);
     const title = rumor
       ? `${speaker} va contando lo que oyó${others.length ? ` (y ${others.join(", ")} lo oye)` : ""}`

@@ -5,6 +5,7 @@ import { api } from "../net/store";
 import { formatGameTime } from "./format";
 import { copyText, permalink } from "./links";
 import { Modal } from "./Modal";
+import { EventText } from "./EventText";
 
 /** Dibuja la vista Rashomon en un PNG (columnas por agente) y lo descarga. */
 function exportImage(
@@ -128,7 +129,7 @@ export function RashomonModal({ eventId, onClose }: { eventId: string; onClose: 
     >
       {data?.event && (
         <p className="readable">
-          {formatGameTime(data.event.time)} · {data.event.text}
+          {formatGameTime(data.event.time)} · <EventText event={data.event} />
         </p>
       )}
       {error && <p className="error small">{error}</p>}

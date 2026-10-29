@@ -5,7 +5,11 @@ import es from "../i18n/es";
 import { useAssets } from "../net/assets";
 import { api, gameTimeNow } from "../net/store";
 import { formatGameTime, formatMinuteOfDay } from "./format";
+import { filterMemories } from "./filters";
 import { Portrait } from "./Portrait";
+import { AgendaPanel } from "./AgendaPanel";
+import { InventoryPanel } from "./InventoryPanel";
+import { PlacesPanel } from "./PlacesPanel";
 import { RelationshipsPanel } from "./RelationshipsPanel";
 import { Tabs } from "./Tabs";
 
@@ -62,7 +66,9 @@ export function MemoryGarden(props: Props) {
   const { agent, agents, world, thinkingTask, canIntervene } = props;
   const { onFocus, onSelectAgent, marksOn, onMarksOn, onMarks, onOpenNetwork } = props;
   const { t } = useI18n();
-  const [view, setView] = useState<"mind" | "relations">("mind");
+  const [view, setView] = useState<"mind" | "relations" | "agenda" | "inventory" | "places">(
+    "mind",
+  );
   const [data, setData] = useState<AgentMemoryResponse | null>(null);
   const [person, setPerson] = useState("");
   const [place, setPlace] = useState("");
@@ -97,13 +103,11 @@ export function MemoryGarden(props: Props) {
 
   const memories = useMemo(
     () =>
-      (data && data.agentId === agentId ? data.memories : []).filter(
-        ({ memory: m, scores }) =>
-          (showForgotten || scores.clarity !== "forgotten") &&
-          m.status === "active" &&
-          (!person || m.people.includes(person)) &&
-          (!place || m.placeId === place),
-      ),
+      filterMemories(data && data.agentId === agentId ? data.memories : [], {
+        person,
+        place,
+        showForgotten,
+      }),
     [data, agentId, person, place, showForgotten],
   );
 
@@ -147,18 +151,33 @@ export function MemoryGarden(props: Props) {
       <div className="small">
         📍 {placeName(agent.locationId)}
         {agent.targetId ? ` → ${placeName(agent.targetId)}` : ""} · {agent.action}{" "}
+        {agent.companionId && (
+          <span className="tag">
+            👣{" "}
+            {t("agent.with", { name: agents.find((a) => a.id === agent.companionId)?.name ?? "" })}
+          </span>
+        )}{" "}
         <span className="tag">{agent.activityKind}</span>
       </div>
       <Tabs
         tabs={[
           { id: "mind", label: t("inspector.mind") },
           { id: "relations", label: t("inspector.relations") },
+          { id: "agenda", label: t("inspector.agenda") },
+          { id: "inventory", label: t("inspector.inventory") },
+          { id: "places", label: t("inspector.places") },
         ]}
         active={view}
         onChange={setView}
         label={t("inspector.label")}
       >
-        {view === "relations" ? (
+        {view === "agenda" ? (
+          <AgendaPanel agent={agent} agents={agents} world={world} />
+        ) : view === "inventory" ? (
+          <InventoryPanel agent={agent} agents={agents} world={world} />
+        ) : view === "places" ? (
+          <PlacesPanel agent={agent} agents={agents} world={world} />
+        ) : view === "relations" ? (
           <RelationshipsPanel
             agent={agent}
             onFocus={onFocus}

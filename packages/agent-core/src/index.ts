@@ -37,3 +37,4 @@ export * from "./agent/moderation";
 export * from "./agent/minor-safety";
 export * from "./agent/mind";
 export * from "./agent/mood";
+export { defaultKnownPlaces, seedKnownPlaces } from "./agent/places";

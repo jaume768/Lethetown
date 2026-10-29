@@ -212,6 +212,8 @@ export function parseTiledMap(input: unknown): World {
       indoor: prop(o, "indoor") === true,
       anchor,
       objects: spotsByPlace.get(id) ?? [],
+      private: prop(o, "private") === true,
+      hours: parseHours(prop(o, "hours")),
     });
   });
 
@@ -241,4 +243,20 @@ export function parseTiledMap(input: unknown): World {
     lights,
     windows,
   });
+}
+
+/** "07:00-22:00" → minutos del día (el cierre puede ser 24:00). Sin propiedad o mal escrita, null. */
+export function parseHours(value: unknown): { opens: number; closes: number } | null {
+  const m = typeof value === "string" ? /^(\d{1,2}):(\d{2})-(\d{1,2}):(\d{2})$/.exec(value) : null;
+  if (!m) return null;
+  const opens = Number(m[1]) * 60 + Number(m[2]);
+  const closes = Number(m[3]) * 60 + Number(m[4]);
+  return opens < closes && closes <= 1440 ? { opens, closes } : null;
+}
+
+/** ¿Está abierto a esa hora (minuto absoluto de juego)? */
+export function isOpen(place: { hours: { opens: number; closes: number } | null }, now: number) {
+  if (!place.hours) return true;
+  const m = ((now % 1440) + 1440) % 1440;
+  return m >= place.hours.opens && m < place.hours.closes;
 }

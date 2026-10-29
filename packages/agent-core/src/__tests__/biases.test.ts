@@ -149,10 +149,10 @@ describe("recuerdos intrusivos", () => {
   it("la tirada que falla no lee la memoria", async () => {
     const s = await setup([0.99]);
     let reads = 0;
-    const list = s.store.listByAgent.bind(s.store);
-    s.store.listByAgent = async (id) => {
+    const list = s.store.listActive.bind(s.store);
+    s.store.listActive = async (id, opts) => {
       reads++;
-      return list(id);
+      return list(id, opts);
     };
     expect(await s.memory.intrude(s.base)).toBeNull();
     expect(reads).toBe(0);

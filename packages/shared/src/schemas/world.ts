@@ -50,6 +50,10 @@ export const Place = z.object({
   /** Baldosa transitable de referencia (a donde se va si no hay spot). */
   anchor: TilePoint,
   objects: z.array(Spot),
+  /** Privado (las casas): solo entran quienes viven ahí y sus invitados. */
+  private: z.boolean().default(false),
+  /** Horario de apertura (minutos del día; cierre ≤ 1440). Sin horario, siempre abierto. */
+  hours: z.object({ opens: z.number(), closes: z.number() }).nullable().default(null),
 });
 export type Place = z.infer<typeof Place>;
 

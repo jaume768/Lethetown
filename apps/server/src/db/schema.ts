@@ -178,6 +178,8 @@ export const simEvents = pgTable(
     kind: text("kind").notNull(),
     text: text("text").notNull(),
     participants: text("participants").array().notNull().default([]),
+    /** Acción del catálogo que lo produjo y si salió bien ({ action, ok }). */
+    meta: jsonb("meta").$type<{ action?: string; ok?: boolean; group?: string[] }>(),
   },
   (t) => [index("sim_events_world_time_idx").on(t.worldId, t.time)],
 );
@@ -311,4 +313,104 @@ export const dramas = pgTable(
     eventId: text("event_id"),
   },
   (t) => [index("dramas_world_time_idx").on(t.worldId, t.time)],
+);
+
+/** Citas entre agentes (compromisos): quién, dónde, cuándo y cómo acabó. */
+export const commitments = pgTable(
+  "commitments",
+  {
+    worldId: worldId(),
+    /** Id corto dentro del mundo ("c3"). */
+    id: text("id").notNull(),
+    organizerId: text("organizer_id").notNull(),
+    participants: text("participants").array().notNull(),
+    responses: jsonb("responses")
+      .$type<Record<string, "pending" | "accepted" | "declined">>()
+      .notNull(),
+    placeId: text("place_id").notNull(),
+    /** Minuto de juego en que empieza. */
+    at: doublePrecision("at").notNull(),
+    reason: text("reason").notNull(),
+    /** proposed | accepted | done | failed | cancelled. */
+    status: text("status").notNull(),
+    arrivals: jsonb("arrivals").$type<Record<string, number>>().notNull().default({}),
+    forgot: text("forgot").array().notNull().default([]),
+    intentions: jsonb("intentions").$type<Record<string, string>>().notNull().default({}),
+    flags: text("flags").array().notNull().default([]),
+    createdAt: doublePrecision("created_at").notNull(),
+    updatedAt: doublePrecision("updated_at").notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.worldId, t.id] }),
+    index("commitments_world_at_idx").on(t.worldId, t.at),
+  ],
+);
+
+/** Lugares que conoce cada agente (y cómo los conoció). */
+export const knownPlaces = pgTable(
+  "known_places",
+  {
+    worldId: worldId(),
+    agentId: text("agent_id").notNull(),
+    placeId: text("place_id").notNull(),
+    /** seed | seen | explored | told. */
+    source: text("source").notNull(),
+    /** Minuto de juego en que lo conoció. */
+    learnedAt: doublePrecision("learned_at").notNull(),
+    toldBy: text("told_by"),
+  },
+  (t) => [primaryKey({ columns: [t.worldId, t.agentId, t.placeId] })],
+);
+
+/** Objetos que se llevan encima (inventario), con dueño, quién lo tiene y préstamo. */
+export const inventoryItems = pgTable(
+  "inventory_items",
+  {
+    worldId: worldId(),
+    /** Id corto dentro del mundo ("i3"). */
+    id: text("id").notNull(),
+    kind: text("kind").notNull(),
+    name: text("name").notNull(),
+    description: text("description").notNull().default(""),
+    ownerId: text("owner_id"),
+    holderId: text("holder_id"),
+    placeId: text("place_id"),
+    loan: jsonb("loan").$type<{
+      from: string;
+      to: string;
+      since: number;
+      dueAt: number;
+      overdueNoticed: boolean;
+    }>(),
+    value: doublePrecision("value").notNull().default(0),
+    createdAt: doublePrecision("created_at").notNull(),
+    updatedAt: doublePrecision("updated_at").notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.worldId, t.id] }),
+    index("inventory_items_holder_idx").on(t.worldId, t.holderId),
+  ],
+);
+
+/** Notas: en el tablón (públicas) o dejadas para alguien (privadas); caducan. */
+export const notes = pgTable(
+  "notes",
+  {
+    worldId: worldId(),
+    /** Id corto dentro del mundo ("n3"). */
+    id: text("id").notNull(),
+    authorId: text("author_id").notNull(),
+    /** public | private. */
+    kind: text("kind").notNull(),
+    toId: text("to_id"),
+    placeId: text("place_id").notNull(),
+    text: text("text").notNull(),
+    createdAt: doublePrecision("created_at").notNull(),
+    expiresAt: doublePrecision("expires_at").notNull(),
+    readBy: text("read_by").array().notNull().default([]),
+  },
+  (t) => [
+    primaryKey({ columns: [t.worldId, t.id] }),
+    index("notes_world_expires_idx").on(t.worldId, t.expiresAt),
+  ],
 );

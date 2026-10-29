@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { TilePoint } from "./world";
+import { SeedItem } from "./items";
 
 /** Aspecto del personaje: hoja de sprites del manifest y colores para recolorear el placeholder. */
 export const Appearance = z.object({
@@ -77,6 +78,11 @@ export const AgentSeed = z.object({
   homeId: z.string(),
   /** Lugar donde trabaja o estudia (opcional): forma parte de la identidad fija del prompt. */
   workId: z.string().optional(),
+  /**
+   * Lugares que conoce al empezar. Sin indicar: los de toda la vida (todo lo público, su casa y
+   * su trabajo). Quien acaba de llegar conoce menos y tiene que explorar.
+   */
+  knownPlaces: z.array(z.string()).optional(),
   appearance: Appearance.default({
     sheet: "default",
     skin: "#f1c27d",
@@ -124,6 +130,8 @@ export const AgentSeed = z.object({
       }),
     )
     .default([]),
+  /** Objetos suyos al empezar (quizá prestados a alguien). */
+  items: z.array(SeedItem).default([]),
   /** Cosas que tiene pensado hacer cuando surja (memoria prospectiva). */
   initialIntentions: z
     .array(
@@ -226,6 +234,8 @@ export const AgentState = z.object({
   doneToday: z
     .array(z.object({ minute: z.number().int(), activity: z.string(), placeId: z.string() }))
     .optional(),
+  /** Con quién va o a quién acompaña ahora (para el mapa). */
+  companionId: z.string().nullable().optional(),
   /** Su último razonamiento al decidir (y si era sobre la voz interior), para el inspector. */
   reasoning: z
     .object({ text: z.string(), at: z.number(), innerVoice: z.boolean() })

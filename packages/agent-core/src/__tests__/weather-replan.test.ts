@@ -107,11 +107,13 @@ describe("tiempo en los prompts", () => {
     for (let t = 0; t < 16; t++) {
       const a = agentAt("parque").agent;
       const d = await a.decide(9 * 60 + t, { ...BASE, weather: "rain" });
-      if (d.kind === "react") rain.add(d.spotId ?? d.placeId);
+      if (d.kind === "act" && d.action.type === "do_activity")
+        rain.add(d.action.spotId ?? d.action.placeId);
       const b = agentAt("parque").agent;
       const e = await b.decide(9 * 60 + t, { ...BASE, weather: "storm" });
-      if (e.kind === "react") {
-        const place = world.places.find((p) => p.id === e.placeId)!;
+      if (e.kind === "act" && e.action.type === "do_activity") {
+        const action = e.action;
+        const place = world.places.find((p) => p.id === action.placeId)!;
         storm.add(place.indoor ? "techo" : "fuera");
       }
     }
@@ -132,9 +134,9 @@ describe("voz interior", () => {
       });
       expect(provider.calls.at(-1)?.prompt).toContain("VOZ INTERIOR");
       expect(d.reason).toBeTruthy();
-      kinds.add(d.kind);
+      kinds.add(d.kind === "act" ? d.action.type : d.kind);
     }
-    expect(kinds.has("react")).toBe(true);
+    expect(kinds.has("do_activity")).toBe(true);
   });
 });
 
@@ -154,11 +156,11 @@ describe("conversación frente al plan", () => {
         conversationWith: "mateo",
       });
       expect(d.reason).toBeTruthy();
-      if (d.kind === "talk") expect(d.to).toBe("mateo");
-      kinds.add(d.kind);
+      if (d.kind === "act" && d.action.type === "say") expect(d.action.to).toBe("mateo");
+      kinds.add(d.kind === "act" ? d.action.type : d.kind);
     }
-    expect(kinds.has("talk")).toBe(true);
-    expect(kinds.has("react")).toBe(true);
+    expect(kinds.has("say")).toBe(true);
+    expect(kinds.has("do_activity")).toBe(true);
   });
 });
 

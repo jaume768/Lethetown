@@ -1,6 +1,7 @@
 import { inferActivityKind, type Agent } from "@lethetown/agent-core";
 import { facingOf, pathLength, type ActivityKind } from "@lethetown/shared";
 import type { Arrival, SimContext } from "./context";
+import { discoverAlong } from "./places";
 import { tileKey } from "./world";
 
 /** Rutinas sin LLM: desplazarse, hacer la actividad, necesidades. */
@@ -51,9 +52,45 @@ export function travel(
   scheduleArrival(ctx, agent, rt.arrival);
 }
 
+/**
+ * Ir juntos: el primero calcula la ruta y los demás la comparten (mismos puntos y mismos
+ * tiempos; cada uno acaba en una baldosa libre del destino).
+ */
+export function travelTogether(
+  ctx: SimContext,
+  leader: Agent,
+  others: Agent[],
+  destId: string,
+  thenAction: string,
+  thenKind: ActivityKind,
+): void {
+  travel(ctx, leader, destId, null, thenAction, thenKind);
+  const lead = leader.state.movement;
+  const leadArrival = ctx.rt(leader.id).arrival;
+  for (const other of others) {
+    travel(ctx, other, destId, null, thenAction, thenKind);
+    const mine = other.state.movement;
+    const arrival = ctx.rt(other.id).arrival;
+    if (!lead || !mine || !arrival || !leadArrival) continue;
+    // La ruta del primero (sin su baldosa final) y la suya propia al llegar.
+    mine.waypoints = [other.state.tile, ...lead.waypoints.slice(1, -1), arrival.goal];
+    mine.startTime = lead.startTime;
+    mine.endTime = lead.endTime;
+    // La llegada que programó travel() no hará nada (ya no es la vigente a esa hora).
+    arrival.at = leadArrival.at;
+    scheduleArrival(ctx, other, arrival);
+  }
+}
+
 export function scheduleArrival(ctx: SimContext, agent: Agent, arrival: Arrival): void {
   const rt = ctx.rt(agent.id);
   ctx.clock.schedule(arrival.at, () => {
+    // Solo la llegada vigente: si cambió de rumbo o de hora por el camino, esta ya no vale.
+    if (rt.arrival !== arrival || ctx.clock.now() < arrival.at) return;
+    // Lo que ha visto por el camino (y el sitio al que llega, si no lo conocía).
+    const path = agent.state.movement?.waypoints ?? [arrival.goal];
+    const source = arrival.thenAction.startsWith("explorando") ? "explored" : "seen";
+    discoverAlong(ctx, agent, path, arrival.destId, arrival.at, source);
     const prev = agent.state.movement?.waypoints.at(-2);
     if (prev) agent.state.facing = facingOf(prev, arrival.goal);
     agent.state.tile = arrival.goal;

@@ -181,6 +181,6 @@ describe("diario sujeto a la memoria", () => {
     const report = await maintenance.run(owner, 40 * 60, []);
     expect(report.gists).toHaveLength(1);
     expect(provider.calls.filter((c) => c.meta.task === "gist")).toHaveLength(1);
-    expect(MemoryConfig.parse({}).gist.minImportance).toBe(3);
+    expect(MemoryConfig.parse({}).gist.minImportance).toBe(4);
   });
 });

@@ -207,3 +207,19 @@ describe("memoria de trabajo", () => {
     expect(wm.contents).toHaveLength(1);
   });
 });
+
+describe("InMemoryStore.listActive", () => {
+  it("devuelve lo mismo que listByAgent filtrado por activos (y en el mismo orden)", async () => {
+    const store = new InMemoryStore();
+    await store.add(mem({ id: "a" }));
+    await store.add(mem({ id: "b", status: "archived" }));
+    await store.add(mem({ id: "c", agentId: "otro" }));
+    await store.add(mem({ id: "d", forgottenAt: 5 }));
+    const expected = (await store.listByAgent("a")).filter((m) => m.status === "active");
+    expect(await store.listActive("a")).toEqual(expected);
+    expect((await store.listActive("a", { withEmbedding: true })).map((m) => m.id)).toEqual([
+      "a",
+      "d",
+    ]);
+  });
+});

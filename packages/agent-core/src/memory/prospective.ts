@@ -12,6 +12,11 @@ export const ProspectiveConfig = z.object({
   enabled: z.boolean().default(true),
   /** Probabilidad de acordarse al aparecer la pista (perfil neutro, recuerdo nítido). */
   baseRecall: z.number().min(0).max(1).default(0.7),
+  /**
+   * Lo mismo para una cita acordada con alguien (se tiene más presente que una intención
+   * suelta). Se aplica cuando llega la hora de salir.
+   */
+  appointmentRecall: z.number().min(0).max(1).default(0.9),
   /** Ocasiones (pistas) que se le pueden pasar antes de darla por olvidada. */
   maxMisses: z.number().int().min(1).default(2),
   /** Probabilidad por hora de caer en la cuenta de algo que se le olvidó. */
@@ -79,7 +84,8 @@ export function recallChance(
   intentionForgetting: number,
   strength: number,
   cfg: ProspectiveConfig,
+  base = cfg.baseRecall,
 ): number {
   const clarity = 0.5 + 0.5 * Math.min(1, Math.max(0, strength));
-  return Math.min(1, Math.max(0, (cfg.baseRecall * clarity) / Math.max(0.1, intentionForgetting)));
+  return Math.min(1, Math.max(0, (base * clarity) / Math.max(0.1, intentionForgetting)));
 }

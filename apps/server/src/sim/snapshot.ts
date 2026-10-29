@@ -1,9 +1,19 @@
 import { AgentMind } from "@lethetown/agent-core";
-import { ActivityKind, AgentState, SimSpeed, TilePoint, Weather } from "@lethetown/shared";
+import {
+  ActivityKind,
+  AgentState,
+  Commitment,
+  Invitation,
+  Note,
+  Item,
+  SimSpeed,
+  TilePoint,
+  Weather,
+} from "@lethetown/shared";
 import { z } from "zod";
 
 /** Sube este número si cambias la forma de la instantánea (las antiguas se ignoran). */
-export const SIM_SNAPSHOT_VERSION = 9;
+export const SIM_SNAPSHOT_VERSION = 16;
 
 /** Percepción pendiente (misma forma que `Perception` de agent-core). */
 const Perception = z.discriminatedUnion("kind", [
@@ -21,6 +31,7 @@ const Perception = z.discriminatedUnion("kind", [
     text: z.string(),
     placeId: z.string(),
     eventId: z.string().optional(),
+    toName: z.string().optional(),
   }),
   z.object({
     kind: z.literal("overheard"),
@@ -45,6 +56,7 @@ const Heard = z.object({
   fromName: z.string(),
   text: z.string(),
   eventId: z.string(),
+  toName: z.string().optional(),
 });
 
 export const SimSnapshot = z.object({
@@ -85,20 +97,39 @@ export const SimSnapshot = z.object({
         consolidatedNight: z.number(),
         weatherChecked: z.string().nullable(),
         convWarned: z.string().nullable(),
+        following: z.object({ who: z.string(), until: z.number() }).nullable().default(null),
+        normWarned: z.string().nullable().default(null),
       }),
     }),
   ),
   conversations: z.array(
     z.object({
-      key: z.string(),
       id: z.string(),
-      a: z.string(),
-      b: z.string(),
+      members: z.array(z.string()).min(2),
       turns: z.number(),
       lastAt: z.number(),
       transcript: z.array(z.string()),
+      pairs: z.record(z.string(), z.number()).default({}),
     }),
   ),
+  /** Citas vivas y recientes, y el contador de ids. */
+  meetings: z.array(Commitment).default([]),
+  meetingSeq: z.number().int().nonnegative().default(0),
+  /** Objetos del inventario y el contador de ids. */
+  items: z.array(Item).default([]),
+  itemSeq: z.number().int().nonnegative().default(0),
+  /** Objetos del mapa que volverán solos a otro estado (spotId → cuándo, a qué y desde cuál). */
+  /** Invitaciones a ir juntos ahora mismo (caducan enseguida). */
+  invitations: z.array(Invitation).default([]),
+  invitationSeq: z.number().int().nonnegative().default(0),
+  /** Notas vivas y el contador de ids. */
+  notes: z.array(Note).default([]),
+  noteSeq: z.number().int().nonnegative().default(0),
+  /** Invitados de cada casa (lugar → agente → hasta cuándo). */
+  guests: z.record(z.string(), z.record(z.string(), z.number())).default({}),
+  objectTimers: z
+    .record(z.string(), z.object({ at: z.number(), state: z.string(), from: z.string() }))
+    .default({}),
 });
 export type SimSnapshot = z.infer<typeof SimSnapshot>;
 

@@ -120,7 +120,25 @@ export class TownScene extends Phaser.Scene {
     cam.setBounds(0, 0, world.width * TS, world.height * TS);
     cam.centerOn((world.width * TS) / 2, (world.height * TS) / 2);
     this.setupMinimap(world);
+    this.buildBoard(world);
     if (this.pendingAgents.length) this.updateAgents(this.pendingAgents);
+  }
+
+  /** Marcador del tablón de anuncios (📌 y cuántas notas tiene). */
+  private board: Phaser.GameObjects.Text | null = null;
+
+  private buildBoard(world: World) {
+    const spot = world.places.flatMap((p) => p.objects).find((o) => o.id === "tablon");
+    if (!spot) return;
+    this.board = this.add
+      .text(spot.tile.x * TS + TS / 2, spot.tile.y * TS, "📌", { fontSize: "10px", resolution: 2 })
+      .setOrigin(0.5, 1)
+      .setDepth(9);
+  }
+
+  /** Número de notas vivas en el tablón (0 = solo el icono). */
+  setBoardNotes(count: number) {
+    this.board?.setText(count > 0 ? `📌${count}` : "📌");
   }
 
   setWeather(weather: Weather) {
@@ -232,6 +250,7 @@ export class TownScene extends Phaser.Scene {
         thinking: this.isThinking(v.state.id),
         realSeconds,
         dtSeconds,
+        gameTime: now,
         reducedMotion: this.reducedMotion,
       });
     }

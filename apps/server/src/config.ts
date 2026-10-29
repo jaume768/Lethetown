@@ -47,6 +47,8 @@ const Env = z.object({
   /** Semilla del azar de la memoria (reconsolidación, rumores...). Vacía = aleatoria. */
   SIM_SEED: z.preprocess(emptyToUndefined, z.coerce.number().int().optional()),
   SIM_WALK_TILES_PER_MINUTE: z.coerce.number().positive().default(6),
+  /** Radio (en baldosas) en que un agente ve los lugares que tiene cerca al pasar. */
+  SIM_DISCOVERY_RADIUS: z.coerce.number().nonnegative().default(4),
   /** Modo demostración: el pueblo genera solo lluvia, averías e ideas (sim/demo.ts). */
   SIM_DEMO: z.enum(["on", "off"]).default("off"),
   /** Minutos de juego (de media) entre dos sucesos del modo demostración. */

@@ -1,182 +1,45 @@
 import type {
-  ActivityKind,
   AgentSeed,
   AgentState,
-  Place,
+  KnownPlaceSource,
   PlanItem,
   Spot,
   Weather,
 } from "@lethetown/shared";
-import type { LLMClient } from "../llm/client";
-import {
-  applySocialUpdate,
-  socialNote,
-  type MemoryOwner,
-  type SocialProfileStore,
-} from "../memory/human";
-import { credibility, exposureDelta, forgive } from "../memory/social";
-import { looksLikeRumor } from "@lethetown/shared";
-import { reinforce } from "../memory/decay";
-import {
-  encodingStrength,
-  eventArousal,
-  overwhelmed,
-  sleepDebt,
-  sleepQuality,
-} from "../memory/encoding";
-import type { MemorySystem, RecallContext } from "../memory/memory-system";
-import { dayDiaryText, dueHabits, habitText, recordDay } from "../memory/habits";
-import { isYouthMemory } from "../memory/psychology";
-import { recallText } from "../memory/retrieval";
-import type { MemorySource } from "@lethetown/shared";
+import { type MemoryOwner } from "../memory/human";
+import type { RecallContext } from "../memory/memory-system";
 import { WorkingMemory } from "../memory/working-memory";
-import { inferActivityKind } from "./activity";
 import { newMind, type AgentMind } from "./mind";
-import {
-  cuePresent,
-  recallChance,
-  type IntentionInput,
-  type IntentionState,
-} from "../memory/prospective";
-import { currentStrength } from "../memory/decay";
-import type { MemoryRecord } from "../memory/types";
-import {
-  baselineMood,
-  blendPerceptions,
-  describeMood,
-  makeMood,
-  stepMood,
-  stepNeeds,
-} from "./mood";
-import type { MinorInfo } from "./minor-safety";
-import { untrusted } from "./moderation";
-import { DecideResponse, ImportanceResponse, PlanResponse, parseWith } from "./parse";
+import { type IntentionInput, type IntentionState } from "../memory/prospective";
+import { baselineMood, describeMood, makeMood } from "./mood";
 import { replanAt } from "./replan";
-import {
-  decidePrompt,
-  formatClock,
-  identityPrompt,
-  importancePrompt,
-  type PromptLanguage,
-  parseClock,
-  planPrompt,
-  weatherLine,
-  type DecideContext,
-} from "./prompts";
+import { formatClock, identityPrompt, weatherLine } from "./prompts";
+import * as _social from "./agent-social";
+import * as _intentions from "./agent-intentions";
+import * as _planning from "./agent-planning";
+import * as _body from "./agent-body";
+import * as _perception from "./agent-perception";
+import * as _decision from "./agent-decision";
+import * as _places from "./places";
+import { seedKnownPlaces } from "./places";
+import { fallbackPlan, SLEEP_START, DAY_START } from "./agent-planning";
+import type {
+  Perception,
+  Decision,
+  AgentDeps,
+  DecideInput,
+  IntentionOutcome,
+  DayEndReport,
+} from "./agent-types";
 
-export type Perception =
-  | { kind: "arrived"; agentId: string; name: string; action: string; placeId: string }
-  | {
-      kind: "speech";
-      fromId: string;
-      fromName: string;
-      text: string;
-      placeId: string;
-      eventId?: string;
-    }
-  | {
-      kind: "overheard";
-      /** Quién habló, si el agente lo distingue. */
-      fromId: string | null;
-      fromName: string;
-      toName: string;
-      fragment: string;
-      placeId: string;
-      eventId?: string;
-    }
-  | { kind: "thought"; text: string }
-  | { kind: "world"; text: string; placeId: string | null; eventId?: string };
+export * from "./agent-types";
+export { fallbackPlan } from "./agent-planning";
+export { describePerception } from "./agent-perception";
 
-/** Decisión del agente; `reason` es su razonamiento (si lo dio). */
-export type Decision = (
-  | { kind: "follow_plan" }
-  | {
-      kind: "react";
-      action: string;
-      activityKind: ActivityKind;
-      placeId: string;
-      spotId: string | null;
-    }
-  | { kind: "talk"; to: string; utterance: string }
-) & { reason?: string };
-
-export interface AgentDeps {
-  llm: LLMClient;
-  memory: MemorySystem;
-  places: Place[];
-  /** Idioma en el que habla y escribe (por mundo). Por defecto, español. */
-  language?: PromptLanguage;
-  /** Fichas sociales (lo que piensa de los demás). */
-  social?: SocialProfileStore;
-  /** Nombres de los demás agentes, para las notas sociales. */
-  names?: Record<string, string>;
-  /** Menores del pueblo, para la regla fija del prompt de identidad. */
-  minors?: MinorInfo[];
-  /** Chismosos del pueblo: lo que cuentan se cree un poco menos. */
-  gossips?: ReadonlySet<string>;
-  onError?: (agentId: string, task: string, error: unknown) => void;
-}
-
-export type DecideInput = Omit<
-  DecideContext,
-  | "now"
-  | "locationId"
-  | "action"
-  | "moodLabel"
-  | "needs"
-  | "planItem"
-  | "workingMemory"
-  | "weather"
-  | "innerVoice"
-  | "doneToday"
-> & {
-  salient: boolean;
-  /** El tiempo que hace; el agente describe cómo le afecta según dónde está. */
-  weather: Weather;
-  /** Voz interior recién recibida (texto del jugador, sin delimitar). */
-  innerVoice?: string[];
-};
-
-const SLEEP_START = 22 * 60;
-const DAY_START = 7 * 60;
-
-/** Qué ha pasado con una intención en este tick. */
-export interface IntentionOutcome {
-  kind: "kept" | "missed" | "late" | "expired";
-  intention: IntentionState;
-  /** Si se acordó: lo que le viene a la cabeza (se le pasa como percepción). */
-  reminder?: string;
-}
-
-/** "estando con carmen", "en cafe_ola", "a las 10:00". */
-function describeCue(i: IntentionState, names: Record<string, string> = {}): string {
-  if (i.personId) return `estando con ${names[i.personId] ?? i.personId}`;
-  if (i.placeId) return `en ${i.placeId}`;
-  if (i.atMinute !== null) return `a las ${formatClock(i.atMinute)}`;
-  return "cuando surgió";
-}
-
-/** Lo que deja el cierre del día (al dormirse): diario y hábitos. */
-export interface DayEndReport {
-  diaryMemoryId: string | null;
-  habitsFormed: string[];
-  habitsReinforced: string[];
-}
-
-/** Plan mínimo sin LLM, usado si la planificación falla. */
-export function fallbackPlan(homeId: string): PlanItem[] {
-  return [
-    {
-      startMinute: DAY_START,
-      durationMin: SLEEP_START - DAY_START,
-      activity: "estar en casa",
-      activityKind: "idle",
-      placeId: homeId,
-      spotId: null,
-    },
-  ];
-}
-
+/**
+ * Un habitante del pueblo. La clase es una fachada: el detalle vive en módulos (cuerpo y ánimo,
+ * planificación y diario, percepción, decisión, intenciones y lo social) que reciben el agente.
+ */
 export class Agent {
   readonly id: string;
   readonly system: string;
@@ -184,14 +47,16 @@ export class Agent {
   state: AgentState;
   /** Estado interno persistente que no viaja al cliente (hábitos, diario). */
   mind: AgentMind = newMind();
-  private readonly spots: Map<string, Spot>;
+  readonly spots: Map<string, Spot>;
 
   constructor(
     readonly seed: AgentSeed,
-    private readonly deps: AgentDeps,
+    readonly deps: AgentDeps,
   ) {
     this.id = seed.id;
-    this.system = identityPrompt(seed, deps.places, deps.language, deps.minors);
+    const known = seedKnownPlaces(seed, deps.places);
+    this.system = identityPrompt(seed, known, deps.language, deps.minors);
+    for (const p of known) this.mind.knownPlaces[p.id] = { source: "seed", at: 0, toldBy: null };
     this.spots = new Map(deps.places.flatMap((p) => p.objects.map((o) => [o.id, o] as const)));
     const home = deps.places.find((p) => p.id === seed.homeId);
     if (!home) throw new Error(`${seed.id}: casa desconocida ${seed.homeId}`);
@@ -231,14 +96,8 @@ export class Agent {
   }
 
   /** Notas de lo que piensa de esas personas (para el prompt). */
-  async socialNotes(ids: string[]): Promise<string[]> {
-    if (!this.deps.social) return [];
-    const notes: string[] = [];
-    for (const id of ids) {
-      const profile = await this.deps.social.get(this.id, id);
-      if (profile) notes.push(socialNote(profile, this.deps.names?.[id] ?? id));
-    }
-    return notes;
+  socialNotes(ids: string[]): Promise<string[]> {
+    return _social.socialNotes(this, ids);
   }
 
   /** Su cama: un spot "sleep" de su casa con su id como dueño (o cualquiera de su casa). */
@@ -260,117 +119,18 @@ export class Agent {
   }
 
   /** Guarda los recuerdos semánticos iniciales del archivo de semillas. */
-  async seedMemories(now: number): Promise<void> {
-    for (const text of this.seed.initialMemories) {
-      await this.deps.memory.remember(
-        {
-          agentId: this.id,
-          text,
-          type: "semantic",
-          importance: 6,
-          source: "inferido",
-          // Recuerdos de juventud: los mayores los conservan y evocan más (reminiscencia).
-          meta: isYouthMemory(text) ? { youth: true } : {},
-        },
-        now,
-      );
-    }
-    for (const i of this.seed.initialIntentions) await this.intend(now, i);
+  seedMemories(now: number): Promise<void> {
+    return _planning.seedMemories(this, now);
   }
 
   /** Siembra lo que piensa de los demás al empezar (relaciones de las semillas). */
-  async seedRelationships(now: number): Promise<void> {
-    const social = this.deps.social;
-    if (!social) return;
-    for (const r of this.seed.relationships) {
-      if (!this.deps.names || !(r.with in this.deps.names)) continue;
-      await applySocialUpdate(social, {
-        ownerId: this.id,
-        aboutId: r.with,
-        summary: r.summary,
-        affinity: r.affinity,
-        trustDelta: r.trust - 0.5,
-        familiarityDelta: r.familiarity - 0.1,
-        bond: r.bond ?? null,
-        now,
-        reason: "relación de partida",
-        minorInvolved: this.involvesMinor(r.with),
-        config: this.deps.memory.config.social,
-      });
-    }
-  }
-
-  /** ¿Es menor él o la otra persona? (para que nunca haya romance). */
-  private involvesMinor(otherId: string): boolean {
-    const guard = this.deps.memory.guard;
-    return Boolean(guard?.isMinor(this.id) || guard?.isMinor(otherId));
+  seedRelationships(now: number): Promise<void> {
+    return _social.seedRelationships(this, now);
   }
 
   /** Mera exposición: anota el tiempo que pasa en el mismo sitio que otros (sin LLM). */
   noteCompany(present: string[], minutes: number): void {
-    const exposure = { ...this.mind.exposure };
-    for (const id of present) exposure[id] = (exposure[id] ?? 0) + minutes;
-    this.mind.exposure = exposure;
-  }
-
-  /**
-   * Lo social al cerrar el día (sin LLM): coincidir a menudo acerca un poco (mera exposición)
-   * y la afinidad negativa se suaviza con el tiempo (perdón), salvo el rencor de las ofensas
-   * importantes. Todo queda en el historial de las fichas.
-   */
-  private async socialDayEnd(now: number, days = 1): Promise<void> {
-    const social = this.deps.social;
-    if (!social) return;
-    const cfg = this.deps.memory.config.social;
-    for (const [id, minutes] of Object.entries(this.mind.exposure)) {
-      const prev = await social.get(this.id, id);
-      const d = exposureDelta(minutes, prev?.affinity ?? 0, cfg);
-      if (!d.familiarityDelta && !d.affinityDelta) continue;
-      await applySocialUpdate(social, {
-        ownerId: this.id,
-        aboutId: id,
-        ...d,
-        now,
-        reason: `coincidieron ${(minutes / 60).toFixed(1)} h en el pueblo`,
-        minorInvolved: this.involvesMinor(id),
-        config: cfg,
-      });
-    }
-    this.mind.exposure = {};
-    for (const p of await social.list(this.id)) {
-      const affinity = forgive(p, days, this.seed.personality.agreeableness, cfg);
-      if (affinity - p.affinity < 0.005) continue;
-      await applySocialUpdate(social, {
-        ownerId: this.id,
-        aboutId: p.aboutId,
-        affinity,
-        now,
-        reason:
-          p.grudge > 0
-            ? `con el tiempo le perdona un poco (aunque le guarda algo de rencor: ${p.grudge.toFixed(2)})`
-            : "con el tiempo le perdona un poco",
-        minorInvolved: this.involvesMinor(p.aboutId),
-        config: cfg,
-      });
-    }
-  }
-
-  /**
-   * Credibilidad de lo que le cuentan (rumores y lo oído a escondidas): la confianza en quien
-   * lo cuenta, menos si es chismoso. Devuelve null si no aplica.
-   */
-  private async credibilityOf(p: Perception): Promise<number | null> {
-    const social = this.deps.social;
-    if (!social) return null;
-    const teller = p.kind === "overheard" ? p.fromId : p.kind === "speech" ? p.fromId : null;
-    if (p.kind === "speech" && !looksLikeRumor(p.text)) return null;
-    if (p.kind !== "speech" && p.kind !== "overheard") return null;
-    const trust = teller ? ((await social.get(this.id, teller))?.trust ?? 0.5) : 0.3;
-    return credibility(
-      trust,
-      teller ? (this.deps.gossips?.has(teller) ?? false) : false,
-      this.deps.memory.config.social,
-    );
+    return _social.noteCompany(this, present, minutes);
   }
 
   /**
@@ -378,54 +138,23 @@ export class Agent {
    * con sus pistas (persona, lugar, hora) que se lleva en la cabeza (`mind.intentions`).
    * Devuelve false si no se guarda (repetida, protección de menores, desactivado).
    */
-  async intend(now: number, input: IntentionInput): Promise<boolean> {
-    const memory = this.deps.memory;
-    const cfg = memory.config.prospective;
-    const text = input.text.trim().replace(/[.。]+$/, "");
-    if (!cfg.enabled || !text) return false;
-    // Solo personas del pueblo (las que conoce por su id).
-    const known = (id: string | null | undefined) =>
-      id && this.deps.names && id in this.deps.names ? id : null;
-    const personId = known(input.personId) ?? null;
-    const placeId = this.validPlace(input.placeId ?? undefined) ?? null;
-    const atMinute = input.at ? parseClock(input.at) : null;
-    const open = this.mind.intentions.filter(
-      (i) => i.status === "pending" || i.status === "forgotten",
-    );
-    if (open.some((i) => i.text.toLowerCase() === text.toLowerCase())) return false;
-    const meta = {
-      intention: { status: "pending" as const, personId, placeId, atMinute, misses: 0 },
-    };
-    const record = await memory.tryRemember(
-      {
-        agentId: this.id,
-        text: `Quiero ${text}`,
-        type: "intention",
-        importance: cfg.importance,
-        source: "inferido",
-        people: personId ? [personId] : [],
-        placeId,
-        meta,
-      },
-      now,
-    );
-    if (!record) return false;
-    this.mind.intentions = [
-      ...open,
-      {
-        memoryId: record.id,
-        text,
-        personId,
-        placeId,
-        atMinute,
-        status: "pending" as const,
-        misses: 0,
-        createdAt: now,
-        // Nace en su contexto (con esa persona, en ese sitio): la pista tiene que irse y volver.
-        cueActive: true,
-      },
-    ].slice(-cfg.maxOpen);
-    return true;
+  intend(now: number, input: IntentionInput): Promise<string | null> {
+    return _intentions.intend(this, now, input);
+  }
+
+  /** Repasa una intención (mirar la agenda la refuerza). */
+  /** Da por cumplida una intención pendiente que encaje (hacer lo que tenía pensado). */
+  fulfillIntention(test: (i: IntentionState) => boolean, now: number, why: string) {
+    return _intentions.fulfillIntention(this, test, now, why);
+  }
+
+  rehearseIntention(memoryId: string, now: number): Promise<boolean> {
+    return _intentions.rehearseIntention(this, memoryId, now);
+  }
+
+  /** Intenta recordar ahora una intención concreta (una cita…). Devuelve si se acordó. */
+  recallIntentionNow(memoryId: string, now: number): Promise<boolean> {
+    return _intentions.recallIntentionNow(this, memoryId, now);
   }
 
   /**
@@ -433,140 +162,8 @@ export class Agent {
    * hora) se acuerda o no; si se le pasan varias ocasiones, se le olvida, y quizá más tarde cae
    * en la cuenta. Lo que recuerda le llega como percepción para que decida qué hacer.
    */
-  async checkIntentions(
-    now: number,
-    minutes: number,
-    present: string[],
-  ): Promise<IntentionOutcome[]> {
-    const memory = this.deps.memory;
-    const cfg = memory.config.prospective;
-    if (!cfg.enabled || !this.mind.intentions.length) return [];
-    const out: IntentionOutcome[] = [];
-    const profile = memory.profileOf(this.id);
-    const ctx = { placeId: this.state.locationId, present, minuteOfDay: Math.floor(now % 1440) };
-    const keep: IntentionState[] = [];
-    for (const i of this.mind.intentions) {
-      const rec = await memory.store.get(i.memoryId);
-      if (!rec || rec.status !== "active") continue;
-      if (now - i.createdAt > cfg.expireDays * 24 * 60) {
-        await this.closeIntention(i, rec, "expired", now, "pasaron los días y ya no lo hizo");
-        out.push({ kind: "expired", intention: i });
-        continue;
-      }
-      if (i.status === "forgotten") {
-        // Caer en la cuenta, tarde: "¡vaya, se me olvidó!". Vuelve a tenerlo pendiente.
-        if (memory.rng() < 1 - Math.pow(1 - cfg.lateRecallPerHour, minutes / 60)) {
-          i.status = "pending";
-          i.misses = 0;
-          await this.syncIntention(i, rec);
-          await memory.tryRemember(
-            {
-              agentId: this.id,
-              text: `¡Vaya, se me olvidó ${i.text}!`,
-              type: "observation",
-              importance: 5,
-              emotionalValence: -0.4,
-              people: i.personId ? [i.personId] : [],
-            },
-            now,
-          );
-          out.push({ kind: "late", intention: i });
-        }
-        keep.push(i);
-        continue;
-      }
-      const cue = cuePresent(i, ctx, cfg.timeWindowMinutes);
-      const appeared = cue && !i.cueActive;
-      i.cueActive = cue;
-      if (!appeared) {
-        keep.push(i);
-        continue;
-      }
-      const strength = currentStrength(rec, now);
-      const chance =
-        strength < memory.config.retrieval.forgetThreshold
-          ? 0
-          : recallChance(profile.intentionForgetting, strength, cfg);
-      if (memory.rng() < chance) {
-        await this.closeIntention(i, rec, "done", now, "se acordó en el momento oportuno");
-        await memory.store.update(rec.id, reinforce(rec, now, memory.config.decay));
-        const who = i.personId ? this.deps.names?.[i.personId] : undefined;
-        this.workingMemory.push({ text: `Quería ${i.text}`, memoryId: rec.id, addedAt: now });
-        out.push({
-          kind: "kept",
-          intention: i,
-          reminder: `Te acuerdas de que querías ${i.text}${who ? ` (ahí está ${who})` : ""}.`,
-        });
-        continue;
-      }
-      i.misses++;
-      if (i.misses >= cfg.maxMisses) {
-        i.status = "forgotten";
-        await this.syncIntention(i, rec);
-        await memory.audit({
-          agentId: this.id,
-          memoryId: rec.id,
-          memoryText: rec.text,
-          action: "intention_forgotten",
-          reason: `tuvo ${i.misses} ocasiones (${describeCue(i, this.deps.names)}) y no se acordó de ${i.text}`,
-          at: now,
-        });
-        out.push({ kind: "missed", intention: i });
-      } else {
-        await this.syncIntention(i, rec);
-      }
-      keep.push(i);
-    }
-    this.mind.intentions = keep;
-    for (const o of out) {
-      if (o.kind === "kept" || o.kind === "missed") {
-        memory.emitEffect({
-          kind: "intention",
-          agentId: this.id,
-          memoryId: o.intention.memoryId,
-          text: o.intention.text,
-          importance: cfg.importance,
-          outcome: o.kind === "kept" ? "kept" : "forgotten",
-          others: o.intention.personId ? [o.intention.personId] : [],
-        });
-      }
-    }
-    return out;
-  }
-
-  /** Refleja en el recuerdo (meta) el estado de una intención. */
-  private async syncIntention(i: IntentionState, rec: MemoryRecord) {
-    await this.deps.memory.store.update(rec.id, {
-      meta: {
-        ...rec.meta,
-        intention: {
-          status: i.status,
-          personId: i.personId,
-          placeId: i.placeId,
-          atMinute: i.atMinute,
-          misses: i.misses,
-        },
-      },
-    });
-  }
-
-  private async closeIntention(
-    i: IntentionState,
-    rec: MemoryRecord,
-    status: "done" | "expired",
-    now: number,
-    why: string,
-  ) {
-    i.status = status;
-    await this.syncIntention(i, rec);
-    await this.deps.memory.audit({
-      agentId: this.id,
-      memoryId: rec.id,
-      memoryText: rec.text,
-      action: status === "done" ? "intention_kept" : "intention_expired",
-      reason: `${i.text}: ${why}`,
-      at: now,
-    });
+  checkIntentions(now: number, minutes: number, present: string[]): Promise<IntentionOutcome[]> {
+    return _intentions.checkIntentions(this, now, minutes, present);
   }
 
   /**
@@ -575,24 +172,7 @@ export class Agent {
    * a veces no la anota y a veces la anota en el lugar de la anterior (la mezcla).
    */
   noteActivity(now: number, activity: string, placeId: string): void {
-    const log = this.state.doneToday ?? [];
-    const last = log.at(-1);
-    if (last && last.activity === activity && last.placeId === placeId) return;
-    const cfg = this.deps.memory.config.diary;
-    const energy = this.state.needs.energy;
-    let where = placeId;
-    if (energy < cfg.lowEnergy) {
-      const tiredness = 1 - energy / cfg.lowEnergy;
-      const r = this.deps.memory.rng();
-      if (r < cfg.maxLossProbability * tiredness) return;
-      if (last && r < (cfg.maxLossProbability + cfg.maxMixProbability) * tiredness) {
-        where = last.placeId;
-      }
-    }
-    this.state.doneToday = [
-      ...log,
-      { minute: Math.floor(now % 1440), activity, placeId: where },
-    ].slice(-cfg.maxEntries);
+    return _planning.noteActivity(this, now, activity, placeId);
   }
 
   /**
@@ -600,99 +180,8 @@ export class Agent {
    * ("El día N: …", con el olvido de siempre) y alimenta el rastreador de rutinas; lo que se
    * repite en varios días se convierte en un recuerdo semántico de hábito o lo refuerza.
    */
-  async endDay(now: number, day: number): Promise<DayEndReport> {
-    const report: DayEndReport = { diaryMemoryId: null, habitsFormed: [], habitsReinforced: [] };
-    await this.socialDayEnd(now);
-    const entries = this.state.doneToday ?? [];
-    if (!entries.length) return report;
-    const memory = this.deps.memory;
-    const cfg = memory.config;
-    const placeName = (id: string) => this.deps.places.find((p) => p.id === id)?.name ?? id;
-    const diary = await memory.tryRemember(
-      {
-        agentId: this.id,
-        text: dayDiaryText(day, entries, placeName),
-        type: "observation",
-        importance: cfg.diary.dayImportance,
-      },
-      now,
-    );
-    if (diary) {
-      report.diaryMemoryId = diary.id;
-      this.mind.diaryMemoryIds = [...this.mind.diaryMemoryIds, diary.id].slice(-7);
-    }
-    if (!cfg.habits.enabled) return report;
-    this.mind.habits = recordDay(this.mind.habits, entries, day, cfg.habits.windowDays);
-    for (const h of dueHabits(this.mind.habits, day, cfg.habits.minDays)) {
-      const existing = h.memoryId ? await memory.store.get(h.memoryId) : undefined;
-      if (existing?.status === "active") {
-        await memory.store.update(existing.id, {
-          ...reinforce(existing, now, cfg.decay),
-          forgottenAt: null,
-        });
-        await memory.audit({
-          agentId: this.id,
-          memoryId: existing.id,
-          memoryText: existing.text,
-          action: "reinforced",
-          reason: `el hábito se repitió otra vez (${h.days.length} de los últimos ${cfg.habits.windowDays} días)`,
-          at: now,
-        });
-        report.habitsReinforced.push(existing.text);
-        continue;
-      }
-      const created = await memory.tryRemember(
-        {
-          agentId: this.id,
-          text: habitText(h, placeName(h.placeId)),
-          type: "semantic",
-          source: "inferido",
-          importance: cfg.habits.importance,
-          placeId: h.placeId,
-        },
-        now,
-      );
-      if (!created) continue;
-      h.memoryId = created.id;
-      await memory.audit({
-        agentId: this.id,
-        memoryId: created.id,
-        memoryText: created.text,
-        action: "habit",
-        reason: `"${h.activity}" en ${placeName(h.placeId)} se repitió ${h.days.length} de los últimos ${cfg.habits.windowDays} días: ya es una costumbre`,
-        at: now,
-      });
-      report.habitsFormed.push(created.text);
-    }
-    return report;
-  }
-
-  /**
-   * Lo que recuerda de ayer y de sus costumbres para planificar: el recuerdo del diario de ayer
-   * y los hábitos, recordados con olvido y vaguedad (lo vago sale como esencia; lo olvidado, no).
-   */
-  private async recallYesterday(now: number): Promise<{ text: string; ids: string[] }> {
-    const cfg = this.deps.memory.config.habits;
-    const diary = this.mind.diaryMemoryIds.at(-1);
-    const habits = Object.values(this.mind.habits)
-      .map((h) => h.memoryId)
-      .filter((id): id is string => Boolean(id));
-    const recalled = await this.deps.memory.recallByIds(
-      [...(diary ? [diary] : []), ...habits],
-      now,
-      this.state.mood.valence,
-      // Lo vago de ayer puede reconstruirse (y rellenarse) al recordarlo.
-      this.recallContext(),
-    );
-    const yesterday = recalled.filter((s) => s.memory.id === diary);
-    const customs = recalled
-      .filter((s) => s.memory.id !== diary)
-      .sort((a, b) => b.scores.strength - a.scores.strength)
-      .slice(0, cfg.maxInPlan);
-    return {
-      text: [...yesterday, ...customs].map((s) => `- ${recallText(s)}`).join("\n"),
-      ids: [...(diary ? [diary] : []), ...habits],
-    };
+  endDay(now: number, day: number): Promise<DayEndReport> {
+    return _planning.endDay(this, now, day);
   }
 
   /** "- HH:MM actividad (lugar)" de lo hecho hoy (o del diario que se le pase). */
@@ -722,188 +211,32 @@ export class Agent {
   }
 
   /** Planifica el día con el modelo de reflexión. */
-  async planDay(now: number, weather: Weather = "sunny"): Promise<PlanItem[]> {
-    // Lo que recuerda de ayer y sus costumbres orientan el plan de hoy; se empieza otro diario.
-    const yesterday = await this.recallYesterday(now);
-    this.state.doneToday = [];
-    const recalled = await this.deps.memory.retrieve({
-      agentId: this.id,
-      query: `${this.seed.name}: qué quiero hacer hoy, mis rutinas y mis planes`,
-      now,
-      moodValence: this.state.mood.valence,
-      k: 5,
-      recall: this.recallContext(),
-      exclude: yesterday.ids,
-    });
-    try {
-      const res = await this.deps.llm.run({
-        kind: "reflection",
-        task: "plan",
-        agentId: this.id,
-        system: this.system,
-        prompt: planPrompt({
-          now,
-          needs: this.state.needs,
-          recalled: recalled.map((s) => `- ${recallText(s)}`).join("\n") || "- (nada en especial)",
-          weather,
-          mood: describeMood(this.state.mood),
-          yesterday: yesterday.text,
-        }),
-      });
-      const plan = parseWith(PlanResponse, res.text)
-        .plan.map((p): PlanItem | null => {
-          const startMinute = parseClock(p.start);
-          if (startMinute === null) return null;
-          const placeId = this.validPlace(p.placeId) ?? this.seed.homeId;
-          const spot = this.spot(p.spotId);
-          const spotId = spot && spot.placeId === placeId ? spot.id : null;
-          return {
-            startMinute,
-            durationMin: p.durationMin,
-            activity: p.activity,
-            activityKind: p.activityKind ?? inferActivityKind(p.activity, spot?.pose),
-            placeId,
-            spotId,
-          };
-        })
-        .filter((p): p is PlanItem => p !== null)
-        .sort((a, b) => a.startMinute - b.startMinute);
-      for (const p of [...plan]) {
-        if (!(await this.safe(p.activity, "plan"))) plan.splice(plan.indexOf(p), 1);
-      }
-      this.state.plan = plan.length ? plan : fallbackPlan(this.seed.homeId);
-    } catch (error) {
-      this.deps.onError?.(this.id, "plan", error);
-      this.state.plan = fallbackPlan(this.seed.homeId);
-    }
-    await this.deps.memory.tryRemember(
-      {
-        agentId: this.id,
-        text: `Mi plan para hoy: ${this.state.plan.map((p) => p.activity).join(", ")}`,
-        type: "plan",
-        importance: 3,
-      },
-      now,
-    );
-    return this.state.plan;
+  /** Planifica el día; `fixed` son compromisos (citas) que el plan debe respetar. */
+  planDay(now: number, weather: Weather = "sunny", fixed: PlanItem[] = []): Promise<PlanItem[]> {
+    return _planning.planDay(this, now, weather, fixed);
   }
 
   /** Percibir → guardar: convierte percepciones en recuerdos con importancia y valencia. */
-  async perceive(perceptions: Perception[], now: number): Promise<void> {
-    if (!perceptions.length) return;
-    const texts = perceptions.map(describePerception);
-    const ratings = await this.rate(texts);
-    const felt: { importance: number; valence: number }[] = [];
-    for (const [i, p] of perceptions.entries()) {
-      const rating = ratings[i] ?? { importance: 2, valence: 0 };
-      felt.push(rating);
-      // Atención: lo que llega de fuera mientras habla con alguien se graba peor.
-      const arousal = Math.max(
-        this.state.mood.arousal,
-        eventArousal(rating.importance, rating.valence),
-      );
-      const distracted =
-        this.state.activityKind === "talk" && (p.kind === "arrived" || p.kind === "overheard");
-      // Rumores: según lo que se fía de quien lo cuenta, lo graba con menos fuerza e
-      // importancia, y si se fía poco, con duda.
-      const cred = await this.credibilityOf(p);
-      const doubt = cred !== null && cred < this.deps.memory.config.social.doubtBelow;
-      const encoded = this.encoding(arousal, distracted);
-      const record = await this.deps.memory.tryRemember(
-        {
-          agentId: this.id,
-          text: doubt ? `(no sé si creérmelo) ${texts[i]!}` : texts[i]!,
-          type: "observation",
-          importance:
-            p.kind === "thought"
-              ? Math.max(rating.importance, 6)
-              : cred === null
-                ? rating.importance
-                : Math.max(1, Math.round(rating.importance * (0.6 + 0.4 * cred))),
-          emotionalValence: rating.valence,
-          source: sourceOf(p),
-          people: peopleOf(p),
-          placeId: "placeId" in p ? p.placeId : this.state.locationId,
-          eventId: "eventId" in p ? (p.eventId ?? null) : null,
-          ...encoded,
-          strength: cred === null ? encoded.strength : encoded.strength * (0.5 + 0.5 * cred),
-        },
-        now,
-      );
-      if (record) this.workingMemory.push({ text: record.text, memoryId: record.id, addedAt: now });
-    }
-    this.state.mood = blendPerceptions(
-      this.state.mood,
-      felt,
-      this.deps.memory.config.mood.perceptionWeight,
-    );
+  perceive(perceptions: Perception[], now: number): Promise<void> {
+    return _perception.perceive(this, perceptions, now);
   }
 
   /** Nivel base del ánimo (según su personalidad). */
   get moodBaseline(): { valence: number; arousal: number } {
-    const cfg = this.deps.memory.config;
-    const base = baselineMood(this.seed.personality, cfg.mood);
-    // Si durmió mal, ese día su nivel base está más bajo.
-    return { ...base, valence: base.valence - cfg.sleep.debtValence * this.mind.sleepDebt };
-  }
-
-  /**
-   * Fuerza inicial con la que graba algo ahora (atención y estado) y si solo le queda la
-   * esencia (activación extrema). Ver memory/encoding.ts.
-   */
-  private encoding(
-    arousal: number,
-    distracted: boolean,
-  ): { strength: number; meta?: { gistOnly: true } } {
-    const cfg = this.deps.memory.config.encoding;
-    const strength = encodingStrength(
-      {
-        arousal,
-        energy: this.state.needs.energy,
-        walking: this.state.activityKind === "walk",
-        distracted,
-        sleepDebt: this.mind.sleepDebt,
-      },
-      cfg,
-    );
-    return overwhelmed(arousal, cfg) ? { strength, meta: { gistOnly: true } } : { strength };
+    return _body.moodBaseline(this);
   }
 
   /**
    * Un recuerdo malo que vuelve sin querer (ver MemorySystem.intrude): entra en la memoria de
    * trabajo y tiñe el ánimo. Devuelve lo que le vino a la cabeza, o null.
    */
-  async ruminate(now: number, minutes: number, present: string[]): Promise<string | null> {
-    const memory = this.deps.memory;
-    const hit = await memory.intrude({
-      agentId: this.id,
-      now,
-      minutes,
-      moodValence: this.state.mood.valence,
-      neuroticism: this.seed.personality.neuroticism,
-      placeId: this.state.locationId,
-      present,
-    });
-    if (!hit) return null;
-    const text = recallText(hit);
-    this.workingMemory.push({
-      text: `(sin querer, me vino a la cabeza) ${text}`,
-      memoryId: hit.memory.id,
-      addedAt: now,
-    });
-    const pull = memory.config.intrusive.moodPull;
-    this.state.mood = makeMood(
-      this.state.mood.valence + (hit.memory.emotionalValence - this.state.mood.valence) * pull,
-      this.state.mood.arousal + (1 - this.state.mood.arousal) * pull,
-    );
-    return text;
+  ruminate(now: number, minutes: number, present: string[]): Promise<string | null> {
+    return _body.ruminate(this, now, minutes, present);
   }
 
   /** Al acostarse: lo tenso o preocupado que esté decide cómo dormirá esta noche. */
   fallAsleep(): number {
-    const cfg = this.deps.memory.config.sleep;
-    this.mind.sleepQuality = sleepQuality(this.state.mood, this.seed.personality.neuroticism, cfg);
-    return this.mind.sleepQuality;
+    return _body.fallAsleep(this);
   }
 
   /**
@@ -911,17 +244,7 @@ export class Agent {
    * (peor memoria y peor ánimo). Devuelve la deuda (0 = descansado).
    */
   wakeUp(): number {
-    const cfg = this.deps.memory.config.sleep;
-    const debt = sleepDebt(this.state.needs.energy, cfg);
-    this.mind.sleepDebt = debt;
-    this.mind.sleepQuality = 1;
-    if (debt > 0) {
-      this.state.mood = makeMood(
-        this.state.mood.valence - cfg.debtValence * debt,
-        this.state.mood.arousal,
-      );
-    }
-    return debt;
+    return _body.wakeUp(this);
   }
 
   /**
@@ -929,216 +252,35 @@ export class Agent {
    * y ánimo que vuelve a su nivel base empujado por las necesidades.
    */
   live(minutes: number, alone: boolean): void {
-    const cfg = this.deps.memory.config;
-    const extraversion = this.seed.personality.extraversion;
-    const kind = this.state.activityKind;
-    this.state.needs = stepNeeds(
-      this.state.needs,
-      { kind, alone, extraversion, sleepQuality: this.mind.sleepQuality },
-      minutes,
-      cfg.needs,
-    );
-    this.state.mood = stepMood(
-      this.state.mood,
-      {
-        needs: this.state.needs,
-        sleeping: kind === "sleep",
-        baseline: this.moodBaseline,
-        extraversion,
-      },
-      minutes,
-      cfg.mood,
-    );
+    return _body.live(this, minutes, alone);
   }
 
   /** Decidir: seguir el plan, reaccionar o hablar. Solo llama al LLM si hay algo saliente. */
-  async decide(now: number, input: DecideInput): Promise<Decision> {
-    if (!input.salient) return { kind: "follow_plan" };
-
-    const cue = [
-      ...input.heard.map((h) => `${h.fromName} dice: ${h.text}`),
-      ...input.present.map((p) => p.name),
-      ...input.objectStates.map((o) => `${o.id} ${o.state}`),
-    ].join(". ");
-    const recalled = await this.deps.memory.retrieve({
-      agentId: this.id,
-      query: cue || this.state.action,
-      now,
-      moodValence: this.state.mood.valence,
-      k: 3,
-      recall: this.recallContext(),
-    });
-    for (const s of recalled) {
-      this.workingMemory.push({ text: recallText(s), memoryId: s.memory.id, addedAt: now });
-    }
-
-    try {
-      const { salient: _salient, ...context } = input;
-      const res = await this.deps.llm.run({
-        kind: "fast",
-        task: "decide",
-        agentId: this.id,
-        system: this.system,
-        prompt: decidePrompt({
-          ...context,
-          weather: this.weatherHere(input.weather),
-          innerVoice: (input.innerVoice ?? []).map(untrusted),
-          doneToday: this.diaryText(),
-          now,
-          locationId: this.state.locationId,
-          action: this.state.action,
-          moodLabel: describeMood(this.state.mood),
-          needs: this.state.needs,
-          planItem: this.currentPlanItem(now),
-          workingMemory: this.workingMemory.render(),
-        }),
-      });
-      const parsed = parseWith(DecideResponse, res.text);
-      // Algo que se propone hacer más adelante (memoria prospectiva).
-      if (parsed.intention?.text) await this.intend(now, parsed.intention);
-      return await this.checked(this.toDecision(parsed, input.present));
-    } catch (error) {
-      this.deps.onError?.(this.id, "decide", error);
-      return { kind: "follow_plan" };
-    }
+  decide(now: number, input: DecideInput): Promise<Decision> {
+    return _decision.decide(this, now, input);
   }
 
   /** Guarda lo que el propio agente ha dicho. */
-  async rememberOwnSpeech(
-    to: string,
-    toName: string,
-    utterance: string,
-    now: number,
-    eventId?: string,
-  ) {
-    await this.deps.memory.tryRemember(
-      {
-        agentId: this.id,
-        text: `Le dije a ${toName}: "${utterance}"`,
-        type: "observation",
-        importance: 3,
-        people: [to],
-        placeId: this.state.locationId,
-        eventId: eventId ?? null,
-        ...this.encoding(this.state.mood.arousal, false),
-      },
-      now,
-    );
+  rememberOwnSpeech(to: string, toName: string, utterance: string, now: number, eventId?: string) {
+    return _perception.rememberOwnSpeech(this, to, toName, utterance, now, eventId);
   }
 
-  /** ¿Pasa la protección de menores? (sin guardián, siempre). */
-  private async safe(
-    text: string,
-    kind: "speech" | "action" | "plan",
-    actors: string[] = [],
-  ): Promise<boolean> {
-    const guard = this.deps.memory.guard;
-    return !guard || guard.allows(text, { kind, actors: [this.id, ...actors], agentId: this.id });
+  /** El id si es un lugar que conoce (si no, undefined). */
+  validPlace(id: string | undefined): string | undefined {
+    return id && _places.knows(this, id) ? id : undefined;
   }
 
-  /** Lo que la protección de menores descarta se convierte en seguir el plan. */
-  private async checked(d: Decision): Promise<Decision> {
-    const reason = d.reason ?? "";
-    if (d.kind === "talk" && !(await this.safe(`${d.utterance} ${reason}`, "speech", [d.to]))) {
-      return { kind: "follow_plan" };
-    }
-    if (d.kind === "react" && !(await this.safe(`${d.action} ${reason}`, "action"))) {
-      return { kind: "follow_plan" };
-    }
-    if (d.kind === "follow_plan" && reason && !(await this.safe(reason, "action"))) {
-      return { kind: "follow_plan" };
-    }
-    return d;
+  knows(placeId: string): boolean {
+    return _places.knows(this, placeId);
   }
 
-  private validPlace(id: string | undefined): string | undefined {
-    return id && this.deps.places.some((p) => p.id === id) ? id : undefined;
+  /** Aprende un lugar (verlo, explorar, que se lo cuenten); true si no lo conocía. */
+  learnPlace(placeId: string, source: KnownPlaceSource, now: number, toldBy?: string): boolean {
+    return _places.learnPlace(this, placeId, source, now, toldBy ?? null);
   }
 
-  private toDecision(r: DecideResponse, present: { id: string }[]): Decision {
-    const why = r.reason?.trim().slice(0, 240);
-    const reason = why ? { reason: why } : {};
-    if (r.choice === "talk" && r.to && r.say && present.some((p) => p.id === r.to)) {
-      return { kind: "talk", to: r.to, utterance: r.say, ...reason };
-    }
-    if (r.choice === "react" && r.action) {
-      const placeId = this.validPlace(r.placeId) ?? this.state.locationId;
-      const spot = this.spot(r.spotId);
-      return {
-        kind: "react",
-        action: r.action,
-        placeId,
-        spotId: spot && spot.placeId === placeId ? spot.id : null,
-        activityKind: r.activityKind ?? inferActivityKind(r.action, spot?.pose),
-        ...reason,
-      };
-    }
-    return { kind: "follow_plan", ...reason };
+  /** Líneas de los lugares descubiertos (van en el prompt de usuario, no en el fijo). */
+  discoveredPlaces(): string[] {
+    return _places.discoveredLines(this);
   }
-
-  private async rate(texts: string[]): Promise<{ importance: number; valence: number }[]> {
-    try {
-      const res = await this.deps.llm.run({
-        kind: "fast",
-        task: "importance",
-        agentId: this.id,
-        system: this.system,
-        prompt: importancePrompt(texts),
-        maxTokens: 400,
-      });
-      return parseWith(ImportanceResponse, res.text).ratings.map((r) => ({
-        importance: clamp(r.importance, 1, 10),
-        valence: clamp(r.valence, -1, 1),
-      }));
-    } catch (error) {
-      this.deps.onError?.(this.id, "importance", error);
-      return texts.map(() => ({ importance: 2, valence: 0 }));
-    }
-  }
-}
-
-export function describePerception(p: Perception): string {
-  switch (p.kind) {
-    case "arrived":
-      return `Vi a ${p.name} llegar a ${p.placeId} (${p.action})`;
-    case "speech":
-      return `${p.fromName} me dijo: "${p.text}"`;
-    case "overheard":
-      return `Oí a ${p.fromName} decirle a ${p.toName} algo como: "${p.fragment}"`;
-    case "thought":
-      // La voz interior la escribe un jugador: va delimitada como dato no confiable.
-      return `Pensé: ${untrusted(p.text)}`;
-    case "world":
-      return p.text;
-  }
-}
-
-function sourceOf(p: Perception): MemorySource {
-  switch (p.kind) {
-    case "speech":
-      return `contado por ${p.fromId}`;
-    case "overheard":
-      return `contado por ${p.fromId ?? "alguien"}`;
-    case "thought":
-      return "inferido";
-    default:
-      return "vivido";
-  }
-}
-
-function peopleOf(p: Perception): string[] {
-  switch (p.kind) {
-    case "arrived":
-      return [p.agentId];
-    case "speech":
-      return [p.fromId];
-    case "overheard":
-      return p.fromId ? [p.fromId] : [];
-    default:
-      return [];
-  }
-}
-
-function clamp(x: number, lo: number, hi: number): number {
-  return Number.isFinite(x) ? Math.min(hi, Math.max(lo, x)) : lo;
 }

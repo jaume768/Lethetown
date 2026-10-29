@@ -1,4 +1,4 @@
-import type { AffinityIcon, Drama } from "@lethetown/shared";
+import type { AffinityIcon, Drama, NotesResponse } from "@lethetown/shared";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { TownMap, type MapController } from "../game/TownMap";
 import { useI18n } from "../i18n";
@@ -20,6 +20,7 @@ import { Onboarding, shouldOnboard } from "./Onboarding";
 import { RashomonModal } from "./RashomonModal";
 import { ConnectionBanner, LoadingScreen, PausedOverlay } from "./StatusOverlay";
 import { Tabs, type TabDef } from "./Tabs";
+import { usePolled } from "./usePolled";
 
 type TabId = "dramas" | "agent" | "events" | "chronicles" | "director";
 const MODE_KEY = "lethetown.mode";
@@ -47,6 +48,9 @@ function savedMode(): Mode {
 export function App() {
   const { t } = useI18n();
   const game = useGame();
+  // Notas del tablón de la plaza (para el marcador del mapa).
+  const notes = usePolled<NotesResponse>("/api/notes", "notes", 30_000);
+  const boardNotes = notes?.items.filter((n) => n.kind === "public").length ?? 0;
   const { user } = useAuth();
   const assets = useAssets();
   const mobile = useMediaQuery(MOBILE);
@@ -232,6 +236,7 @@ export function App() {
             followId={followId}
             weather={game.weather}
             minimap={minimap}
+            boardNotes={boardNotes}
             affinityMarks={marksOn ? marks : null}
             onSelect={onSelect}
             onFollowChange={setFollowId}
