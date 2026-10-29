@@ -33,3 +33,4 @@ export * from "./agent/interview";
 export * from "./agent/moderation";
 export * from "./agent/minor-safety";
 export * from "./agent/mind";
+export * from "./agent/mood";

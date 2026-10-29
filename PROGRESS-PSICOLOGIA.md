@@ -38,10 +38,10 @@ y comprobar que `pnpm dev` arranca en modo mock.
 
 ### Fase 3 — Ánimo y necesidades
 
-- [ ] Ánimo bidimensional (valencia, activación) con etiqueta circumpleja
-- [ ] Nivel base por personalidad y regreso con vida media
-- [ ] Necesidades → ánimo; velocidades por personalidad
-- [ ] `AgentState`, inspector y prompts
+- [x] Ánimo bidimensional (valencia, activación) con etiqueta circumpleja
+- [x] Nivel base por personalidad y regreso con vida media
+- [x] Necesidades → ánimo; velocidades por personalidad
+- [x] `AgentState`, inspector y prompts
 
 ### Fase 4 — Codificación y sueño
 
@@ -185,3 +185,22 @@ conversaciones (decide 842 → 916), que son las llamadas con más entrada.
   puntual e hipocondríaco, Leo sugestionable…).
 - **Test dorado regenerado**: los perfiles cambian la estabilidad de los recuerdos y con ella lo
   que se recuerda y se dice.
+- **Ánimo circumplejo**: `Mood` = valencia (-1..1) + activación (0..1) + etiqueta derivada
+  (eufórico, animado, contento, relajado, tranquilo, nervioso, irritable, preocupado, triste,
+  apagado, abatido, inquieto, adormilado, neutral; zona neutral de ±0.1). En los prompts sale
+  como "contento (activación media)" (decidir, planificar y reconsolidar); el inspector muestra
+  la etiqueta (traducida en la UI) y dos barras.
+- **Nivel base y vuelta**: base = 0.2 ± extraversión ∓ neuroticismo (la gente suele estar
+  ligeramente bien); la valencia vuelve con una vida media de 4 h y la activación con una de 1 h
+  (uno se espabila o se calma antes de lo que cambia de humor). Durmiendo, la valencia vuelve en
+  2 h y la activación tiende a 0.15.
+- **Necesidades → ánimo** por hora y en proporción a lo que pasan del umbral: hambre > 0.7 baja
+  la valencia y sube la activación (irritable), energía < 0.3 baja las dos (apagado), social
+  < 0.3 baja la valencia × (0.5 + extraversión) (soledad).
+- **Necesidades por personalidad**: los ritmos por defecto son los de antes; la social baja
+  × (0.5 + extraversión) y un introvertido solo en algo tranquilo (leer, sentarse, estar,
+  cocinar) recupera algo de energía y de social. "Solo" = nadie más en el lugar.
+- **Percepciones**: además de la valencia, mueven la activación según su importancia y carga
+  emotiva (mismo peso, 0.2).
+- Calibrado con 30 h de mock (antes, casi todos "neutral" y "adormilado" a mediodía).
+  `SIM_SNAPSHOT_VERSION` = 6 (cambia la forma del ánimo). Test dorado regenerado.

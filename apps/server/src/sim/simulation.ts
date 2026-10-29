@@ -22,8 +22,8 @@ import { startDemo } from "./demo";
 import * as intervention from "./intervention";
 import { WEATHER_NOW } from "./intervention";
 import { consolidate, maintain, scheduleChronicle, writeChronicle } from "./memory-routines";
-import { gatherPerceptions } from "./perception";
-import { goOrDo, scheduleArrival, setAction, travel, updateNeeds } from "./routines";
+import { gatherPerceptions, presentWith } from "./perception";
+import { goOrDo, scheduleArrival, setAction, travel } from "./routines";
 import { SIM_SNAPSHOT_VERSION, type SimSnapshot } from "./snapshot";
 import type { WorldMap } from "./world";
 
@@ -270,7 +270,8 @@ export class Simulation {
     const rt = ctx.rt(agent.id);
     if (rt.travelling) return;
     const now = this.clock.now();
-    updateNeeds(agent, this.tickMinutes);
+    // Necesidades y ánimo (solo: un introvertido recarga pilas en algo tranquilo).
+    agent.live(this.tickMinutes, presentWith(ctx, agent).length === 0);
     endIdleConversations(ctx, now);
     await maintain(ctx, agent, now);
 

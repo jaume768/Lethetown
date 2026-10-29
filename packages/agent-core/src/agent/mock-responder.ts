@@ -650,8 +650,8 @@ function mockGist(req: CompletionRequest): string {
 function mockReconsolidate(req: CompletionRequest): string {
   const text = /Estás recordando esto: "(.+)"$/m.exec(req.prompt)?.[1] ?? "";
   const mood = /Tu ánimo ahora: ([^.]+)\./.exec(req.prompt)?.[1] ?? "neutral";
-  const sad = /apagado|triste/.test(mood);
-  const happy = /contento|buen humor/.test(mood);
+  const sad = /apagado|abatido|triste|preocupado|irritable|nervioso/.test(mood);
+  const happy = /contento|animado|eufórico|relajado|tranquilo/.test(mood);
   const suffix = sad
     ? " (aunque ahora me parece más triste de lo que fue)"
     : happy

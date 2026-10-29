@@ -3,7 +3,7 @@ import { ActivityKind, AgentState, SimSpeed, TilePoint, Weather } from "@letheto
 import { z } from "zod";
 
 /** Sube este número si cambias la forma de la instantánea (las antiguas se ignoran). */
-export const SIM_SNAPSHOT_VERSION = 5;
+export const SIM_SNAPSHOT_VERSION = 6;
 
 /** Percepción pendiente (misma forma que `Perception` de agent-core). */
 const Perception = z.discriminatedUnion("kind", [

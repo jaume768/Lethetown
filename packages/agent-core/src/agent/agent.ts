@@ -2,7 +2,6 @@ import type {
   ActivityKind,
   AgentSeed,
   AgentState,
-  Mood,
   Place,
   PlanItem,
   Spot,
@@ -19,6 +18,14 @@ import type { MemorySource } from "@lethetown/shared";
 import { WorkingMemory } from "../memory/working-memory";
 import { inferActivityKind } from "./activity";
 import { newMind, type AgentMind } from "./mind";
+import {
+  baselineMood,
+  blendPerceptions,
+  describeMood,
+  makeMood,
+  stepMood,
+  stepNeeds,
+} from "./mood";
 import type { MinorInfo } from "./minor-safety";
 import { untrusted } from "./moderation";
 import { DecideResponse, ImportanceResponse, PlanResponse, parseWith } from "./parse";
@@ -116,14 +123,6 @@ export interface DayEndReport {
   habitsReinforced: string[];
 }
 
-export function moodLabel(valence: number): string {
-  if (valence > 0.5) return "contento";
-  if (valence > 0.15) return "tranquilo y de buen humor";
-  if (valence > -0.15) return "neutral";
-  if (valence > -0.5) return "algo apagado";
-  return "triste";
-}
-
 /** Plan mínimo sin LLM, usado si la planificación falla. */
 export function fallbackPlan(homeId: string): PlanItem[] {
   return [
@@ -157,7 +156,8 @@ export class Agent {
     const home = deps.places.find((p) => p.id === seed.homeId);
     if (!home) throw new Error(`${seed.id}: casa desconocida ${seed.homeId}`);
     const bed = this.bedSpot();
-    const mood: Mood = { valence: 0.1, label: moodLabel(0.1) };
+    const base = baselineMood(seed.personality, deps.memory.config.mood);
+    const mood = makeMood(base.valence, base.arousal);
     this.state = {
       id: seed.id,
       name: seed.name,
@@ -185,7 +185,7 @@ export class Agent {
   recallContext(): RecallContext {
     return {
       system: this.system,
-      moodLabel: this.state.mood.label,
+      moodLabel: describeMood(this.state.mood),
       socialSummary: async (people) => (await this.socialNotes(people)).join(" "),
     };
   }
@@ -411,6 +411,7 @@ export class Agent {
           needs: this.state.needs,
           recalled: recalled.map((s) => `- ${recallText(s)}`).join("\n") || "- (nada en especial)",
           weather,
+          mood: describeMood(this.state.mood),
           yesterday: yesterday.text,
         }),
       });
@@ -457,10 +458,10 @@ export class Agent {
     if (!perceptions.length) return;
     const texts = perceptions.map(describePerception);
     const ratings = await this.rate(texts);
-    let valenceSum = 0;
+    const felt: { importance: number; valence: number }[] = [];
     for (const [i, p] of perceptions.entries()) {
       const rating = ratings[i] ?? { importance: 2, valence: 0 };
-      valenceSum += rating.valence;
+      felt.push(rating);
       const record = await this.deps.memory.tryRemember(
         {
           agentId: this.id,
@@ -477,8 +478,43 @@ export class Agent {
       );
       if (record) this.workingMemory.push({ text: record.text, memoryId: record.id, addedAt: now });
     }
-    const v = 0.8 * this.state.mood.valence + 0.2 * (valenceSum / perceptions.length);
-    this.state.mood = { valence: clamp(v, -1, 1), label: moodLabel(v) };
+    this.state.mood = blendPerceptions(
+      this.state.mood,
+      felt,
+      this.deps.memory.config.mood.perceptionWeight,
+    );
+  }
+
+  /** Nivel base del ánimo (según su personalidad). */
+  get moodBaseline(): { valence: number; arousal: number } {
+    return baselineMood(this.seed.personality, this.deps.memory.config.mood);
+  }
+
+  /**
+   * El cuerpo con el paso del tiempo (sin LLM): necesidades según lo que hace y su personalidad,
+   * y ánimo que vuelve a su nivel base empujado por las necesidades.
+   */
+  live(minutes: number, alone: boolean): void {
+    const cfg = this.deps.memory.config;
+    const extraversion = this.seed.personality.extraversion;
+    const kind = this.state.activityKind;
+    this.state.needs = stepNeeds(
+      this.state.needs,
+      { kind, alone, extraversion },
+      minutes,
+      cfg.needs,
+    );
+    this.state.mood = stepMood(
+      this.state.mood,
+      {
+        needs: this.state.needs,
+        sleeping: kind === "sleep",
+        baseline: this.moodBaseline,
+        extraversion,
+      },
+      minutes,
+      cfg.mood,
+    );
   }
 
   /** Decidir: seguir el plan, reaccionar o hablar. Solo llama al LLM si hay algo saliente. */
@@ -517,7 +553,7 @@ export class Agent {
           now,
           locationId: this.state.locationId,
           action: this.state.action,
-          moodLabel: this.state.mood.label,
+          moodLabel: describeMood(this.state.mood),
           needs: this.state.needs,
           planItem: this.currentPlanItem(now),
           workingMemory: this.workingMemory.render(),

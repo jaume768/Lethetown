@@ -114,9 +114,12 @@ export const Needs = z.object({
 });
 export type Needs = z.infer<typeof Needs>;
 
+/** Ánimo (modelo circumplejo): valencia y activación, con su etiqueta ("contento", "irritable"…). */
 export const Mood = z.object({
   /** -1 (muy negativo) .. 1 (muy positivo) */
   valence: z.number().min(-1).max(1),
+  /** 0 (calma, sueño) .. 1 (tensión, euforia) */
+  arousal: z.number().min(0).max(1).default(0.4),
   label: z.string(),
 });
 export type Mood = z.infer<typeof Mood>;

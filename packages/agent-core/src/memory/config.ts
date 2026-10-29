@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { MoodConfig, NeedsConfig } from "../agent/mood";
 import { ProfileConfig } from "./psychology";
 
 /**
@@ -160,6 +161,10 @@ export const MemoryConfig = z.object({
       dayImportance: z.number().int().min(1).max(10).default(3),
     })
     .prefault({}),
+  /** Ánimo bidimensional (valencia, activación): nivel base, vuelta a él y efecto de las necesidades. */
+  mood: MoodConfig.prefault({}),
+  /** Ritmos de las necesidades (energía, hambre, social) y efecto de la personalidad. */
+  needs: NeedsConfig.prefault({}),
   /** Edad y personalidad → perfil de memoria de cada agente (ver psychology.ts). */
   profile: ProfileConfig.prefault({}),
   /** Rutinas repetidas → recuerdos semánticos de hábito ("suelo desayunar en el café…"). */

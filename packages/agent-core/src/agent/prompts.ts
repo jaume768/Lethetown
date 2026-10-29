@@ -124,6 +124,8 @@ export function planPrompt(opts: {
   needs: Needs;
   recalled: string;
   weather?: Weather;
+  /** Ánimo al despertar ("contento (activación media)"). */
+  mood?: string;
   /** Lo que recuerda de ayer y sus costumbres ("- …", quizá vago), para no repetir siempre lo mismo. */
   yesterday?: string;
 }): string {
@@ -136,7 +138,7 @@ Lo que recuerdas de ayer y tus costumbres (puede ser vago o incompleto; no hace 
 ${opts.yesterday}`
       : ""
   }
-Necesidades (0 = vacía, 1 = llena): energía ${opts.needs.energy.toFixed(2)}, hambre ${opts.needs.hunger.toFixed(2)}, social ${opts.needs.social.toFixed(2)}.
+${opts.mood ? `Ánimo al despertar: ${opts.mood}.\n` : ""}Necesidades (0 = vacía, 1 = llena): energía ${opts.needs.energy.toFixed(2)}, hambre ${opts.needs.hunger.toFixed(2)}, social ${opts.needs.social.toFixed(2)}.
 Lo que recuerdas ahora:
 ${opts.recalled}
 

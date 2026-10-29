@@ -1,6 +1,7 @@
 import type { AgentMemoryResponse, AgentState, World } from "@lethetown/shared";
 import { useEffect, useMemo, useState } from "react";
-import { useI18n, type MessageKey } from "../i18n";
+import { t, useI18n, type MessageKey } from "../i18n";
+import es from "../i18n/es";
 import { useAssets } from "../net/assets";
 import { api, gameTimeNow } from "../net/store";
 import { formatGameTime, formatMinuteOfDay } from "./format";
@@ -10,7 +11,9 @@ const REFRESH_MS = 3000;
 /** Recuerdos por página del jardín. */
 const PAGE = 40;
 
-function Bar({ value, label }: { value: number; label: string }) {
+/** Barra de 0..1 (o de `min`..1, p. ej. la valencia de -1 a 1). */
+function Bar({ value, label, min = 0 }: { value: number; label: string; min?: number }) {
+  const fraction = (value - min) / (1 - min);
   return (
     <div className="bar" title={`${label}: ${value.toFixed(2)}`}>
       <span>{label}</span>
@@ -18,14 +21,20 @@ function Bar({ value, label }: { value: number; label: string }) {
         className="bar-track"
         role="meter"
         aria-label={label}
-        aria-valuemin={0}
+        aria-valuemin={min}
         aria-valuemax={1}
         aria-valuenow={Number(value.toFixed(2))}
       >
-        <div className="bar-fill" style={{ width: `${Math.round(value * 100)}%` }} />
+        <div className="bar-fill" style={{ width: `${Math.round(fraction * 100)}%` }} />
       </div>
     </div>
   );
+}
+
+/** Etiqueta del ánimo (la pone el servidor en español) traducida si se conoce. */
+function moodText(label: string): string {
+  const key = `mood.${label}`;
+  return key in es ? t(key as MessageKey) : label;
 }
 
 interface Props {
@@ -130,9 +139,9 @@ export function MemoryGarden({ agent, agents, world, thinkingTask, canIntervene 
       {agent.lastUtterance && (
         <blockquote className="readable says">«{agent.lastUtterance}»</blockquote>
       )}
-      <div className="muted small">
-        {t("agent.mood", { label: agent.mood.label, value: agent.mood.valence.toFixed(2) })}
-      </div>
+      <div className="muted small">{t("agent.mood", { label: moodText(agent.mood.label) })}</div>
+      <Bar label={t("agent.moodValence")} value={agent.mood.valence} min={-1} />
+      <Bar label={t("agent.moodArousal")} value={agent.mood.arousal} />
       <Bar label={t("agent.energy")} value={agent.needs.energy} />
       <Bar label={t("agent.hunger")} value={agent.needs.hunger} />
       <Bar label={t("agent.social")} value={agent.needs.social} />
