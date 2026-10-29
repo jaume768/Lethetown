@@ -15,7 +15,9 @@ export function describePerception(p: Perception): string {
     case "arrived":
       return `Vi a ${p.name} llegar a ${p.placeId} (${p.action})`;
     case "speech":
-      return `${p.fromName} me dijo: "${p.text}"`;
+      return p.toName
+        ? `${p.fromName} le dijo a ${p.toName} (yo estaba en la conversación): "${p.text}"`
+        : `${p.fromName} me dijo: "${p.text}"`;
     case "overheard":
       return `Oí a ${p.fromName} decirle a ${p.toName} algo como: "${p.fragment}"`;
     case "thought":

@@ -2,7 +2,7 @@
 import { inferActivityKind } from "@lethetown/agent-core";
 import type { DoActivityAction, SayAction } from "@lethetown/shared";
 import type { z } from "zod";
-import { talk } from "../conversations";
+import { joinBlocked, talk } from "../conversations";
 import { goOrDo } from "../routines";
 import { registerAction } from "./registry";
 
@@ -61,7 +61,7 @@ registerAction<z.infer<typeof SayAction>>({
       return `${target.seed.name} no está aquí`;
     }
     if (target.state.activityKind === "sleep") return `${target.seed.name} está durmiendo`;
-    return null;
+    return joinBlocked(ctx, agent.id, a.to);
   },
   describe: ({ ctx }, a) => `hablar con ${ctx.agents.get(a.to)?.seed.name ?? a.to}`,
   execute: ({ ctx, agent }, a) => talk(ctx, agent, a.to, a.text),

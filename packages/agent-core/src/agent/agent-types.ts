@@ -16,6 +16,8 @@ export type Perception =
       text: string;
       placeId: string;
       eventId?: string;
+      /** En un grupo: a quién se lo dijo (si no era a este agente). */
+      toName?: string;
     }
   | {
       kind: "overheard";

@@ -30,6 +30,8 @@ export interface Heard {
   fromName: string;
   text: string;
   eventId: string;
+  /** En un grupo: a quién iba dirigido (si no era a quien lo oye). */
+  toName?: string;
 }
 
 /** Llegada pendiente de un viaje (se reprograma al restaurar una instantánea). */
@@ -86,13 +88,16 @@ export function newRuntime(): Runtime {
   };
 }
 
+/** Una conversación de dos o más (un grupo). */
 export interface Conversation {
   id: string;
-  a: string;
-  b: string;
+  /** Quienes están en ella, por orden de llegada. */
+  members: string[];
   turns: number;
   lastAt: number;
   transcript: string[];
+  /** Frases de cada uno a cada otro ("a>b" → n): con quién habló más (fichas sociales). */
+  pairs: Record<string, number>;
 }
 
 export interface SimulationDeps {
@@ -213,10 +218,6 @@ export class SimContext {
 function remove<T>(list: T[], item: T): void {
   const i = list.indexOf(item);
   if (i >= 0) list.splice(i, 1);
-}
-
-export function convKey(a: string, b: string): string {
-  return [a, b].sort().join("|");
 }
 
 export function clamp01(x: number): number {

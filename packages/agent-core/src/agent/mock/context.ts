@@ -135,7 +135,9 @@ export interface DecideCtx {
   raining: boolean;
   presentLine: string;
   present: string[];
-  heard: { from: string; text: string }[];
+  /** Lo que se oye; `to` si en un grupo se lo dicen a otra persona. */
+  heard: { from: string; text: string; to?: string }[];
+  /** Quien le habla a él o ella (lo primero que le dicen directamente). */
   speaker: { from: string; text: string } | undefined;
   broken: RegExpMatchArray | null | undefined;
   thought: string | undefined;
@@ -172,9 +174,10 @@ export function decideContext(req: CompletionRequest): DecideCtx {
   const presentLine = /^PRESENTES: (.+)$/m.exec(p)?.[1] ?? "nadie";
   const present =
     presentLine === "nadie" ? [] : presentLine.split("; ").map((x) => x.slice(0, x.indexOf("=")));
-  const heard = [...p.matchAll(/^(\S+)=[^:\n]+: "(.+)"$/gm)].map((m) => ({
+  const heard = [...p.matchAll(/^(\S+)=[^:\n(]+?(?: \(a ([^)]+)\))?: "(.+)"$/gm)].map((m) => ({
     from: m[1]!,
-    text: m[2]!,
+    text: m[3]!,
+    ...(m[2] ? { to: m[2] } : {}),
   }));
   const small = [...GREETINGS, ...REPLIES, ...FOLLOW_UPS];
   const rumor = [...p.matchAll(/^- Oí a (.+?) decirle a .+? algo como: "(.+)"$/gm)].find((m) => {
@@ -217,7 +220,7 @@ export function decideContext(req: CompletionRequest): DecideCtx {
     presentLine,
     present,
     heard,
-    speaker: heard[0],
+    speaker: heard.find((x) => !x.to),
     broken: /^OBJETOS: (.+)$/m.exec(p)?.[1]?.match(/(\w+): (rot[oa]|estropead[oa]|averiad[oa])/),
     thought: /^- Pensé: (.+)$/m.exec(p)?.[1],
     rumor,

@@ -12,6 +12,7 @@ import "./mock/narrative";
 import "./mock/decide";
 import "./mock/meetings";
 import "./mock/places";
+import "./mock/groups";
 
 export {
   agentMockResponder,

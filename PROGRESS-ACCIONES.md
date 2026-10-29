@@ -46,8 +46,8 @@ y comprobar que `pnpm dev` arranca en modo mock.
 
 ### Paso 4 — Conversaciones en grupo
 
-- [ ] Grupos con turnos, unirse y marcharse; límites configurables
-- [ ] Escuchas y Rashomon con grupos
+- [x] Grupos con turnos, unirse y marcharse; límites configurables
+- [x] Escuchas y Rashomon con grupos
 
 ### Paso 5 — Objetos e inventario
 
@@ -136,6 +136,16 @@ acciones en la lista y la AGENDA cuando la hay); el total vuelve a moverse por e
 Sin llamadas nuevas. El prompt fijo es un poco más corto (sin las casas que no conoce) y la
 entrada por decisión sube por la acción `explore` y, para quien descubre sitios, la lista de
 descubiertos. El total, de nuevo, es sobre todo ruido del mock.
+
+### Tras el paso 4 (grupos)
+
+|        | Llamadas | decide | social | Entrada no cacheada | Entrada por decisión | Entrada por `social` |
+| ------ | -------: | -----: | -----: | ------------------: | -------------------: | -------------------: |
+| Paso 3 |     2695 |    859 |    408 |             830 956 |                  605 |                  198 |
+| Paso 4 |     2949 |    959 |    439 |             988 762 |                  630 |                  293 |
+
+Sin llamadas nuevas por acción. En grupo se habla más (más decisiones) y la revisión social lleva
+la transcripción del grupo (más larga); se limita a `socialPartners` fichas por persona.
 
 ## Decisiones tomadas
 
@@ -253,3 +263,19 @@ descubiertos. El total, de nuevo, es sobre todo ruido del mock.
   invitados dónde es.
 - **Apertura**: en el mock, quien tiene la curiosidad alta ("te mueven la curiosidad y lo nuevo")
   explora con más frecuencia; con un LLM real lo decide su personalidad, que ya está en el prompt.
+- **Conversaciones en grupo** (`sim/conversations.ts`): una conversación tiene `members` (2 a
+  `conversation.maxMembers`, 5) en lugar de `a`/`b`. No hay acciones nuevas: **hablarle a alguien
+  que está conversando es unirse** a su grupo (y dejar el propio), hablarle a alguien suelto desde
+  un grupo le mete en él, y **seguir con el plan sin contestar a quien te habla es marcharse**; con
+  menos de dos, la conversación se acaba. `say` rechaza unirse a un grupo lleno.
+- **Turnos**: cada frase va a quien se dirige (le pide respuesta) y el resto del grupo la oye
+  entera con `toName` ("Mateo (a Carmen): …"): está en la conversación, no es una escucha a
+  escondidas, y no le obliga a contestar (en el mock, a veces mete baza: regla `chime-in`, más
+  quien es sociable). El máximo de seguridad crece con el grupo (`turnsPerExtraMember`).
+- **Escuchas**: solo quien está en el sitio y no en el grupo oye fragmentos. Los eventos de habla de
+  un grupo llevan `meta.group` para que el detector de dramas no cuente al grupo como espías.
+  Rashomon no cambia: todos los recuerdos de una conversación comparten su `eventId`.
+- **Fichas sociales**: al marcharse o al acabar, cada uno revisa lo que piensa de las
+  `socialPartners` (2) personas con quienes más habló (`pairs`, frases en cada sentido), no de todo
+  el grupo: el coste crece con las personas, no con las parejas. En una conversación de dos es lo
+  de siempre (una revisión por cada lado). Instantánea v12 (conversaciones con `members` y `pairs`).

@@ -147,8 +147,17 @@ export const MemoryConfig = z.object({
       safetyMaxTurns: z.number().int().positive().default(12),
       /** Minutos sin hablar tras los que una conversación se da por acabada. */
       idleMinutes: z.number().positive().default(30),
+      /** Personas como máximo en un grupo de conversación. */
+      maxMembers: z.number().int().min(2).default(5),
+      /** Turnos de seguridad extra por cada persona más allá de dos. */
+      turnsPerExtraMember: z.number().int().nonnegative().default(4),
+      /**
+       * Fichas sociales que actualiza cada uno al acabar (con quienes más habló): en un grupo
+       * no se revisa la opinión de todos sobre todos (una llamada al LLM por ficha).
+       */
+      socialPartners: z.number().int().positive().default(2),
     })
-    .default({ safetyMaxTurns: 12, idleMinutes: 30 }),
+    .prefault({}),
   /** Diario de hoy (`doneToday`): memoria a corto plazo del día, imprecisa con poca energía. */
   diary: z
     .object({

@@ -212,7 +212,8 @@ export interface DecideContext {
   needs: Needs;
   planItem: PlanItem | undefined;
   present: { id: string; name: string; action: string }[];
-  heard: { fromId: string; fromName: string; text: string }[];
+  /** Lo que le dicen; `toName` si en un grupo se lo dicen a otra persona. */
+  heard: { fromId: string; fromName: string; text: string; toName?: string }[];
   /** Con quién está conversando ahora, si con alguien. */
   conversationWith: string | null;
   /** Estado de los objetos del lugar que no están en "idle". */
@@ -244,7 +245,9 @@ export function decidePrompt(opts: DecideContext): string {
     ? opts.present.map((p) => `${p.id}=${p.name} (${p.action})`).join("; ")
     : "nadie";
   const heard = opts.heard.length
-    ? opts.heard.map((h) => `${h.fromId}=${h.fromName}: "${h.text}"`).join("\n")
+    ? opts.heard
+        .map((h) => `${h.fromId}=${h.fromName}${h.toName ? ` (a ${h.toName})` : ""}: "${h.text}"`)
+        .join("\n")
     : "(nada)";
   const plan = opts.planItem
     ? `${opts.planItem.activity} en ${opts.planItem.placeId}${opts.planItem.spotId ? `/${opts.planItem.spotId}` : ""} (desde ${formatClock(opts.planItem.startMinute)}, ${opts.planItem.durationMin} min)`

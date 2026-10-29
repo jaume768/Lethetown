@@ -50,6 +50,7 @@ describe("mock declarativo: reglas de decisión", () => {
       "no-mood",
       "answer-invitation",
       "reply",
+      "chime-in",
       "spread-rumor",
       "confide",
       "follow-idea",
@@ -137,6 +138,18 @@ describe("mock declarativo: reglas de decisión", () => {
       req(base("LUGARES QUE HAS DESCUBIERTO:\n- biblioteca (other): Biblioteca Mnemósine")),
     );
     expect(found.places.map((p) => p.id)).toContain("biblioteca");
+  });
+
+  it("en un grupo, lo que se dice a otro no pide respuesta, pero a veces mete baza", () => {
+    const group =
+      '\n- say {}: dices algo.\nPRESENTES: mateo=Mateo (charlando); carmen=Carmen (charlando)\nHABLAN:\nmateo=Mateo (a Carmen): "¿Viste la lluvia?"';
+    const c = ctx(group, 15);
+    expect(c.speaker).toBeUndefined();
+    expect(c.heard).toEqual([{ from: "mateo", text: "¿Viste la lluvia?", to: "Carmen" }]);
+    expect(rule("chime-in").respond(c)?.response).toMatchObject({
+      action: { type: "say", to: "mateo" },
+    });
+    expect(rule("chime-in").respond(ctx(group, 16))).toBeNull();
   });
 
   it("una acción nueva añade su regla donde quiere (y se puede sustituir)", () => {

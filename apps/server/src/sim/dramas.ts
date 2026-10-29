@@ -62,11 +62,14 @@ export class DramaDetector {
       return;
     }
     if (e.kind !== "speech" || !e.agentId) return;
-    const listeners = e.participants.length - 2;
+    // En un grupo, los demás del grupo están en la conversación: no escuchan a escondidas.
+    const group = new Set(e.meta?.group ?? []);
+    const hidden = e.participants.slice(2).filter((id) => !group.has(id));
+    const listeners = hidden.length;
     const rumor = looksLikeRumor(e.text);
     if (listeners <= 0 && !rumor) return;
     const kind: DramaKind = rumor ? "rumor" : "eavesdrop";
-    const others = e.participants.slice(2).map((id) => this.ctx.name(id));
+    const others = hidden.map((id) => this.ctx.name(id));
     const speaker = this.ctx.name(e.agentId);
     const title = rumor
       ? `${speaker} va contando lo que oyó${others.length ? ` (y ${others.join(", ")} lo oye)` : ""}`

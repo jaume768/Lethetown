@@ -56,7 +56,14 @@ export const SimEvent = z.object({
   /** Agentes implicados (hablante, oyente, quien lo oyó a escondidas...). */
   participants: z.array(z.string()).default([]),
   /** Acción del catálogo que lo produjo (para iconos y filtros) y si salió bien. */
-  meta: z.object({ action: z.string().optional(), ok: z.boolean().optional() }).optional(),
+  meta: z
+    .object({
+      action: z.string().optional(),
+      ok: z.boolean().optional(),
+      /** Frase en un grupo: los demás del grupo (están en la conversación, no escuchan a escondidas). */
+      group: z.array(z.string()).optional(),
+    })
+    .optional(),
 });
 export type SimEvent = z.infer<typeof SimEvent>;
 

@@ -10,7 +10,7 @@ import {
 import { z } from "zod";
 
 /** Sube este número si cambias la forma de la instantánea (las antiguas se ignoran). */
-export const SIM_SNAPSHOT_VERSION = 11;
+export const SIM_SNAPSHOT_VERSION = 12;
 
 /** Percepción pendiente (misma forma que `Perception` de agent-core). */
 const Perception = z.discriminatedUnion("kind", [
@@ -97,13 +97,12 @@ export const SimSnapshot = z.object({
   ),
   conversations: z.array(
     z.object({
-      key: z.string(),
       id: z.string(),
-      a: z.string(),
-      b: z.string(),
+      members: z.array(z.string()).min(2),
       turns: z.number(),
       lastAt: z.number(),
       transcript: z.array(z.string()),
+      pairs: z.record(z.string(), z.number()).default({}),
     }),
   ),
   /** Citas vivas y recientes, y el contador de ids. */

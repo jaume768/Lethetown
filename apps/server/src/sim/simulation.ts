@@ -17,13 +17,12 @@ import { exposedTo } from "@lethetown/shared";
 import type { GameClock } from "./clock";
 import {
   SimContext,
-  convKey,
   errorMessage,
   newRuntime,
   type SimSignal,
   type SimulationDeps,
 } from "./context";
-import { activeConversationOf, endConversation, endIdleConversations } from "./conversations";
+import { activeConversationOf, endIdleConversations, leaveConversation } from "./conversations";
 import { startDemo } from "./demo";
 import * as intervention from "./intervention";
 import { WEATHER_NOW } from "./intervention";
@@ -209,10 +208,7 @@ export class Simulation {
           },
         };
       }),
-      conversations: [...this.ctx.conversations.entries()].map(([key, c]) => ({
-        key,
-        ...structuredClone(c),
-      })),
+      conversations: [...this.ctx.conversations.values()].map((c) => structuredClone(c)),
       meetings: structuredClone([...this.ctx.meetings.values()]),
       meetingSeq: this.ctx.meetingSeq,
     };
@@ -241,8 +237,9 @@ export class Simulation {
       });
     }
     this.ctx.conversations.clear();
-    for (const { key, ...c } of s.conversations) {
-      if (this.agents.has(c.a) && this.agents.has(c.b)) this.ctx.conversations.set(key, c);
+    for (const c of s.conversations) {
+      const members = c.members.filter((m) => this.agents.has(m));
+      if (members.length >= 2) this.ctx.conversations.set(c.id, { ...c, members });
     }
     this.ctx.meetings.clear();
     for (const m of s.meetings) this.ctx.meetings.set(m.id, m);
@@ -397,7 +394,8 @@ export class Simulation {
     // Al pararse a pensar, repasa su agenda (las citas que tiene presentes se olvidan menos).
     if (perceptions.length) await rehearseAgenda(ctx, agent, this.clock.now());
     // Decidir.
-    const speaker = heard[0]?.fromId ?? null;
+    // Quien le habla a él o ella (en un grupo, lo que se dice a otros no pide respuesta).
+    const speaker = heard.find((h) => !h.toName)?.fromId ?? null;
     const decision = await agent.decide(this.clock.now(), {
       present,
       heard,
@@ -420,11 +418,10 @@ export class Simulation {
       };
     }
     if (innerVoice.length) reportInnerVoice(ctx, agent, decision);
-    // Fin de conversación natural: le hablaron y decidió no contestar a esa persona.
-    const answered =
-      decision.kind === "act" && decision.action.type === "say" && decision.action.to === speaker;
+    // Fin de conversación natural: le hablaron y decidió no contestar a nadie (se marcha).
+    const answered = decision.kind === "act" && decision.action.type === "say";
     if (speaker && !answered) {
-      await endConversation(ctx, convKey(agent.id, speaker), "decidió no seguir");
+      await leaveConversation(ctx, agent.id, "decidió no seguir");
     }
     await this.apply(agent, decision);
   }
@@ -444,11 +441,7 @@ export class Simulation {
         const conv = activeConversationOf(ctx, agent.id);
         if (conv && item.placeId !== agent.state.locationId) {
           const place = ctx.world.place(item.placeId).name;
-          void endConversation(
-            ctx,
-            convKey(agent.id, conv.other),
-            `${agent.seed.name} se fue a ${place}`,
-          );
+          void leaveConversation(ctx, agent.id, `${agent.seed.name} se fue a ${place}`);
         }
         return goOrDo(ctx, agent, item.placeId, item.spotId, item.activity, item.activityKind);
       }
@@ -490,7 +483,7 @@ function warnConversationPlan(ctx: SimContext, agent: Agent, now: number): void 
   const key = `${item.startMinute}:${conv.conv.id}`;
   if (rt.convWarned === key) return;
   rt.convWarned = key;
-  const other = ctx.agents.get(conv.other)?.seed.name ?? conv.other;
+  const other = conv.others.map((id) => ctx.agents.get(id)?.seed.name ?? id).join(", ");
   rt.pending.push({
     kind: "world",
     text: `Según tu plan ahora toca ${item.activity} en ${ctx.world.place(item.placeId).name}, pero estás hablando con ${other}.`,
