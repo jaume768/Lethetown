@@ -314,3 +314,34 @@ export const dramas = pgTable(
   },
   (t) => [index("dramas_world_time_idx").on(t.worldId, t.time)],
 );
+
+/** Citas entre agentes (compromisos): quién, dónde, cuándo y cómo acabó. */
+export const commitments = pgTable(
+  "commitments",
+  {
+    worldId: worldId(),
+    /** Id corto dentro del mundo ("c3"). */
+    id: text("id").notNull(),
+    organizerId: text("organizer_id").notNull(),
+    participants: text("participants").array().notNull(),
+    responses: jsonb("responses")
+      .$type<Record<string, "pending" | "accepted" | "declined">>()
+      .notNull(),
+    placeId: text("place_id").notNull(),
+    /** Minuto de juego en que empieza. */
+    at: doublePrecision("at").notNull(),
+    reason: text("reason").notNull(),
+    /** proposed | accepted | done | failed | cancelled. */
+    status: text("status").notNull(),
+    arrivals: jsonb("arrivals").$type<Record<string, number>>().notNull().default({}),
+    forgot: text("forgot").array().notNull().default([]),
+    intentions: jsonb("intentions").$type<Record<string, string>>().notNull().default({}),
+    flags: text("flags").array().notNull().default([]),
+    createdAt: doublePrecision("created_at").notNull(),
+    updatedAt: doublePrecision("updated_at").notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.worldId, t.id] }),
+    index("commitments_world_at_idx").on(t.worldId, t.at),
+  ],
+);

@@ -37,6 +37,18 @@ export class DramaDetector {
 
   /** Frases con oyentes de más: alguien escuchaba; si además cuenta algo oído, es un rumor. */
   onEvent(e: SimEvent): void {
+    // Plantón en una cita.
+    if (e.meta?.action === "meeting" && e.meta.ok === false && e.text.startsWith("💔")) {
+      this.publish(
+        "meeting_failed",
+        dramaScore.meetingFailed(e.participants.length - 1),
+        e.text.replace(/^💔 /, ""),
+        e.participants,
+        e.agentId ? this.ctx.placeOf(e.agentId) : null,
+        e.id,
+      );
+      return;
+    }
     if (e.kind !== "speech" || !e.agentId) return;
     const listeners = e.participants.length - 2;
     const rumor = looksLikeRumor(e.text);

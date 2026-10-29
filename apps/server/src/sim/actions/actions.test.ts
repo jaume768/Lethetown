@@ -38,7 +38,11 @@ describe("catálogo de acciones", () => {
     const now = app.defaultWorld.clock.now();
     expect(availableActions({ ctx, agent: lucia, now })).toEqual(["do_activity"]);
     at("mateo", "biblioteca");
-    expect(availableActions({ ctx, agent: lucia, now })).toEqual(["do_activity", "say"]);
+    expect(availableActions({ ctx, agent: lucia, now })).toEqual([
+      "do_activity",
+      "say",
+      "propose_meeting",
+    ]);
   });
 
   it("si no es posible, el agente lo percibe con el motivo y queda un evento con el resultado", async () => {

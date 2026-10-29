@@ -168,6 +168,8 @@ export function planPrompt(opts: {
   mood?: string;
   /** Lo que recuerda de ayer y sus costumbres ("- …", quizá vago), para no repetir siempre lo mismo. */
   yesterday?: string;
+  /** Compromisos de hoy ("- HH:MM actividad (lugar, N min)") que el plan debe respetar. */
+  fixed?: string[];
 }): string {
   return `TAREA: plan
 Es ${formatGameTime(opts.now)}. Planifica tu día desde las 07:00 hasta las 22:00 (de 22:00 a 07:00 duermes en casa).
@@ -178,7 +180,7 @@ Lo que recuerdas de ayer y tus costumbres (puede ser vago o incompleto; no hace 
 ${opts.yesterday}`
       : ""
   }
-${opts.mood ? `Ánimo al despertar: ${opts.mood}.\n` : ""}Necesidades (0 = vacía, 1 = llena): energía ${opts.needs.energy.toFixed(2)}, hambre ${opts.needs.hunger.toFixed(2)}, social ${opts.needs.social.toFixed(2)}.
+${opts.fixed?.length ? `Hoy tienes estas citas (respétalas en el plan):\n${opts.fixed.join("\n")}\n` : ""}${opts.mood ? `Ánimo al despertar: ${opts.mood}.\n` : ""}Necesidades (0 = vacía, 1 = llena): energía ${opts.needs.energy.toFixed(2)}, hambre ${opts.needs.hunger.toFixed(2)}, social ${opts.needs.social.toFixed(2)}.
 Lo que recuerdas ahora:
 ${opts.recalled}
 
@@ -223,6 +225,8 @@ export interface DecideContext {
   doneToday?: string;
   /** Acciones del catálogo posibles ahora. */
   actions: ActionType[];
+  /** Agenda: citas propuestas y aceptadas (líneas ya escritas por el motor). */
+  agenda?: string[];
   workingMemory: string;
 }
 
@@ -248,7 +252,7 @@ Es ${formatGameTime(opts.now)}. Estás en ${opts.locationId} haciendo: ${opts.ac
 Tu plan ahora: ${plan}
 HOY YA HAS HECHO:
 ${opts.doneToday || "- (nada todavía)"}
-OBJETOS: ${objects}
+${opts.agenda?.length ? `AGENDA:\n${opts.agenda.map((l) => `- ${l}`).join("\n")}\n` : ""}OBJETOS: ${objects}
 PRESENTES: ${present}
 CONVERSACIÓN: ${opts.conversationWith ?? "ninguna"}
 HABLAN:

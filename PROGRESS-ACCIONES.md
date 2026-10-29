@@ -31,11 +31,11 @@ y comprobar que `pnpm dev` arranca en modo mock.
 
 ### Paso 2 — Citas y compromisos
 
-- [ ] `propose_meeting`, `accept_meeting`, `decline_meeting`, `cancel_meeting`
-- [ ] Tabla `commitments` + instantánea + RAM
-- [ ] Hueco en el plan (hoy) y restricción en `planDay` (mañana)
-- [ ] Intenciones que se pueden olvidar; plantones, tardanzas, afinidad, dramas
-- [ ] Pestaña «Agenda»
+- [x] `propose_meeting`, `accept_meeting`, `decline_meeting`, `cancel_meeting`
+- [x] Tabla `commitments` + instantánea + RAM
+- [x] Hueco en el plan (hoy) y restricción en `planDay` (mañana)
+- [x] Intenciones que se pueden olvidar; plantones, tardanzas, afinidad, dramas
+- [x] Pestaña «Agenda»
 
 ### Paso 3 — Conocer el pueblo y explorar
 
@@ -116,6 +116,16 @@ Sin llamadas nuevas. La entrada por decisión sube un 5 % (la lista de acciones)
 el mock elige con el hash del prompt: al cambiar el texto cambian sus "dados" y en estas 48 h hubo más
 conversaciones (más decisiones). Es ruido del mock, no del diseño.
 
+### Tras el paso 2 (citas)
+
+|        | Llamadas | decide | Entrada no cacheada | Entrada por decisión |
+| ------ | -------: | -----: | ------------------: | -------------------: |
+| Paso 1 |     3468 |   1094 |             946 351 |                  507 |
+| Paso 2 |     2991 |    959 |             873 374 |                  552 |
+
+Sin llamadas nuevas (las citas van en la misma decisión). La entrada por decisión sube un 9 % (más
+acciones en la lista y la AGENDA cuando la hay); el total vuelve a moverse por el ruido del mock.
+
 ## Decisiones tomadas
 
 - **`agent.ts` como fachada**: la clase `Agent` conserva su API pública; el detalle vive en
@@ -183,3 +193,27 @@ conversaciones (más decisiones). Es ruido del mock, no del diseño.
   hay alguien).
 - **La protección de menores** revisa cualquier acción: todo su texto libre (`actionText`) con las
   personas que nombra (`actionPeople`) como actores.
+- **Citas** (`sim/meetings.ts`, `sim/actions/meetings.ts`): `propose_meeting` (a quien está aquí,
+  1-4 personas, hoy o mañana, de 07:00 a 22:00, con 30 min de antelación y como mucho 3 citas
+  abiertas), `accept_meeting`, `decline_meeting` y `cancel_meeting`, con ids cortos ("c3"). Viven en
+  el runtime (`ctx.meetings`, en la instantánea, v10) y se escriben en `commitments` (Postgres o
+  RAM) en cada cambio; el api las lee de ahí para la Agenda. El contador sigue al mayor id guardado.
+- **Agenda en el prompt** (sección AGENDA de decidir): invitaciones pendientes ("Responde con
+  accept_meeting o decline_meeting") y citas aceptadas. Aceptar reserva el hueco en el plan de hoy
+  (desde 20 min antes de la hora, 80 min); las de mañana entran en `planDay` como compromisos que
+  el prompt pide respetar y que se imponen después con `replanAt`.
+- **Memoria prospectiva de verdad**: cada participante guarda la intención sin pistas automáticas
+  y, 20 minutos antes, el motor tira "¿se acuerda?" con su perfil y la nitidez del recuerdo
+  (`recallIntentionNow`, base `prospective.appointmentRecall` = 0.9, más que una intención suelta).
+  Repasar la agenda (decidir con ella delante, una vez al día por cita) refuerza el recuerdo. Si se
+  le olvida pierde el hueco del plan (quizá caiga en la cuenta después). En mock se olvida ≈ 25 %.
+- **Ir y llegar**: quien se acuerda deja lo que hacía por su cuenta y el motor le lleva a la cita
+  en cada revisión (cada 5 min de juego) salvo si está hablando (una charla le puede hacer llegar
+  tarde). Llegar después de 10 min es llegar tarde (afinidad −0.03); a los 10 min, quien espera
+  percibe que el otro no llega; a los 45, la cita se da por cumplida o fallida.
+- **Plantón**: quien esperaba pierde afinidad (−0.15, la mitad si es familia o amistad) y confianza
+  (−0.1) hacia quien no vino, con motivo en el historial; su ánimo baja (más preocupación si es
+  alguien cercano, más enfado si no) y lo percibe. Evento 💔 y drama `meeting_failed`.
+- **Anular a última hora** (menos de 3 h) molesta un poco a los demás (−0.03).
+- **Menores**: si en la cita hay un menor y algún adulto, solo en un lugar público (o en la casa
+  del propio menor, con su familia). La protección de menores revisa además el texto del motivo.

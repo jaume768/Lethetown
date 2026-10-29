@@ -23,6 +23,7 @@ import * as intervention from "./intervention";
 import { WEATHER_NOW } from "./intervention";
 import { consolidate, maintain, scheduleChronicle, writeChronicle } from "./memory-routines";
 import { availableActions, failAction, runAction } from "./actions";
+import { agendaLines, fixedPlanFor, meetingsTick, rehearseAgenda } from "./meetings";
 import { gatherPerceptions, presentWith } from "./perception";
 import { goOrDo, scheduleArrival, setAction, travel } from "./routines";
 import { SIM_SNAPSHOT_VERSION, type SimSnapshot } from "./snapshot";
@@ -31,6 +32,8 @@ import type { WorldMap } from "./world";
 export type { SimSignal, SimulationDeps } from "./context";
 
 const SPEECH_BUBBLE_MINUTES = 20;
+/** Cada cuántos minutos de juego se revisan las citas. */
+const MEETINGS_EVERY = 5;
 
 /**
  * Orquesta la simulación de un mundo: el bucle de cada agente (percibir → guardar → decidir →
@@ -121,8 +124,23 @@ export class Simulation {
       this.clock.schedule(now + i, () => this.agentTick(agent));
     });
     scheduleChronicle(this.ctx, now);
+    this.scheduleMeetings(now);
     if (this.ctx.deps.demoEveryMinutes) startDemo(this.ctx, this.ctx.deps.demoEveryMinutes);
     this.ctx.emit("system", null, `Simulación iniciada con ${this.agents.size} agentes`);
+  }
+
+  /** Revisión de las citas cada pocos minutos de juego (quién sale, quién llega, plantones). */
+  private scheduleMeetings(from: number): void {
+    const next = (Math.floor(from / MEETINGS_EVERY) + 1) * MEETINGS_EVERY;
+    this.clock.schedule(next, async () => {
+      await meetingsTick(this.ctx, next);
+      this.scheduleMeetings(next);
+    });
+  }
+
+  /** Primer id libre de cita (si no se restauró una instantánea, los guardados mandan). */
+  setMeetingSeq(seq: number): void {
+    this.ctx.meetingSeq = Math.max(this.ctx.meetingSeq, seq);
   }
 
   onEvent(listener: (e: SimEvent) => void): () => void {
@@ -178,6 +196,8 @@ export class Simulation {
         key,
         ...structuredClone(c),
       })),
+      meetings: structuredClone([...this.ctx.meetings.values()]),
+      meetingSeq: this.ctx.meetingSeq,
     };
   }
 
@@ -207,6 +227,9 @@ export class Simulation {
     for (const { key, ...c } of s.conversations) {
       if (this.agents.has(c.a) && this.agents.has(c.b)) this.ctx.conversations.set(key, c);
     }
+    this.ctx.meetings.clear();
+    for (const m of s.meetings) this.ctx.meetings.set(m.id, m);
+    this.ctx.meetingSeq = s.meetingSeq;
     this.restored = true;
   }
 
@@ -313,7 +336,7 @@ export class Simulation {
         );
       }
       setAction(ctx, agent, "pensando en el día", "idle");
-      const plan = await agent.planDay(now, ctx.world.weather);
+      const plan = await agent.planDay(now, ctx.world.weather, fixedPlanFor(ctx, agent.id, day));
       ctx.emit("plan", agent.id, `Plan: ${plan.map((p) => p.activity).join(" → ")}`, [agent.id]);
     }
 
@@ -354,6 +377,8 @@ export class Simulation {
     const innerVoice = perceptions.flatMap((p) => (p.kind === "thought" ? [p.text] : []));
     // Guardar.
     await agent.perceive(perceptions, this.clock.now());
+    // Al pararse a pensar, repasa su agenda (las citas que tiene presentes se olvidan menos).
+    if (perceptions.length) await rehearseAgenda(ctx, agent, this.clock.now());
     // Decidir.
     const speaker = heard[0]?.fromId ?? null;
     const decision = await agent.decide(this.clock.now(), {
@@ -368,6 +393,7 @@ export class Simulation {
       innerVoice,
       salient: perceptions.length > 0,
       actions: availableActions({ ctx, agent, now: this.clock.now() }),
+      agenda: agendaLines(ctx, agent.id, this.clock.now()),
     });
     if (decision.reason) {
       agent.state.reasoning = {

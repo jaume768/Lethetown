@@ -10,6 +10,7 @@ import {
 } from "@lethetown/shared";
 import { z } from "zod";
 import type { WorldRuntime } from "../bootstrap";
+import type { CommitmentStore } from "../db/commitments";
 import type { ChronicleStore, DramaStore, EventStore } from "../db/stores";
 import type { SimSignal } from "../sim/simulation";
 
@@ -63,6 +64,7 @@ export interface WorldGateway {
   events: EventStore;
   chronicles: ChronicleStore;
   dramas: DramaStore;
+  commitments: CommitmentStore;
   costs(): CostSummary & { unpricedModels: string[] };
   command(cmd: WorldCommand): Promise<CommandResult>;
   onSignal(listener: (s: SimSignal | { type: "cost"; summary: CostSummary }) => void): () => void;
@@ -158,6 +160,9 @@ export class LocalWorldGateway implements WorldGateway {
   }
   get dramas() {
     return this.w.dramas;
+  }
+  get commitments() {
+    return this.w.commitments;
   }
 
   live() {

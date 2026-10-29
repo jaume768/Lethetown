@@ -7,6 +7,7 @@ import { api, gameTimeNow } from "../net/store";
 import { formatGameTime, formatMinuteOfDay } from "./format";
 import { filterMemories } from "./filters";
 import { Portrait } from "./Portrait";
+import { AgendaPanel } from "./AgendaPanel";
 import { RelationshipsPanel } from "./RelationshipsPanel";
 import { Tabs } from "./Tabs";
 
@@ -63,7 +64,7 @@ export function MemoryGarden(props: Props) {
   const { agent, agents, world, thinkingTask, canIntervene } = props;
   const { onFocus, onSelectAgent, marksOn, onMarksOn, onMarks, onOpenNetwork } = props;
   const { t } = useI18n();
-  const [view, setView] = useState<"mind" | "relations">("mind");
+  const [view, setView] = useState<"mind" | "relations" | "agenda">("mind");
   const [data, setData] = useState<AgentMemoryResponse | null>(null);
   const [person, setPerson] = useState("");
   const [place, setPlace] = useState("");
@@ -152,12 +153,15 @@ export function MemoryGarden(props: Props) {
         tabs={[
           { id: "mind", label: t("inspector.mind") },
           { id: "relations", label: t("inspector.relations") },
+          { id: "agenda", label: t("inspector.agenda") },
         ]}
         active={view}
         onChange={setView}
         label={t("inspector.label")}
       >
-        {view === "relations" ? (
+        {view === "agenda" ? (
+          <AgendaPanel agent={agent} agents={agents} world={world} />
+        ) : view === "relations" ? (
           <RelationshipsPanel
             agent={agent}
             onFocus={onFocus}

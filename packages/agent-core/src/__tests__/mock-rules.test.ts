@@ -48,11 +48,14 @@ describe("mock declarativo: reglas de decisión", () => {
       "shelter",
       "plan-clash",
       "no-mood",
+      "answer-invitation",
       "reply",
       "spread-rumor",
       "confide",
       "follow-idea",
+      "propose-meeting",
       "greet",
+      "cancel-meeting",
       "ponder",
     ]);
   });

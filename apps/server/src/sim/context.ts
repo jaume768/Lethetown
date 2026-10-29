@@ -13,12 +13,14 @@ import type {
 import type {
   ActivityKind,
   AgentSeed,
+  Commitment,
   ServerMessage,
   SimEvent,
   SimEventKind,
   TilePoint,
 } from "@lethetown/shared";
 import type { ChronicleStore, EventStore } from "../db/stores";
+import { InMemoryCommitmentStore, type CommitmentStore } from "../db/commitments";
 import type { GameClock } from "./clock";
 import type { WorldMap } from "./world";
 
@@ -111,6 +113,10 @@ export interface SimulationDeps {
   language?: PromptLanguage;
   /** Modo demostración: minutos de juego entre sucesos (sin definir = apagado). */
   demoEveryMinutes?: number;
+  /** Citas entre agentes (si no se pasa, en RAM). */
+  commitments?: CommitmentStore;
+  /** Escrituras en segundo plano (para esperarlas al cerrar). */
+  track?: (write: Promise<unknown>) => void;
 }
 
 /** Señales que la simulación emite hacia los clientes (además de los eventos del log). */
@@ -127,10 +133,17 @@ export class SimContext {
   readonly agents = new Map<string, Agent>();
   readonly runtime = new Map<string, Runtime>();
   readonly conversations = new Map<string, Conversation>();
+  /** Citas vivas (propuestas o aceptadas) y recientes; también en la instantánea. */
+  readonly meetings = new Map<string, Commitment>();
+  /** Contador de ids cortos de cita ("c1", "c2"…). */
+  meetingSeq = 0;
+  readonly commitments: CommitmentStore;
   private readonly eventListeners: ((e: SimEvent) => void)[] = [];
   private readonly signalListeners: ((s: SimSignal) => void)[] = [];
 
-  constructor(readonly deps: SimulationDeps) {}
+  constructor(readonly deps: SimulationDeps) {
+    this.commitments = deps.commitments ?? new InMemoryCommitmentStore();
+  }
 
   get clock(): GameClock {
     return this.deps.clock;

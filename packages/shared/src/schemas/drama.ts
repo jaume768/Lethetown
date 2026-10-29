@@ -22,6 +22,14 @@ export const DramaKind = z.enum([
   "intention_forgotten",
   /** Una relación cambia de tipo (de amistad a rivalidad…). */
   "relationship",
+  /** Alguien no fue a una cita (plantón). */
+  "meeting_failed",
+  /** Un préstamo que no se devuelve. */
+  "loan_unreturned",
+  /** Alguien entra en una casa ajena. */
+  "intruder",
+  /** Alguien descubre un lugar del pueblo. */
+  "discovery",
 ]);
 export type DramaKind = z.infer<typeof DramaKind>;
 
@@ -61,6 +69,11 @@ export const dramaScore = {
   intention: (importance: number, forgotten: boolean) =>
     Math.min(1, (forgotten ? 0.5 : 0.35) + importance / 20),
   relationship: (affinity: number) => Math.min(1, 0.55 + Math.abs(affinity) * 0.4),
+  /** Plantón: más interés cuantos más se quedaron esperando. */
+  meetingFailed: (waiting: number) => Math.min(1, 0.6 + 0.1 * waiting),
+  loanUnreturned: () => 0.6,
+  intruder: () => 0.75,
+  discovery: () => 0.5,
 };
 
 /** ¿Parece que alguien cuenta algo que oyó? (rumor que se propaga). */

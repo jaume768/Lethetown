@@ -1,6 +1,7 @@
 import { clarityFor, currentStrength, type MemoryRecord } from "@lethetown/agent-core";
 import type {
   AgentMemoryResponse,
+  CommitmentsResponse,
   MemoryView,
   RashomonAccount,
   RashomonResponse,
@@ -304,6 +305,23 @@ export function registerWorldRest(server: FastifyInstance, ctx: ApiContext): voi
       return body;
     },
   );
+
+  /** Agenda del agente: sus citas, de la más reciente a la más antigua. */
+  server.get<{ Params: { id: string } }>("/agents/:id/commitments", async (req, reply) => {
+    const w = worldOf(ctx, req, reply);
+    if (!w) return reply;
+    const live = w.live();
+    if (!live.agents.some((a) => a.id === req.params.id)) {
+      return reply.code(404).send({ error: "Agente no encontrado" });
+    }
+    const { limit } = HistoryQuery.parse(req.query);
+    const body: CommitmentsResponse = {
+      agentId: req.params.id,
+      now: live.time,
+      items: await w.commitments.listFor(req.params.id, Math.min(limit, 200)),
+    };
+    return body;
+  });
 
   /** Red del pueblo ahora: agentes y todas las fichas. */
   server.get("/social/graph", async (req, reply) => {

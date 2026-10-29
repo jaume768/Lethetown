@@ -34,7 +34,51 @@ export const SayAction = z.object({
   text: z.string().trim().min(1).max(400),
 });
 
-export const AgentAction = z.discriminatedUnion("type", [DoActivityAction, SayAction]);
+/** Una o varias personas (acepta un id suelto). */
+const People = z
+  .union([z.string(), z.array(z.string())])
+  .transform((v) => (Array.isArray(v) ? v : [v]))
+  .pipe(z.array(z.string().min(1)).min(1).max(4));
+
+/** Proponer una cita (a quien está aquí): lugar, hora de hoy o de mañana y motivo. */
+export const ProposeMeetingAction = z.object({
+  type: z.literal("propose_meeting"),
+  with: People,
+  placeId: z.string().min(1),
+  /** "HH:MM" */
+  at: z.string().regex(/^\d{1,2}:\d{2}$/),
+  day: z.enum(["hoy", "mañana"]).catch("hoy").default("hoy"),
+  reason: z.string().trim().min(1).max(160),
+});
+
+/** Aceptar una cita que le han propuesto. */
+export const AcceptMeetingAction = z.object({
+  type: z.literal("accept_meeting"),
+  meetingId: z.string().min(1),
+});
+
+/** Rechazar una cita que le han propuesto. */
+export const DeclineMeetingAction = z.object({
+  type: z.literal("decline_meeting"),
+  meetingId: z.string().min(1),
+  reason: z.string().trim().max(160).optional(),
+});
+
+/** Anular una cita en la que está. */
+export const CancelMeetingAction = z.object({
+  type: z.literal("cancel_meeting"),
+  meetingId: z.string().min(1),
+  reason: z.string().trim().max(160).optional(),
+});
+
+export const AgentAction = z.discriminatedUnion("type", [
+  DoActivityAction,
+  SayAction,
+  ProposeMeetingAction,
+  AcceptMeetingAction,
+  DeclineMeetingAction,
+  CancelMeetingAction,
+]);
 export type AgentAction = z.infer<typeof AgentAction>;
 export type ActionType = AgentAction["type"];
 
@@ -57,6 +101,27 @@ export const ACTION_SPECS: Record<ActionType, ActionSpec> = {
     type: "say",
     params: '{"to":"id de alguien presente","text":"…"}',
     description: "dices algo breve a alguien que está aquí",
+  },
+  propose_meeting: {
+    type: "propose_meeting",
+    params:
+      '{"with":["id de alguien presente"],"placeId":"…","at":"HH:MM","day":"hoy|mañana","reason":"…"}',
+    description: "propones quedar con quien está aquí en un sitio y a una hora",
+  },
+  accept_meeting: {
+    type: "accept_meeting",
+    params: '{"meetingId":"…"}',
+    description: "aceptas una cita que te han propuesto (ver AGENDA)",
+  },
+  decline_meeting: {
+    type: "decline_meeting",
+    params: '{"meetingId":"…","reason":"…"}',
+    description: "rechazas una cita que te han propuesto",
+  },
+  cancel_meeting: {
+    type: "cancel_meeting",
+    params: '{"meetingId":"…","reason":"…"}',
+    description: "anulas una cita de tu agenda",
   },
 };
 

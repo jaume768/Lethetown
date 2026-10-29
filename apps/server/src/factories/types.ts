@@ -25,6 +25,7 @@ import {
 } from "../db/stores";
 import { type SnapshotStore, type WorldRepo } from "../db/worlds";
 import type { Metrics } from "../observability";
+import type { CommitmentStore } from "../db/commitments";
 import type { RetentionConfig, RetentionReport } from "../retention";
 import type { GameClock } from "../sim/clock";
 import type { LimitedProvider } from "../sim/llm-queue";
@@ -101,6 +102,8 @@ export interface WorldRuntime {
   /** Programa la simulación y las instantáneas horarias (no arranca el reloj real). */
   start(): void;
   saveSnapshot(reason: string): Promise<void>;
+  /** Citas de los agentes de este mundo. */
+  commitments: CommitmentStore;
   /** Retención: poda lo más antiguo de este mundo (ver retention.ts). */
   prune(): Promise<RetentionReport>;
   /** Guarda una instantánea de apagado y para el reloj. */

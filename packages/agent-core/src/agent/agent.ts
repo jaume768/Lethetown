@@ -127,8 +127,18 @@ export class Agent {
    * con sus pistas (persona, lugar, hora) que se lleva en la cabeza (`mind.intentions`).
    * Devuelve false si no se guarda (repetida, protección de menores, desactivado).
    */
-  intend(now: number, input: IntentionInput): Promise<boolean> {
+  intend(now: number, input: IntentionInput): Promise<string | null> {
     return _intentions.intend(this, now, input);
+  }
+
+  /** Repasa una intención (mirar la agenda la refuerza). */
+  rehearseIntention(memoryId: string, now: number): Promise<boolean> {
+    return _intentions.rehearseIntention(this, memoryId, now);
+  }
+
+  /** Intenta recordar ahora una intención concreta (una cita…). Devuelve si se acordó. */
+  recallIntentionNow(memoryId: string, now: number): Promise<boolean> {
+    return _intentions.recallIntentionNow(this, memoryId, now);
   }
 
   /**
@@ -185,8 +195,9 @@ export class Agent {
   }
 
   /** Planifica el día con el modelo de reflexión. */
-  planDay(now: number, weather: Weather = "sunny"): Promise<PlanItem[]> {
-    return _planning.planDay(this, now, weather);
+  /** Planifica el día; `fixed` son compromisos (citas) que el plan debe respetar. */
+  planDay(now: number, weather: Weather = "sunny", fixed: PlanItem[] = []): Promise<PlanItem[]> {
+    return _planning.planDay(this, now, weather, fixed);
   }
 
   /** Percibir → guardar: convierte percepciones en recuerdos con importancia y valencia. */

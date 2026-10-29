@@ -24,11 +24,12 @@ function describeCue(i: IntentionState, names: Record<string, string> = {}): str
  * con sus pistas (persona, lugar, hora) que se lleva en la cabeza (`mind.intentions`).
  * Devuelve false si no se guarda (repetida, protección de menores, desactivado).
  */
-export async function intend(a: Agent, now: number, input: IntentionInput): Promise<boolean> {
+/** Devuelve el id del recuerdo de la intención, o null si no se guarda. */
+export async function intend(a: Agent, now: number, input: IntentionInput): Promise<string | null> {
   const memory = a.deps.memory;
   const cfg = memory.config.prospective;
   const text = input.text.trim().replace(/[.。]+$/, "");
-  if (!cfg.enabled || !text) return false;
+  if (!cfg.enabled || !text) return null;
   // Solo personas del pueblo (las que conoce por su id).
   const known = (id: string | null | undefined) =>
     id && a.deps.names && id in a.deps.names ? id : null;
@@ -36,7 +37,7 @@ export async function intend(a: Agent, now: number, input: IntentionInput): Prom
   const placeId = a.validPlace(input.placeId ?? undefined) ?? null;
   const atMinute = input.at ? parseClock(input.at) : null;
   const open = a.mind.intentions.filter((i) => i.status === "pending" || i.status === "forgotten");
-  if (open.some((i) => i.text.toLowerCase() === text.toLowerCase())) return false;
+  if (open.some((i) => i.text.toLowerCase() === text.toLowerCase())) return null;
   const meta = {
     intention: { status: "pending" as const, personId, placeId, atMinute, misses: 0 },
   };
@@ -53,7 +54,7 @@ export async function intend(a: Agent, now: number, input: IntentionInput): Prom
     },
     now,
   );
-  if (!record) return false;
+  if (!record) return null;
   a.mind.intentions = [
     ...open,
     {
@@ -69,7 +70,7 @@ export async function intend(a: Agent, now: number, input: IntentionInput): Prom
       cueActive: true,
     },
   ].slice(-cfg.maxOpen);
-  return true;
+  return record.id;
 }
 
 /**
@@ -213,4 +214,70 @@ export async function closeIntention(
     reason: `${i.text}: ${why}`,
     at: now,
   });
+}
+
+/**
+ * Repasar una intención (p. ej. al mirar la agenda): recordarla la refuerza, como cualquier
+ * recuerdo. Devuelve si seguía ahí.
+ */
+export async function rehearseIntention(a: Agent, memoryId: string, now: number): Promise<boolean> {
+  const memory = a.deps.memory;
+  const rec = await memory.store.get(memoryId);
+  if (!rec || rec.status !== "active") return false;
+  if (currentStrength(rec, now) < memory.config.retrieval.forgetThreshold) return false;
+  await memory.store.update(memoryId, reinforce(rec, now, memory.config.decay));
+  return true;
+}
+
+/**
+ * Intento de recordar ahora una intención concreta (p. ej. una cita, un rato antes): misma
+ * probabilidad que con una pista (perfil y nitidez del recuerdo). Se cierra como cumplida o
+ * olvidada, con su auditoría. Devuelve si se acordó.
+ */
+export async function recallIntentionNow(
+  a: Agent,
+  memoryId: string,
+  now: number,
+): Promise<boolean> {
+  const memory = a.deps.memory;
+  const cfg = memory.config.prospective;
+  const i = a.mind.intentions.find((x) => x.memoryId === memoryId);
+  const rec = await memory.store.get(memoryId);
+  if (!i || !rec || rec.status !== "active") return false;
+  const strength = currentStrength(rec, now);
+  const chance =
+    strength < memory.config.retrieval.forgetThreshold
+      ? 0
+      : recallChance(
+          memory.profileOf(a.id).intentionForgetting,
+          strength,
+          cfg,
+          cfg.appointmentRecall,
+        );
+  const kept = memory.rng() < chance;
+  if (kept) {
+    await closeIntention(a, i, rec, "done", now, "se acordó a tiempo");
+    a.mind.intentions = a.mind.intentions.filter((x) => x !== i);
+  } else {
+    i.status = "forgotten";
+    i.misses = cfg.maxMisses;
+    await syncIntention(a, i, rec);
+    await memory.audit({
+      agentId: a.id,
+      memoryId: rec.id,
+      memoryText: rec.text,
+      action: "intention_forgotten",
+      reason: `llegado el momento, no se acordó de ${i.text}`,
+      at: now,
+    });
+  }
+  memory.emitEffect({
+    kind: "intention",
+    agentId: a.id,
+    memoryId,
+    text: i.text,
+    importance: cfg.importance,
+    outcome: kept ? "kept" : "forgotten",
+  });
+  return kept;
 }

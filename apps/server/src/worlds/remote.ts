@@ -1,4 +1,5 @@
 import { MemorySystem, profilesFor } from "@lethetown/agent-core";
+import { PgCommitmentStore } from "../db/commitments";
 import {
   AgentState,
   RUNNING,
@@ -56,6 +57,7 @@ export class RemoteWorldGateway implements WorldGateway {
   readonly events: PgEventStore;
   readonly chronicles: PgChronicleStore;
   readonly dramas: PgDramaStore;
+  readonly commitments: PgCommitmentStore;
   private readonly map: WorldMap;
   private state: LiveState;
   /** Date.now() al recibir el último estado vivo. */
@@ -85,6 +87,7 @@ export class RemoteWorldGateway implements WorldGateway {
     this.events = new PgEventStore(db, row.id);
     this.chronicles = new PgChronicleStore(db, row.id);
     this.dramas = new PgDramaStore(db, row.id);
+    this.commitments = new PgCommitmentStore(db, row.id);
     this.state = initial;
     this.applySpots(initial.spots);
   }

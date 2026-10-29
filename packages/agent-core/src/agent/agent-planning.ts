@@ -8,6 +8,8 @@ import { describeMood } from "./mood";
 import { PlanResponse, parseWith } from "./parse";
 import { parseClock, planPrompt } from "./prompts";
 import type { Agent } from "./agent";
+import { formatClock } from "./prompts";
+import { replanAt } from "./replan";
 import type { DayEndReport } from "./agent-types";
 import { socialDayEnd } from "./agent-social";
 import { safe } from "./agent-decision";
@@ -181,6 +183,8 @@ export async function planDay(
   a: Agent,
   now: number,
   weather: Weather = "sunny",
+  /** Compromisos (citas) de hoy: van al prompt y se respetan en el plan. */
+  fixed: PlanItem[] = [],
 ): Promise<PlanItem[]> {
   // Lo que recuerda de ayer y sus costumbres orientan el plan de hoy; se empieza otro diario.
   const yesterday = await recallYesterday(a, now);
@@ -207,6 +211,10 @@ export async function planDay(
         weather,
         mood: describeMood(a.state.mood),
         yesterday: yesterday.text,
+        fixed: fixed.map(
+          (f) =>
+            `- ${formatClock(f.startMinute)} ${f.activity} (${f.placeId}, ${f.durationMin} min)`,
+        ),
       }),
     });
     const plan = parseWith(PlanResponse, res.text)
@@ -235,6 +243,8 @@ export async function planDay(
     a.deps.onError?.(a.id, "plan", error);
     a.state.plan = fallbackPlan(a.seed.homeId);
   }
+  // Las citas mandan sobre lo planeado (aunque el modelo no las haya respetado).
+  for (const f of fixed) a.state.plan = replanAt(a.state.plan, f.startMinute, f, f.durationMin);
   await a.deps.memory.tryRemember(
     {
       agentId: a.id,

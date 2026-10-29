@@ -10,6 +10,7 @@ import "./mock/plan";
 import "./mock/memory";
 import "./mock/narrative";
 import "./mock/decide";
+import "./mock/meetings";
 
 export {
   agentMockResponder,

@@ -4,6 +4,7 @@ export * from "./schemas/memory";
 export * from "./schemas/api";
 export * from "./schemas/messages";
 export * from "./schemas/drama";
+export * from "./schemas/commitment";
 export * from "./map/tiled";
 export * from "./map/pathfinding";
 export * from "./map/movement";

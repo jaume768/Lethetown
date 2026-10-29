@@ -69,6 +69,7 @@ export type DecideInput = Omit<
   | "innerVoice"
   | "doneToday"
   | "actions"
+  | "agenda"
 > & {
   salient: boolean;
   /** El tiempo que hace; el agente describe cómo le afecta según dónde está. */
@@ -80,6 +81,8 @@ export type DecideInput = Omit<
    * `do_activity`, y `say` si hay alguien.
    */
   actions?: ActionType[];
+  /** Agenda (citas propuestas y aceptadas), ya escrita por el motor. */
+  agenda?: string[];
 };
 
 /** Qué ha pasado con una intención en este tick. */

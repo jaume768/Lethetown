@@ -34,7 +34,7 @@ export async function decide(a: Agent, now: number, input: DecideInput): Promise
   }
 
   try {
-    const { salient: _salient, actions, ...context } = input;
+    const { salient: _salient, actions, agenda, ...context } = input;
     const res = await a.deps.llm.run({
       kind: "fast",
       task: "decide",
@@ -44,6 +44,7 @@ export async function decide(a: Agent, now: number, input: DecideInput): Promise
         ...context,
         weather: a.weatherHere(input.weather),
         actions: actions ?? defaultActions(input.present),
+        agenda,
         innerVoice: (input.innerVoice ?? []).map(untrusted),
         doneToday: a.diaryText(),
         now,

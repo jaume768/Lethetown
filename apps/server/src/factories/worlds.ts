@@ -35,6 +35,11 @@ import { parseSnapshot } from "../sim/snapshot";
 import { describeBreach } from "../security/budget";
 import { WorldMap } from "../sim/world";
 import { readJson } from "./files";
+import {
+  InMemoryCommitmentStore,
+  PgCommitmentStore,
+  type CommitmentStore,
+} from "../db/commitments";
 import { describeReport, pruneGlobalPg, pruneWorldPg, pruneWorldRam } from "../retention";
 import { createWorldLlm } from "./llm";
 import { createMaintenance, createWorldMemory } from "./memory";
@@ -78,6 +83,9 @@ export async function openWorld(services: Services, row: WorldRow): Promise<Worl
   const social: SocialProfileStore = detector.observe(rawSocial);
   const dramas: DramaStore = db ? new PgDramaStore(db.db, row.id) : new InMemoryDramaStore();
   const events: EventStore = db ? new PgEventStore(db.db, row.id) : new InMemoryEventStore();
+  const commitments: CommitmentStore = db
+    ? new PgCommitmentStore(db.db, row.id)
+    : new InMemoryCommitmentStore();
   const chronicles: ChronicleStore = db
     ? new PgChronicleStore(db.db, row.id)
     : new InMemoryChronicleStore();
@@ -110,6 +118,8 @@ export async function openWorld(services: Services, row: WorldRow): Promise<Worl
     rng,
     language: row.language,
     demoEveryMinutes: config.SIM_DEMO === "on" ? config.SIM_DEMO_EVERY_MINUTES : undefined,
+    commitments,
+    track: (w) => services.track(w),
   });
   placeOf = (id) => sim.agents.get(id)?.state.locationId ?? null;
   sim.onEvent((e) => detector.onEvent(e));
@@ -131,6 +141,7 @@ export async function openWorld(services: Services, row: WorldRow): Promise<Worl
   sim.onTick(() => services.metrics.simTicks.inc({ world: row.id }));
   const seeded = await sim.seedMemoriesIfEmpty(startTime);
   if (seeded) worldLog(`Sembrados los recuerdos iniciales de ${seeded} agentes.`);
+  sim.setMeetingSeq(await commitments.maxSeq());
   if (snapshot) {
     sim.restore(snapshot);
     worldLog(`Estado restaurado de la instantánea de ${formatGameTime(snapshot.time)}.`);
@@ -179,6 +190,7 @@ export async function openWorld(services: Services, row: WorldRow): Promise<Worl
     events,
     chronicles,
     dramas,
+    commitments,
     costs,
     restoredFrom: snapshot?.time ?? null,
     status: () => status,

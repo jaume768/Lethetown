@@ -1,9 +1,16 @@
 import { AgentMind } from "@lethetown/agent-core";
-import { ActivityKind, AgentState, SimSpeed, TilePoint, Weather } from "@lethetown/shared";
+import {
+  ActivityKind,
+  AgentState,
+  Commitment,
+  SimSpeed,
+  TilePoint,
+  Weather,
+} from "@lethetown/shared";
 import { z } from "zod";
 
 /** Sube este número si cambias la forma de la instantánea (las antiguas se ignoran). */
-export const SIM_SNAPSHOT_VERSION = 9;
+export const SIM_SNAPSHOT_VERSION = 10;
 
 /** Percepción pendiente (misma forma que `Perception` de agent-core). */
 const Perception = z.discriminatedUnion("kind", [
@@ -99,6 +106,9 @@ export const SimSnapshot = z.object({
       transcript: z.array(z.string()),
     }),
   ),
+  /** Citas vivas y recientes, y el contador de ids. */
+  meetings: z.array(Commitment).default([]),
+  meetingSeq: z.number().int().nonnegative().default(0),
 });
 export type SimSnapshot = z.infer<typeof SimSnapshot>;
 
