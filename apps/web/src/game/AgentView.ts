@@ -3,6 +3,7 @@ import {
   emoteFor,
   emoteForMemoryEffect,
   pickFrame,
+  type AffinityIcon,
   type AgentState,
   type CharacterSheet,
   type Emote,
@@ -33,6 +34,8 @@ export class AgentView {
   private readonly outline: Phaser.GameObjects.Sprite[];
   private readonly label: Phaser.GameObjects.Text;
   private readonly emote: Phaser.GameObjects.Image;
+  /** Lo que el agente seleccionado piensa de este (corazón, indiferencia, enfado). */
+  private readonly mark: Phaser.GameObjects.Image;
   private readonly bubble: Phaser.GameObjects.Container;
   private readonly bubbleBg: Phaser.GameObjects.NineSlice;
   private readonly bubbleText: Phaser.GameObjects.Text;
@@ -87,6 +90,11 @@ export class AgentView {
       .image(0, -height + 4, emoteKey("dots"))
       .setOrigin(0.5, 1)
       .setVisible(false);
+    this.mark = scene.add
+      .image(8, -height + 2, emoteKey("meh"))
+      .setOrigin(0.5, 1)
+      .setScale(0.75)
+      .setVisible(false);
 
     this.bubbleBg = scene.add
       .nineslice(
@@ -122,6 +130,7 @@ export class AgentView {
       this.body,
       this.label,
       this.emote,
+      this.mark,
       this.bubble,
     ]);
     this.body
@@ -179,6 +188,12 @@ export class AgentView {
       this.typed = 0;
       this.readFor = 0;
     }
+  }
+
+  /** Marca de afinidad (null = sin marca). */
+  setMark(icon: AffinityIcon | null) {
+    if (!icon) return void this.mark.setVisible(false);
+    this.mark.setTexture(emoteKey(icon === "neutral" ? "meh" : icon)).setVisible(true);
   }
 
   /** Efecto visual de memoria. */

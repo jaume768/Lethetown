@@ -94,3 +94,23 @@ test("overlay para OBS: fondo transparente, reloj y dramas", async ({ page }) =>
   const bg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
   expect(bg).toBe("rgba(0, 0, 0, 0)");
 });
+
+test("relaciones: pestaña del inspector, recíproca y red del pueblo", async ({ page }) => {
+  await open(page, "/?agent=rafael");
+  // En móvil los paneles van en una hoja inferior que hay que abrir.
+  const handle = page.locator(".sheet-handle");
+  if (await handle.isVisible()) await handle.click();
+  await page.getByRole("tab", { name: "Agente" }).click();
+  await page.getByRole("tab", { name: "Relaciones" }).click();
+  const mateo = page.locator(".rel-head", { hasText: "Mateo" });
+  await expect(mateo).toBeVisible();
+  await expect(page.getByRole("meter", { name: "afinidad" }).first()).toBeVisible();
+  await mateo.click();
+  await expect(mateo).toHaveAttribute("aria-expanded", "true");
+  await expect(page.getByText(/Lo que Mateo piensa de Rafael/)).toBeVisible();
+  await page.getByRole("button", { name: /Red del pueblo/ }).click();
+  const dialog = page.getByRole("dialog", { name: "Red del pueblo" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole("button", { name: "Marta Gil" })).toBeVisible();
+  await expect(dialog.getByRole("slider")).toBeVisible();
+});

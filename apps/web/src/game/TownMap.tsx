@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import { useEffect, useRef } from "react";
-import type { AgentState, Weather, World } from "@lethetown/shared";
+import type { AffinityIcon, AgentState, Weather, World } from "@lethetown/shared";
 import { gameTimeNow, getState, onMemoryEffect } from "../net/store";
 import { t } from "../i18n";
 import { TownScene } from "./TownScene";
@@ -8,6 +8,8 @@ import { TownScene } from "./TownScene";
 /** Lo que la UI puede pedirle al mapa (botones, teclado, clips). */
 export interface MapController {
   focusPlace(placeId: string): void;
+  /** Centra la cámara en un agente sin seleccionarlo. */
+  focusAgent(agentId: string): void;
   nudge(dx: number, dy: number): void;
   zoom(step: number): void;
   canvas(): HTMLCanvasElement | null;
@@ -20,6 +22,8 @@ interface Props {
   followId: string | null;
   weather: Weather;
   minimap: boolean;
+  /** Lo que el seleccionado piensa de los demás, como marca sobre cada uno (o nada). */
+  affinityMarks?: Record<string, AffinityIcon> | null;
   onSelect: (id: string) => void;
   onFollowChange: (id: string | null) => void;
   /** Overlay para OBS: fondo transparente y sin minimapa. */
@@ -27,11 +31,15 @@ interface Props {
   controller?: { current: MapController | null };
 }
 
-function sync(scene: TownScene, { world, agents, selectedId, weather, minimap }: Props) {
+function sync(
+  scene: TownScene,
+  { world, agents, selectedId, weather, minimap, affinityMarks }: Props,
+) {
   if (!scene.ready || !world) return;
   scene.setWorld(world);
   scene.updateAgents(agents);
   scene.setSelected(selectedId);
+  scene.setAffinityMarks(affinityMarks ?? null);
   scene.setWeather(weather);
   scene.setMinimapVisible(minimap);
 }
@@ -55,6 +63,7 @@ export function TownMap(props: Props) {
     if (latest.current.controller) {
       latest.current.controller.current = {
         focusPlace: (id) => townScene.focusPlace(id),
+        focusAgent: (id) => townScene.focusAgent(id),
         nudge: (dx, dy) => townScene.nudgeCamera(dx, dy),
         zoom: (step) => townScene.zoomBy(step),
         canvas: () => (townScene.ready ? townScene.canvas : null),

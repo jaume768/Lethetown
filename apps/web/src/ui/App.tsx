@@ -1,4 +1,4 @@
-import type { Drama } from "@lethetown/shared";
+import type { AffinityIcon, Drama } from "@lethetown/shared";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { TownMap, type MapController } from "../game/TownMap";
 import { useI18n } from "../i18n";
@@ -15,6 +15,7 @@ import { Header, type Mode } from "./Header";
 import { initialParams } from "./links";
 import { LoginDialog } from "./LoginDialog";
 import { MemoryGarden } from "./MemoryGarden";
+import { NetworkModal } from "./NetworkModal";
 import { Onboarding, shouldOnboard } from "./Onboarding";
 import { RashomonModal } from "./RashomonModal";
 import { ConnectionBanner, LoadingScreen, PausedOverlay } from "./StatusOverlay";
@@ -63,6 +64,10 @@ export function App() {
     shouldOnboard() ? "onboarding" : null,
   );
   const [seenDramas, setSeenDramas] = useState(0);
+  /** Marcas de afinidad sobre el mapa (lo que el seleccionado piensa de los demás). */
+  const [marksOn, setMarksOn] = useState(false);
+  const [marks, setMarks] = useState<Record<string, AffinityIcon> | null>(null);
+  const [network, setNetwork] = useState(false);
   const mapWrap = useRef<HTMLDivElement>(null);
   const [nativeFull, setNativeFull] = useState(false);
   /** Sin Fullscreen API (iOS): el mapa se fija a toda la ventana con CSS. */
@@ -172,6 +177,18 @@ export function App() {
             world={game.world}
             thinkingTask={thinking && thinking.count > 0 ? thinking.task : null}
             canIntervene={director}
+            onFocus={(id, reveal) => {
+              map.current?.focusAgent(id);
+              if (mobile && reveal) setSheetOpen(false);
+            }}
+            onSelectAgent={onSelect}
+            marksOn={marksOn}
+            onMarksOn={setMarksOn}
+            onMarks={setMarks}
+            onOpenNetwork={() => {
+              exitFullscreen();
+              setNetwork(true);
+            }}
           />
         );
       case "events":
@@ -215,6 +232,7 @@ export function App() {
             followId={followId}
             weather={game.weather}
             minimap={minimap}
+            affinityMarks={marksOn ? marks : null}
             onSelect={onSelect}
             onFollowChange={setFollowId}
             controller={map}
@@ -311,6 +329,7 @@ export function App() {
       </aside>
 
       {rashomonId && <RashomonModal eventId={rashomonId} onClose={() => setRashomonId(null)} />}
+      {network && <NetworkModal onSelect={onSelect} onClose={() => setNetwork(false)} />}
       {dialog === "login" && (
         <LoginDialog
           onClose={() => setDialog(null)}

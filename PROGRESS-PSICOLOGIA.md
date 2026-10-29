@@ -66,13 +66,13 @@ y comprobar que `pnpm dev` arranca en modo mock.
 
 ### Fase 7 — Ver las relaciones
 
-- [ ] Pestaña «Relaciones» en el inspector (barras, evolución, recíproca)
-- [ ] Filtro, búsqueda y «personas que no conoce»
-- [ ] Vista «Red del pueblo» (grafo con deslizador de tiempo)
-- [ ] Indicador de afinidad sobre el mapa
-- [ ] Endpoints REST paginados
-- [ ] Dramas al cruzar umbrales de afinidad
-- [ ] Responsive, accesible, i18n
+- [x] Pestaña «Relaciones» en el inspector (barras, evolución, recíproca)
+- [x] Filtro, búsqueda y «personas que no conoce»
+- [x] Vista «Red del pueblo» (grafo con deslizador de tiempo)
+- [x] Indicador de afinidad sobre el mapa
+- [x] Endpoints REST paginados
+- [x] Dramas al cruzar umbrales de afinidad
+- [x] Responsive, accesible, i18n
 
 ### Final
 
@@ -318,3 +318,32 @@ conversaciones (decide 842 → 916), que son las llamadas con más entrada.
   enseñaba la salida de tsc). Desde el commit de los falsos recuerdos había un error en la web
   (iconos de los dramas nuevos) y uno en un test de agent-core; ambos se arreglan en este commit.
   A partir de aquí se comprueba siempre el código de salida.
+- **Endpoints** (públicos, como el inspector; sin datos sensibles): `GET /agents/:id/relationships`
+  (`q` sin tildes, `type`, `limit`, `offset`; ordenadas de más a menos afinidad, cada una con la
+  recíproca y una tendencia de 24 puntos para la mini gráfica, más `unknown`, los vecinos que no
+  conoce), `GET /agents/:id/relationships/:other/history` (los dos sentidos),
+  `GET /social/graph` (nodos y fichas de ahora) y `GET /social/history?since=&limit=` (paginado
+  por instante; `next` es el `since` de la página siguiente; en el borde puede repetir cambios
+  del mismo instante, que no afectan a la reconstrucción).
+- **Lógica visual pura en shared** (`social/network.ts`, con tests): la red en un instante a
+  partir del historial (`networkAt`), color de la afinidad (rojo → gris → verde), grosor por
+  familiaridad, icono del mapa (corazón ≥ 0.3, enfado ≤ −0.3, indiferencia), trazado de la mini
+  gráfica, asimetría (≥ 0.3 se destaca con ⇄) y un layout de fuerzas determinista que se escala
+  para llenar el lienzo.
+- **Inspector**: dos sub-pestañas, «Estado y recuerdos» (lo de antes) y «Relaciones» (sustituye a
+  «Lo que piensa de los demás»). Cada persona: retrato, tipo, barras de afinidad (bipolar, con
+  color), confianza y familiaridad, resumen y mini gráfica. Al tocarla se despliega lo que la otra
+  piensa de este agente (destacando si no es recíproco) y el mapa se centra en ella (sin cambiar
+  el inspector; en móvil la hoja no se cierra salvo con «Ver en el mapa»); «Ver su ficha» la abre
+  en el inspector. Búsqueda, filtro por tipo y «Personas que no conoce».
+- **Red del pueblo** (modal): SVG con flechas dirigidas (desplazadas para ver los dos
+  sentidos), color por afinidad, grosor por familiaridad, rivalidades discontinuas, lo débil más
+  tenue y lo de quien tenga el foco resaltado; retratos como botones (teclado y lector de
+  pantalla), filtros por tipo, deslizador de tiempo que reconstruye la red con el historial (el
+  layout se calcula una vez con la red de ahora para que los nodos no salten) y lista en texto
+  como alternativa accesible. Sin librerías: con 20 nodos basta SVG propio.
+- **Mapa**: «Afinidad en el mapa» pinta sobre cada vecino lo que el seleccionado piensa de él
+  (corazón, indiferencia —emote propio `meh`— o enfado).
+- **Capturas** en `docs/capturas/` hechas sin los packs de LimeZu (Playwright bloquea
+  `assets/vendor/`), porque su licencia no permite redistribuirlos.
+- Smoke test e2e nuevo (escritorio y móvil).

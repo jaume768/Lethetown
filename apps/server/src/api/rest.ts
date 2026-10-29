@@ -4,10 +4,15 @@ import type {
   MemoryView,
   RashomonAccount,
   RashomonResponse,
+  RelationshipHistoryResponse,
+  RelationshipsResponse,
   ScoredMemoryView,
+  SocialGraphResponse,
+  SocialHistoryResponse,
   WorldSnapshot,
 } from "@lethetown/shared";
 import {
+  RelationshipsQuery,
   SetSpeedRequest,
   SpotStateRequest,
   ThoughtRequest,
@@ -73,6 +78,26 @@ const MemoryQuery = z.object({
   limit: z.coerce.number().int().positive().max(200).default(50),
   offset: z.coerce.number().int().nonnegative().default(0),
 });
+
+/** Puntos de la mini gráfica de cada relación. */
+const TREND_POINTS = 24;
+
+const HistoryQuery = z.object({
+  limit: z.coerce.number().int().positive().max(1000).default(200),
+});
+
+const SocialHistoryQuery = z.object({
+  since: z.coerce.number().optional(),
+  limit: z.coerce.number().int().positive().max(5000).default(2000),
+});
+
+/** Minúsculas y sin tildes, para buscar por nombre. */
+function fold(s: string): string {
+  return s
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase();
+}
 
 const EventsQuery = z.object({
   day: z.coerce.number().int().nonnegative().optional(),
@@ -216,6 +241,93 @@ export function registerWorldRest(server: FastifyInstance, ctx: ApiContext): voi
       offset,
       audit: await w.memory.store.audit(agent.id, 50),
       social: await w.social.list(agent.id),
+    };
+    return body;
+  });
+
+  /**
+   * Relaciones del agente (lo que piensa de cada uno y lo que cada uno piensa de él), de más a
+   * menos afinidad, con búsqueda y filtro por tipo; y los vecinos que aún no conoce.
+   */
+  server.get<{ Params: { id: string } }>("/agents/:id/relationships", async (req, reply) => {
+    const w = worldOf(ctx, req, reply);
+    if (!w) return reply;
+    const live = w.live();
+    const agent = live.agents.find((a) => a.id === req.params.id);
+    if (!agent) return reply.code(404).send({ error: "Agente no encontrado" });
+    const { q, type, limit, offset } = RelationshipsQuery.parse(req.query);
+    const names = new Map(live.agents.map((a) => [a.id, a.name]));
+    const profiles = (await w.social.list(agent.id)).filter((p) => names.has(p.aboutId));
+    const needle = q ? fold(q) : "";
+    const matching = profiles
+      .filter((p) => !type || p.relationshipType === type)
+      .filter((p) => !needle || fold(names.get(p.aboutId)!).includes(needle))
+      .sort((a, b) => b.affinity - a.affinity);
+    const known = new Set(profiles.map((p) => p.aboutId));
+    const body: RelationshipsResponse = {
+      agentId: agent.id,
+      now: live.time,
+      items: await Promise.all(
+        matching.slice(offset, offset + limit).map(async (p) => ({
+          name: names.get(p.aboutId)!,
+          profile: p,
+          reciprocal: (await w.social.get(p.aboutId, agent.id)) ?? null,
+          trend: (await w.social.history(agent.id, p.aboutId))
+            .slice(-TREND_POINTS)
+            .map((c) => ({ at: c.at, value: c.affinity })),
+        })),
+      ),
+      total: matching.length,
+      offset,
+      unknown: live.agents
+        .filter((a) => a.id !== agent.id && !known.has(a.id))
+        .filter((a) => !needle || fold(a.name).includes(needle))
+        .map((a) => ({ id: a.id, name: a.name })),
+    };
+    return body;
+  });
+
+  /** Evolución de una relación en los dos sentidos (para la mini gráfica). */
+  server.get<{ Params: { id: string; other: string } }>(
+    "/agents/:id/relationships/:other/history",
+    async (req, reply) => {
+      const w = worldOf(ctx, req, reply);
+      if (!w) return reply;
+      const { id, other } = req.params;
+      const { limit } = HistoryQuery.parse(req.query);
+      const body: RelationshipHistoryResponse = {
+        ownerId: id,
+        aboutId: other,
+        changes: (await w.social.history(id, other, { limit })).slice(-limit),
+        reciprocal: (await w.social.history(other, id, { limit })).slice(-limit),
+      };
+      return body;
+    },
+  );
+
+  /** Red del pueblo ahora: agentes y todas las fichas. */
+  server.get("/social/graph", async (req, reply) => {
+    const w = worldOf(ctx, req, reply);
+    if (!w) return reply;
+    const live = w.live();
+    const body: SocialGraphResponse = {
+      now: live.time,
+      nodes: live.agents.map((a) => ({ id: a.id, name: a.name })),
+      profiles: await w.social.listAll(),
+    };
+    return body;
+  });
+
+  /** Historial de toda la red, paginado por `since` (deslizador de tiempo). */
+  server.get("/social/history", async (req, reply) => {
+    const w = worldOf(ctx, req, reply);
+    if (!w) return reply;
+    const { since, limit } = SocialHistoryQuery.parse(req.query);
+    const changes = await w.social.history(null, undefined, { since, limit: limit + 1 });
+    const page = changes.slice(0, limit);
+    const body: SocialHistoryResponse = {
+      changes: page,
+      next: changes.length > limit ? changes[limit]!.at : null,
     };
     return body;
   });

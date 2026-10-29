@@ -15,6 +15,8 @@ export const EMOTES = [
   "exclaim",
   "sparkle",
   "storm",
+  /** Indiferencia (afinidad neutra sobre el mapa). */
+  "meh",
 ] as const;
 export type Emote = (typeof EMOTES)[number];
 
