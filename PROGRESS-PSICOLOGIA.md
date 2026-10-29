@@ -76,8 +76,8 @@ y comprobar que `pnpm dev` arranca en modo mock.
 
 ### Final
 
-- [ ] README, CLAUDE.md, este archivo
-- [ ] Entrevistas antes/después (Carmen, Aurora, Leo)
+- [x] README, CLAUDE.md, este archivo
+- [x] Entrevistas antes/después (Carmen, Aurora, Leo)
 - [ ] Push y PR
 
 ## Coste (mock, 48 h de juego, SIM_SEED=7)
@@ -114,6 +114,66 @@ y comprobar que `pnpm dev` arranca en modo mock.
 hay un recuerdo por actividad y lo de importancia ≤ 2 no se resume. La entrada no cacheada
 queda igual (+0.5 %) porque, con el nuevo orden de los eventos, hay más decisiones y
 conversaciones (decide 842 → 916), que son las llamadas con más entrada.
+
+### Al final (todas las fases)
+
+| Tarea         | Llamadas | Entrada (no cacheada) | Salida | Lectura de caché |
+| ------------- | -------: | --------------------: | -----: | ---------------: |
+| importance    |      963 |                113045 |  17280 |          1434852 |
+| decide        |      963 |                463100 |  27932 |          1434852 |
+| gist          |      847 |                 60971 |   7830 |          1260968 |
+| social        |      466 |                 92814 |  13234 |           694338 |
+| reconsolidate |      281 |                 48913 |   7821 |           406622 |
+| plan          |       40 |                 28611 |   8253 |            41786 |
+| consolidate   |       40 |                 41521 |  11257 |            59702 |
+| summarize     |       10 |                  1600 |    300 |            14730 |
+| chronicle     |        2 |                  3517 |    102 |               72 |
+| confabulate   |        1 |                   140 |     21 |             1489 |
+| **total**     | **3613** |            **854232** |  94030 |          5349411 |
+
+Mismas llamadas que al principio (3613 frente a 3620), pero distinto reparto:
+
+- **Esencias: 1208 → 401 → 847.** La fase 1 las bajó, pero la codificación de la fase 4 graba los
+  recuerdos con menos fuerza, así que más recuerdos de importancia ≥ 3 llegan a vagos. Subir
+  `gist.minImportance` a 4 las recortaría (a revisar).
+- **Entrada no cacheada: +20 %.** Hay un 14 % más de decisiones y conversaciones (intenciones que se
+  cumplen hablando, muletillas…), y el prompt social pide intenciones.
+- **Lectura de caché: +19 %.** El prompt fijo es más largo (personalidad, forma de hablar y
+  menores). Es la parte barata.
+- **Moderación de menores: 0 llamadas** en mock.
+
+## Entrevistas (mock, 48 h, SIM_SEED=7)
+
+`pnpm interview --advance 48` en RAM, antes (main) y después. El mock responde con el primer
+recuerdo recuperado, así que la comparación muestra qué recuerda cada uno:
+
+- **Carmen** (memoriosa): antes, casi todo lo respondía con «mi hijo Mateo trabaja demasiado»; ahora
+  ese recuerdo sigue ahí (reforzado y reconsolidado: «y fue muy agradable») y además recuerda lo
+  que habló con Mateo («¡Ay, por cierto! Tenía que volver a quedar con Carmen»): una intención que
+  Mateo cumplió.
+- **Aurora** (82, desmemoriada): antes contestaba con frases sueltas de otros («Rafael me dijo…»,
+  más o menos); ahora todas sus respuestas salen de su juventud («Nací en Lethetown hace ochenta y
+  dos años, cuando el lago era más grande»): pico de reminiscencia y episódica frágil (lo
+  reciente le llega «más o menos»), y aparece una intención («Quiero volver a quedar con Ernesto»).
+- **Leo** (10): antes recordaba sobre todo lo que le decía su madre; ahora recuerda a Inés y a
+  Carmen, una reflexión («Hoy he hablado bastante con la gente del pueblo») y el pez gigante de
+  Tomás.
+
+## Decisiones que conviene revisar
+
+1. Protección de menores conservadora: un menor no guarda nada con léxico romántico claro, aunque
+   hable de adultos.
+2. El romance solo surge entre adultos con afinidad ≥ 0.75, familiaridad ≥ 0.6 y una opinión que lo
+   diga con léxico claro; si no, solo el de las semillas (Tomás y Pilar).
+3. Falsos recuerdos sobre todo en el mantenimiento (al volverse vagos), porque la recuperación casi
+   nunca elige recuerdos desvaídos; 0.015 × sugestionabilidad × (1 − fuerza).
+4. `gist.minImportance` = 3 (lo pedido); con la nueva codificación, 4 ahorraría ~45 % de esencias.
+5. Umbrales de amistad y rivalidad (afinidad ±0.35, familiaridad ≥ 0.35): en mock surgen amistades
+   en uno o dos días (charlas + mera exposición); rivalidades nuevas, casi ninguna, porque el mock
+   apenas baja la afinidad. Con un LLM real habrá que mirarlo.
+6. Calibración de ánimo y necesidades hecha con el mock (zona neutral ±0.1, base 0.2): con un LLM
+   real convendrá revisarla.
+7. Capturas sin los packs de LimeZu (licencia): la UI se ve sin la piel de Modern UI.
 
 ## Decisiones tomadas
 

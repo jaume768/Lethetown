@@ -12,6 +12,8 @@ Parte de [_Generative Agents: Interactive Simulacra of Human Behavior_](https://
 - **Reconsolidación**: los recuerdos se reescriben un poco al evocarlos, y queda un historial de versiones.
 - **Confusión de fuente**: con el tiempo, "me lo contó X" puede pasar a "lo viví".
 - **Fichas sociales** por persona, **rumores** que se propagan al escuchar a escondidas y **olvido por presupuesto**. Cada decisión de olvido queda registrada con su motivo.
+- **Psicología**: personalidad (Big Five) y memoria propia por agente, ánimo bidimensional, hábitos, sueño, sesgos, falsos recuerdos, memoria prospectiva y relaciones que evolucionan (ver [Psicología](#psicología)).
+- **Protección de menores**: ningún menor tiene ni recibe contenido romántico o sexual, ni en los prompts ni en lo que escribe el LLM.
 
 Todo funciona **sin API keys** gracias a un proveedor LLM simulado (mock).
 
@@ -115,9 +117,10 @@ Todos los parámetros (pesos, umbrales, probabilidades, presupuesto) están en `
   hace caso — «…»».
 - **Cambios de planes**: cada reacción reescribe el plan del día desde ese minuto (`replanAt`), así que el
   inspector muestra lo que el agente hace de verdad (marcado como «cambio de planes»).
-- **Diario del día**: cada actividad que empieza se anota (`doneToday`) y se guarda como recuerdo rutinario
-  (importancia 2, sin LLM, con el mismo olvido que el resto). Al decidir ve «HOY YA HAS HECHO» y al planificar,
-  «Ayer hiciste, más o menos», para no repetir lo mismo.
+- **Diario del día**: cada actividad que empieza se anota en `doneToday` (memoria a corto plazo, sin LLM ni
+  recuerdo por actividad; con poca energía se pierden o mezclan entradas). Al decidir ve «HOY YA HAS HECHO». Al
+  dormirse, el día se guarda como un único recuerdo («El día N: …») y las rutinas repetidas se vuelven hábitos;
+  al planificar recuerda ayer y sus costumbres desde la memoria (con olvido y vaguedad).
 
 ### Agentes y coste
 
@@ -125,6 +128,29 @@ Todos los parámetros (pesos, umbrales, probabilidades, presupuesto) están en `
 - **Rutinas sin LLM**: dormir, desplazarse y seguir el plan cuando no pasa nada nuevo.
 - Modelo `fast` para decidir, valorar importancia, esencia, reconsolidación y fichas; modelo `reflection` para el plan, la consolidación, los resúmenes y la crónica.
 - El `CostTracker` registra tokens y coste por agente, tarea y modelo. Los precios están en `config/pricing.json`.
+
+### Psicología
+
+Toda la lógica es pura (agent-core, con tests), sin LLM salvo donde se dice, y todos los parámetros están en
+`MemoryConfig` (`packages/agent-core/src/memory/config.ts` y los esquemas que importa), sobrescribibles con
+`config/memory.json`. Detalle y decisiones: [PROGRESS-PSICOLOGIA.md](PROGRESS-PSICOLOGIA.md).
+
+| Fenómeno              | Qué hace                                                                                                                                                                                                                                                        | Parámetros                                                     |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| Protección de menores | Regla fija en el prompt de todos con la lista de menores; `MinorGuard` revisa lo que escribe el LLM (léxico claro → descarte; ambiguo → moderación `fast`, fail-closed). Lo descartado va a `moderation_log`. Las relaciones con un menor nunca son románticas. | — (`isMinor` en la semilla)                                    |
+| Hábitos               | Las actividades no crean recuerdos; lo repetido en 3 de 7 días se vuelve «Suelo … por las mañanas» y se refuerza. Sin esencia del LLM para importancia ≤ 2.                                                                                                     | `diary`, `habits`, `gist.minImportance`                        |
+| Perfil de memoria     | Big Five + `memoryProfile` de la semilla + edad: los mayores olvidan antes lo vivido y conservan y evocan sus recuerdos de juventud (pico de reminiscencia); los niños confunden más la fuente y son más sugestionables.                                        | `profile`                                                      |
+| Ánimo                 | Valencia y activación con etiqueta circumpleja; nivel base por personalidad y vuelta con vida media; hambre → irritable, cansancio → apagado, soledad → triste. Necesidades según extraversión.                                                                 | `mood`, `needs`                                                |
+| Codificación y sueño  | Fuerza inicial por Yerkes-Dodson, energía, atención y deuda de sueño; con activación extrema solo queda la esencia. Dormir con tensión o preocupación recupera menos; el sueño consolida lo emocional.                                                          | `encoding`, `sleep`                                            |
+| Sesgos                | Negatividad (lo malo dura más), desvanecimiento afectivo (lo malo se suaviza antes), recuerdos intrusivos (vuelven sin buscarlos, con pistas), falsos recuerdos (rellenar huecos, tarea `confabulate`, marcados).                                               | `profile.negativityBias`, `biases`, `intrusive`, `falseMemory` |
+| Memoria prospectiva   | Intenciones con pistas (persona, lugar, hora); al aparecer la pista se acuerda o no según responsabilidad y perfil; si no, «¡vaya, se me olvidó!». Se detectan en charlas y decisiones.                                                                         | `prospective`                                                  |
+| Relaciones            | Afinidad, confianza, familiaridad y tipo (familia, amistad, vecindad, trabajo, rivalidad, pareja) con historial; credibilidad de los rumores, mera exposición, perdón y rencor. Estilo de habla propio por agente.                                              | `social`                                                       |
+
+En la web: pestaña «Relaciones» del inspector (con la relación recíproca y su evolución), «Red del pueblo»
+(grafo con deslizador de tiempo) y afinidad sobre el mapa.
+
+![Relaciones en el inspector](docs/capturas/relaciones-escritorio.png)
+![Red del pueblo](docs/capturas/red-del-pueblo.png)
 
 ## Cómo arrancar
 
@@ -190,18 +216,20 @@ Todas las variables, con su explicación, están en [`.env.example`](.env.exampl
 
 ### Comandos
 
-| Comando                                       | Qué hace                                                                                                                                         |
-| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `pnpm test` / `lint` / `typecheck` / `format` | Vitest, ESLint, TypeScript y Prettier.                                                                                                           |
-| `pnpm map:generate [--pack nombre]`           | Regenera `seeds/town.tmj` con los sellos del pack indicado (por defecto, `activePack`).                                                          |
-| `pnpm assets:placeholder`                     | Genera el set placeholder propio en `apps/web/public/assets/placeholder/`.                                                                       |
-| `pnpm assets:check [--strict]`                | Lista los assets en uso con su licencia y marca los no comerciales (`--strict` falla si hay alguno).                                             |
-| `pnpm portraits:compose`                      | Compone los retratos animados de los agentes con las capas del Portrait Generator ([docs/personajes.md](docs/personajes.md)).                    |
-| `pnpm user:create <usuario> [rol]`            | Crea un usuario (viewer, director o admin) en Postgres.                                                                                          |
-| `pnpm test:e2e`                               | Smoke tests de la interfaz con Playwright (escritorio y 375 px), con su propio servidor mock.                                                    |
-| `pnpm interview [--advance horas]`            | Entrevista a cada agente con una batería fija de preguntas y guarda las respuestas en `interviews/`. Sirve como test de regresión de la memoria. |
-| `pnpm --filter @lethetown/server sim:text 16` | Simulación en modo texto, sin servidor: 16 horas de juego con eventos y costes.                                                                  |
-| `pnpm db:generate`                            | Genera una migración de Drizzle tras cambiar el esquema.                                                                                         |
+| Comando                                          | Qué hace                                                                                                                                         |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `pnpm test` / `lint` / `typecheck` / `format`    | Vitest, ESLint, TypeScript y Prettier.                                                                                                           |
+| `pnpm map:generate [--pack nombre]`              | Regenera `seeds/town.tmj` con los sellos del pack indicado (por defecto, `activePack`).                                                          |
+| `pnpm assets:placeholder`                        | Genera el set placeholder propio en `apps/web/public/assets/placeholder/`.                                                                       |
+| `pnpm assets:check [--strict]`                   | Lista los assets en uso con su licencia y marca los no comerciales (`--strict` falla si hay alguno).                                             |
+| `pnpm portraits:compose`                         | Compone los retratos animados de los agentes con las capas del Portrait Generator ([docs/personajes.md](docs/personajes.md)).                    |
+| `pnpm user:create <usuario> [rol]`               | Crea un usuario (viewer, director o admin) en Postgres.                                                                                          |
+| `pnpm test:e2e`                                  | Smoke tests de la interfaz con Playwright (escritorio y 375 px), con su propio servidor mock.                                                    |
+| `pnpm interview [--advance horas]`               | Entrevista a cada agente con una batería fija de preguntas y guarda las respuestas en `interviews/`. Sirve como test de regresión de la memoria. |
+| `pnpm --filter @lethetown/server sim:text 16`    | Simulación en modo texto, sin servidor: 16 horas de juego con eventos y costes.                                                                  |
+| `pnpm --filter @lethetown/server cost:report 48` | Llamadas y tokens por tarea en 48 h de mock reproducible (tabla Markdown).                                                                       |
+| `pnpm personality:derive [--write]`              | Propone personalidad y perfil de memoria a partir de rasgos, edad y descripción de `seeds/agents.json`.                                          |
+| `pnpm db:generate`                               | Genera una migración de Drizzle tras cambiar el esquema.                                                                                         |
 
 `SIM_SEED` en `.env` fija el azar de la memoria (rumores, reconsolidación…) para tener simulaciones reproducibles. El test dorado (`apps/server/src/sim/golden.test.ts`) compara 3 días de simulación en mock con una línea de tiempo guardada.
 
@@ -221,18 +249,21 @@ modelo no carga (p. ej. sin red la primera vez, para descargarlo), el servidor c
 Todas las rutas de un mundo cuelgan de `/api/worlds/:worldId/…`; `/api/…` es un alias del mundo
 `default`. 👁 = público, 🎬 = director, 🔑 = admin.
 
-| Método  | Ruta (dentro del mundo)                | Descripción                                                        |
-| ------- | -------------------------------------- | ------------------------------------------------------------------ |
-| 👁 GET   | `/state` · `/map`                      | Estado del mundo (con su estado de pausa) y mapa `.tmj`.           |
-| 👁 GET   | `/agents/:id/memory?q=&limit=&offset=` | Jardín de recuerdos paginado (sin embeddings), auditoría y fichas. |
-| 👁 GET   | `/rashomon/:eventId`                   | Versiones de un evento según cada implicado, con historial.        |
-| 👁 GET   | `/events?day=` · `?from=&to=`          | Línea de tiempo.                                                   |
-| 👁 GET   | `/dramas?limit=` · `/chronicles`       | Feed de dramas y crónicas.                                         |
-| 🎬 POST | `/agents/:id/thought`                  | Voz interior `{ text }` (moderada).                                |
-| 🎬 POST | `/world/spots/:id` · `/world/weather`  | Estado de un objeto `{ state }` (moderado) y clima.                |
-| 🎬 POST | `/speed` · `/pause` · `/resume`        | Velocidad (0, 1, 10, 60, 360) y pausa.                             |
-| 🎬 POST | `/chronicles/:day`                     | Genera ya la crónica de un día.                                    |
-| 🔑 GET  | `/costs`                               | Costes acumulados.                                                 |
+| Método  | Ruta (dentro del mundo)                             | Descripción                                                        |
+| ------- | --------------------------------------------------- | ------------------------------------------------------------------ |
+| 👁 GET   | `/state` · `/map`                                   | Estado del mundo (con su estado de pausa) y mapa `.tmj`.           |
+| 👁 GET   | `/agents/:id/memory?q=&limit=&offset=`              | Jardín de recuerdos paginado (sin embeddings), auditoría y fichas. |
+| 👁 GET   | `/rashomon/:eventId`                                | Versiones de un evento según cada implicado, con historial.        |
+| 👁 GET   | `/agents/:id/relationships?q=&type=&limit=&offset=` | Relaciones con la recíproca y su tendencia, y quién no conoce.     |
+| 👁 GET   | `/agents/:id/relationships/:other/history`          | Evolución de una relación en los dos sentidos.                     |
+| 👁 GET   | `/social/graph` · `/social/history?since=&limit=`   | Red del pueblo ahora y su historial (paginado).                    |
+| 👁 GET   | `/events?day=` · `?from=&to=`                       | Línea de tiempo.                                                   |
+| 👁 GET   | `/dramas?limit=` · `/chronicles`                    | Feed de dramas y crónicas.                                         |
+| 🎬 POST | `/agents/:id/thought`                               | Voz interior `{ text }` (moderada).                                |
+| 🎬 POST | `/world/spots/:id` · `/world/weather`               | Estado de un objeto `{ state }` (moderado) y clima.                |
+| 🎬 POST | `/speed` · `/pause` · `/resume`                     | Velocidad (0, 1, 10, 60, 360) y pausa.                             |
+| 🎬 POST | `/chronicles/:day`                                  | Genera ya la crónica de un día.                                    |
+| 🔑 GET  | `/costs`                                            | Costes acumulados.                                                 |
 
 | Método      | Ruta general                                            | Descripción                                                                                                                             |
 | ----------- | ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
@@ -326,4 +357,5 @@ El cliente elige automáticamente el pack con el que se generó el mapa (propied
 3. **Motor y acelerador** ✅ LOD sin espectadores, Batch API, presupuestos de coste. Pendiente: una conversación completa por llamada.
 4. **Mundo visual 2D** ✅ (en gran parte). Pendiente: colisión de muebles y animaciones con el Character Generator completo (cuando se compre Modern Interiors).
 5. **Producción** ✅ multi-mundo con instantáneas, seguridad, api + workers, observabilidad, Docker con Caddy e interfaz para espectadores, directores y streaming.
-6. **Siguiente**: OAuth, editor de mundos y agentes desde la web, traducción de los prompts (hoy se pide al modelo que responda en el idioma del mundo).
+6. **Psicología** ✅ protección de menores, hábitos, perfiles, ánimo, sueño, sesgos, memoria prospectiva y relaciones visibles.
+7. **Siguiente**: OAuth, editor de mundos y agentes desde la web, traducción de los prompts (hoy se pide al modelo que responda en el idioma del mundo).
