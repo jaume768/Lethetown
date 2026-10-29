@@ -22,6 +22,7 @@ export * from "./memory/habits";
 export * from "./memory/psychology";
 export * from "./memory/prospective";
 export * from "./memory/encoding";
+export * from "./memory/social";
 export * from "./util/random";
 
 export * from "./agent/agent";

@@ -538,15 +538,39 @@ function mockDecide(req: CompletionRequest): string {
     }
     return reply({ choice: "continue" }, `Se me hace tarde para ${activity}; me voy ya.`);
   }
+  // Personalidad y forma de hablar (del prompt fijo): muletillas propias, ganas de hablar.
+  const personality = /^Personalidad: (.+)\.$/m.exec(req.system)?.[1] ?? "";
+  const catchphrases = [
+    ...(/muletillas: (.+?)\.$/m.exec(req.system)?.[1] ?? "").matchAll(/«([^»]+)»/g),
+  ].map((m) => m[1]!);
+  const styled = (say: string) => {
+    const c = catchphrases[h % Math.max(1, catchphrases.length)];
+    if (!c || h % 3 !== 0) return say;
+    const lead = `${c.charAt(0).toUpperCase()}${c.slice(1)}`;
+    // "¡Hombre! Hola…" o "Hija mía, hola…".
+    return /[…!?]$/.test(c)
+      ? `${lead} ${say}`
+      : `${lead}, ${say.charAt(0).toLowerCase()}${say.slice(1)}`;
+  };
+  const social = Number(/social (\d\.\d+)\./.exec(p)?.[1] ?? 0.5);
+  const loner = personality.includes("necesitas ratos a solas");
+  if (speaker && present.includes(speaker.from) && loner && social > 0.7 && h % 4 === 1) {
+    return reply({ choice: "continue" }, "Ahora mismo no me apetece hablar con nadie.");
+  }
   if (speaker && present.includes(speaker.from) && h % 3 !== 0) {
     const asked = speaker.text.trim().endsWith("?");
-    const say =
-      !asked && h % 4 === 1
-        ? FOLLOW_UPS[h % FOLLOW_UPS.length]
+    const blunt = personality.includes("dices lo que piensas") && h % 5 === 2;
+    const say = blunt
+      ? "Pues no estoy de acuerdo, la verdad."
+      : !asked && h % 4 === 1
+        ? FOLLOW_UPS[h % FOLLOW_UPS.length]!
         : raining && h % 5 === 0
-          ? RAIN_TALK[h % RAIN_TALK.length]
-          : REPLIES[h % REPLIES.length];
-    return reply({ choice: "talk", to: speaker.from, say }, "Me han hablado y quiero contestar.");
+          ? RAIN_TALK[h % RAIN_TALK.length]!
+          : REPLIES[h % REPLIES.length]!;
+    return reply(
+      { choice: "talk", to: speaker.from, say: styled(say) },
+      blunt ? "No pienso darle la razón en esto." : "Me han hablado y quiero contestar.",
+    );
   }
   const someone = present[h % Math.max(1, present.length)];
   if (!speaker && someone && rumor && h % 4 === 0) {
@@ -589,7 +613,7 @@ function mockDecide(req: CompletionRequest): string {
       ...(plan ? [`Yo vengo de paso, que luego toca ${plan}.`] : []),
     ];
     return reply(
-      { choice: "talk", to: someone, say: contextual[h % contextual.length] },
+      { choice: "talk", to: someone, say: styled(contextual[h % contextual.length]!) },
       "Hay alguien conocido y me apetece charlar.",
     );
   }

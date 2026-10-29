@@ -130,7 +130,23 @@ export const MemoryAuditEntry = z.object({
 });
 export type MemoryAuditEntry = z.infer<typeof MemoryAuditEntry>;
 
-/** Ficha social: lo que un agente cree saber de otro. */
+/** Tipo de relación (lo que un agente cree que es para él otro). */
+export const RelationshipType = z.enum([
+  "family",
+  "friendship",
+  "neighbor",
+  "work",
+  "rivalry",
+  /** Nunca entre un adulto y un menor ni entre menores (protección de menores). */
+  "romantic",
+]);
+export type RelationshipType = z.infer<typeof RelationshipType>;
+
+/** Vínculo de base que no cambia con la afinidad (de las semillas): familia, pareja, trabajo. */
+export const RelationshipBond = z.enum(["family", "romantic", "work"]);
+export type RelationshipBond = z.infer<typeof RelationshipBond>;
+
+/** Ficha social: lo que un agente cree saber de otro (no tiene por qué ser recíproca). */
 export const SocialProfile = z.object({
   ownerId: z.string(),
   aboutId: z.string(),
@@ -139,6 +155,30 @@ export const SocialProfile = z.object({
   affinity: z.number().min(-1).max(1),
   /** 0..1 */
   trust: z.number().min(0).max(1),
+  /** Cuánto lo conoce o lo trata (0 = desconocido, 1 = de toda la vida). */
+  familiarity: z.number().min(0).max(1).default(0.1),
+  relationshipType: RelationshipType.default("neighbor"),
+  /** Vínculo de base (de las semillas), si lo hay. */
+  bond: RelationshipBond.nullable().default(null),
+  /** Rencor mínimo (0..1) que dejan las ofensas importantes: el perdón no baja de −rencor. */
+  grudge: z.number().min(0).max(1).default(0),
   lastUpdated: z.number(),
 });
 export type SocialProfile = z.infer<typeof SocialProfile>;
+
+/** Cambio de una ficha social (historial, para ver cómo evoluciona una relación). */
+export const SocialProfileChange = z.object({
+  ownerId: z.string(),
+  aboutId: z.string(),
+  /** Minutos de juego. */
+  at: z.number(),
+  affinity: z.number(),
+  trust: z.number(),
+  familiarity: z.number(),
+  relationshipType: RelationshipType,
+  /** Por qué cambió ("hablaron en el café", "con el tiempo le perdona un poco"…). */
+  reason: z.string(),
+  /** Evento que lo causó (conversación…), si lo hay. */
+  eventId: z.string().nullable(),
+});
+export type SocialProfileChange = z.infer<typeof SocialProfileChange>;

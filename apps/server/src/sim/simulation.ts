@@ -53,6 +53,10 @@ export class Simulation {
     this.ctx = ctx;
     const names = Object.fromEntries(deps.seeds.map((s) => [s.id, s.name]));
     const minors = minorsOf(deps.seeds);
+    // Chismosos: lo que cuentan se cree un poco menos (credibilidad de los rumores).
+    const gossips = new Set(
+      deps.seeds.filter((s) => s.traits.some((t) => /chism|cotill/i.test(t))).map((s) => s.id),
+    );
     for (const seed of deps.seeds) {
       const agent = new Agent(seed, {
         llm: deps.llm,
@@ -61,6 +65,7 @@ export class Simulation {
         social: deps.social,
         names,
         minors,
+        gossips,
         language: deps.language,
         onError: (agentId, task, error) =>
           ctx.emit("system", agentId, `⚠ Error en "${task}": ${errorMessage(error)}`),
@@ -98,6 +103,8 @@ export class Simulation {
         await agent.seedMemories(now);
         seeded++;
       }
+      // Relaciones de partida (si aún no piensa nada de nadie).
+      if (!(await this.ctx.deps.social.list(agent.id)).length) await agent.seedRelationships(now);
     }
     return seeded;
   }
@@ -292,6 +299,8 @@ export class Simulation {
       return;
     }
 
+    // Mera exposición: el tiempo que pasa en el mismo sitio que otros acerca un poco.
+    agent.noteCompany(around, this.tickMinutes);
     const day = Math.floor(now / 1440);
     if (rt.plannedDay !== day) {
       rt.plannedDay = day;

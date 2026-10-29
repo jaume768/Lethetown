@@ -1,15 +1,25 @@
 import type { SocialProfileStore } from "@lethetown/agent-core";
 import {
   DramaKind,
+  RelationshipBond,
+  RelationshipType,
   SimEventKind,
   type Chronicle,
   type Drama,
   type SimEvent,
   type SocialProfile,
+  type SocialProfileChange,
 } from "@lethetown/shared";
 import { and, asc, desc, eq, gte, lt } from "drizzle-orm";
 import type { Db } from "./client";
-import { chronicles, dramas, moderationLog, simEvents, socialProfiles } from "./schema";
+import {
+  chronicles,
+  dramas,
+  moderationLog,
+  simEvents,
+  socialProfileHistory,
+  socialProfiles,
+} from "./schema";
 
 /** Línea de tiempo de eventos. */
 export interface EventStore {
@@ -129,6 +139,14 @@ export class PgChronicleStore implements ChronicleStore {
   }
 }
 
+type SocialRow = typeof socialProfiles.$inferSelect;
+
+const toProfile = ({ worldId: _w, ...r }: SocialRow): SocialProfile => ({
+  ...r,
+  relationshipType: RelationshipType.catch("neighbor").parse(r.relationshipType),
+  bond: RelationshipBond.nullable().catch(null).parse(r.bond),
+});
+
 export class PgSocialProfileStore implements SocialProfileStore {
   constructor(
     private readonly db: Db,
@@ -146,21 +164,17 @@ export class PgSocialProfileStore implements SocialProfileStore {
           eq(socialProfiles.aboutId, aboutId),
         ),
       );
-    return row && stripWorld(row);
+    return row && toProfile(row);
   }
 
   async upsert(p: SocialProfile): Promise<void> {
+    const { ownerId: _o, aboutId: _a, ...set } = p;
     await this.db
       .insert(socialProfiles)
       .values({ ...p, worldId: this.worldId })
       .onConflictDoUpdate({
         target: [socialProfiles.worldId, socialProfiles.ownerId, socialProfiles.aboutId],
-        set: {
-          summary: p.summary,
-          affinity: p.affinity,
-          trust: p.trust,
-          lastUpdated: p.lastUpdated,
-        },
+        set,
       });
   }
 
@@ -169,15 +183,45 @@ export class PgSocialProfileStore implements SocialProfileStore {
       .select()
       .from(socialProfiles)
       .where(and(eq(socialProfiles.worldId, this.worldId), eq(socialProfiles.ownerId, ownerId)));
-    return rows.map(stripWorld);
+    return rows.map(toProfile);
   }
-}
 
-function stripWorld<T extends { worldId: string }>({
-  worldId: _w,
-  ...rest
-}: T): Omit<T, "worldId"> {
-  return rest;
+  async listAll(): Promise<SocialProfile[]> {
+    const rows = await this.db
+      .select()
+      .from(socialProfiles)
+      .where(eq(socialProfiles.worldId, this.worldId));
+    return rows.map(toProfile);
+  }
+
+  async addHistory(c: SocialProfileChange): Promise<void> {
+    await this.db.insert(socialProfileHistory).values({ ...c, worldId: this.worldId });
+  }
+
+  async history(
+    ownerId: string | null,
+    aboutId?: string,
+    opts: { since?: number; limit?: number } = {},
+  ): Promise<SocialProfileChange[]> {
+    const t = socialProfileHistory;
+    const rows = await this.db
+      .select()
+      .from(t)
+      .where(
+        and(
+          eq(t.worldId, this.worldId),
+          ownerId === null ? undefined : eq(t.ownerId, ownerId),
+          aboutId ? eq(t.aboutId, aboutId) : undefined,
+          opts.since !== undefined ? gte(t.at, opts.since) : undefined,
+        ),
+      )
+      .orderBy(asc(t.at), asc(t.id))
+      .limit(opts.limit ?? 1000);
+    return rows.map(({ id: _id, worldId: _w, ...c }) => ({
+      ...c,
+      relationshipType: RelationshipType.catch("neighbor").parse(c.relationshipType),
+    }));
+  }
 }
 
 // --- Moderación ----------------------------------------------------------------------------

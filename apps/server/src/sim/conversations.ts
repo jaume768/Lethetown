@@ -134,6 +134,8 @@ export async function endConversation(ctx: SimContext, key: string, reason: stri
         transcript: conv.transcript,
         now,
         guard: ctx.deps.memory.guard,
+        eventId: conv.id,
+        config: ctx.deps.memory.config.social,
         onIntentions: async (list) => {
           for (const i of list) {
             if (await owner.intend(now, i)) {

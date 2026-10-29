@@ -3,9 +3,9 @@
  * confusión de fuente, fichas sociales y resumen de episodios. Interfaces + implementaciones
  * con LLM (inyectado). Los prompts siguen el formato "TAREA: <nombre>" que entiende el MockProvider.
  */
-import type { MemorySource, SocialProfile } from "@lethetown/shared";
+import type { MemorySource, SocialProfile, SocialProfileChange } from "@lethetown/shared";
 import { z } from "zod";
-import type { MinorGuard } from "../agent/minor-safety";
+import { hasStrongRomance, type MinorGuard } from "../agent/minor-safety";
 import { parseWith } from "../agent/parse";
 import type { LLMClient } from "../llm/client";
 import type { Rng } from "../util/random";
@@ -13,6 +13,9 @@ import type { MemoryConfig } from "./config";
 import { currentStrength } from "./decay";
 import type { MemorySystem } from "./memory-system";
 import { IntentionInput } from "./prospective";
+import { SocialConfig, classifyRelationship, grudgeAfter, relationshipLabel } from "./social";
+
+const DEFAULT_SOCIAL = SocialConfig.parse({});
 import type { MemoryRecord } from "./types";
 
 /** Quién recuerda: identidad (prompt fijo) y nombre. */
@@ -72,12 +75,26 @@ export interface SocialProfileStore {
   get(ownerId: string, aboutId: string): Promise<SocialProfile | undefined>;
   upsert(profile: SocialProfile): Promise<void>;
   list(ownerId: string): Promise<SocialProfile[]>;
+  /** Todas las fichas del mundo (red del pueblo). */
+  listAll(): Promise<SocialProfile[]>;
+  /** Historial de cambios de las fichas. */
+  addHistory(change: SocialProfileChange): Promise<void>;
+  /**
+   * Historial (de una ficha si se pasa `aboutId`, de todas las del dueño si no, o de todo el
+   * mundo si `ownerId` es null), del más antiguo al más reciente, a partir de `since`.
+   */
+  history(
+    ownerId: string | null,
+    aboutId?: string,
+    opts?: { since?: number; limit?: number },
+  ): Promise<SocialProfileChange[]>;
 }
 
 // --- Fichas sociales ------------------------------------------------------------------------
 
 export class InMemorySocialProfileStore implements SocialProfileStore {
   private readonly profiles = new Map<string, SocialProfile>();
+  private readonly changes: SocialProfileChange[] = [];
 
   async get(ownerId: string, aboutId: string) {
     const p = this.profiles.get(`${ownerId}:${aboutId}`);
@@ -91,12 +108,55 @@ export class InMemorySocialProfileStore implements SocialProfileStore {
   async list(ownerId: string) {
     return [...this.profiles.values()].filter((p) => p.ownerId === ownerId).map((p) => ({ ...p }));
   }
+
+  async listAll() {
+    return [...this.profiles.values()].map((p) => ({ ...p }));
+  }
+
+  async addHistory(change: SocialProfileChange) {
+    this.changes.push({ ...change });
+  }
+
+  async history(
+    ownerId: string | null,
+    aboutId?: string,
+    opts: { since?: number; limit?: number } = {},
+  ) {
+    return this.changes
+      .filter(
+        (c) =>
+          (ownerId === null || c.ownerId === ownerId) &&
+          (!aboutId || c.aboutId === aboutId) &&
+          c.at >= (opts.since ?? -Infinity),
+      )
+      .slice(0, opts.limit ?? 1000)
+      .map((c) => ({ ...c }));
+  }
 }
 
 const clamp = (x: number, lo: number, hi: number) =>
   Number.isFinite(x) ? Math.min(hi, Math.max(lo, x)) : lo;
 
-/** Aplica un cambio a la ficha social (crea la ficha si no existe). */
+/** Ficha nueva (alguien de quien aún no sabe nada). */
+export function emptyProfile(ownerId: string, aboutId: string, now: number): SocialProfile {
+  return {
+    ownerId,
+    aboutId,
+    summary: "",
+    affinity: 0,
+    trust: 0.5,
+    familiarity: 0.1,
+    relationshipType: "neighbor",
+    bond: null,
+    grudge: 0,
+    lastUpdated: now,
+  };
+}
+
+/**
+ * Aplica un cambio a la ficha social (crea la ficha si no existe): afinidad, confianza,
+ * familiaridad, rencor y tipo de relación, y deja constancia en el historial con su motivo.
+ */
 export async function applySocialUpdate(
   store: SocialProfileStore,
   update: {
@@ -105,25 +165,68 @@ export async function applySocialUpdate(
     summary?: string;
     affinityDelta?: number;
     trustDelta?: number;
+    familiarityDelta?: number;
+    /** Afinidad absoluta (perdón, semillas); si se pasa, manda sobre `affinityDelta`. */
+    affinity?: number;
     now: number;
+    /** Por qué cambia (historial). */
+    reason?: string;
+    eventId?: string | null;
+    /** ¿Hay un menor implicado? Entonces la relación nunca es romántica. */
+    minorInvolved?: boolean;
+    /** La opinión deja claro un interés romántico (solo cuenta entre adultos). */
+    romanticHint?: boolean;
+    /** Vínculo de base (semillas). */
+    bond?: SocialProfile["bond"];
+    config?: SocialConfig;
   },
 ): Promise<SocialProfile> {
-  const prev = (await store.get(update.ownerId, update.aboutId)) ?? {
-    ownerId: update.ownerId,
-    aboutId: update.aboutId,
-    summary: "",
-    affinity: 0,
-    trust: 0.5,
+  const cfg = update.config ?? DEFAULT_SOCIAL;
+  const prev =
+    (await store.get(update.ownerId, update.aboutId)) ??
+    emptyProfile(update.ownerId, update.aboutId, update.now);
+  const affinity = clamp(update.affinity ?? prev.affinity + (update.affinityDelta ?? 0), -1, 1);
+  const base = {
+    ...prev,
+    summary: update.summary?.trim() || prev.summary,
+    affinity,
+    trust: clamp(prev.trust + (update.trustDelta ?? 0), 0, 1),
+    familiarity: clamp(prev.familiarity + (update.familiarityDelta ?? 0), 0, 1),
+    grudge: grudgeAfter(prev.grudge, affinity - prev.affinity, cfg),
+    bond: update.bond === undefined ? prev.bond : update.bond,
     lastUpdated: update.now,
   };
   const next: SocialProfile = {
-    ...prev,
-    summary: update.summary?.trim() || prev.summary,
-    affinity: clamp(prev.affinity + (update.affinityDelta ?? 0), -1, 1),
-    trust: clamp(prev.trust + (update.trustDelta ?? 0), 0, 1),
-    lastUpdated: update.now,
+    ...base,
+    relationshipType: classifyRelationship(
+      base,
+      {
+        minorInvolved: update.minorInvolved ?? false,
+        // Un romance que ya existe se mantiene mientras no se rompa (afinidad, rivalidad).
+        romanticHint: update.romanticHint || prev.relationshipType === "romantic",
+      },
+      cfg,
+    ),
   };
   await store.upsert(next);
+  const changed =
+    Math.abs(next.affinity - prev.affinity) >= 0.005 ||
+    Math.abs(next.trust - prev.trust) >= 0.005 ||
+    Math.abs(next.familiarity - prev.familiarity) >= 0.005 ||
+    next.relationshipType !== prev.relationshipType;
+  if (changed) {
+    await store.addHistory({
+      ownerId: next.ownerId,
+      aboutId: next.aboutId,
+      at: update.now,
+      affinity: next.affinity,
+      trust: next.trust,
+      familiarity: next.familiarity,
+      relationshipType: next.relationshipType,
+      reason: update.reason ?? "cambio de opinión",
+      eventId: update.eventId ?? null,
+    });
+  }
   return next;
 }
 
@@ -145,7 +248,8 @@ export function socialNote(profile: SocialProfile, name: string): string {
       : profile.trust < 0.33
         ? "no te fías"
         : "confianza media";
-  return `${name}: ${feel}, ${trust}. ${profile.summary}`.trim();
+  const known = profile.familiarity < 0.2 ? ", apenas os tratáis" : "";
+  return `${name} (${relationshipLabel(profile.relationshipType)}${known}): ${feel}, ${trust}. ${profile.summary}`.trim();
 }
 
 const SocialResponse = z.object({
@@ -169,6 +273,9 @@ export async function updateSocialAfterConversation(
     guard?: MinorGuard;
     /** Intenciones que surgen de la charla (promesas, quedadas…). */
     onIntentions?: (intentions: IntentionInput[]) => Promise<void>;
+    /** Conversación (para el historial de la ficha). */
+    eventId?: string;
+    config?: SocialConfig;
   },
 ): Promise<SocialProfile> {
   const prev = await store.get(opts.owner.agentId, opts.other.id);
@@ -196,20 +303,26 @@ Formato:
     actors: [opts.owner.agentId, opts.other.id],
     agentId: opts.owner.agentId,
   });
-  if (safe === false) {
-    return applySocialUpdate(store, {
-      ownerId: opts.owner.agentId,
-      aboutId: opts.other.id,
-      now: opts.now,
-    });
-  }
-  return applySocialUpdate(store, {
+  const cfg = opts.config ?? DEFAULT_SOCIAL;
+  const common = {
     ownerId: opts.owner.agentId,
     aboutId: opts.other.id,
+    now: opts.now,
+    // Hablar acerca: cada conversación suma familiaridad.
+    familiarityDelta: cfg.conversationFamiliarity,
+    eventId: opts.eventId ?? null,
+    minorInvolved:
+      (opts.guard?.isMinor(opts.owner.agentId) || opts.guard?.isMinor(opts.other.id)) ?? false,
+    config: cfg,
+  };
+  if (safe === false) return applySocialUpdate(store, { ...common, reason: "hablaron" });
+  return applySocialUpdate(store, {
+    ...common,
     summary: r.summary,
     affinityDelta: clamp(r.affinityDelta, -0.3, 0.3),
     trustDelta: clamp(r.trustDelta, -0.3, 0.3),
-    now: opts.now,
+    reason: `hablaron: ${r.summary || "sin más"}`,
+    romanticHint: hasStrongRomance(r.summary),
   });
 }
 
@@ -425,6 +538,11 @@ Formato:
         affinityDelta: clamp(p.affinityDelta, -0.3, 0.3),
         trustDelta: clamp(p.trustDelta, -0.3, 0.3),
         now,
+        reason: `al repasar el día: ${p.summary || "sin más"}`,
+        minorInvolved:
+          (this.memory.guard?.isMinor(owner.agentId) || this.memory.guard?.isMinor(p.id)) ?? false,
+        romanticHint: hasStrongRomance(p.summary),
+        config: this.memory.config.social,
       });
     }
     return result;

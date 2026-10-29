@@ -64,6 +64,13 @@
       "when": 1793261011559,
       "tag": "0008_memory_meta",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793263104191,
+      "tag": "0009_social_relationships",
+      "breakpoints": true
     }
   ]
 }

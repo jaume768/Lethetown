@@ -132,9 +132,39 @@ export const socialProfiles = pgTable(
     summary: text("summary").notNull(),
     affinity: real("affinity").notNull(),
     trust: real("trust").notNull(),
+    familiarity: real("familiarity").notNull().default(0.1),
+    /** family | friendship | neighbor | work | rivalry | romantic. */
+    relationshipType: text("relationship_type").notNull().default("neighbor"),
+    /** Vínculo de base de las semillas (family | romantic | work) o null. */
+    bond: text("bond"),
+    /** Rencor mínimo que dejan las ofensas importantes. */
+    grudge: real("grudge").notNull().default(0),
     lastUpdated: doublePrecision("last_updated").notNull(),
   },
   (t) => [primaryKey({ columns: [t.worldId, t.ownerId, t.aboutId] })],
+);
+
+/** Historial de las fichas sociales: cada cambio con su motivo (evolución de las relaciones). */
+export const socialProfileHistory = pgTable(
+  "social_profile_history",
+  {
+    id: serial("id").primaryKey(),
+    worldId: worldId(),
+    ownerId: text("owner_id").notNull(),
+    aboutId: text("about_id").notNull(),
+    /** Minutos de juego. */
+    at: doublePrecision("at").notNull(),
+    affinity: real("affinity").notNull(),
+    trust: real("trust").notNull(),
+    familiarity: real("familiarity").notNull(),
+    relationshipType: text("relationship_type").notNull(),
+    reason: text("reason").notNull(),
+    eventId: text("event_id"),
+  },
+  (t) => [
+    index("social_history_world_owner_idx").on(t.worldId, t.ownerId, t.aboutId, t.at),
+    index("social_history_world_at_idx").on(t.worldId, t.at),
+  ],
 );
 
 /** Línea de tiempo: todos los eventos de la simulación. */

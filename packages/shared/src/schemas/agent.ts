@@ -96,6 +96,34 @@ export const AgentSeed = z.object({
   personality: BigFive.prefault({}),
   /** Particularidades de su memoria (opcional). */
   memoryProfile: MemoryProfileSeed.optional(),
+  /** Cómo habla: así cada agente suena distinto (va en el prompt fijo de identidad). */
+  speechStyle: z
+    .object({
+      /** "coloquial y bromista", "formal y medido"… */
+      register: z.string(),
+      sentenceLength: z.enum(["corta", "media", "larga"]).default("media"),
+      /** Muletillas y expresiones suyas. */
+      catchphrases: z.array(z.string()).default([]),
+      /** Temas que le salen solos (sus intereses). */
+      topics: z.array(z.string()).default([]),
+    })
+    .optional(),
+  /**
+   * Relaciones de partida (lo que piensa de otros al empezar; no tienen por qué ser
+   * recíprocas). `bond` fija un vínculo que no cambia con la afinidad (familia, pareja, trabajo).
+   */
+  relationships: z
+    .array(
+      z.object({
+        with: z.string(),
+        bond: z.enum(["family", "romantic", "work"]).optional(),
+        affinity: z.number().min(-1).max(1).default(0),
+        trust: z.number().min(0).max(1).default(0.5),
+        familiarity: z.number().min(0).max(1).default(0.5),
+        summary: z.string().default(""),
+      }),
+    )
+    .default([]),
   /** Cosas que tiene pensado hacer cuando surja (memoria prospectiva). */
   initialIntentions: z
     .array(

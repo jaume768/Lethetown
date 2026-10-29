@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Drama } from "@lethetown/shared";
+import { SocialProfile, type Drama } from "@lethetown/shared";
 import { createServices, openWorld } from "../bootstrap";
 import { loadConfig } from "../config";
 import { DramaDetector } from "./dramas";
@@ -22,15 +22,22 @@ describe("DramaDetector", () => {
     speech('a → b: "¿Sabes? Oí a C decir que…"', ["a", "b"]); // repetido: se ignora
     speech('a → b: "Qué bien"', ["a", "b", "c"]);
     d.onSocial(
-      { ownerId: "a", aboutId: "b", summary: "", affinity: 0.5, trust: 0.5, lastUpdated: 0 },
-      {
+      SocialProfile.parse({
+        ownerId: "a",
+        aboutId: "b",
+        summary: "",
+        affinity: 0.5,
+        trust: 0.5,
+        lastUpdated: 0,
+      }),
+      SocialProfile.parse({
         ownerId: "a",
         aboutId: "b",
         summary: "me mintió",
         affinity: 0.25,
         trust: 0.5,
         lastUpdated: 1,
-      },
+      }),
     );
     d.onEffect({ kind: "forget", agentId: "a", memoryId: "m", text: "boda", importance: 3 }); // poco importante
     d.onEffect({ kind: "forget", agentId: "a", memoryId: "m", text: "boda", importance: 9 });

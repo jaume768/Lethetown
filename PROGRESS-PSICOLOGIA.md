@@ -58,11 +58,11 @@ y comprobar que `pnpm dev` arranca en modo mock.
 
 ### Fase 6 — Lo social
 
-- [ ] Identidad: intereses, discrepar, negarse; `speechStyle` de los 20
-- [ ] Ficha ampliada: `familiarity`, `relationshipType`, historial (`social_profile_history`)
-- [ ] Credibilidad de los rumores
-- [ ] Mera exposición
-- [ ] Perdón y rencor mínimo
+- [x] Identidad: intereses, discrepar, negarse; `speechStyle` de los 20
+- [x] Ficha ampliada: `familiarity`, `relationshipType`, historial (`social_profile_history`)
+- [x] Credibilidad de los rumores
+- [x] Mera exposición
+- [x] Perdón y rencor mínimo
 
 ### Fase 7 — Ver las relaciones
 
@@ -279,3 +279,42 @@ conversaciones (decide 842 → 916), que son las llamadas con más entrada.
 - **Semillas**: `initialIntentions` en 10 agentes (el libro de Lucía, el aniversario de Tomás, el
   dinero que Hugo le debe a Rafael…). En 3 días de mock: 74 intenciones nuevas, 41 cumplidas, 4
   que se le pasan (Lucía se olvida del libro de Carmen) y 2 «¡vaya, se me olvidó!».
+- **Identidad**: el prompt fijo añade "Personalidad:" (solo los rasgos Big Five marcados, en
+  frases sin género: "necesitas ratos a solas"…), "Cómo hablas:" (registro, longitud de frase,
+  muletillas) y "Temas que te salen solos" (`speechStyle`, rellenado a mano para los 20; un test
+  comprueba que todos son distintos), y la regla de que pueden discrepar, negarse, molestarse o
+  no tener ganas de hablar. El mock usa las muletillas, a veces no le apetece hablar (si es
+  introvertido y ya tiene la social cubierta) y a veces lleva la contraria (si es poco amable).
+- **Ficha ampliada**: `familiarity` (cada charla suma 0.04), `relationshipType` (family,
+  friendship, neighbor, work, rivalry, romantic; ids en inglés, la UI los traduce), `bond`
+  (vínculo de base de las semillas: familia, pareja, trabajo) y `grudge`. El tipo lo calcula el
+  código (`classifyRelationship`): el vínculo manda; si no, rivalidad con afinidad ≤ −0.35,
+  amistad con afinidad ≥ 0.35 y familiaridad ≥ 0.35, y si no, trabajo o vecindad. **Romántica**
+  solo por vínculo de las semillas (Tomás y Pilar) o si surge entre adultos (afinidad ≥ 0.75,
+  familiaridad ≥ 0.6 y una opinión con léxico romántico claro); con un menor, nunca (también lo
+  comprueba un test sobre las semillas).
+- **Relaciones de partida**: `relationships` en las semillas (58, no recíprocas: Rafael ve a
+  Mateo como rival y Mateo apenas a él) que se siembran si el agente aún no tiene fichas.
+- **Historial** (`social_profile_history`, migración 0009): cada cambio de afinidad, confianza,
+  familiaridad o tipo (≥ 0.005) con motivo ("hablaron: …", "al repasar el día: …", "coincidieron
+  3.0 h en el pueblo", "con el tiempo le perdona un poco…", "relación de partida") y evento.
+  `SocialProfileStore` gana `listAll`, `addHistory` e `history` (para la red y la UI).
+- **Credibilidad de los rumores**: lo que suena a rumor (`looksLikeRumor`) o se oye a escondidas
+  se graba con importancia × (0.6 + 0.4·credibilidad) y fuerza × (0.5 + 0.5·credibilidad), donde
+  credibilidad = confianza en quien lo cuenta × 0.7 si es chismoso (rasgo "chismoso/cotilla");
+  por debajo de 0.35 se guarda como "(no sé si creérmelo) …".
+- **Mera exposición** sin escrituras por tick: el agente suma los minutos que pasa en el mismo
+  sitio que cada vecino (`AgentMind.exposure`) y al dormirse, si pasan de 30 min, suben la
+  familiaridad (0.02/h) y un poco la afinidad (0.004/h, con tope 0.3): una entrada de historial
+  por pareja y día.
+- **Perdón y rencor**: una bajada de afinidad ≥ 0.2 deja un rencor del 50 % de la bajada
+  (acumulable). Cada noche la afinidad negativa vuelve hacia −rencor (no hasta 0) con vida media
+  de 6 días ÷ (0.5 + amabilidad).
+- **Dramas de relación**: cuando el tipo cambia a amistad, rivalidad o romance
+  ("X ya considera a Y un amigo"…).
+- `SIM_SNAPSHOT_VERSION` = 9 (`mind.exposure`). Test dorado regenerado (prompt fijo nuevo,
+  muletillas en el mock, credibilidad).
+- **Ojo: `pnpm -s typecheck` escondía errores** (en modo recursivo y silencioso, pnpm no
+  enseñaba la salida de tsc). Desde el commit de los falsos recuerdos había un error en la web
+  (iconos de los dramas nuevos) y uno en un test de agent-core; ambos se arreglan en este commit.
+  A partir de aquí se comprueba siempre el código de salida.

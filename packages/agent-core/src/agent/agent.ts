@@ -8,7 +8,14 @@ import type {
   Weather,
 } from "@lethetown/shared";
 import type { LLMClient } from "../llm/client";
-import { socialNote, type MemoryOwner, type SocialProfileStore } from "../memory/human";
+import {
+  applySocialUpdate,
+  socialNote,
+  type MemoryOwner,
+  type SocialProfileStore,
+} from "../memory/human";
+import { credibility, exposureDelta, forgive } from "../memory/social";
+import { looksLikeRumor } from "@lethetown/shared";
 import { reinforce } from "../memory/decay";
 import {
   encodingStrength,
@@ -105,6 +112,8 @@ export interface AgentDeps {
   names?: Record<string, string>;
   /** Menores del pueblo, para la regla fija del prompt de identidad. */
   minors?: MinorInfo[];
+  /** Chismosos del pueblo: lo que cuentan se cree un poco menos. */
+  gossips?: ReadonlySet<string>;
   onError?: (agentId: string, task: string, error: unknown) => void;
 }
 
@@ -267,6 +276,101 @@ export class Agent {
       );
     }
     for (const i of this.seed.initialIntentions) await this.intend(now, i);
+  }
+
+  /** Siembra lo que piensa de los demás al empezar (relaciones de las semillas). */
+  async seedRelationships(now: number): Promise<void> {
+    const social = this.deps.social;
+    if (!social) return;
+    for (const r of this.seed.relationships) {
+      if (!this.deps.names || !(r.with in this.deps.names)) continue;
+      await applySocialUpdate(social, {
+        ownerId: this.id,
+        aboutId: r.with,
+        summary: r.summary,
+        affinity: r.affinity,
+        trustDelta: r.trust - 0.5,
+        familiarityDelta: r.familiarity - 0.1,
+        bond: r.bond ?? null,
+        now,
+        reason: "relación de partida",
+        minorInvolved: this.involvesMinor(r.with),
+        config: this.deps.memory.config.social,
+      });
+    }
+  }
+
+  /** ¿Es menor él o la otra persona? (para que nunca haya romance). */
+  private involvesMinor(otherId: string): boolean {
+    const guard = this.deps.memory.guard;
+    return Boolean(guard?.isMinor(this.id) || guard?.isMinor(otherId));
+  }
+
+  /** Mera exposición: anota el tiempo que pasa en el mismo sitio que otros (sin LLM). */
+  noteCompany(present: string[], minutes: number): void {
+    const exposure = { ...this.mind.exposure };
+    for (const id of present) exposure[id] = (exposure[id] ?? 0) + minutes;
+    this.mind.exposure = exposure;
+  }
+
+  /**
+   * Lo social al cerrar el día (sin LLM): coincidir a menudo acerca un poco (mera exposición)
+   * y la afinidad negativa se suaviza con el tiempo (perdón), salvo el rencor de las ofensas
+   * importantes. Todo queda en el historial de las fichas.
+   */
+  private async socialDayEnd(now: number, days = 1): Promise<void> {
+    const social = this.deps.social;
+    if (!social) return;
+    const cfg = this.deps.memory.config.social;
+    for (const [id, minutes] of Object.entries(this.mind.exposure)) {
+      const prev = await social.get(this.id, id);
+      const d = exposureDelta(minutes, prev?.affinity ?? 0, cfg);
+      if (!d.familiarityDelta && !d.affinityDelta) continue;
+      await applySocialUpdate(social, {
+        ownerId: this.id,
+        aboutId: id,
+        ...d,
+        now,
+        reason: `coincidieron ${(minutes / 60).toFixed(1)} h en el pueblo`,
+        minorInvolved: this.involvesMinor(id),
+        config: cfg,
+      });
+    }
+    this.mind.exposure = {};
+    for (const p of await social.list(this.id)) {
+      const affinity = forgive(p, days, this.seed.personality.agreeableness, cfg);
+      if (affinity - p.affinity < 0.005) continue;
+      await applySocialUpdate(social, {
+        ownerId: this.id,
+        aboutId: p.aboutId,
+        affinity,
+        now,
+        reason:
+          p.grudge > 0
+            ? `con el tiempo le perdona un poco (aunque le guarda algo de rencor: ${p.grudge.toFixed(2)})`
+            : "con el tiempo le perdona un poco",
+        minorInvolved: this.involvesMinor(p.aboutId),
+        config: cfg,
+      });
+    }
+  }
+
+  /**
+   * Credibilidad de lo que le cuentan (rumores y lo oído a escondidas): la confianza en quien
+   * lo cuenta, menos si es chismoso. Devuelve null si no aplica.
+   */
+  private async credibilityOf(p: Perception): Promise<number | null> {
+    const social = this.deps.social;
+    if (!social) return null;
+    const teller = p.kind === "overheard" ? p.fromId : p.kind === "speech" ? p.fromId : null;
+    if (p.kind === "speech" && !looksLikeRumor(p.text)) return null;
+    if (p.kind !== "speech" && p.kind !== "overheard") return null;
+    const trust = teller ? ((await social.get(this.id, teller))?.trust ?? 0.5) : 0.3;
+    return credibility(
+      trust,
+      teller ? (this.deps.gossips?.has(teller) ?? false) : false,
+      this.deps.memory.config.social,
+    );
   }
 
   /**
@@ -498,6 +602,7 @@ export class Agent {
    */
   async endDay(now: number, day: number): Promise<DayEndReport> {
     const report: DayEndReport = { diaryMemoryId: null, habitsFormed: [], habitsReinforced: [] };
+    await this.socialDayEnd(now);
     const entries = this.state.doneToday ?? [];
     if (!entries.length) return report;
     const memory = this.deps.memory;
@@ -699,18 +804,29 @@ export class Agent {
       );
       const distracted =
         this.state.activityKind === "talk" && (p.kind === "arrived" || p.kind === "overheard");
+      // Rumores: según lo que se fía de quien lo cuenta, lo graba con menos fuerza e
+      // importancia, y si se fía poco, con duda.
+      const cred = await this.credibilityOf(p);
+      const doubt = cred !== null && cred < this.deps.memory.config.social.doubtBelow;
+      const encoded = this.encoding(arousal, distracted);
       const record = await this.deps.memory.tryRemember(
         {
           agentId: this.id,
-          text: texts[i]!,
+          text: doubt ? `(no sé si creérmelo) ${texts[i]!}` : texts[i]!,
           type: "observation",
-          importance: p.kind === "thought" ? Math.max(rating.importance, 6) : rating.importance,
+          importance:
+            p.kind === "thought"
+              ? Math.max(rating.importance, 6)
+              : cred === null
+                ? rating.importance
+                : Math.max(1, Math.round(rating.importance * (0.6 + 0.4 * cred))),
           emotionalValence: rating.valence,
           source: sourceOf(p),
           people: peopleOf(p),
           placeId: "placeId" in p ? p.placeId : this.state.locationId,
           eventId: "eventId" in p ? (p.eventId ?? null) : null,
-          ...this.encoding(arousal, distracted),
+          ...encoded,
+          strength: cred === null ? encoded.strength : encoded.strength * (0.5 + 0.5 * cred),
         },
         now,
       );

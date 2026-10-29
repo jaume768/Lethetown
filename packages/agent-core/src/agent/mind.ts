@@ -14,6 +14,8 @@ export const AgentMind = z.object({
   sleepQuality: z.number().min(0).max(1).default(1),
   /** Deuda de sueño de hoy (0..1): peor memoria y peor ánimo. */
   sleepDebt: z.number().min(0).max(1).default(0),
+  /** Minutos que ha pasado hoy en el mismo sitio que cada vecino (mera exposición). */
+  exposure: z.record(z.string(), z.number()).default({}),
   /** Intenciones abiertas (memoria prospectiva), con su pista y su estado. */
   intentions: z.array(IntentionState).default([]),
 });
