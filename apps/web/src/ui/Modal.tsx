@@ -13,16 +13,21 @@ interface Props {
 /** Diálogo modal accesible: role=dialog, Escape cierra, foco al abrir y devuelto al cerrar. */
 export function Modal({ title, onClose, children, actions, className = "" }: Props) {
   const ref = useRef<HTMLElement>(null);
+  // onClose suele ser una flecha nueva en cada render del padre (que se repinta con cada delta
+  // del mundo): si fuera dependencia del efecto, el foco saltaría al diálogo sin parar y no se
+  // podría escribir en sus campos.
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
   useEffect(() => {
     const previous = document.activeElement as HTMLElement | null;
     ref.current?.focus();
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onCloseRef.current();
     window.addEventListener("keydown", onKey);
     return () => {
       window.removeEventListener("keydown", onKey);
       previous?.focus?.();
     };
-  }, [onClose]);
+  }, []);
   return (
     <div className="modal-back" onClick={onClose}>
       <section

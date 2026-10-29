@@ -23,18 +23,42 @@ Cada hoja tiene 10 columnas × 3 filas: `talk`, `nod` y `shake`. El inspector us
 el agente habla y `nod` mientras piensa; el mapa anima `talk` mientras se escribe el bocadillo.
 Si faltan los retratos, se muestra la inicial del nombre y el bocadillo va sin retrato.
 
-Recetas actuales:
+Las recetas de los 20 vecinos están en `seeds/agents.json`. Pieles reales: 1 (la más oscura), 4
+(morena), 7 (tostada), 3 (clara) y 2 (muy clara); la 5, 6, 8 y 9 son tonos de fantasía.
 
-| Agente | Quién es             | Receta                                              |
-| ------ | -------------------- | --------------------------------------------------- |
-| Lucía  | 28, ilustradora      | piel 2, ojos 1, melena 09 pelirroja (1)             |
-| Mateo  | 34, regenta el café  | piel 4, ojos 2, pelo 02 castaño oscuro (4), barba 1 |
-| Carmen | 63, maestra jubilada | piel 2, ojos 3, media melena 04 canosa (5), gafas 1 |
+| Agente    | Quién es                     | Casa · trabajo                   |
+| --------- | ---------------------------- | -------------------------------- |
+| Lucía     | 28, ilustradora              | casa_azul                        |
+| Mateo     | 34, regenta el café          | casa_roja · cafe_ola             |
+| Carmen    | 63, maestra jubilada         | casa_roja                        |
+| Julián    | 46, panadero viudo           | casa_amarilla · panaderia        |
+| Inés      | 16, hija de Julián           | casa_amarilla · escuela (alumna) |
+| Elena     | 52, alcaldesa                | casa_lila · ayuntamiento         |
+| Tomás     | 71, pescador jubilado        | casa_ocre · lago                 |
+| Pilar     | 68, mujer de Tomás           | casa_ocre · huerto               |
+| Andrés    | 39, bibliotecario            | casa_marron · biblioteca         |
+| Sofía     | 31, maestra                  | casa_celeste · escuela           |
+| Rafael    | 42, tabernero                | casa_granate · taberna           |
+| Marta     | 37, tendera, madre de Leo    | casa_naranja · tienda            |
+| Leo       | 10, hijo de Marta            | casa_naranja · escuela (alumno)  |
+| Nuria     | 27, jardinera                | casa_pino · huerto               |
+| Hugo      | 29, músico callejero         | casa_rio · plaza                 |
+| Valentina | 25, fotógrafa recién llegada | casa_colina                      |
+| Ernesto   | 58, cartero hipocondríaco    | casa_molino                      |
+| Aurora    | 82, la más anciana           | casa_jardin                      |
+| Clara     | 19, nieta de Aurora          | casa_jardin · mercado            |
+| Samuel    | 35, médico                   | casa_faro · consultorio          |
+
+`workId` (opcional) es su lugar de trabajo o estudios: entra en el prompt fijo («Tu trabajo o
+estudios») y el mock organiza su día alrededor de él.
 
 ## Personajes del mapa
 
-Ahora se usan los 4 personajes de Modern Interiors **Free** (solo uso no comercial): Lucía →
-Amelia, Mateo → Bob, Carmen → Alex (`agentCharacters` del manifest).
+Se usan los 4 personajes de Modern Interiors **Free** (solo uso no comercial) como cuerpos:
+Amelia, Alex, Adam y Bob (`agentCharacters` del manifest). Cada hoja lleva una `palette` con los
+colores de su piel, pelo, camisa y pantalón, y el cliente los lleva a los colores del
+`appearance` de cada agente conservando el sombreado (`recolorPalette` en `packages/shared`).
+Así los 20 vecinos se distinguen aunque compartan cuerpo.
 
 Cuando compres Modern Interiors de pago:
 

@@ -441,6 +441,7 @@ export async function openWorld(services: Services, row: WorldRow): Promise<Worl
     maintenance,
     rng,
     language: row.language,
+    demoEveryMinutes: config.SIM_DEMO === "on" ? config.SIM_DEMO_EVERY_MINUTES : undefined,
   });
   placeOf = (id) => sim.agents.get(id)?.state.locationId ?? null;
   sim.onEvent((e) => detector.onEvent(e));

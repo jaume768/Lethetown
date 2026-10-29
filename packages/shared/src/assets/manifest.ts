@@ -84,6 +84,20 @@ export const CharacterSheet = z.object({
     .object({ skin: z.string(), hair: z.string(), shirt: z.string(), pants: z.string() })
     .optional(),
   /**
+   * Hojas con sombreado (LimeZu): colores de cada parte, que el cliente lleva al color del
+   * `appearance` conservando la luz y la sombra (`recolorPalette`). Con `recolor: true`.
+   */
+  palette: z
+    .partialRecord(
+      z.enum(["skin", "hair", "shirt", "pants"]),
+      z.object({
+        colors: z.array(z.string().regex(/^#[0-9a-f]{6}$/i)).min(1),
+        minY: z.number().int().nonnegative().optional(),
+        maxY: z.number().int().nonnegative().optional(),
+      }),
+    )
+    .optional(),
+  /**
    * Animaciones por clave (`walk_down`, `sit_left`...). Las que falten caen en otras:
    * sit_up/down → idle, sleep → primer frame de idle_down tumbado, read → idle.
    */
@@ -295,3 +309,48 @@ export const REQUIRED_STAMPS = [
   "coffee_machine",
   "collision",
 ] as const;
+
+/**
+ * Sellos opcionales: estructuras y decoración extra. El generador los usa si el pack los
+ * define y, si no, los omite (o cae en los obligatorios: sin `villa_*`, las casas se hacen
+ * con `roof` + `facade`).
+ */
+export const OPTIONAL_STAMPS = [
+  // Casas completas (tejado a dos aguas) de 8×13 baldosas con la puerta en la columna 2.
+  "villa_1",
+  "villa_2",
+  "villa_3",
+  "villa_4",
+  "villa_5",
+  // Árboles y plantas
+  "tree_round",
+  "tree_big",
+  "tree_planter",
+  "pine",
+  "cypress",
+  "swing_tree",
+  "flowers_blue",
+  "flowers_pink",
+  "flowers_red",
+  "flowers_yellow",
+  "flowers_purple",
+  "planter",
+  // Huerto
+  "garden_bed",
+  "crop_sprout",
+  "crop_lettuce",
+  "crop_leaf",
+  "crop_corn",
+  "sunflower",
+  "greenhouse",
+  // Parque infantil, mercado y monumentos
+  "slide",
+  "swings",
+  "sandbox",
+  "trampoline",
+  "market_cart_1",
+  "market_cart_2",
+  "market_cart_3",
+  "angel_statue",
+] as const;
+export type StampName = (typeof REQUIRED_STAMPS)[number] | (typeof OPTIONAL_STAMPS)[number];

@@ -35,6 +35,8 @@ const es = {
   "map.clip": "Crear clip",
   "map.keys": "Flechas: mover la cámara · +/−: zoom · Tab: elegir agente",
   "map.selectAgent": "Elegir agente",
+  "map.fullscreen": "Pantalla completa",
+  "map.exitFullscreen": "Salir de pantalla completa",
 
   "status.paused": "Mundo en pausa",
   "status.budget":
@@ -107,6 +109,8 @@ const es = {
   "events.until": "hasta las {hour}:00",
   "events.none": "Sin eventos guardados.",
   "events.rashomon": "Ver cómo lo recuerda cada uno (Rashomon)",
+  "events.collapse": "Ocultar eventos",
+  "events.expand": "Mostrar eventos",
 
   "chronicles.title": "Crónicas",
   "chronicles.write": "Escribir la de hoy",

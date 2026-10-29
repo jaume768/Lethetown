@@ -13,6 +13,7 @@ import {
   AssetManifest,
   REQUIRED_STAMPS,
   activePack,
+  type StampName,
   parseTiledMap,
   type Stamp,
   type TiledMap,
@@ -20,8 +21,8 @@ import {
   type TiledTileset,
 } from "@lethetown/shared";
 
-const W = 60;
-const H = 40;
+const W = 120;
+const H = 80;
 const TS = 16;
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const OUT = path.join(ROOT, "seeds/town.tmj");
@@ -64,9 +65,12 @@ const tilesets: TiledTileset[] = pack.tilesets.map((t) => {
 });
 const tilesetByName = new Map(tilesets.map((t) => [t.name, t]));
 
-function stamp(name: (typeof REQUIRED_STAMPS)[number]): Stamp {
+function stamp(name: StampName): Stamp {
   return pack.stamps[name]!;
 }
+
+/** ¿Define el pack este sello (opcional)? */
+const has = (name: StampName) => Boolean(pack.stamps[name]);
 
 function gidOf(s: Stamp, col: number, row: number): number {
   const ts = tilesetByName.get(s.tileset)!;
@@ -95,8 +99,9 @@ const block = (x: number, y: number) => put("collision", x, y, collisionGid);
 const unblock = (x: number, y: number) => put("collision", x, y, 0);
 
 /** Coloca un sello fijo con su ancla en (x, y). */
-function place(layer: LayerName, name: (typeof REQUIRED_STAMPS)[number], x: number, y: number) {
-  const s = stamp(name);
+function place(layer: LayerName, name: StampName, x: number, y: number) {
+  const s = pack.stamps[name];
+  if (!s) return; // sello opcional que este pack no tiene
   const ox = x - s.anchor[0];
   const oy = y - s.anchor[1];
   for (let j = 0; j < s.h; j++) {
@@ -106,14 +111,7 @@ function place(layer: LayerName, name: (typeof REQUIRED_STAMPS)[number], x: numb
 }
 
 /** Rellena un área con un sello en modo patrón (alineado a coordenadas del mapa). */
-function pattern(
-  layer: LayerName,
-  name: (typeof REQUIRED_STAMPS)[number],
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-) {
+function pattern(layer: LayerName, name: StampName, x: number, y: number, w: number, h: number) {
   const s = stamp(name);
   for (let j = y; j < y + h; j++) {
     for (let i = x; i < x + w; i++) put(layer, i, j, gidOf(s, s.x + (i % s.w), s.y + (j % s.h)));
@@ -121,14 +119,7 @@ function pattern(
 }
 
 /** Estira un sello nine-slice sobre un área. */
-function nineslice(
-  layer: LayerName,
-  name: (typeof REQUIRED_STAMPS)[number],
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-) {
+function nineslice(layer: LayerName, name: StampName, x: number, y: number, w: number, h: number) {
   const s = stamp(name);
   const pick = (i: number, n: number, size: number) => {
     if (size < 3) return Math.min(i, size - 1);
@@ -210,16 +201,11 @@ function addSpot(
   });
 }
 
-/**
- * Edificio estilo LimeZu: borde de techo, pared de 2 baldosas, suelo, puerta abajo.
- * Por encima (capa roofs): azotea + fachada con la puerta, que el cliente oculta si hay alguien dentro.
- */
-function building(
-  r: Rect,
-  doorX: number,
-  wall: "wall_blue" | "wall_red" | "wall_wood" | "wall_grey",
-  floor: "floor_home" | "floor_cafe" | "floor_shop",
-) {
+type Wall = "wall_blue" | "wall_red" | "wall_wood" | "wall_grey";
+type Floor = "floor_home" | "floor_cafe" | "floor_shop";
+
+/** Habitación estilo LimeZu: borde de techo, pared de 2 baldosas, suelo y puerta abajo. */
+function room(r: Rect, doorX: number, wall: Wall, floor: Floor) {
   const bottom = r.y + r.h - 1;
   pattern("buildings", "ceiling", r.x, r.y, r.w, 1);
   pattern("buildings", "ceiling", r.x, bottom, r.w, 1);
@@ -237,7 +223,15 @@ function building(
   put("buildings", doorX, bottom, 0);
   pattern("ground", floor, doorX, bottom, 1, 1);
   unblock(doorX, bottom);
+}
 
+/**
+ * Edificio: habitación y, por encima (capa roofs), azotea + fachada con la puerta, que el
+ * cliente oculta si hay alguien dentro.
+ */
+function building(r: Rect, doorX: number, wall: Wall, floor: Floor) {
+  room(r, doorX, wall, floor);
+  const bottom = r.y + r.h - 1;
   // Exterior: azotea + fachada (3 filas) con la puerta alineada.
   const facade = stamp("facade");
   nineslice("roofs", "roof", r.x, r.y, r.w, r.h - facade.h);
@@ -262,6 +256,45 @@ function building(
   }
 }
 
+const VILLA_W = 8;
+const VILLA_H = 13;
+
+/**
+ * Casa de 8×13 con su puerta en (x + 2, y + 12). Con los sellos `villa_*` el exterior es una
+ * casa completa (tejado a dos aguas) y la habitación empieza dos filas más abajo, bajo el
+ * tejado opaco; sin ellos, un edificio normal del mismo tamaño.
+ */
+function house(x: number, y: number, variant: 1 | 2 | 3 | 4 | 5, wall: Wall): Rect {
+  const name = `villa_${variant}` as const;
+  const inner = { x, y: y + 2, w: VILLA_W, h: VILLA_H - 2 };
+  if (has(name)) {
+    room(inner, x + 2, wall, "floor_home");
+    place("roofs", name, x, y);
+    for (const [wx, wy] of [
+      [1, 6],
+      [3, 6],
+      [6, 6],
+      [4, 9],
+    ] as const) {
+      windows.push(point("ventana", "window", x + wx, y + wy));
+    }
+  } else {
+    building(inner, x + 2, wall, "floor_home");
+  }
+  // Las dos filas de arriba quedan detrás del tejado: no se pisan.
+  for (let i = 0; i < VILLA_W; i++) {
+    block(x + i, y);
+    block(x + i, y + 1);
+  }
+  return { x, y, w: VILLA_W, h: VILLA_H };
+}
+
+/** Farola (con su luz nocturna) cuyo pie cae en (x, y). */
+function lamp(x: number, y: number) {
+  place("decor", "lamp", x, y);
+  lights.push(point("farola", "light", x, y));
+}
+
 function pathRect(x0: number, y0: number, x1: number, y1: number) {
   const [xa, xb] = [Math.min(x0, x1), Math.max(x0, x1)];
   const [ya, yb] = [Math.min(y0, y1), Math.max(y0, y1)];
@@ -269,113 +302,546 @@ function pathRect(x0: number, y0: number, x1: number, y1: number) {
 }
 
 // --- Trazado -----------------------------------------------------------------------------
+//
+// 120×80 baldosas. De norte a sur: pinar, fila de casas A, calle Norte (y 16-17), fila B
+// (casas, biblioteca, escuela y consultorio), calle Mayor (y 37-38), manzana de servicios con
+// la plaza y el mercadillo, avenida del Lago (y 56-57) y, abajo, parque, lago, jardín y huerto.
+// Dos calles verticales (x 50-51 y 68-69) y la del este (x 118-119) unen las tres horizontales.
 
 pattern("ground", "grass", 0, 0, W, H);
 
-// Caminos
-pathRect(0, 24, W - 1, 25); // calle principal
-pathRect(8, 12, 8, 23); // casa azul
-pathRect(52, 12, 52, 23); // casa roja
-pathRect(30, 23, 30, 23); // café
-pathRect(57, 26, 57, 37); // bajada a la tienda
-pathRect(49, 37, 57, 37);
-pathRect(12, 26, 12, 33); // parque
-pathRect(6, 33, 18, 33);
+// Calles
+pathRect(0, 16, W - 1, 17); // calle Norte
+pathRect(0, 37, W - 1, 38); // calle Mayor
+pathRect(0, 56, W - 1, 57); // avenida del Lago
+pathRect(50, 16, 51, 57);
+pathRect(68, 16, 69, 57);
+pathRect(118, 16, 119, 57);
 
-// Edificios
-const casaAzul = { x: 2, y: 1, w: 12, h: 11 };
-const casaRoja = { x: 46, y: 1, w: 12, h: 11 };
-const cafe = { x: 23, y: 12, w: 14, h: 11 };
-const tienda = { x: 42, y: 27, w: 14, h: 10 };
-building(casaAzul, 8, "wall_blue", "floor_home");
-building(casaRoja, 52, "wall_red", "floor_home");
-building(cafe, 30, "wall_wood", "floor_cafe");
-building(tienda, 49, "wall_grey", "floor_shop");
+// --- Casas -----------------------------------------------------------------------------------
 
-addPlace("casa_azul", "Casa azul", "home", casaAzul, true);
-addPlace("casa_roja", "Casa roja", "home", casaRoja, true);
+interface HomeDef {
+  id: string;
+  name: string;
+  x: number;
+  /** Fila A (y 3, puerta a la calle Norte) o B (y 24, puerta a la calle Mayor). */
+  y: 3 | 24;
+  variant: 1 | 2 | 3 | 4 | 5;
+  wall: Wall;
+  /** Camas: [id del spot, nombre, dueño]. */
+  beds: [string, string, string][];
+  kitchen: string;
+}
+
+/** Casa con hasta tres camas en la fila de arriba y la cocina debajo. */
+function home(d: HomeDef): Rect {
+  const r = house(d.x, d.y, d.variant, d.wall);
+  addPlace(d.id, d.name, "home", r, true);
+  const cols = [d.x + 1, d.x + 5, d.x + 3];
+  d.beds.forEach(([id, name, owner], i) => {
+    place("decor", "bed", cols[i]!, d.y + 6);
+    addSpot(id, name, d.id, "sleep", cols[i]!, d.y + 6, owner);
+  });
+  place("decor", "stove", d.x + 3, d.y + 10);
+  addSpot(d.kitchen, "cocina", d.id, "use", d.x + 3, d.y + 10);
+  place("decor", "plant", d.x + 6, d.y + 10);
+  return r;
+}
+
+const HOMES: HomeDef[] = [
+  // Fila A
+  {
+    id: "casa_azul",
+    name: "Casa azul",
+    x: 2,
+    y: 3,
+    variant: 5,
+    wall: "wall_blue",
+    beds: [["cama_azul", "cama", "lucia"]],
+    kitchen: "cocina_azul",
+  },
+  {
+    id: "casa_amarilla",
+    name: "Casa amarilla",
+    x: 12,
+    y: 3,
+    variant: 1,
+    wall: "wall_wood",
+    beds: [
+      ["cama_julian", "cama de Julián", "julian"],
+      ["cama_ines", "cama de Inés", "ines"],
+    ],
+    kitchen: "cocina_amarilla",
+  },
+  {
+    id: "casa_lila",
+    name: "Casa lila",
+    x: 22,
+    y: 3,
+    variant: 3,
+    wall: "wall_red",
+    beds: [["cama_elena", "cama de Elena", "elena"]],
+    kitchen: "cocina_lila",
+  },
+  {
+    id: "casa_ocre",
+    name: "Casa ocre",
+    x: 32,
+    y: 3,
+    variant: 1,
+    wall: "wall_wood",
+    beds: [
+      ["cama_tomas", "cama de Tomás", "tomas"],
+      ["cama_pilar", "cama de Pilar", "pilar"],
+    ],
+    kitchen: "cocina_ocre",
+  },
+  {
+    id: "casa_marron",
+    name: "Casa marrón",
+    x: 42,
+    y: 3,
+    variant: 2,
+    wall: "wall_grey",
+    beds: [["cama_andres", "cama de Andrés", "andres"]],
+    kitchen: "cocina_marron",
+  },
+  {
+    id: "casa_roja",
+    name: "Casa roja",
+    x: 70,
+    y: 3,
+    variant: 4,
+    wall: "wall_red",
+    beds: [
+      ["cama_mateo", "cama de Mateo", "mateo"],
+      ["cama_carmen", "cama de Carmen", "carmen"],
+    ],
+    kitchen: "cocina_roja",
+  },
+  {
+    id: "casa_celeste",
+    name: "Casa celeste",
+    x: 80,
+    y: 3,
+    variant: 5,
+    wall: "wall_blue",
+    beds: [["cama_sofia", "cama de Sofía", "sofia"]],
+    kitchen: "cocina_celeste",
+  },
+  {
+    id: "casa_granate",
+    name: "Casa granate",
+    x: 90,
+    y: 3,
+    variant: 4,
+    wall: "wall_red",
+    beds: [["cama_rafael", "cama de Rafael", "rafael"]],
+    kitchen: "cocina_granate",
+  },
+  {
+    id: "casa_naranja",
+    name: "Casa naranja",
+    x: 100,
+    y: 3,
+    variant: 1,
+    wall: "wall_wood",
+    beds: [
+      ["cama_marta", "cama de Marta", "marta"],
+      ["cama_leo", "cama de Leo", "leo"],
+    ],
+    kitchen: "cocina_naranja",
+  },
+  {
+    id: "casa_pino",
+    name: "Casa del pinar",
+    x: 110,
+    y: 3,
+    variant: 2,
+    wall: "wall_grey",
+    beds: [["cama_nuria", "cama de Nuria", "nuria"]],
+    kitchen: "cocina_pino",
+  },
+  // Fila B
+  {
+    id: "casa_rio",
+    name: "Casa del río",
+    x: 2,
+    y: 24,
+    variant: 3,
+    wall: "wall_blue",
+    beds: [["cama_hugo", "cama de Hugo", "hugo"]],
+    kitchen: "cocina_rio",
+  },
+  {
+    id: "casa_colina",
+    name: "Casa de la colina",
+    x: 12,
+    y: 24,
+    variant: 5,
+    wall: "wall_grey",
+    beds: [["cama_valentina", "cama de Valentina", "valentina"]],
+    kitchen: "cocina_colina",
+  },
+  {
+    id: "casa_molino",
+    name: "Casa del molino",
+    x: 22,
+    y: 24,
+    variant: 2,
+    wall: "wall_wood",
+    beds: [["cama_ernesto", "cama de Ernesto", "ernesto"]],
+    kitchen: "cocina_molino",
+  },
+  {
+    id: "casa_jardin",
+    name: "Casa del jardín",
+    x: 70,
+    y: 24,
+    variant: 4,
+    wall: "wall_red",
+    beds: [
+      ["cama_aurora", "cama de Aurora", "aurora"],
+      ["cama_clara", "cama de Clara", "clara"],
+    ],
+    kitchen: "cocina_jardin",
+  },
+  {
+    id: "casa_faro",
+    name: "Casa del faro",
+    x: 80,
+    y: 24,
+    variant: 3,
+    wall: "wall_blue",
+    beds: [["cama_samuel", "cama de Samuel", "samuel"]],
+    kitchen: "cocina_faro",
+  },
+  {
+    id: "casa_en_venta",
+    name: "Casa en venta",
+    x: 90,
+    y: 24,
+    variant: 1,
+    wall: "wall_grey",
+    beds: [["cama_vacia", "cama vieja", ""]],
+    kitchen: "cocina_vacia",
+  },
+];
+// La cama de la casa en venta no tiene dueño ("" = sin owner).
+for (const h of HOMES) home(h);
+// Mesa de dibujo de Lucía.
+place("decor", "desk", 7, 10);
+addSpot("mesa_dibujo", "mesa de dibujo", "casa_azul", "sit", 7, 10);
+
+// --- Edificios públicos ------------------------------------------------------------------
+
+// Ayuntamiento (suelo x 53..66, y 6..14)
+const ayuntamiento = { x: 52, y: 3, w: 16, h: 13 };
+building(ayuntamiento, 59, "wall_grey", "floor_shop");
+addPlace("ayuntamiento", "Ayuntamiento", "other", ayuntamiento, true);
+place("decor", "desk", 55, 9);
+addSpot("mesa_alcaldia", "mesa de la alcaldía", "ayuntamiento", "sit", 55, 9);
+place("decor", "table", 58, 7);
+place("decor", "chair", 58, 11);
+addSpot("sala_plenos", "sala de plenos", "ayuntamiento", "sit", 58, 11);
+place("decor", "chair", 61, 11);
+addSpot("silla_pleno", "silla del pleno", "ayuntamiento", "sit", 61, 11);
+place("decor", "bookshelf", 64, 6);
+place("decor", "plant", 53, 6);
+place("decor", "plant", 66, 13);
+
+// Escuela (suelo x 53..66, y 24..35)
+const escuela = { x: 52, y: 21, w: 16, h: 16 };
+building(escuela, 59, "wall_blue", "floor_home");
+addPlace("escuela", "Escuela del pueblo", "other", escuela, true);
+place("decor", "desk", 58, 26);
+addSpot("mesa_maestra", "mesa de la maestra", "escuela", "sit", 58, 26);
+[54, 57, 61, 64].forEach((x, i) => {
+  place("decor", "desk", x, 30);
+  addSpot(`pupitre_${i + 1}`, `pupitre ${i + 1}`, "escuela", "sit", x, 30);
+});
+place("decor", "bookshelf", 65, 24);
+place("decor", "plant", 53, 34);
+
+// Biblioteca (suelo x 33..48, y 27..35)
+const biblioteca = { x: 32, y: 24, w: 18, h: 13 };
+building(biblioteca, 40, "wall_wood", "floor_shop");
+addPlace("biblioteca", "Biblioteca Mnemósine", "other", biblioteca, true);
+for (const x of [33, 35, 37, 44, 46]) place("decor", "bookshelf", x, 27);
+place("decor", "desk", 41, 30);
+addSpot("mostrador_biblio", "mostrador de préstamo", "biblioteca", "sit", 41, 30);
+place("decor", "table", 34, 32);
+place("decor", "chair", 35, 35);
+addSpot("mesa_lectura", "mesa de lectura", "biblioteca", "sit", 35, 35);
+place("decor", "table", 43, 32);
+place("decor", "chair", 44, 35);
+addSpot("mesa_lectura_2", "mesa del fondo", "biblioteca", "sit", 44, 35);
+place("decor", "plant", 48, 34);
+
+// Consultorio (suelo x 101..116, y 27..35)
+const consultorio = { x: 100, y: 24, w: 18, h: 13 };
+building(consultorio, 108, "wall_blue", "floor_shop");
+addPlace("consultorio", "Consultorio médico", "other", consultorio, true);
+place("decor", "desk", 104, 29);
+addSpot("consulta", "mesa de la consulta", "consultorio", "sit", 104, 29);
+place("decor", "bed", 112, 28);
+addSpot("camilla", "camilla", "consultorio", "sit", 112, 28);
+place("decor", "fridge_shelf", 109, 30);
+addSpot("botiquin", "botiquín", "consultorio", "use", 109, 30);
+place("decor", "chair", 102, 34);
+addSpot("sala_espera", "sala de espera", "consultorio", "sit", 102, 34);
+place("decor", "sofa", 113, 33);
+place("decor", "plant", 116, 27);
+
+// Café La Ola (suelo x 3..16, y 43..54)
+const cafe = { x: 2, y: 40, w: 16, h: 16 };
+building(cafe, 9, "wall_wood", "floor_cafe");
 addPlace("cafe_ola", "Café La Ola", "cafe", cafe, true);
-addPlace("parque", "Parque del Olvido", "park", { x: 2, y: 27, w: 20, h: 12 }, false);
+place("decor", "coffee_machine", 4, 46);
+addSpot("cafetera", "cafetera", "cafe_ola", "use", 4, 46);
+place("decor", "counter", 7, 47);
+place("decor", "stool", 7, 47);
+addSpot("barra", "barra", "cafe_ola", "sit", 7, 47);
+place("decor", "stool", 8, 47);
+addSpot("taburete", "taburete de la barra", "cafe_ola", "sit", 8, 47);
+place("decor", "table", 12, 44);
+place("decor", "chair", 13, 48);
+addSpot("mesa_ventana", "mesa junto a la ventana", "cafe_ola", "sit", 13, 48);
+place("decor", "table", 11, 50);
+place("decor", "chair", 12, 54);
+addSpot("mesa_fondo", "mesa del fondo", "cafe_ola", "sit", 12, 54);
+place("decor", "sofa", 3, 51);
+addSpot("sofa_cafe", "sofá", "cafe_ola", "sit", 4, 52);
+place("decor", "plant", 16, 53);
+
+// Panadería (suelo x 21..32, y 45..54)
+const panaderia = { x: 20, y: 42, w: 14, h: 14 };
+building(panaderia, 26, "wall_red", "floor_cafe");
+addPlace("panaderia", "Panadería Miga", "shop", panaderia, true);
+place("decor", "counter", 24, 49);
+addSpot("mostrador_pan", "mostrador del pan", "panaderia", "use", 24, 49);
+place("decor", "stove", 29, 47);
+addSpot("horno", "horno", "panaderia", "use", 29, 47);
+place("decor", "fridge_shelf", 22, 53);
+addSpot("vitrina", "vitrina de dulces", "panaderia", "use", 22, 53);
+place("decor", "table", 28, 50);
+place("decor", "chair", 29, 54);
+addSpot("mesita_pan", "mesita", "panaderia", "sit", 29, 54);
+
+// Ultramarinos (suelo x 37..48, y 45..54)
+const tienda = { x: 36, y: 42, w: 14, h: 14 };
+building(tienda, 42, "wall_grey", "floor_shop");
 addPlace("tienda", "Ultramarinos Lete", "shop", tienda, true);
+place("decor", "fridge_shelf", 38, 48);
+addSpot("estanteria", "estantería", "tienda", "use", 38, 48);
+place("decor", "counter", 42, 49);
+addSpot("mostrador", "mostrador", "tienda", "use", 42, 49);
+place("decor", "fridge_shelf", 46, 48);
+addSpot("nevera", "nevera", "tienda", "use", 46, 48);
+place("decor", "plant", 37, 53);
 
-// Casa azul (suelo x 3..12, y 4..10)
-place("decor", "bed", 4, 5);
-addSpot("cama_azul", "cama", "casa_azul", "sleep", 4, 5, "lucia");
-place("decor", "desk", 10, 6);
-addSpot("mesa_dibujo", "mesa de dibujo", "casa_azul", "sit", 10, 6);
-place("decor", "stove", 7, 6);
-addSpot("cocina_azul", "cocina", "casa_azul", "use", 7, 6);
-place("paths", "rug", 5, 8);
-place("decor", "plant", 12, 4);
+// Taberna El Faro (suelo x 89..102, y 43..54)
+const taberna = { x: 88, y: 40, w: 16, h: 16 };
+building(taberna, 95, "wall_red", "floor_cafe");
+addPlace("taberna", "Taberna El Faro", "cafe", taberna, true);
+place("decor", "counter", 92, 46);
+place("decor", "stool", 92, 46);
+addSpot("barra_taberna", "barra de la taberna", "taberna", "sit", 92, 46);
+place("decor", "stool", 93, 46);
+addSpot("taburete_taberna", "taburete", "taberna", "sit", 93, 46);
+place("decor", "stove", 99, 45);
+addSpot("cocina_taberna", "cocina de la taberna", "taberna", "use", 99, 45);
+place("decor", "table", 90, 49);
+place("decor", "chair", 91, 53);
+addSpot("mesa_taberna", "mesa grande", "taberna", "sit", 91, 53);
+place("decor", "table", 97, 49);
+place("decor", "chair", 98, 53);
+addSpot("mesa_rincon", "mesa del rincón", "taberna", "sit", 98, 53);
+place("decor", "plant", 102, 52);
 
-// Casa roja (suelo x 47..56, y 4..10)
-place("decor", "bed", 48, 5);
-addSpot("cama_mateo", "cama de Mateo", "casa_roja", "sleep", 48, 5, "mateo");
-place("decor", "bed", 55, 5);
-addSpot("cama_carmen", "cama de Carmen", "casa_roja", "sleep", 55, 5, "carmen");
-place("decor", "stove", 52, 6);
-addSpot("cocina_roja", "cocina", "casa_roja", "use", 52, 6);
-place("decor", "table", 50, 8);
-place("decor", "bookshelf", 47, 8);
+// --- Plaza Mayor y mercadillo ---------------------------------------------------------------
 
-// Café (suelo x 24..35, y 15..21)
-place("decor", "coffee_machine", 24, 17);
-addSpot("cafetera", "cafetera", "cafe_ola", "use", 24, 17);
-place("decor", "counter", 26, 18);
-place("decor", "stool", 26, 18);
-addSpot("barra", "barra", "cafe_ola", "sit", 26, 18);
-place("decor", "table", 32, 15);
-place("decor", "chair", 33, 18);
-addSpot("mesa_ventana", "mesa junto a la ventana", "cafe_ola", "sit", 33, 18);
-place("decor", "plant", 35, 20);
-place("decor", "sofa", 25, 20);
-
-// Tienda (suelo x 43..54, y 30..35)
-place("decor", "fridge_shelf", 44, 33);
-addSpot("estanteria", "estantería", "tienda", "use", 44, 33);
-place("decor", "counter", 48, 33);
-addSpot("mostrador", "mostrador", "tienda", "use", 48, 33);
-place("decor", "fridge_shelf", 52, 33);
-
-// Parque (x 2..21, y 27..38)
-place("decor", "bench", 8, 31);
-addSpot("banco", "banco", "parque", "sit", 8, 31);
-place("decor", "fountain", 15, 33);
-addSpot("fuente", "fuente", "parque", "stand", 15, 33);
-nineslice("ground", "water", 17, 35, 4, 3);
-for (let y = 35; y < 38; y++) for (let x = 17; x < 21; x++) block(x, y);
-
-// Árboles, arbustos y farolas
+const plaza = { x: 52, y: 40, w: 16, h: 16 };
+pathRect(52, 40, 67, 55);
+addPlace("plaza", "Plaza Mayor", "park", plaza, false);
+place("decor", "fountain", 59, 47);
+addSpot("fuente_plaza", "fuente de la plaza", "plaza", "stand", 59, 47);
+place("decor", "bench", 54, 50);
+addSpot("banco_plaza", "banco de la plaza", "plaza", "sit", 54, 50);
+place("decor", "bench", 65, 50);
+addSpot("banco_plaza_2", "banco junto al mercadillo", "plaza", "sit", 65, 50);
+addSpot("escenario", "rincón del músico", "plaza", "stand", 59, 53);
 for (const [x, y] of [
-  [4, 30],
-  [20, 30],
-  [4, 38],
-  [11, 38],
-  [16, 9],
-  [21, 6],
-  [39, 6],
-  [43, 10],
-  [26, 34],
-  [34, 38],
-  [38, 31],
-  [58, 20],
-  [41, 21],
-  [20, 21],
-] as const)
-  place("decor", "tree", x, y);
+  [53, 42],
+  [66, 42],
+  [53, 55],
+  [66, 55],
+] as const) {
+  place("decor", has("tree_planter") ? "tree_planter" : "bush", x, y);
+}
+lamp(56, 44);
+lamp(63, 44);
+
+const mercado = { x: 70, y: 40, w: 16, h: 16 };
+pathRect(70, 45, 85, 47);
+addPlace("mercado", "Mercadillo", "shop", mercado, false);
+const carts = [
+  ["puesto_fruta", "puesto de fruta", 73, "market_cart_1"],
+  ["puesto_flores", "puesto de flores", 78, "market_cart_2"],
+  ["puesto_quesos", "puesto de quesos", 83, "market_cart_3"],
+] as const;
+for (const [id, name, x, cart] of carts) {
+  place("decor", has(cart) ? cart : "counter", x, 45);
+  addSpot(id, name, "mercado", "use", x, 45);
+}
+place("decor", "bench", 77, 52);
+addSpot("banco_mercado", "banco del mercadillo", "mercado", "sit", 77, 52);
 for (const [x, y] of [
-  [15, 13],
-  [44, 14],
-  [38, 18],
-  [2, 22],
-  [58, 30],
+  [72, 52],
+  [84, 52],
+] as const) {
+  place("decor", has("planter") ? "planter" : "bush", x, y);
+}
+
+// --- Parque del Olvido (x 2..31, y 59..78) ---------------------------------------------------
+
+addPlace("parque", "Parque del Olvido", "park", { x: 2, y: 59, w: 30, h: 20 }, false);
+pathRect(12, 58, 12, 77);
+pathRect(3, 68, 30, 68);
+place("decor", "bench", 8, 63);
+addSpot("banco", "banco", "parque", "sit", 8, 63);
+place("decor", "fountain", 16, 66);
+addSpot("fuente", "fuente", "parque", "stand", 16, 66);
+nineslice("ground", "water", 22, 71, 7, 5);
+for (let y = 71; y < 76; y++) for (let x = 22; x < 29; x++) block(x, y);
+place("decor", "slide", 5, 75);
+addSpot("tobogan", "tobogán", "parque", "stand", 5, 75);
+place("decor", "swings", 15, 73);
+addSpot("columpios", "columpios", "parque", "sit", 15, 73);
+place("decor", "sandbox", 7, 76);
+place("decor", "trampoline", 21, 63);
+place("decor", "swing_tree", 27, 67);
+addSpot("arbol_columpio", "árbol del columpio", "parque", "stand", 27, 68);
+
+// --- Lago Leteo (x 34..75, y 59..78) ----------------------------------------------------------
+
+addPlace("lago", "Lago Leteo", "park", { x: 34, y: 59, w: 42, h: 20 }, false);
+pathRect(55, 58, 55, 61);
+pathRect(36, 61, 73, 61);
+nineslice("ground", "water", 38, 63, 34, 13);
+for (let y = 63; y < 76; y++) for (let x = 38; x < 72; x++) block(x, y);
+addSpot("orilla", "orilla de pesca", "lago", "use", 46, 62);
+addSpot("orilla_este", "orilla del este", "lago", "stand", 70, 62);
+place("decor", "bench", 62, 60);
+addSpot("mirador", "banco del mirador", "lago", "sit", 62, 60);
+
+// --- Jardín del Recuerdo (x 78..93, y 59..78) -------------------------------------------------
+
+addPlace("jardin_recuerdo", "Jardín del Recuerdo", "park", { x: 78, y: 59, w: 16, h: 20 }, false);
+pathRect(85, 58, 85, 76);
+pathRect(80, 72, 91, 72);
+if (has("angel_statue")) {
+  place("decor", "angel_statue", 85, 67);
+} else {
+  place("decor", "fountain", 85, 67);
+}
+addSpot("estatua_angel", "estatua del ángel", "jardin_recuerdo", "stand", 85, 67);
+place("decor", "bench", 82, 74);
+addSpot("banco_jardin", "banco del jardín", "jardin_recuerdo", "sit", 82, 74);
+place("decor", "bench", 89, 74);
+addSpot("banco_jardin_2", "banco de los cipreses", "jardin_recuerdo", "sit", 89, 74);
+const FLOWERS = [
+  "flowers_blue",
+  "flowers_pink",
+  "flowers_red",
+  "flowers_yellow",
+  "flowers_purple",
+] as const;
+[
+  [79, 69],
+  [81, 69],
+  [88, 69],
+  [90, 69],
+  [79, 76],
+  [91, 76],
+].forEach(([x, y], i) => place("paths", FLOWERS[i % FLOWERS.length]!, x!, y!));
+
+// --- Huerto comunitario (x 96..117, y 59..78) ---------------------------------------------------
+
+addPlace("huerto", "Huerto comunitario", "other", { x: 96, y: 59, w: 22, h: 20 }, false);
+pathRect(102, 58, 102, 76);
+pathRect(97, 71, 112, 71);
+const CROPS = ["crop_sprout", "crop_lettuce", "crop_leaf", "crop_corn"] as const;
+const beds = [
+  [98, 62],
+  [103, 62],
+  [108, 62],
+  [98, 67],
+  [103, 67],
+  [108, 67],
+] as const;
+beds.forEach(([bx, by], i) => {
+  place("paths", "garden_bed", bx, by);
+  for (let j = 1; j < 3; j++) {
+    for (let k = 0; k < 4; k++) place("decor", CROPS[(i + k) % CROPS.length]!, bx + k, by + j);
+  }
+});
+addSpot("bancal_tomates", "bancal de tomates", "huerto", "use", 100, 65);
+addSpot("bancal_lechugas", "bancal de lechugas", "huerto", "use", 105, 65);
+addSpot("bancal_hierbas", "bancal de hierbas", "huerto", "use", 110, 70);
+place("decor", "greenhouse", 115, 66);
+addSpot("invernadero", "invernadero", "huerto", "use", 115, 66);
+for (let x = 98; x <= 112; x += 2) place("decor", "sunflower", x, 75);
+
+// --- Árboles, flores y farolas ----------------------------------------------------------------
+
+// Pinar del norte
+for (let x = 0; x < W; x += 3) place("decor", has("pine") ? "pine" : "tree", x, 2);
+// Entre las filas de casas: árboles en el centro de cada parcela y flores a los lados.
+const LOTS = [2, 12, 22, 32, 42, 70, 80, 90, 100, 110];
+const TREES = ["tree", "tree_round", "tree_big"] as const;
+LOTS.forEach((x, i) => {
+  const t = TREES[i % TREES.length]!;
+  place("decor", has(t) ? t : "tree", x + 4, 22);
+  place("paths", FLOWERS[i % FLOWERS.length]!, x, 19);
+  place("paths", FLOWERS[(i + 2) % FLOWERS.length]!, x + 6, 19);
+});
+// Setos y cipreses sueltos
+for (const [x, y] of [
+  [109, 40],
+  [114, 40],
+  [106, 53],
+  [112, 50],
 ] as const) {
   place("decor", "bush", x, y);
 }
-for (const x of [5, 18, 38, 44, 57]) {
-  place("decor", "lamp", x, 23);
-  lights.push(point("farola", "light", x, 23));
+for (const [x, y] of [
+  [108, 47],
+  [115, 47],
+  [80, 62],
+  [91, 62],
+  [36, 70],
+  [74, 70],
+  [36, 76],
+  [74, 76],
+  [3, 61],
+  [30, 61],
+] as const) {
+  place("decor", has("cypress") ? "cypress" : "tree", x, y);
 }
+for (const [x, y] of [
+  [3, 78],
+  [30, 78],
+  [94, 78],
+  [118, 78],
+  [118, 63],
+] as const) {
+  place("decor", has("tree_big") ? "tree_big" : "tree", x, y);
+}
+// Farolas: calle Norte, calle Mayor y avenida del Lago
+for (const x of [10, 20, 30, 40, 78, 88, 98, 108]) lamp(x, 18);
+for (const x of [10, 20, 30, 78, 88, 98]) lamp(x, 39);
+for (const x of [18, 34, 86, 110]) lamp(x, 58);
 
 // --- Ensamblado ---------------------------------------------------------------------------
 

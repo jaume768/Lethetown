@@ -36,6 +36,8 @@ export const AgentSeed = z.object({
   traits: z.array(z.string()),
   description: z.string(),
   homeId: z.string(),
+  /** Lugar donde trabaja o estudia (opcional): forma parte de la identidad fija del prompt. */
+  workId: z.string().optional(),
   appearance: Appearance.default({
     sheet: "default",
     skin: "#f1c27d",

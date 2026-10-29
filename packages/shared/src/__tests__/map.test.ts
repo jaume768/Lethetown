@@ -1,7 +1,9 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
+  AgentSeed,
   AssetManifest,
+  OPTIONAL_STAMPS,
   REQUIRED_STAMPS,
   activePack,
   characterFor,
@@ -86,13 +88,49 @@ describe("A*", () => {
 describe("mapa del pueblo (seeds/town.tmj)", () => {
   const world = parseTiledMap(tmj);
 
-  it("tiene los 5 lugares con sus ids y nombres", () => {
-    expect(world.places.map((p) => p.id).sort()).toEqual(
-      ["cafe_ola", "casa_azul", "casa_roja", "parque", "tienda"].sort(),
-    );
+  it("tiene las casas, los edificios públicos y los espacios abiertos", () => {
+    const ids = world.places.map((p) => p.id);
+    for (const id of [
+      "cafe_ola",
+      "casa_azul",
+      "casa_roja",
+      "parque",
+      "tienda",
+      "plaza",
+      "mercado",
+      "lago",
+      "huerto",
+      "biblioteca",
+      "escuela",
+    ]) {
+      expect(ids, id).toContain(id);
+    }
+    expect(world.places.filter((p) => p.kind === "home").length).toBeGreaterThanOrEqual(15);
     expect(world.places.find((p) => p.id === "cafe_ola")?.name).toBe("Café La Ola");
-    expect(world.width).toBe(60);
-    expect(world.height).toBe(40);
+    expect(world.width).toBe(120);
+    expect(world.height).toBe(80);
+  });
+
+  it("cada agente tiene casa, cama propia y, si trabaja, un lugar que existe", () => {
+    const seeds = AgentSeed.array().parse(
+      JSON.parse(readFileSync(new URL("../../../../seeds/agents.json", import.meta.url), "utf8")),
+    );
+    expect(seeds).toHaveLength(20);
+    const spots = world.places.flatMap((p) => p.objects);
+    for (const s of seeds) {
+      const home = world.places.find((p) => p.id === s.homeId);
+      expect(home?.kind, s.id).toBe("home");
+      expect(
+        home?.objects.some((o) => o.pose === "sleep" && o.owner === s.id),
+        s.id,
+      ).toBe(true);
+      if (s.workId)
+        expect(
+          world.places.some((p) => p.id === s.workId),
+          s.workId,
+        ).toBe(true);
+    }
+    expect(new Set(spots.map((o) => o.id)).size).toBe(spots.length);
   });
 
   it("los spots tienen pose y las camas dueño", () => {
@@ -132,6 +170,17 @@ describe("manifest de assets", () => {
     expect(tmj.tilesets.map((t: { name: string }) => t.name)).toEqual(
       pack.tilesets.map((t) => t.name),
     );
+  });
+
+  it("los sellos opcionales que define el pack usan tilesets del pack", () => {
+    for (const s of OPTIONAL_STAMPS) {
+      const stamp = pack.stamps[s];
+      if (stamp)
+        expect(
+          pack.tilesets.some((t) => t.name === stamp.tileset),
+          s,
+        ).toBe(true);
+    }
   });
 
   it("asigna un personaje a cada agente y cae en uno válido si no hay asignación", () => {

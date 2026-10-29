@@ -35,7 +35,7 @@ export function DramaFeed({ dramas, onGoTo, onOpenEvent, compact, limit = 50 }: 
           <div className="drama-head">
             <span aria-hidden="true">{ICON[d.kind]}</span>
             <span className="tag">{t(`dramas.kind.${d.kind}` as MessageKey)}</span>
-            <span className="muted small">{formatGameTime(d.time)}</span>
+            <span className="muted small num">{formatGameTime(d.time)}</span>
             <span className="score" aria-hidden="true" style={{ width: `${d.score * 100}%` }} />
           </div>
           <div className="readable">{d.title}</div>

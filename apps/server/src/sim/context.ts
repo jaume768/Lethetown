@@ -103,6 +103,8 @@ export interface SimulationDeps {
   rng: Rng;
   /** Idioma de los agentes y del cronista. */
   language?: PromptLanguage;
+  /** Modo demostración: minutos de juego entre sucesos (sin definir = apagado). */
+  demoEveryMinutes?: number;
 }
 
 /** Señales que la simulación emite hacia los clientes (además de los eventos del log). */

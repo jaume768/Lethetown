@@ -3,6 +3,7 @@ import {
   activePack,
   characterFor,
   mapAssetPack,
+  recolorPalette,
   recolorPixels,
   positionAt,
   type AgentState,
@@ -325,11 +326,14 @@ export class TownScene extends Phaser.Scene {
     this.load.start();
   }
 
-  /** Textura del personaje; si la hoja es recoloreable, crea una copia con los colores del agente. */
+  /**
+   * Textura del personaje; si la hoja es recoloreable, crea una copia con los colores del agente
+   * (colores marcador en el placeholder; paleta con sombreado en las hojas de LimeZu).
+   */
   private textureFor(agent: AgentState, key: string): string {
     const base = `char:${key}`;
     const sheet = this.pack!.characters[key]!;
-    if (!sheet.recolor || !sheet.markers) return base;
+    if (!sheet.recolor || (!sheet.markers && !sheet.palette)) return base;
     const own = `${base}:${agent.id}`;
     if (this.textures.exists(own)) return own;
     const src = this.textures.get(base).getSourceImage() as HTMLImageElement;
@@ -340,7 +344,11 @@ export class TownScene extends Phaser.Scene {
     if (!ctx) return base;
     ctx.drawImage(src, 0, 0);
     const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    recolorPixels(img.data, sheet.markers, agent.appearance);
+    if (sheet.palette) {
+      recolorPalette(img.data, canvas.width, sheet.frameHeight, sheet.palette, agent.appearance);
+    } else if (sheet.markers) {
+      recolorPixels(img.data, sheet.markers, agent.appearance);
+    }
     ctx.putImageData(img, 0, 0);
     this.textures.addSpriteSheet(own, canvas as unknown as HTMLImageElement, {
       frameWidth: sheet.frameWidth,

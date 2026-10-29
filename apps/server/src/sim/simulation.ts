@@ -17,6 +17,7 @@ import {
   type SimulationDeps,
 } from "./context";
 import { activeConversationOf, endConversation, endIdleConversations, talk } from "./conversations";
+import { startDemo } from "./demo";
 import * as intervention from "./intervention";
 import { consolidate, maintain, scheduleChronicle, writeChronicle } from "./memory-routines";
 import { gatherPerceptions } from "./perception";
@@ -108,6 +109,7 @@ export class Simulation {
       this.clock.schedule(now + i, () => this.agentTick(agent));
     });
     scheduleChronicle(this.ctx, now);
+    if (this.ctx.deps.demoEveryMinutes) startDemo(this.ctx, this.ctx.deps.demoEveryMinutes);
     this.ctx.emit("system", null, `Simulación iniciada con ${this.agents.size} agentes`);
   }
 

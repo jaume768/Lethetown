@@ -5,16 +5,36 @@ import { api } from "../net/store";
 import { formatGameTime } from "./format";
 
 const RASHOMON_KINDS = new Set(["speech", "world", "thought"]);
+const COLLAPSED_KEY = "lethetown.eventsCollapsed";
+
+function savedCollapsed(): boolean {
+  try {
+    return localStorage.getItem(COLLAPSED_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
 
 interface Props {
   events: SimEvent[];
   today: number;
   onOpenEvent: (id: string) => void;
+  /** Con botón para plegarlo (escritorio: debajo del mapa). */
+  collapsible?: boolean;
 }
 
 /** Log en vivo y línea de tiempo (eventos guardados por día y hora). */
-export function EventLog({ events, today, onOpenEvent }: Props) {
+export function EventLog({ events, today, onOpenEvent, collapsible = false }: Props) {
   const { t } = useI18n();
+  const [collapsed, setCollapsed] = useState(() => collapsible && savedCollapsed());
+  const toggle = () => {
+    setCollapsed(!collapsed);
+    try {
+      localStorage.setItem(COLLAPSED_KEY, collapsed ? "0" : "1");
+    } catch {
+      /* no se recuerda: no pasa nada */
+    }
+  };
   const end = useRef<HTMLDivElement>(null);
   const [mode, setMode] = useState<"live" | "history">("live");
   const [day, setDay] = useState(today);
@@ -39,10 +59,20 @@ export function EventLog({ events, today, onOpenEvent }: Props) {
   const shown = mode === "live" ? events : history.filter((e) => e.time % 1440 < hour * 60);
 
   return (
-    <section className="panel log" aria-label={t("events.title")}>
+    <section className={`panel log ${collapsed ? "collapsed" : ""}`} aria-label={t("events.title")}>
       <div className="row">
         <h3>{mode === "live" ? t("events.title") : t("events.timeline")}</h3>
         <div className="wrap">
+          {collapsible && (
+            <button
+              className="btn small"
+              aria-expanded={!collapsed}
+              aria-controls="event-log-body"
+              onClick={toggle}
+            >
+              {collapsed ? "▸" : "▾"} {t(collapsed ? "events.expand" : "events.collapse")}
+            </button>
+          )}
           <button
             className={`btn small ${mode === "live" ? "active" : ""}`}
             aria-pressed={mode === "live"}
@@ -82,12 +112,12 @@ export function EventLog({ events, today, onOpenEvent }: Props) {
           <span>{t("events.until", { hour: String(hour).padStart(2, "0") })}</span>
         </div>
       )}
-      <div className="log-body readable" role="log" aria-live="off">
+      <div id="event-log-body" className="log-body readable" role="log" aria-live="off">
         {shown.map((e) => {
           const clickable = RASHOMON_KINDS.has(e.kind);
           const content = (
             <>
-              <span className="muted">{formatGameTime(e.time)}</span> {e.text}
+              <span className="muted num">{formatGameTime(e.time)}</span> {e.text}
             </>
           );
           return clickable ? (

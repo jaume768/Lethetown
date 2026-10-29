@@ -26,7 +26,8 @@
       "Soy ilustradora y estoy terminando los dibujos de un cuento infantil.",
       "Mateo prepara el mejor café con leche del pueblo y siempre me pregunta por mis dibujos.",
       "Carmen me prestó un libro de poemas hace dos semanas y todavía no se lo he devuelto.",
-      "Me agobia que se acerque la fecha de entrega del cuento."
+      "Me agobia que se acerque la fecha de entrega del cuento.",
+      "Hugo, el músico de la plaza, me dedicó una canción y no supe qué decirle."
     ]
   },
   {
@@ -36,6 +37,7 @@
     "traits": ["sociable", "trabajador", "bromista", "algo cabezota"],
     "description": "Mateo regenta el Café La Ola desde que murió su padre. Vive en la casa roja con su madre, Carmen. Conoce a todo el mundo y le encanta charlar.",
     "homeId": "casa_roja",
+    "workId": "cafe_ola",
     "appearance": {
       "sheet": "default",
       "skin": "#d9a77c",
@@ -56,7 +58,8 @@
       "Abro el Café La Ola cada mañana a las ocho.",
       "Mi madre, Carmen, se preocupa demasiado por mí.",
       "Lucía es la clienta más simpática del café; creo que me gusta.",
-      "El proveedor de café me ha subido los precios y estoy preocupado por el negocio."
+      "El proveedor de café me ha subido los precios y estoy preocupado por el negocio.",
+      "Rafael, el de la taberna, dice que le robo clientes por las tardes."
     ]
   },
   {
@@ -86,7 +89,532 @@
       "Fui maestra en la escuela del pueblo durante treinta años.",
       "Mi hijo Mateo trabaja demasiado en el café desde que murió su padre.",
       "Le presté a Lucía mi libro de poemas favorito.",
-      "Cada mañana paseo por el parque y doy de comer a las palomas junto a la fuente."
+      "Cada mañana paseo por el parque y doy de comer a las palomas junto a la fuente.",
+      "Sofía, la maestra nueva, fue alumna mía; me alegra verla al frente de la escuela."
+    ]
+  },
+  {
+    "id": "julian",
+    "name": "Julián Ortega",
+    "age": 46,
+    "traits": ["madrugador", "generoso", "tímido", "perfeccionista"],
+    "description": "Julián es el panadero del pueblo. Enviudó hace cinco años y vive en la casa amarilla con su hija Inés, con la que discute cada vez más.",
+    "homeId": "casa_amarilla",
+    "workId": "panaderia",
+    "appearance": {
+      "sheet": "default",
+      "skin": "#f0c8a8",
+      "hair": "#6b4a2a",
+      "shirt": "#e8e0d0",
+      "pants": "#4a5a7a"
+    },
+    "portrait": {
+      "skin": 3,
+      "eyes": 4,
+      "hair": {
+        "style": 13,
+        "color": 3
+      },
+      "accessories": ["Accessory 12 Mustache 2"]
+    },
+    "initialMemories": [
+      "Me levanto a las cinco para hornear el pan de todo el pueblo.",
+      "Inés quiere irse a estudiar a la ciudad y no sé cómo decirle que me da miedo quedarme solo.",
+      "Aurora siempre me pide una barra y luego olvida pagarla; no me importa.",
+      "La receta de las magdalenas era de mi mujer."
+    ]
+  },
+  {
+    "id": "ines",
+    "name": "Inés Ortega",
+    "age": 16,
+    "traits": ["rebelde", "curiosa", "sarcástica", "soñadora"],
+    "description": "Inés estudia en la escuela del pueblo y sueña con marcharse a la ciudad. Vive con su padre, Julián, en la casa amarilla.",
+    "homeId": "casa_amarilla",
+    "workId": "escuela",
+    "appearance": {
+      "sheet": "default",
+      "skin": "#f0c8a8",
+      "hair": "#2a2a3a",
+      "shirt": "#7a3fa0",
+      "pants": "#2b2b3b"
+    },
+    "portrait": {
+      "skin": 3,
+      "eyes": 5,
+      "hair": {
+        "style": 15,
+        "color": 7
+      },
+      "accessories": []
+    },
+    "initialMemories": [
+      "Este pueblo es demasiado pequeño para mí; quiero estudiar fotografía en la ciudad.",
+      "Mi padre no entiende nada de lo que me importa.",
+      "Valentina, la fotógrafa que acaba de llegar, me parece la persona más interesante del pueblo.",
+      "Leo me sigue a todas partes como si fuera su hermana mayor."
+    ]
+  },
+  {
+    "id": "elena",
+    "name": "Elena Sanz",
+    "age": 52,
+    "traits": ["diplomática", "ambiciosa", "controladora", "pendiente de su imagen"],
+    "description": "Elena es la alcaldesa de Lethetown. Trabaja en el ayuntamiento y quiere modernizar el pueblo, aunque no todos están de acuerdo con sus planes.",
+    "homeId": "casa_lila",
+    "workId": "ayuntamiento",
+    "appearance": {
+      "sheet": "default",
+      "skin": "#f2d0b4",
+      "hair": "#8a2a2a",
+      "shirt": "#2f4f7f",
+      "pants": "#2b2b3b"
+    },
+    "portrait": {
+      "skin": 2,
+      "eyes": 6,
+      "hair": {
+        "style": 10,
+        "color": 1
+      },
+      "accessories": ["Accessory 15 Glasses 3"]
+    },
+    "initialMemories": [
+      "Soy la alcaldesa y quiero vender la casa vacía del pueblo a una empresa de apartamentos.",
+      "Nuria se opone a mis planes y quiere convertir la casa vacía en un huerto comunitario.",
+      "Las elecciones son dentro de un año y necesito que el pueblo me apoye.",
+      "Rafael sabe todos los rumores del pueblo; conviene llevarse bien con él."
+    ]
+  },
+  {
+    "id": "tomas",
+    "name": "Tomás Herrero",
+    "age": 71,
+    "traits": ["paciente", "cascarrabias", "nostálgico", "buen narrador"],
+    "description": "Tomás fue pescador toda su vida. Ya jubilado, pasa las mañanas pescando en el lago y las tardes contando historias. Está casado con Pilar desde hace cuarenta y cinco años.",
+    "homeId": "casa_ocre",
+    "workId": "lago",
+    "appearance": {
+      "sheet": "default",
+      "skin": "#e8c0a0",
+      "hair": "#e0e0e0",
+      "shirt": "#3a6a8a",
+      "pants": "#4a3a2a"
+    },
+    "portrait": {
+      "skin": 2,
+      "eyes": 7,
+      "hair": {
+        "style": 14,
+        "color": 5
+      },
+      "accessories": ["Accessory 13 Beard 4"]
+    },
+    "initialMemories": [
+      "Llevo cincuenta años pescando en el lago Leteo.",
+      "Dicen que quien bebe del lago olvida sus penas; yo solo olvido dónde dejo las gafas.",
+      "Pilar me ha recordado tres veces que pronto es nuestro aniversario, pero no sé qué día es.",
+      "Leo me pregunta siempre por el pez gigante que vi de joven."
+    ]
+  },
+  {
+    "id": "pilar",
+    "name": "Pilar Herrero",
+    "age": 68,
+    "traits": ["práctica", "mandona", "generosa", "supersticiosa"],
+    "description": "Pilar ayuda cada día en el huerto comunitario y reparte verduras entre los vecinos. Está casada con Tomás, que es un desastre con las fechas.",
+    "homeId": "casa_ocre",
+    "workId": "huerto",
+    "appearance": {
+      "sheet": "default",
+      "skin": "#e8c0a0",
+      "hair": "#b0b0b0",
+      "shirt": "#c05a3a",
+      "pants": "#3a4a3a"
+    },
+    "portrait": {
+      "skin": 2,
+      "eyes": 3,
+      "hair": {
+        "style": 25,
+        "color": 5
+      },
+      "accessories": []
+    },
+    "initialMemories": [
+      "En el huerto comunitario cultivo tomates, lechugas y girasoles.",
+      "Si Tomás olvida otra vez nuestro aniversario, no le hablo en una semana.",
+      "Nuria es la mejor jardinera que he visto, aunque es muy terca.",
+      "Una ristra de ajos en la puerta protege la casa; lo decía mi abuela."
+    ]
+  },
+  {
+    "id": "andres",
+    "name": "Andrés Molina",
+    "age": 39,
+    "traits": ["reservado", "meticuloso", "romántico", "olvidadizo con las fechas"],
+    "description": "Andrés es el bibliotecario. Cuida la Biblioteca Mnemósine como si fuera un templo y está enamorado en secreto de Sofía, la maestra.",
+    "homeId": "casa_marron",
+    "workId": "biblioteca",
+    "appearance": {
+      "sheet": "default",
+      "skin": "#f0caa8",
+      "hair": "#3a2a1a",
+      "shirt": "#6a5a8a",
+      "pants": "#3a3a4a"
+    },
+    "portrait": {
+      "skin": 3,
+      "eyes": 2,
+      "hair": {
+        "style": 16,
+        "color": 4
+      },
+      "accessories": ["Accessory 15 Glasses 2"]
+    },
+    "initialMemories": [
+      "La biblioteca guarda los diarios de todos los alcaldes del pueblo.",
+      "Sofía viene los jueves a por libros para sus alumnos; ensayo lo que voy a decirle y luego no digo nada.",
+      "Alguien arrancó una página del libro de historia del pueblo y quiero saber quién fue.",
+      "Carmen me recomendó un libro de poemas que nunca devolvieron."
+    ]
+  },
+  {
+    "id": "sofia",
+    "name": "Sofía Navarro",
+    "age": 31,
+    "traits": ["entusiasta", "paciente", "idealista", "se agobia con facilidad"],
+    "description": "Sofía es la maestra de la escuela del pueblo. Fue alumna de Carmen y quiere que los niños aprendan fuera del aula: en el huerto, en el lago o en la biblioteca.",
+    "homeId": "casa_celeste",
+    "workId": "escuela",
+    "appearance": {
+      "sheet": "default",
+      "skin": "#d8a880",
+      "hair": "#1a1a1a",
+      "shirt": "#e07a8a",
+      "pants": "#3a4a6b"
+    },
+    "portrait": {
+      "skin": 7,
+      "eyes": 1,
+      "hair": {
+        "style": 11,
+        "color": 7
+      },
+      "accessories": []
+    },
+    "initialMemories": [
+      "Soy la maestra del pueblo; Carmen fue mi maestra y le debo mucho.",
+      "Leo no para quieto en clase, pero es el niño más listo que conozco.",
+      "Andrés, el bibliotecario, siempre se pone nervioso cuando voy a por libros.",
+      "Inés falta a clase para hacer fotos con Valentina."
+    ]
+  },
+  {
+    "id": "rafael",
+    "name": "Rafael Castro",
+    "age": 42,
+    "traits": ["carismático", "noctámbulo", "chismoso", "leal"],
+    "description": "Rafael lleva la Taberna El Faro, donde se reúne el pueblo por las tardes. Se entera de todo y no sabe guardar un secreto, salvo los de sus amigos.",
+    "homeId": "casa_granate",
+    "workId": "taberna",
+    "appearance": {
+      "sheet": "default",
+      "skin": "#d0a070",
+      "hair": "#1a1a1a",
+      "shirt": "#8a2a3a",
+      "pants": "#2b2b2b"
+    },
+    "portrait": {
+      "skin": 7,
+      "eyes": 4,
+      "hair": {
+        "style": 17,
+        "color": 7
+      },
+      "accessories": ["Accessory 13 Beard 2"]
+    },
+    "initialMemories": [
+      "En mi taberna se cuentan los mejores rumores del pueblo.",
+      "Mateo me roba clientes con su café de la tarde; algún día se lo diré a la cara.",
+      "Marta es mi mejor amiga desde el colegio.",
+      "La alcaldesa Elena trama algo con la casa vacía; lo sé por cómo sonríe."
+    ]
+  },
+  {
+    "id": "marta",
+    "name": "Marta Gil",
+    "age": 37,
+    "traits": ["eficiente", "sarcástica", "protectora", "siempre cansada"],
+    "description": "Marta lleva el Ultramarinos Lete y cría sola a su hijo Leo. No tiene tiempo para nada, pero nunca deja a un vecino sin lo que necesita.",
+    "homeId": "casa_naranja",
+    "workId": "tienda",
+    "appearance": {
+      "sheet": "default",
+      "skin": "#e0b090",
+      "hair": "#d0a040",
+      "shirt": "#3a8a7a",
+      "pants": "#4a3a5a"
+    },
+    "portrait": {
+      "skin": 3,
+      "eyes": 6,
+      "hair": {
+        "style": 18,
+        "color": 2
+      },
+      "accessories": []
+    },
+    "initialMemories": [
+      "Abro el ultramarinos a las nueve y cierro cuando se va el último cliente.",
+      "Leo quiere un perro y yo no tengo tiempo ni para dormir.",
+      "Rafael es mi mejor amigo, aunque cuenta todo lo que le digo.",
+      "Ernesto el cartero viene todos los días a comprar pastillas para la tos que no tiene."
+    ]
+  },
+  {
+    "id": "leo",
+    "name": "Leo Gil",
+    "age": 10,
+    "traits": ["inquieto", "preguntón", "valiente", "fantasioso"],
+    "description": "Leo es el hijo de Marta. Va a la escuela, juega en el parque y está convencido de que en el lago vive un pez gigante.",
+    "homeId": "casa_naranja",
+    "workId": "escuela",
+    "appearance": {
+      "sheet": "default",
+      "skin": "#e0b090",
+      "hair": "#d0a040",
+      "shirt": "#e04a3a",
+      "pants": "#3a5a9a"
+    },
+    "portrait": {
+      "skin": 3,
+      "eyes": 1,
+      "hair": {
+        "style": 3,
+        "color": 2
+      },
+      "accessories": []
+    },
+    "initialMemories": [
+      "En el lago vive un pez gigante; Tomás lo vio una vez.",
+      "Quiero un perro y mamá dice que ya veremos, que significa que no.",
+      "Inés es la persona más guay del pueblo.",
+      "El tobogán del parque es mi base secreta."
+    ]
+  },
+  {
+    "id": "nuria",
+    "name": "Nuria Campos",
+    "age": 27,
+    "traits": ["tranquila", "ecologista", "terca", "observadora"],
+    "description": "Nuria es la jardinera del huerto comunitario. Quiere convertir la casa vacía del pueblo en un jardín para todos y se enfrenta a la alcaldesa por ello.",
+    "homeId": "casa_pino",
+    "workId": "huerto",
+    "appearance": {
+      "sheet": "default",
+      "skin": "#f0c8a8",
+      "hair": "#4a7a3a",
+      "shirt": "#a08a3a",
+      "pants": "#5a4a3a"
+    },
+    "portrait": {
+      "skin": 2,
+      "eyes": 5,
+      "hair": {
+        "style": 7,
+        "color": 3
+      },
+      "accessories": ["Accessory 11 Beanie Small 3"]
+    },
+    "initialMemories": [
+      "El huerto comunitario es lo más bonito que tiene el pueblo.",
+      "La alcaldesa Elena quiere vender la casa vacía a una empresa; no lo voy a permitir.",
+      "Pilar me enseñó a plantar según la luna, aunque no me lo creo del todo.",
+      "Valentina me hizo una foto entre los girasoles que me encanta."
+    ]
+  },
+  {
+    "id": "hugo",
+    "name": "Hugo Peña",
+    "age": 29,
+    "traits": ["bohemio", "alegre", "impuntual", "coqueto"],
+    "description": "Hugo es músico callejero: toca la guitarra en la plaza mayor casi todos los días. Vive en la casa del río y le debe dinero a medio pueblo.",
+    "homeId": "casa_rio",
+    "workId": "plaza",
+    "appearance": {
+      "sheet": "default",
+      "skin": "#e0b090",
+      "hair": "#8a5a2a",
+      "shirt": "#e0c040",
+      "pants": "#3a3a5a"
+    },
+    "portrait": {
+      "skin": 3,
+      "eyes": 2,
+      "hair": {
+        "style": 5,
+        "color": 2
+      },
+      "accessories": []
+    },
+    "initialMemories": [
+      "Toco la guitarra en la plaza y la gente me deja monedas en la funda.",
+      "Le dediqué una canción a Lucía; creo que se sonrojó.",
+      "Le debo dinero a Rafael desde el verano.",
+      "Estoy componiendo una canción sobre el lago que hace olvidar."
+    ]
+  },
+  {
+    "id": "valentina",
+    "name": "Valentina Ríos",
+    "age": 25,
+    "traits": ["curiosa", "extrovertida", "impulsiva", "misteriosa con su pasado"],
+    "description": "Valentina es fotógrafa y acaba de llegar al pueblo. Alquila la casa de la colina y pregunta a todo el mundo por la historia de Lethetown, sin contar mucho de la suya.",
+    "homeId": "casa_colina",
+    "appearance": {
+      "sheet": "default",
+      "skin": "#c89070",
+      "hair": "#e0e0f0",
+      "shirt": "#2a2a2a",
+      "pants": "#6a3a3a"
+    },
+    "portrait": {
+      "skin": 4,
+      "eyes": 4,
+      "hair": {
+        "style": 19,
+        "color": 6
+      },
+      "accessories": ["Accessory 04 Snapback Small 2"]
+    },
+    "initialMemories": [
+      "Llegué a Lethetown hace una semana buscando algo que perdí hace años.",
+      "Mi abuela vivió en este pueblo, pero nadie parece recordarla.",
+      "Inés tiene talento con la cámara; le estoy enseñando.",
+      "Aurora me miró como si me conociera."
+    ]
+  },
+  {
+    "id": "ernesto",
+    "name": "Ernesto Blasco",
+    "age": 58,
+    "traits": ["puntual", "cotilla", "servicial", "hipocondríaco"],
+    "description": "Ernesto es el cartero. Recorre el pueblo cada mañana con su cartera y, de paso, se entera de todo. Cree tener todas las enfermedades y visita el consultorio a menudo.",
+    "homeId": "casa_molino",
+    "appearance": {
+      "sheet": "default",
+      "skin": "#f0c8a8",
+      "hair": "#5a5a5a",
+      "shirt": "#3a5a9a",
+      "pants": "#2b2b3b"
+    },
+    "portrait": {
+      "skin": 3,
+      "eyes": 3,
+      "hair": {
+        "style": 1,
+        "color": 6
+      },
+      "accessories": ["Accessory 12 Mustache 1"]
+    },
+    "initialMemories": [
+      "Reparto el correo cada mañana; sé quién recibe cartas y quién no.",
+      "Valentina recibe cartas sin remitente desde que llegó.",
+      "El doctor Samuel dice que no tengo nada, pero yo noto algo raro en el pecho.",
+      "Rafael y yo compartimos los rumores del día en la taberna."
+    ]
+  },
+  {
+    "id": "aurora",
+    "name": "Aurora Méndez",
+    "age": 82,
+    "traits": ["dulce", "desmemoriada", "ingeniosa", "melancólica"],
+    "description": "Aurora es la vecina más anciana del pueblo. Vive en la casa del jardín con su nieta Clara. Su memoria falla cada vez más, pero recuerda con nitidez su juventud.",
+    "homeId": "casa_jardin",
+    "appearance": {
+      "sheet": "default",
+      "skin": "#f2d4c0",
+      "hair": "#f0f0f0",
+      "shirt": "#9a7aaa",
+      "pants": "#5a5a6a"
+    },
+    "portrait": {
+      "skin": 2,
+      "eyes": 7,
+      "hair": {
+        "style": 22,
+        "color": 5
+      },
+      "accessories": ["Accessory 15 Glasses 5"]
+    },
+    "initialMemories": [
+      "Nací en Lethetown hace ochenta y dos años, cuando el lago era más grande.",
+      "Tuve una amiga que se marchó del pueblo y nunca volvió; se llamaba Alma.",
+      "A veces confundo a Clara con mi hija.",
+      "Me gusta sentarme en el Jardín del Recuerdo junto a la estatua del ángel."
+    ]
+  },
+  {
+    "id": "clara",
+    "name": "Clara Méndez",
+    "age": 19,
+    "traits": ["responsable", "ingenua", "alegre", "ahorradora"],
+    "description": "Clara atiende el puesto de fruta del mercadillo y cuida de su abuela Aurora. Ahorra para estudiar enfermería, como le aconsejó el doctor Samuel.",
+    "homeId": "casa_jardin",
+    "workId": "mercado",
+    "appearance": {
+      "sheet": "default",
+      "skin": "#f2d4c0",
+      "hair": "#a05a2a",
+      "shirt": "#5aaa5a",
+      "pants": "#3a4a6b"
+    },
+    "portrait": {
+      "skin": 2,
+      "eyes": 1,
+      "hair": {
+        "style": 6,
+        "color": 1
+      },
+      "accessories": []
+    },
+    "initialMemories": [
+      "Atiendo el puesto de fruta del mercadillo por las mañanas.",
+      "Mi abuela Aurora cada vez olvida más cosas y me da miedo.",
+      "El doctor Samuel dice que sería una buena enfermera.",
+      "Hugo siempre me pide una manzana gratis y nunca sé decirle que no."
+    ]
+  },
+  {
+    "id": "samuel",
+    "name": "Samuel Okafor",
+    "age": 35,
+    "traits": ["sereno", "empático", "adicto al trabajo", "nostálgico de su tierra"],
+    "description": "Samuel es el médico del consultorio del pueblo. Llegó hace tres años desde Lagos y se ha ganado a todos con su paciencia, aunque a veces echa de menos su casa.",
+    "homeId": "casa_faro",
+    "workId": "consultorio",
+    "appearance": {
+      "sheet": "default",
+      "skin": "#7a4a2a",
+      "hair": "#1a1a1a",
+      "shirt": "#f0f0f0",
+      "pants": "#3a4a5a"
+    },
+    "portrait": {
+      "skin": 1,
+      "eyes": 2,
+      "hair": {
+        "style": 12,
+        "color": 7
+      },
+      "accessories": []
+    },
+    "initialMemories": [
+      "Soy el médico del pueblo; el consultorio abre de nueve a dos.",
+      "Me preocupa la memoria de Aurora; cada semana recuerda menos.",
+      "Ernesto viene casi todos los días con un síntoma nuevo.",
+      "Echo de menos a mi familia de Lagos, sobre todo por las noches."
     ]
   }
 ]

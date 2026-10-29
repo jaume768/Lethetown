@@ -24,10 +24,11 @@ export function parseClock(hhmm: string): number | null {
 
 const ACTIVITY_KINDS = ActivityKind.options.join("|");
 
-/** Una línea por lugar: "- id (tipo): nombre · objetos: spot[pose], ...". */
+/** Una línea por lugar: "- id (tipo[, exterior]): nombre · objetos: spot[pose], ...". */
 export function placeLine(p: Place): string {
   const objects = p.objects.map((o) => `${o.id}[${o.pose}]`).join(", ");
-  return `- ${p.id} (${p.kind}): ${p.name}${objects ? ` · objetos: ${objects}` : ""}`;
+  const kind = p.indoor ? p.kind : `${p.kind}, exterior`;
+  return `- ${p.id} (${kind}): ${p.name}${objects ? ` · objetos: ${objects}` : ""}`;
 }
 
 /**
@@ -56,7 +57,7 @@ export function identityPrompt(
   return `Eres ${seed.name}, ${seed.age} años, habitante de un pequeño pueblo.
 Rasgos: ${seed.traits.join(", ")}.
 ${seed.description}
-Tu casa: ${seed.homeId}
+Tu casa: ${seed.homeId}${seed.workId ? `\nTu trabajo o estudios: ${seed.workId}` : ""}
 
 ## Lugares del pueblo (id (tipo): nombre · objetos: id[pose])
 ${places.map(placeLine).join("\n")}

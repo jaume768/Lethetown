@@ -37,6 +37,8 @@ const en: Record<MessageKey, string> = {
   "map.clip": "Make clip",
   "map.keys": "Arrows: move camera · +/−: zoom · Tab: pick agent",
   "map.selectAgent": "Pick agent",
+  "map.fullscreen": "Full screen",
+  "map.exitFullscreen": "Exit full screen",
 
   "status.paused": "World paused",
   "status.budget":
@@ -109,6 +111,8 @@ const en: Record<MessageKey, string> = {
   "events.until": "until {hour}:00",
   "events.none": "No saved events.",
   "events.rashomon": "See how each one remembers it (Rashomon)",
+  "events.collapse": "Hide events",
+  "events.expand": "Show events",
 
   "chronicles.title": "Chronicles",
   "chronicles.write": "Write today's",

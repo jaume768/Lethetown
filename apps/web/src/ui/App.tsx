@@ -63,6 +63,35 @@ export function App() {
     shouldOnboard() ? "onboarding" : null,
   );
   const [seenDramas, setSeenDramas] = useState(0);
+  const mapWrap = useRef<HTMLDivElement>(null);
+  const [nativeFull, setNativeFull] = useState(false);
+  /** Sin Fullscreen API (iOS): el mapa se fija a toda la ventana con CSS. */
+  const [pseudoFull, setPseudoFull] = useState(false);
+  const fullscreen = nativeFull || pseudoFull;
+
+  useEffect(() => {
+    const onChange = () => setNativeFull(document.fullscreenElement === mapWrap.current);
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
+  }, []);
+  useEffect(() => {
+    if (!pseudoFull) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setPseudoFull(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [pseudoFull]);
+
+  const exitFullscreen = () => {
+    setPseudoFull(false);
+    if (document.fullscreenElement) void document.exitFullscreen().catch(() => undefined);
+  };
+  const toggleFullscreen = () => {
+    const el = mapWrap.current;
+    if (!el) return;
+    if (fullscreen) return exitFullscreen();
+    if (el.requestFullscreen) void el.requestFullscreen().catch(() => setPseudoFull(true));
+    else setPseudoFull(true);
+  };
 
   useEffect(() => {
     void refreshMe();
@@ -177,7 +206,7 @@ export function App() {
       />
       <ConnectionBanner connected={game.connected} retries={game.retries} />
       <main className="stage">
-        <div className="map-wrap">
+        <div ref={mapWrap} className={`map-wrap ${pseudoFull ? "fullscreen" : ""}`}>
           <TownMap
             world={game.world}
             agents={game.agents}
@@ -221,8 +250,22 @@ export function App() {
                   : t("map.follow", { name: selected.name.split(" ")[0] ?? selected.name })}
               </button>
             )}
-            <button className="btn small" onClick={() => setDialog("clip")}>
+            <button
+              className="btn small"
+              onClick={() => {
+                // Los diálogos van fuera del mapa: en pantalla completa no se verían.
+                exitFullscreen();
+                setDialog("clip");
+              }}
+            >
               ⏺ {t("map.clip")}
+            </button>
+            <button
+              className={`btn small ${fullscreen ? "active" : ""}`}
+              aria-pressed={fullscreen}
+              onClick={toggleFullscreen}
+            >
+              {fullscreen ? "✕" : "⛶"} {t(fullscreen ? "map.exitFullscreen" : "map.fullscreen")}
             </button>
           </div>
           <PausedOverlay
@@ -232,7 +275,9 @@ export function App() {
           />
           {!game.loaded && <LoadingScreen />}
         </div>
-        {!mobile && <EventLog events={game.events} today={today} onOpenEvent={setRashomonId} />}
+        {!mobile && (
+          <EventLog events={game.events} today={today} onOpenEvent={setRashomonId} collapsible />
+        )}
       </main>
       <aside
         id="side"

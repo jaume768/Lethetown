@@ -35,6 +35,8 @@
   --focus: #ffe08a;
   --pixel: "Pixelify Sans", ui-monospace, monospace;
   --read: "Atkinson Hyperlegible", system-ui, sans-serif;
+  /* Horas, días y cifras: en Pixelify Sans se confunden (1/7, 3/8, 5/6). */
+  --num: "Atkinson Hyperlegible", system-ui, sans-serif;
   --header-h: 48px;
   font-family: var(--read);
   color: var(--ink);
@@ -74,6 +76,17 @@ h4,
 .readable {
   font-family: var(--read);
   line-height: 1.45;
+}
+/* Números legibles: negrita y cifras tabulares (no bailan al cambiar). */
+.clock,
+.cost,
+.tab-badge,
+.overlay-clock,
+.num {
+  font-family: var(--num);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.2px;
 }
 
 /* --- Accesibilidad ---------------------------------------------------------------------- */
@@ -147,6 +160,20 @@ h4,
   position: relative;
   flex: 1 1 62%;
   min-height: 240px;
+}
+/* Pantalla completa: la API del navegador o, si no la hay (iOS), el mapa fijo a toda la ventana. */
+.map-wrap:fullscreen,
+.map-wrap.fullscreen {
+  background: var(--bg);
+}
+.map-wrap.fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+}
+.map-wrap:fullscreen .map,
+.map-wrap.fullscreen .map {
+  box-shadow: none;
 }
 .map {
   width: 100%;
@@ -287,7 +314,6 @@ textarea.field {
 .cost {
   font-size: 26px;
   color: var(--accent);
-  font-family: var(--pixel);
 }
 .muted {
   color: var(--muted);
@@ -425,6 +451,15 @@ textarea.field {
   min-height: 120px;
   display: flex;
   flex-direction: column;
+}
+/* Plegado: solo la cabecera; el mapa ocupa el resto. */
+.log.collapsed {
+  flex: 0 0 auto;
+  min-height: 0;
+}
+.log.collapsed .log-body,
+.log.collapsed .timeline {
+  display: none;
 }
 .log-body {
   overflow-y: auto;
@@ -886,7 +921,6 @@ html.overlay-mode body {
   position: absolute;
   top: 12px;
   left: 12px;
-  font-family: var(--pixel);
   font-size: 28px;
   color: var(--accent);
   background: rgba(16, 19, 27, 0.75);
