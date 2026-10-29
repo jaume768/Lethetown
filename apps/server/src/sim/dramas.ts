@@ -62,6 +62,18 @@ export class DramaDetector {
         this.ctx.placeOf(e.agentId),
         null,
       );
+    } else if (e.kind === "intention") {
+      const kept = e.outcome === "kept";
+      this.publish(
+        kept ? "intention_kept" : "intention_forgotten",
+        dramaScore.intention(importance, !kept),
+        kept
+          ? `${this.ctx.name(e.agentId)} se acuerda de ${clip(e.text)}`
+          : `A ${this.ctx.name(e.agentId)} se le olvida ${clip(e.text)}`,
+        [e.agentId, ...(e.others ?? [])],
+        this.ctx.placeOf(e.agentId),
+        null,
+      );
     } else if (e.kind === "false_memory") {
       this.publish(
         "false_memory",

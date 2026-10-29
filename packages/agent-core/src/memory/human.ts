@@ -12,6 +12,7 @@ import type { Rng } from "../util/random";
 import type { MemoryConfig } from "./config";
 import { currentStrength } from "./decay";
 import type { MemorySystem } from "./memory-system";
+import { IntentionInput } from "./prospective";
 import type { MemoryRecord } from "./types";
 
 /** Quién recuerda: identidad (prompt fijo) y nombre. */
@@ -151,6 +152,8 @@ const SocialResponse = z.object({
   summary: z.string().default(""),
   affinityDelta: z.coerce.number().default(0),
   trustDelta: z.coerce.number().default(0),
+  /** Lo que se ha propuesto hacer a raíz de la charla (memoria prospectiva). */
+  intentions: z.array(IntentionInput).catch([]).default([]),
 });
 
 /** Actualiza la ficha social tras una conversación (modelo "fast"). */
@@ -164,6 +167,8 @@ export async function updateSocialAfterConversation(
     now: number;
     /** Protección de menores: si la opinión no pasa, la ficha no cambia. */
     guard?: MinorGuard;
+    /** Intenciones que surgen de la charla (promesas, quedadas…). */
+    onIntentions?: (intentions: IntentionInput[]) => Promise<void>;
   },
 ): Promise<SocialProfile> {
   const prev = await store.get(opts.owner.agentId, opts.other.id);
@@ -180,10 +185,12 @@ Conversación:
 ${opts.transcript.map((l) => `- ${l}`).join("\n")}
 
 Actualiza tu opinión. summary: una frase sobre esa persona. affinityDelta y trustDelta entre -0.3 y 0.3.
+Si en la charla has quedado en algo o te has propuesto hacer algo más adelante (una promesa, una quedada, devolver algo), ponlo en intentions: text en infinitivo y, si aplica, personId, placeId o la hora (at, "HH:MM"). Si no, [].
 Formato:
-{"summary":"...","affinityDelta":0.05,"trustDelta":0}`,
+{"summary":"...","affinityDelta":0.05,"trustDelta":0,"intentions":[{"text":"...","personId":"...","placeId":null,"at":null}]}`,
   });
   const r = parseWith(SocialResponse, res.text);
+  if (r.intentions.length) await opts.onIntentions?.(r.intentions);
   const safe = await opts.guard?.allows(r.summary, {
     kind: "social",
     actors: [opts.owner.agentId, opts.other.id],

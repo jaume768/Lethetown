@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { MoodConfig, NeedsConfig } from "../agent/mood";
 import { EncodingConfig, SleepConfig } from "./encoding";
+import { ProspectiveConfig } from "./prospective";
 import { ProfileConfig } from "./psychology";
 
 /**
@@ -201,6 +202,8 @@ export const MemoryConfig = z.object({
       minImportance: z.number().int().min(1).max(10).default(3),
     })
     .prefault({}),
+  /** Memoria prospectiva: acordarse de hacer algo cuando aparece la pista. */
+  prospective: ProspectiveConfig.prefault({}),
   /** Recuerdos intrusivos: algo malo e importante vuelve sin buscarlo. */
   intrusive: z
     .object({

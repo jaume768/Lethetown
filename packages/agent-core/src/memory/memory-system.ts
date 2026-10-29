@@ -29,6 +29,10 @@ export interface MemoryEffect {
     | "intrusive"
     | "false_memory"
     | "intention";
+  /** Intenciones: si se acordó a tiempo o se le olvidó. */
+  outcome?: "kept" | "forgotten";
+  /** Otros implicados (p. ej. la persona de una intención). */
+  others?: string[];
   agentId: string;
   memoryId: string;
   text: string;

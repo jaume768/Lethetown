@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const MemoryType = z.enum(["observation", "reflection", "plan", "semantic"]);
+export const MemoryType = z.enum(["observation", "reflection", "plan", "semantic", "intention"]);
 export type MemoryType = z.infer<typeof MemoryType>;
 
 /** "vivido" | "contado por <agentId>" | "inferido" */
@@ -21,6 +21,16 @@ export const MemoryMeta = z.object({
   affectAt: z.number().optional(),
   /** Al reconsolidarlo rellenó huecos con detalles que no vivió (falso recuerdo). */
   falseMemory: z.boolean().optional(),
+  /** Intención (memoria prospectiva): pistas y estado. */
+  intention: z
+    .object({
+      status: z.enum(["pending", "done", "forgotten", "expired"]),
+      personId: z.string().nullable(),
+      placeId: z.string().nullable(),
+      atMinute: z.number().nullable(),
+      misses: z.number().int().nonnegative(),
+    })
+    .optional(),
 });
 export type MemoryMeta = z.infer<typeof MemoryMeta>;
 
@@ -100,6 +110,12 @@ export const MemoryAuditAction = z.enum([
   "affect_faded",
   /** Al recordarlo vagamente rellenó los huecos con detalles inventados. */
   "false_memory",
+  /** Se acordó de hacer lo que tenía pensado (memoria prospectiva). */
+  "intention_kept",
+  /** Se le pasó hacer lo que tenía pensado. */
+  "intention_forgotten",
+  /** Una intención caducó sin hacerse. */
+  "intention_expired",
 ]);
 export type MemoryAuditAction = z.infer<typeof MemoryAuditAction>;
 

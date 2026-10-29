@@ -96,6 +96,18 @@ export const AgentSeed = z.object({
   personality: BigFive.prefault({}),
   /** Particularidades de su memoria (opcional). */
   memoryProfile: MemoryProfileSeed.optional(),
+  /** Cosas que tiene pensado hacer cuando surja (memoria prospectiva). */
+  initialIntentions: z
+    .array(
+      z.object({
+        text: z.string(),
+        personId: z.string().optional(),
+        placeId: z.string().optional(),
+        /** "HH:MM" */
+        at: z.string().optional(),
+      }),
+    )
+    .default([]),
 });
 export type AgentSeed = z.infer<typeof AgentSeed>;
 

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { HabitTracker } from "../memory/habits";
+import { IntentionState } from "../memory/prospective";
 
 /**
  * Estado interno del agente que no viaja al cliente (no está en `AgentState`) pero sí se guarda
@@ -13,6 +14,8 @@ export const AgentMind = z.object({
   sleepQuality: z.number().min(0).max(1).default(1),
   /** Deuda de sueño de hoy (0..1): peor memoria y peor ánimo. */
   sleepDebt: z.number().min(0).max(1).default(0),
+  /** Intenciones abiertas (memoria prospectiva), con su pista y su estado. */
+  intentions: z.array(IntentionState).default([]),
 });
 export type AgentMind = z.infer<typeof AgentMind>;
 

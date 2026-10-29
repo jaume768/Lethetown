@@ -38,7 +38,13 @@
     },
     "memoryProfile": {
       "intentionForgetting": 1.5
-    }
+    },
+    "initialIntentions": [
+      {
+        "text": "devolverle a Carmen su libro de poemas",
+        "personId": "carmen"
+      }
+    ]
   },
   {
     "id": "mateo",
@@ -241,7 +247,13 @@
     },
     "memoryProfile": {
       "sourceConfusion": 0.8
-    }
+    },
+    "initialIntentions": [
+      {
+        "text": "hablar con Nuria de la casa vacía",
+        "personId": "nuria"
+      }
+    ]
   },
   {
     "id": "tomas",
@@ -283,7 +295,13 @@
     "memoryProfile": {
       "dateForgetting": 2.5,
       "intentionForgetting": 1.3
-    }
+    },
+    "initialIntentions": [
+      {
+        "text": "felicitar a Pilar por nuestro aniversario",
+        "personId": "pilar"
+      }
+    ]
   },
   {
     "id": "pilar",
@@ -366,7 +384,13 @@
     "memoryProfile": {
       "dateForgetting": 2.5,
       "semanticStability": 1.2
-    }
+    },
+    "initialIntentions": [
+      {
+        "text": "preguntarle a Sofía qué libros necesitan sus alumnos",
+        "personId": "sofia"
+      }
+    ]
   },
   {
     "id": "sofia",
@@ -445,7 +469,13 @@
     },
     "memoryProfile": {
       "sourceConfusion": 1.2
-    }
+    },
+    "initialIntentions": [
+      {
+        "text": "decirle a Mateo a la cara lo de los clientes de la tarde",
+        "personId": "mateo"
+      }
+    ]
   },
   {
     "id": "marta",
@@ -486,7 +516,14 @@
     },
     "memoryProfile": {
       "episodicStability": 0.85
-    }
+    },
+    "initialIntentions": [
+      {
+        "text": "hacer el pedido de la tienda antes de las doce",
+        "placeId": "tienda",
+        "at": "11:00"
+      }
+    ]
   },
   {
     "id": "leo",
@@ -527,7 +564,13 @@
     },
     "memoryProfile": {
       "suggestibility": 1.3
-    }
+    },
+    "initialIntentions": [
+      {
+        "text": "preguntarle a Tomás otra vez por el pez gigante",
+        "personId": "tomas"
+      }
+    ]
   },
   {
     "id": "nuria",
@@ -607,7 +650,13 @@
     "memoryProfile": {
       "intentionForgetting": 1.4,
       "dateForgetting": 1.5
-    }
+    },
+    "initialIntentions": [
+      {
+        "text": "devolverle a Rafael el dinero que le debo",
+        "personId": "rafael"
+      }
+    ]
   },
   {
     "id": "valentina",
@@ -684,7 +733,13 @@
     },
     "memoryProfile": {
       "sourceConfusion": 1.2
-    }
+    },
+    "initialIntentions": [
+      {
+        "text": "pedirle al doctor Samuel que me mire lo del pecho",
+        "placeId": "consultorio"
+      }
+    ]
   },
   {
     "id": "aurora",
@@ -767,7 +822,13 @@
     },
     "memoryProfile": {
       "suggestibility": 1.3
-    }
+    },
+    "initialIntentions": [
+      {
+        "text": "pedirle consejo al doctor Samuel sobre estudiar enfermería",
+        "personId": "samuel"
+      }
+    ]
   },
   {
     "id": "samuel",

@@ -26,6 +26,14 @@ import { WorkingMemory } from "../memory/working-memory";
 import { inferActivityKind } from "./activity";
 import { newMind, type AgentMind } from "./mind";
 import {
+  cuePresent,
+  recallChance,
+  type IntentionInput,
+  type IntentionState,
+} from "../memory/prospective";
+import { currentStrength } from "../memory/decay";
+import type { MemoryRecord } from "../memory/types";
+import {
   baselineMood,
   blendPerceptions,
   describeMood,
@@ -122,6 +130,22 @@ export type DecideInput = Omit<
 
 const SLEEP_START = 22 * 60;
 const DAY_START = 7 * 60;
+
+/** Qué ha pasado con una intención en este tick. */
+export interface IntentionOutcome {
+  kind: "kept" | "missed" | "late" | "expired";
+  intention: IntentionState;
+  /** Si se acordó: lo que le viene a la cabeza (se le pasa como percepción). */
+  reminder?: string;
+}
+
+/** "estando con carmen", "en cafe_ola", "a las 10:00". */
+function describeCue(i: IntentionState, names: Record<string, string> = {}): string {
+  if (i.personId) return `estando con ${names[i.personId] ?? i.personId}`;
+  if (i.placeId) return `en ${i.placeId}`;
+  if (i.atMinute !== null) return `a las ${formatClock(i.atMinute)}`;
+  return "cuando surgió";
+}
 
 /** Lo que deja el cierre del día (al dormirse): diario y hábitos. */
 export interface DayEndReport {
@@ -242,6 +266,203 @@ export class Agent {
         now,
       );
     }
+    for (const i of this.seed.initialIntentions) await this.intend(now, i);
+  }
+
+  /**
+   * Se propone hacer algo más adelante (memoria prospectiva): un recuerdo de tipo `intention`
+   * con sus pistas (persona, lugar, hora) que se lleva en la cabeza (`mind.intentions`).
+   * Devuelve false si no se guarda (repetida, protección de menores, desactivado).
+   */
+  async intend(now: number, input: IntentionInput): Promise<boolean> {
+    const memory = this.deps.memory;
+    const cfg = memory.config.prospective;
+    const text = input.text.trim().replace(/[.。]+$/, "");
+    if (!cfg.enabled || !text) return false;
+    // Solo personas del pueblo (las que conoce por su id).
+    const known = (id: string | null | undefined) =>
+      id && this.deps.names && id in this.deps.names ? id : null;
+    const personId = known(input.personId) ?? null;
+    const placeId = this.validPlace(input.placeId ?? undefined) ?? null;
+    const atMinute = input.at ? parseClock(input.at) : null;
+    const open = this.mind.intentions.filter(
+      (i) => i.status === "pending" || i.status === "forgotten",
+    );
+    if (open.some((i) => i.text.toLowerCase() === text.toLowerCase())) return false;
+    const meta = {
+      intention: { status: "pending" as const, personId, placeId, atMinute, misses: 0 },
+    };
+    const record = await memory.tryRemember(
+      {
+        agentId: this.id,
+        text: `Quiero ${text}`,
+        type: "intention",
+        importance: cfg.importance,
+        source: "inferido",
+        people: personId ? [personId] : [],
+        placeId,
+        meta,
+      },
+      now,
+    );
+    if (!record) return false;
+    this.mind.intentions = [
+      ...open,
+      {
+        memoryId: record.id,
+        text,
+        personId,
+        placeId,
+        atMinute,
+        status: "pending" as const,
+        misses: 0,
+        createdAt: now,
+        // Nace en su contexto (con esa persona, en ese sitio): la pista tiene que irse y volver.
+        cueActive: true,
+      },
+    ].slice(-cfg.maxOpen);
+    return true;
+  }
+
+  /**
+   * Memoria prospectiva en cada tick (sin LLM): con la pista delante (la persona, el lugar o la
+   * hora) se acuerda o no; si se le pasan varias ocasiones, se le olvida, y quizá más tarde cae
+   * en la cuenta. Lo que recuerda le llega como percepción para que decida qué hacer.
+   */
+  async checkIntentions(
+    now: number,
+    minutes: number,
+    present: string[],
+  ): Promise<IntentionOutcome[]> {
+    const memory = this.deps.memory;
+    const cfg = memory.config.prospective;
+    if (!cfg.enabled || !this.mind.intentions.length) return [];
+    const out: IntentionOutcome[] = [];
+    const profile = memory.profileOf(this.id);
+    const ctx = { placeId: this.state.locationId, present, minuteOfDay: Math.floor(now % 1440) };
+    const keep: IntentionState[] = [];
+    for (const i of this.mind.intentions) {
+      const rec = await memory.store.get(i.memoryId);
+      if (!rec || rec.status !== "active") continue;
+      if (now - i.createdAt > cfg.expireDays * 24 * 60) {
+        await this.closeIntention(i, rec, "expired", now, "pasaron los días y ya no lo hizo");
+        out.push({ kind: "expired", intention: i });
+        continue;
+      }
+      if (i.status === "forgotten") {
+        // Caer en la cuenta, tarde: "¡vaya, se me olvidó!". Vuelve a tenerlo pendiente.
+        if (memory.rng() < 1 - Math.pow(1 - cfg.lateRecallPerHour, minutes / 60)) {
+          i.status = "pending";
+          i.misses = 0;
+          await this.syncIntention(i, rec);
+          await memory.tryRemember(
+            {
+              agentId: this.id,
+              text: `¡Vaya, se me olvidó ${i.text}!`,
+              type: "observation",
+              importance: 5,
+              emotionalValence: -0.4,
+              people: i.personId ? [i.personId] : [],
+            },
+            now,
+          );
+          out.push({ kind: "late", intention: i });
+        }
+        keep.push(i);
+        continue;
+      }
+      const cue = cuePresent(i, ctx, cfg.timeWindowMinutes);
+      const appeared = cue && !i.cueActive;
+      i.cueActive = cue;
+      if (!appeared) {
+        keep.push(i);
+        continue;
+      }
+      const strength = currentStrength(rec, now);
+      const chance =
+        strength < memory.config.retrieval.forgetThreshold
+          ? 0
+          : recallChance(profile.intentionForgetting, strength, cfg);
+      if (memory.rng() < chance) {
+        await this.closeIntention(i, rec, "done", now, "se acordó en el momento oportuno");
+        await memory.store.update(rec.id, reinforce(rec, now, memory.config.decay));
+        const who = i.personId ? this.deps.names?.[i.personId] : undefined;
+        this.workingMemory.push({ text: `Quería ${i.text}`, memoryId: rec.id, addedAt: now });
+        out.push({
+          kind: "kept",
+          intention: i,
+          reminder: `Te acuerdas de que querías ${i.text}${who ? ` (ahí está ${who})` : ""}.`,
+        });
+        continue;
+      }
+      i.misses++;
+      if (i.misses >= cfg.maxMisses) {
+        i.status = "forgotten";
+        await this.syncIntention(i, rec);
+        await memory.audit({
+          agentId: this.id,
+          memoryId: rec.id,
+          memoryText: rec.text,
+          action: "intention_forgotten",
+          reason: `tuvo ${i.misses} ocasiones (${describeCue(i, this.deps.names)}) y no se acordó de ${i.text}`,
+          at: now,
+        });
+        out.push({ kind: "missed", intention: i });
+      } else {
+        await this.syncIntention(i, rec);
+      }
+      keep.push(i);
+    }
+    this.mind.intentions = keep;
+    for (const o of out) {
+      if (o.kind === "kept" || o.kind === "missed") {
+        memory.emitEffect({
+          kind: "intention",
+          agentId: this.id,
+          memoryId: o.intention.memoryId,
+          text: o.intention.text,
+          importance: cfg.importance,
+          outcome: o.kind === "kept" ? "kept" : "forgotten",
+          others: o.intention.personId ? [o.intention.personId] : [],
+        });
+      }
+    }
+    return out;
+  }
+
+  /** Refleja en el recuerdo (meta) el estado de una intención. */
+  private async syncIntention(i: IntentionState, rec: MemoryRecord) {
+    await this.deps.memory.store.update(rec.id, {
+      meta: {
+        ...rec.meta,
+        intention: {
+          status: i.status,
+          personId: i.personId,
+          placeId: i.placeId,
+          atMinute: i.atMinute,
+          misses: i.misses,
+        },
+      },
+    });
+  }
+
+  private async closeIntention(
+    i: IntentionState,
+    rec: MemoryRecord,
+    status: "done" | "expired",
+    now: number,
+    why: string,
+  ) {
+    i.status = status;
+    await this.syncIntention(i, rec);
+    await this.deps.memory.audit({
+      agentId: this.id,
+      memoryId: rec.id,
+      memoryText: rec.text,
+      action: status === "done" ? "intention_kept" : "intention_expired",
+      reason: `${i.text}: ${why}`,
+      at: now,
+    });
   }
 
   /**
@@ -656,9 +877,10 @@ export class Agent {
           workingMemory: this.workingMemory.render(),
         }),
       });
-      return await this.checked(
-        this.toDecision(parseWith(DecideResponse, res.text), input.present),
-      );
+      const parsed = parseWith(DecideResponse, res.text);
+      // Algo que se propone hacer más adelante (memoria prospectiva).
+      if (parsed.intention?.text) await this.intend(now, parsed.intention);
+      return await this.checked(this.toDecision(parsed, input.present));
     } catch (error) {
       this.deps.onError?.(this.id, "decide", error);
       return { kind: "follow_plan" };

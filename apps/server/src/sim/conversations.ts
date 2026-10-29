@@ -134,6 +134,16 @@ export async function endConversation(ctx: SimContext, key: string, reason: stri
         transcript: conv.transcript,
         now,
         guard: ctx.deps.memory.guard,
+        onIntentions: async (list) => {
+          for (const i of list) {
+            if (await owner.intend(now, i)) {
+              ctx.emit("memory", owner.id, `📝 ${owner.seed.name} se propone ${i.text}`, [
+                owner.id,
+                ...(i.personId ? [i.personId] : []),
+              ]);
+            }
+          }
+        },
       });
     } catch (error) {
       ctx.emit("system", owner.id, `⚠ Error en "social": ${errorMessage(error)}`);

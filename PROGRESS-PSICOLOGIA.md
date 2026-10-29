@@ -54,7 +54,7 @@ y comprobar que `pnpm dev` arranca en modo mock.
 - [x] Desvanecimiento afectivo
 - [x] Recuerdos intrusivos (+ efecto visual)
 - [x] Falsos recuerdos controlados
-- [ ] Memoria prospectiva (intenciones)
+- [x] Memoria prospectiva (intenciones)
 
 ### Fase 6 — Lo social
 
@@ -257,3 +257,25 @@ conversaciones (decide 842 → 916), que son las llamadas con más entrada.
   salvedad explícita de la tarea `confabulate`.
 - Frecuencia en mock: 10 en 96 h para 20 agentes (≈ 2-3 al día en el pueblo), sin cambiar el
   número de llamadas (sustituyen a una esencia o a una reconsolidación).
+- **Memoria prospectiva**: nuevo tipo de recuerdo `intention` ("Quiero devolverle a Carmen su
+  libro de poemas") con pistas (persona, lugar, hora "HH:MM") y estado en
+  `meta.intention` (pending, done, forgotten, expired). El agente lleva las abiertas en
+  `AgentMind.intentions` (en la instantánea; `SIM_SNAPSHOT_VERSION` = 8) para no consultar la BD
+  en cada tick, y refleja cada cambio de estado en el recuerdo.
+- **Cuándo se acuerda**: solo cuando la pista _aparece_ (llega esa persona, llega a ese lugar,
+  entra la hora); una intención nace con la pista activa (se forma hablando con esa persona),
+  así que tiene que irse y volver. Probabilidad = 0.7 × (0.5 + 0.5·fuerza del recuerdo) ÷ olvido
+  de intenciones del perfil (que ya incluye la responsabilidad); si el recuerdo está olvidado, 0.
+  Si se acuerda: le llega como percepción ("Te acuerdas de que querías…, ahí está Carmen") y
+  decide qué hacer; queda `done`. Si falla 2 veces: `forgotten`. Después, con 0.04 por hora,
+  cae en la cuenta («¡Vaya, se me olvidó…!», recuerdo negativo) y vuelve a estar pendiente.
+  Caducan a los 7 días. Auditoría `intention_kept` / `intention_forgotten` /
+  `intention_expired`, eventos ✅ 🫥 😳 📝 y dramas `intention_kept` / `intention_forgotten`.
+- **Detección sin llamadas nuevas**: en la ficha social al acabar una charla (campo
+  `intentions` de la respuesta) y en la decisión (campo opcional `intention`). Pasan por
+  `tryRemember`, así que también por la protección de menores. El mock detecta las quedadas
+  ("Deberíamos venir juntos") y la voz interior con "tengo que / debería…"; al acordarse con la
+  persona delante, se lo dice.
+- **Semillas**: `initialIntentions` en 10 agentes (el libro de Lucía, el aniversario de Tomás, el
+  dinero que Hugo le debe a Rafael…). En 3 días de mock: 74 intenciones nuevas, 41 cumplidas, 4
+  que se le pasan (Lucía se olvida del libro de Carmen) y 2 «¡vaya, se me olvidó!».

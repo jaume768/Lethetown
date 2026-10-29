@@ -20,6 +20,8 @@ export * from "./memory/human";
 export * from "./memory/maintenance";
 export * from "./memory/habits";
 export * from "./memory/psychology";
+export * from "./memory/prospective";
+export * from "./memory/encoding";
 export * from "./util/random";
 
 export * from "./agent/agent";

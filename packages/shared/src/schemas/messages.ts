@@ -49,6 +49,8 @@ export const ServerMessage = z.discriminatedUnion("type", [
     ]),
     text: z.string(),
     importance: z.number().optional(),
+    outcome: z.enum(["kept", "forgotten"]).optional(),
+    others: z.array(z.string()).optional(),
   }),
   /** Algo de alto interés (rumor, discusión, olvido importante…) para el feed de dramas. */
   z.object({ type: z.literal("drama"), drama: Drama }),

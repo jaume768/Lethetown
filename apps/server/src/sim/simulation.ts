@@ -313,6 +313,26 @@ export class Simulation {
     warnConversationPlan(ctx, agent, now);
     // Un recuerdo malo que vuelve sin querer (más con el ánimo bajo o si algo se lo recuerda).
     const intrusive = await agent.ruminate(now, this.tickMinutes, around);
+    // Memoria prospectiva: lo que tenía pensado hacer, si aparece la pista.
+    for (const o of await agent.checkIntentions(now, this.tickMinutes, around)) {
+      const who = o.intention.personId ? ctx.agents.get(o.intention.personId)?.seed.name : null;
+      const name = agent.seed.name;
+      if (o.kind === "kept") {
+        rt.pending.push({ kind: "world", text: o.reminder!, placeId: null });
+        ctx.emit("memory", agent.id, `✅ ${name} se acuerda de ${o.intention.text}`, [agent.id]);
+      } else if (o.kind === "missed") {
+        ctx.emit(
+          "memory",
+          agent.id,
+          `🫥 A ${name} se le pasa ${o.intention.text}${who ? ` (y eso que estaba con ${who})` : ""}`,
+          [agent.id],
+        );
+      } else if (o.kind === "late") {
+        ctx.emit("memory", agent.id, `😳 ¡Vaya! A ${name} se le olvidó ${o.intention.text}`, [
+          agent.id,
+        ]);
+      }
+    }
     if (intrusive) {
       ctx.emit(
         "memory",

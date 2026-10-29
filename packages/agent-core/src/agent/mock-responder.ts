@@ -384,7 +384,14 @@ function mockDecide(req: CompletionRequest): string {
     .filter((l) => /\s[A-ZÁÉÍÓÚ][a-záéíóúñ]{2,}/.test(l) && !p.includes(`cosa? ${l}`));
   const plan = /^Tu plan ahora: (.+) en \S+ \(desde/m.exec(p)?.[1];
 
-  const reply = (o: Record<string, unknown>, reason: string) => JSON.stringify({ ...o, reason });
+  // La voz interior que dice "tengo que…" o "debería…" se queda como intención.
+  const voiceIntent =
+    /^VOZ INTERIOR[^\n]*\n- ⟦.*?\b(?:tengo que|debería|quiero acordarme de) (.+?)[.!]?⟧$/im.exec(
+      p,
+    )?.[1];
+  const intention = voiceIntent ? { intention: { text: voiceIntent } } : {};
+  const reply = (o: Record<string, unknown>, reason: string) =>
+    JSON.stringify({ ...o, reason, ...intention });
   // Voz interior recién recibida (sección VOZ INTERIOR): casi siempre se le hace caso.
   const voice = /^VOZ INTERIOR[^\n]*\n- ⟦(.+)⟧$/m.exec(p)?.[1];
   // Diario de hoy: lo que ya ha hecho, para no repetirlo al cambiar de planes.
@@ -392,6 +399,16 @@ function mockDecide(req: CompletionRequest): string {
   const visited = (id: string) => done.some((d) => d.placeId === id);
   const did = (activity: string) => done.some((d) => d.activity.startsWith(activity));
 
+  // Se acaba de acordar de algo que quería hacer con alguien que está aquí: lo hace.
+  const remembered = /^- Te acuerdas de que querías (.+?) \(ahí está (.+)\)\.$/m.exec(p);
+  const withWhom =
+    remembered && present.find((id) => presentLine.includes(`${id}=${remembered[2]}`));
+  if (remembered && withWhom) {
+    return reply(
+      { choice: "talk", to: withWhom, say: `¡Ay, por cierto! Tenía que ${remembered[1]}.` },
+      "Menos mal que me he acordado justo ahora.",
+    );
+  }
   // Un objeto roto: va a mirarlo (si no lo ha mirado ya hoy).
   if (broken && h % 2 === 0 && !did(`mirar qué le pasa a ${broken[1]}`)) {
     return reply(
@@ -691,12 +708,20 @@ function mockSummarize(req: CompletionRequest): string {
 }
 
 function mockSocial(req: CompletionRequest): string {
-  const name = /Acabas de hablar con ([^(]+) \(/.exec(req.prompt)?.[1]?.trim() ?? "esa persona";
+  const match = /Acabas de hablar con ([^(]+) \((\S+)\)/.exec(req.prompt);
+  const name = match?.[1]?.trim() ?? "esa persona";
   const negative = /liado|mal|triste/i.test(req.prompt);
+  // Promesas y quedadas de la charla (memoria prospectiva).
+  const talk = req.prompt.split("Conversación:")[1] ?? "";
+  const first = name.split(" ")[0];
+  const intentions = /Deberíamos venir juntos/.test(talk)
+    ? [{ text: `volver a quedar con ${first}`, personId: match?.[2] ?? null }]
+    : [];
   return JSON.stringify({
     summary: negative ? `${name} parece agobiado últimamente.` : `${name} es agradable de tratar.`,
     affinityDelta: negative ? -0.02 : 0.06,
     trustDelta: 0.02,
+    intentions,
   });
 }
 
