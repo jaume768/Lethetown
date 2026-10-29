@@ -290,7 +290,7 @@ export class MemorySystem {
     const roll = this.rng();
     if (roll >= chance(rate * cfg.cueFactor)) return null;
     const retrieval = this.retrievalFor(opts.agentId);
-    const candidates = (await this.store.listByAgent(opts.agentId))
+    const candidates = (await this.store.listActive(opts.agentId))
       .filter(
         (m) =>
           m.status === "active" &&

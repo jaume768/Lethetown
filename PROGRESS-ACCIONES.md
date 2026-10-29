@@ -16,7 +16,7 @@ y comprobar que `pnpm dev` arranca en modo mock.
 - [x] 0.1 `agent.ts` dividido en módulos (dorado sin cambios)
 - [x] 0.2 `mock-responder.ts` declarativo (registro de respondedores con reglas pequeñas)
 - [x] 0.3 `bootstrap.ts` en factorías por área
-- [ ] 0.4 `MemoryStore.listActive(agentId, { withEmbedding })`
+- [x] 0.4 `MemoryStore.listActive(agentId, { withEmbedding })`
 - [ ] 0.5 Retención de datos configurable por tabla + job + test
 - [ ] 0.6 `gist.minImportance` = 4 (y medir)
 - [ ] 0.7 `docs/decisiones/` (ADR breves), CLAUDE.md corto, sin PROGRESS antiguos
@@ -122,3 +122,8 @@ y comprobar que `pnpm dev` arranca en modo mock.
   moderación del texto de usuario), `worlds.ts` (abrir un mundo, instantáneas, `attachWorlds`),
   `services.ts`, `files.ts` y `types.ts`. `bootstrap.ts` solo orquesta y reexporta lo de antes,
   así que los importadores no cambian. Mismo orden de construcción: el dorado no cambia.
+- **`listActive(agentId, { withEmbedding })`**: lo usan el mantenimiento, la consolidación y los
+  recuerdos intrusivos (sin vectores) y el olvido por presupuesto (con vectores, porque agrupa
+  por similitud). En Postgres, sin `withEmbedding` no se selecciona la columna `embedding`
+  (384 floats por fila); en RAM se devuelven siempre (ya están en memoria). Tests de que el
+  resultado es el mismo que `listByAgent` filtrado. El dorado no cambia.

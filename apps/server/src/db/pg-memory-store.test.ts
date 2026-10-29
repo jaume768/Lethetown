@@ -105,4 +105,20 @@ describe.skipIf(!url)("PgMemoryStore (Postgres)", () => {
     expect(rows[0]!.memory.embedding).toEqual([]);
     expect(rows[0]!.relevance).toBeGreaterThan(0);
   });
+
+  it("listActive: lo mismo que listByAgent filtrado, con o sin vectores", async () => {
+    const a = await memory("activo", "uno");
+    const b = { ...(await memory("activo", "dos")), status: "archived" as const };
+    await store.add(a);
+    await store.add(b);
+    const full = (await store.listByAgent("activo")).filter((m) => m.status === "active");
+    const lean = await store.listActive("activo");
+    expect(lean.map((m) => ({ ...m, embedding: [] }))).toEqual(
+      full.map((m) => ({ ...m, embedding: [] })),
+    );
+    expect(lean[0]!.embedding).toEqual([]);
+    expect((await store.listActive("activo", { withEmbedding: true }))[0]!.embedding).toHaveLength(
+      384,
+    );
+  });
 });

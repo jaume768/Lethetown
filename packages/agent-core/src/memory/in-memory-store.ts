@@ -34,6 +34,13 @@ export class InMemoryStore implements MemoryStore {
     return [...this.byId.values()].filter((m) => m.agentId === agentId).map((m) => ({ ...m }));
   }
 
+  /** En RAM los vectores ya están en memoria: se devuelven siempre (no cuesta nada). */
+  async listActive(agentId: string, _opts?: { withEmbedding?: boolean }): Promise<MemoryRecord[]> {
+    return [...this.byId.values()]
+      .filter((m) => m.agentId === agentId && m.status === "active")
+      .map((m) => ({ ...m }));
+  }
+
   async candidates(agentId: string): Promise<MemoryRecord[]> {
     return (await this.listByAgent(agentId)).filter((m) => m.status === "active");
   }

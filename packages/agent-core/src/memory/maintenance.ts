@@ -59,7 +59,7 @@ export class MemoryMaintenance {
     const elapsedDays = Math.max(0, now - since) / (24 * HOUR);
     const confuseP = 1 - Math.pow(1 - cfg.sourceConfusion.dailyProbability, elapsedDays);
 
-    for (const m of await this.memory.store.listByAgent(owner.agentId)) {
+    for (const m of await this.memory.store.listActive(owner.agentId)) {
       if (m.status !== "active") continue;
       const s = currentStrength(m, now);
       if (s < cfg.retrieval.forgetThreshold) {
@@ -263,9 +263,10 @@ export class MemoryMaintenance {
   /** Olvido por presupuesto (política híbrida): triviales viejos → resumen de grupos → descarte. */
   private async enforceBudget(owner: MemoryOwner, now: number, report: MaintenanceReport) {
     const cfg = this.memory.config.budget;
-    let active = (await this.memory.store.listByAgent(owner.agentId)).filter(
-      (m) => m.status === "active",
-    );
+    // Con vectores: el resumen de grupos compara embeddings.
+    let active = (
+      await this.memory.store.listActive(owner.agentId, { withEmbedding: true })
+    ).filter((m) => m.status === "active");
     const tokens = () => active.reduce((n, m) => n + estimateTextTokens(m.text), 0);
     if (tokens() <= cfg.tokensPerAgent) return;
     const protectedIds = this.protectedIds(active, now);

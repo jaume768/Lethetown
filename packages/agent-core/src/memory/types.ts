@@ -62,6 +62,12 @@ export interface MemoryStore {
   get(id: string): Promise<MemoryRecord | undefined>;
   listByAgent(agentId: string): Promise<MemoryRecord[]>;
   /**
+   * Recuerdos activos (no archivados) del agente. Sin `withEmbedding`, el almacén puede no traer
+   * los vectores (llegan vacíos): es lo que necesitan el mantenimiento, la consolidación y los
+   * recuerdos intrusivos.
+   */
+  listActive(agentId: string, opts?: { withEmbedding?: boolean }): Promise<MemoryRecord[]>;
+  /**
    * Candidatos para la recuperación. Un almacén con índice vectorial puede prefiltrar
    * por similitud; el de memoria devuelve todos. La puntuación final se hace en agent-core.
    */

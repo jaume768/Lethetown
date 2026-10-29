@@ -105,6 +105,20 @@ export class PgMemoryStore implements MemoryStore {
     return rows.map(toRecord);
   }
 
+  async listActive(
+    agentId: string,
+    opts: { withEmbedding?: boolean } = {},
+  ): Promise<MemoryRecord[]> {
+    const where = and(this.inWorld(), eq(memories.agentId, agentId), eq(memories.status, "active"));
+    if (opts.withEmbedding) {
+      return (await this.db.select().from(memories).where(where)).map(toRecord);
+    }
+    // Sin la columna embedding (384 floats por fila): mucho menos tráfico con la BD.
+    const { embedding: _e, ...columns } = getTableColumns(memories);
+    const rows = await this.db.select(columns).from(memories).where(where);
+    return rows.map((r) => toRecord({ ...r, embedding: [] }));
+  }
+
   /**
    * Prefiltro: los más parecidos (índice HNSW) ∪ los más recientes ∪ los más importantes,
    * para que la puntuación final en agent-core no pierda recuerdos poco relevantes pero vívidos.

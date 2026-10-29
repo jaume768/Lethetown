@@ -374,7 +374,7 @@ export class LLMConsolidator implements Consolidator {
       weakened: [],
       questions: [],
     };
-    const day = (await this.memory.store.listByAgent(owner.agentId)).filter(
+    const day = (await this.memory.store.listActive(owner.agentId)).filter(
       (m) => m.status === "active" && m.createdAt >= from && m.type !== "reflection",
     );
     if (!day.length || !this.cfg.enabled) return result;
