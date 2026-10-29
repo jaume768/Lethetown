@@ -15,6 +15,8 @@ export type MemorySource = z.infer<typeof MemorySource>;
 export const MemoryMeta = z.object({
   /** Recuerdo de juventud (pico de reminiscencia en los mayores). */
   youth: z.boolean().optional(),
+  /** Se vivió con una activación extrema: solo se grabó la esencia (sin detalles). */
+  gistOnly: z.boolean().optional(),
 });
 export type MemoryMeta = z.infer<typeof MemoryMeta>;
 

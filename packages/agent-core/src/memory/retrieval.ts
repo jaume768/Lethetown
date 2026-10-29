@@ -111,6 +111,8 @@ export function rankMemories(
 /** Lo que el agente "ve" de un recuerdo: el texto completo, o solo la esencia si es vago. */
 export function recallText(scored: ScoredMemory): string {
   const { memory, scores } = scored;
+  // Vivido con una activación extrema: nunca tuvo detalles.
+  if (memory.meta?.gistOnly && memory.gist) return memory.gist;
   if (scores.clarity !== "vague") return memory.text;
   return memory.gist ?? vagueGist(memory.text);
 }

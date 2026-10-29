@@ -4,6 +4,7 @@ import { seededRng, type Rng } from "../util/random";
 import { DEFAULT_MEMORY_CONFIG, type MemoryConfig } from "./config";
 import { initialStability, reinforce } from "./decay";
 import type { MinorGuard } from "../agent/minor-safety";
+import { reduceDetails } from "./encoding";
 import type { Reconsolidator } from "./human";
 import { NEUTRAL_PROFILE, stabilityFactor, type MemoryProfile } from "./psychology";
 import {
@@ -147,13 +148,14 @@ export class MemorySystem {
       id: this.newId(),
       agentId: input.agentId,
       text: input.text,
-      gist: null,
+      // Con activación extrema solo se graba la esencia (sin LLM).
+      gist: input.meta?.gistOnly ? reduceDetails(input.text) : null,
       embedding: embedding ?? [],
       createdAt: now,
       lastAccessedAt: now,
       importance,
       emotionalValence: valence,
-      strength: 1,
+      strength: Math.min(1, Math.max(0, input.strength ?? 1)),
       stability:
         initialStability(importance, valence, this.config.decay) *
         stabilityFactor(this.profileOf(input.agentId), {

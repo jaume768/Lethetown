@@ -119,7 +119,13 @@ const QUIET: ReadonlySet<ActivityKind> = new Set(["read", "sit", "idle", "cook"]
 /** Necesidades tras `minutes` de juego haciendo `kind`. */
 export function stepNeeds(
   needs: Needs,
-  ctx: { kind: ActivityKind; alone: boolean; extraversion: number },
+  ctx: {
+    kind: ActivityKind;
+    alone: boolean;
+    extraversion: number;
+    /** Calidad del sueño (0..1): durmiendo, la energía no pasa de aquí. */
+    sleepQuality?: number;
+  },
   minutes: number,
   cfg: NeedsConfig,
 ): Needs {
@@ -128,11 +134,14 @@ export function stepNeeds(
   const eating = ctx.kind === "eat";
   const introvert = Math.max(0, (0.5 - ctx.extraversion) * 2);
   const recharge = !sleeping && ctx.alone && QUIET.has(ctx.kind) ? introvert : 0;
+  const ceiling = sleeping ? Math.max(needs.energy, ctx.sleepQuality ?? 1) : 1;
   return {
-    energy: clamp01(
+    energy: clamp(
       needs.energy +
         (sleeping ? cfg.energySleepPerHour * h : -cfg.energyAwakePerHour * h) +
         recharge * cfg.introvertRecoveryPerHour * h,
+      0,
+      ceiling,
     ),
     hunger: clamp01(
       needs.hunger +

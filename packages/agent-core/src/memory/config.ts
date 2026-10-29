@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { MoodConfig, NeedsConfig } from "../agent/mood";
+import { EncodingConfig, SleepConfig } from "./encoding";
 import { ProfileConfig } from "./psychology";
 
 /**
@@ -165,6 +166,10 @@ export const MemoryConfig = z.object({
   mood: MoodConfig.prefault({}),
   /** Ritmos de las necesidades (energía, hambre, social) y efecto de la personalidad. */
   needs: NeedsConfig.prefault({}),
+  /** Codificación: fuerza inicial según atención y activación (Yerkes-Dodson). */
+  encoding: EncodingConfig.prefault({}),
+  /** Sueño: calidad, deuda y consolidación emocional. */
+  sleep: SleepConfig.prefault({}),
   /** Edad y personalidad → perfil de memoria de cada agente (ver psychology.ts). */
   profile: ProfileConfig.prefault({}),
   /** Rutinas repetidas → recuerdos semánticos de hábito ("suelo desayunar en el café…"). */

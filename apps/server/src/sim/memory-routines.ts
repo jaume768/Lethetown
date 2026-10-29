@@ -30,6 +30,8 @@ export async function consolidate(ctx: SimContext, agent: Agent, now: number): P
   if (!ctx.deps.consolidator || rt.consolidatedNight === night) return;
   rt.consolidatedNight = night;
   try {
+    // Cómo dormirá: según lo tenso o preocupado que se acuesta.
+    agent.fallAsleep();
     // Primero el cierre del día (diario y hábitos, sin LLM): el diario entra en la reflexión.
     const end = await agent.endDay(now, night);
     for (const habit of end.habitsFormed) {

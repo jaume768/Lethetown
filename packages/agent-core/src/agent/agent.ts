@@ -10,6 +10,13 @@ import type {
 import type { LLMClient } from "../llm/client";
 import { socialNote, type MemoryOwner, type SocialProfileStore } from "../memory/human";
 import { reinforce } from "../memory/decay";
+import {
+  encodingStrength,
+  eventArousal,
+  overwhelmed,
+  sleepDebt,
+  sleepQuality,
+} from "../memory/encoding";
 import type { MemorySystem, RecallContext } from "../memory/memory-system";
 import { dayDiaryText, dueHabits, habitText, recordDay } from "../memory/habits";
 import { isYouthMemory } from "../memory/psychology";
@@ -462,6 +469,13 @@ export class Agent {
     for (const [i, p] of perceptions.entries()) {
       const rating = ratings[i] ?? { importance: 2, valence: 0 };
       felt.push(rating);
+      // Atención: lo que llega de fuera mientras habla con alguien se graba peor.
+      const arousal = Math.max(
+        this.state.mood.arousal,
+        eventArousal(rating.importance, rating.valence),
+      );
+      const distracted =
+        this.state.activityKind === "talk" && (p.kind === "arrived" || p.kind === "overheard");
       const record = await this.deps.memory.tryRemember(
         {
           agentId: this.id,
@@ -473,6 +487,7 @@ export class Agent {
           people: peopleOf(p),
           placeId: "placeId" in p ? p.placeId : this.state.locationId,
           eventId: "eventId" in p ? (p.eventId ?? null) : null,
+          ...this.encoding(arousal, distracted),
         },
         now,
       );
@@ -487,7 +502,57 @@ export class Agent {
 
   /** Nivel base del ánimo (según su personalidad). */
   get moodBaseline(): { valence: number; arousal: number } {
-    return baselineMood(this.seed.personality, this.deps.memory.config.mood);
+    const cfg = this.deps.memory.config;
+    const base = baselineMood(this.seed.personality, cfg.mood);
+    // Si durmió mal, ese día su nivel base está más bajo.
+    return { ...base, valence: base.valence - cfg.sleep.debtValence * this.mind.sleepDebt };
+  }
+
+  /**
+   * Fuerza inicial con la que graba algo ahora (atención y estado) y si solo le queda la
+   * esencia (activación extrema). Ver memory/encoding.ts.
+   */
+  private encoding(
+    arousal: number,
+    distracted: boolean,
+  ): { strength: number; meta?: { gistOnly: true } } {
+    const cfg = this.deps.memory.config.encoding;
+    const strength = encodingStrength(
+      {
+        arousal,
+        energy: this.state.needs.energy,
+        walking: this.state.activityKind === "walk",
+        distracted,
+        sleepDebt: this.mind.sleepDebt,
+      },
+      cfg,
+    );
+    return overwhelmed(arousal, cfg) ? { strength, meta: { gistOnly: true } } : { strength };
+  }
+
+  /** Al acostarse: lo tenso o preocupado que esté decide cómo dormirá esta noche. */
+  fallAsleep(): number {
+    const cfg = this.deps.memory.config.sleep;
+    this.mind.sleepQuality = sleepQuality(this.state.mood, this.seed.personality.neuroticism, cfg);
+    return this.mind.sleepQuality;
+  }
+
+  /**
+   * Al despertar: si no recuperó energía suficiente, arrastra una deuda de sueño ese día
+   * (peor memoria y peor ánimo). Devuelve la deuda (0 = descansado).
+   */
+  wakeUp(): number {
+    const cfg = this.deps.memory.config.sleep;
+    const debt = sleepDebt(this.state.needs.energy, cfg);
+    this.mind.sleepDebt = debt;
+    this.mind.sleepQuality = 1;
+    if (debt > 0) {
+      this.state.mood = makeMood(
+        this.state.mood.valence - cfg.debtValence * debt,
+        this.state.mood.arousal,
+      );
+    }
+    return debt;
   }
 
   /**
@@ -500,7 +565,7 @@ export class Agent {
     const kind = this.state.activityKind;
     this.state.needs = stepNeeds(
       this.state.needs,
-      { kind, alone, extraversion },
+      { kind, alone, extraversion, sleepQuality: this.mind.sleepQuality },
       minutes,
       cfg.needs,
     );
@@ -585,6 +650,7 @@ export class Agent {
         people: [to],
         placeId: this.state.locationId,
         eventId: eventId ?? null,
+        ...this.encoding(this.state.mood.arousal, false),
       },
       now,
     );

@@ -34,6 +34,8 @@ export interface NewMemory {
   eventId?: string | null;
   links?: string[];
   meta?: MemoryMeta;
+  /** Fuerza inicial (0..1) según la atención al grabarlo (ver encoding.ts). Por defecto, 1. */
+  strength?: number;
 }
 
 export type MemoryPatch = Partial<

@@ -45,8 +45,8 @@ y comprobar que `pnpm dev` arranca en modo mock.
 
 ### Fase 4 — Codificación y sueño
 
-- [ ] Fuerza inicial según atención y activación (Yerkes-Dodson)
-- [ ] Sueño: refuerzo emocional y efectos de dormir poco
+- [x] Fuerza inicial según atención y activación (Yerkes-Dodson)
+- [x] Sueño: refuerzo emocional y efectos de dormir poco
 
 ### Fase 5 — Sesgos y fenómenos
 
@@ -204,3 +204,23 @@ conversaciones (decide 842 → 916), que son las llamadas con más entrada.
   emotiva (mismo peso, 0.2).
 - Calibrado con 30 h de mock (antes, casi todos "neutral" y "adormilado" a mediodía).
   `SIM_SNAPSHOT_VERSION` = 6 (cambia la forma del ánimo). Test dorado regenerado.
+- **Codificación**: la fuerza inicial de un recuerdo (antes siempre 1) = curva de
+  Yerkes-Dodson sobre la activación (campana con pico en 0.55 y mínimo 0.6) × energía (hasta
+  0.6 con energía 0 por debajo de 0.3) × 0.75 si va caminando × 0.7 si está hablando y le llega
+  otra cosa (una llegada, algo oído a escondidas) × deuda de sueño (hasta 0.6), con un mínimo
+  de 0.2. La activación que cuenta es la mayor entre la suya y la que provoca el suceso
+  (importancia y carga emotiva).
+- **Activación extrema (≥ 0.9) → solo la esencia**: se guarda la esencia sin LLM
+  (`reduceDetails`: sin frases literales ni cifras) y `meta.gistOnly`; el agente solo ve la
+  esencia aunque el recuerdo esté nítido. El inspector sigue viendo el texto completo.
+- **Sueño**: al acostarse se calcula la calidad (la activación por encima de 0.5 y la
+  valencia negativa × (0.5 + neuroticismo) la bajan; mínimo 0.4), que es el techo de la energía
+  que se recupera durmiendo. Al despertar, si la energía no llega a 0.85 hay deuda de sueño:
+  baja la valencia (al despertar y en su nivel base ese día) y empeora la codificación.
+  Evento «😴 X ha dormido mal» si la deuda pasa de 0.2. En 3 días de mock nadie duerme mal
+  (se acuestan tranquilos); aparece con días tensos.
+- **Consolidación emocional**: al dormir, el repaso prioriza importancia × (1 + |valencia|) y
+  los recuerdos del día con |valencia| ≥ 0.4 se refuerzan × (1 + 0.5·|valencia|) aunque no se
+  citen (y no se debilitan aunque sean triviales). Auditoría `reinforced` con el motivo.
+- `AgentMind` guarda `sleepQuality` y `sleepDebt`; `SIM_SNAPSHOT_VERSION` = 7. Test dorado
+  regenerado (cambian las fuerzas iniciales y con ellas lo que se recuerda).

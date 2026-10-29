@@ -9,6 +9,10 @@ export const AgentMind = z.object({
   habits: HabitTracker.default({}),
   /** Recuerdos "El día N: …" de los últimos días (el último es el de ayer). */
   diaryMemoryIds: z.array(z.string()).default([]),
+  /** Calidad del sueño de esta noche (0..1): techo de la energía que recupera durmiendo. */
+  sleepQuality: z.number().min(0).max(1).default(1),
+  /** Deuda de sueño de hoy (0..1): peor memoria y peor ánimo. */
+  sleepDebt: z.number().min(0).max(1).default(0),
 });
 export type AgentMind = z.infer<typeof AgentMind>;
 

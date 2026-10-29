@@ -294,6 +294,15 @@ export class Simulation {
     const day = Math.floor(now / 1440);
     if (rt.plannedDay !== day) {
       rt.plannedDay = day;
+      const debt = agent.wakeUp();
+      if (debt > 0.2) {
+        ctx.emit(
+          "action",
+          agent.id,
+          `😴 ${agent.seed.name} ha dormido mal (energía ${agent.state.needs.energy.toFixed(2)})`,
+          [agent.id],
+        );
+      }
       setAction(ctx, agent, "pensando en el día", "idle");
       const plan = await agent.planDay(now, ctx.world.weather);
       ctx.emit("plan", agent.id, `Plan: ${plan.map((p) => p.activity).join(" → ")}`, [agent.id]);

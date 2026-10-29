@@ -249,8 +249,10 @@ export class LLMConsolidator implements Consolidator {
       (m) => m.status === "active" && m.createdAt >= from && m.type !== "reflection",
     );
     if (!day.length || !this.cfg.enabled) return result;
+    // Al dormir se repasa sobre todo lo importante y lo emocional.
+    const salience = (m: MemoryRecord) => m.importance * (1 + Math.abs(m.emotionalValence));
     const chosen = [...day]
-      .sort((a, b) => b.importance - a.importance || a.createdAt - b.createdAt)
+      .sort((a, b) => salience(b) - salience(a) || a.createdAt - b.createdAt)
       .slice(0, this.cfg.maxMemories);
     const people = this.knownAgents().filter((a) => a.id !== owner.agentId);
 
@@ -324,10 +326,18 @@ Formato:
       result.created.push(m);
     }
 
-    // Reforzar lo citado y debilitar lo trivial no citado, con su auditoría, de forma atómica.
+    // Reforzar lo citado y lo emocional, y debilitar lo trivial no citado, con su auditoría,
+    // de forma atómica. El sueño consolida preferentemente los recuerdos con carga emocional.
+    const sleep = this.memory.config.sleep;
     const reinforced = chosen.filter((m) => cited.has(m.id));
+    const emotional = day.filter(
+      (m) => !cited.has(m.id) && Math.abs(m.emotionalValence) >= sleep.emotionalMin,
+    );
+    const emotionalGain = (m: MemoryRecord) =>
+      1 + sleep.emotionalGain * Math.abs(m.emotionalValence);
     const weakened = day.filter(
-      (m) => !cited.has(m.id) && m.importance <= this.cfg.trivialImportanceMax,
+      (m) =>
+        !cited.has(m.id) && !emotional.includes(m) && m.importance <= this.cfg.trivialImportanceMax,
     );
     await this.memory.store.transaction(async (tx) => {
       await tx.updateMany([
@@ -338,11 +348,28 @@ Formato:
             stability: m.stability * this.cfg.reinforceFactor,
           },
         })),
+        ...emotional.map((m) => ({
+          id: m.id,
+          patch: {
+            strength: Math.min(1, m.strength * emotionalGain(m)),
+            stability: m.stability * emotionalGain(m),
+          },
+        })),
         ...weakened.map((m) => ({
           id: m.id,
           patch: { strength: m.strength * this.cfg.weakenFactor },
         })),
       ]);
+      for (const m of emotional) {
+        await tx.addAudit({
+          agentId: owner.agentId,
+          memoryId: m.id,
+          memoryText: m.text,
+          action: "reinforced",
+          reason: `el sueño consolida lo emocional (valencia ${m.emotionalValence.toFixed(2)})`,
+          at: now,
+        });
+      }
       for (const m of reinforced) {
         await tx.addAudit({
           agentId: owner.agentId,
@@ -364,7 +391,7 @@ Formato:
         });
       }
     });
-    result.reinforced.push(...reinforced.map((m) => m.id));
+    result.reinforced.push(...reinforced.map((m) => m.id), ...emotional.map((m) => m.id));
     result.weakened.push(...weakened.map((m) => m.id));
 
     const known = new Set(people.map((p) => p.id));
