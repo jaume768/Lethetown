@@ -7,6 +7,7 @@ export * from "./schemas/drama";
 export * from "./schemas/commitment";
 export * from "./schemas/places";
 export * from "./schemas/items";
+export * from "./schemas/invitation";
 export * from "./objects/machines";
 export * from "./map/tiled";
 export * from "./map/pathfinding";

@@ -14,6 +14,7 @@ import type {
   ActivityKind,
   AgentSeed,
   Commitment,
+  Invitation,
   Item,
   ServerMessage,
   SimEvent,
@@ -69,6 +70,8 @@ export interface Runtime {
   weatherChecked: string | null;
   /** Bloque del plan ya avisado de que choca con una conversación ("inicio:conversación"). */
   convWarned: string | null;
+  /** A quién acompaña (va donde vaya) y hasta cuándo. */
+  following: { who: string; until: number } | null;
 }
 
 export function newRuntime(): Runtime {
@@ -87,6 +90,7 @@ export function newRuntime(): Runtime {
     consolidatedNight: -1,
     weatherChecked: null,
     convWarned: null,
+    following: null,
   };
 }
 
@@ -154,6 +158,9 @@ export class SimContext {
   /** Objetos del inventario (también en la instantánea) y su contador ("i1", "i2"…). */
   readonly items = new Map<string, Item>();
   itemSeq = 0;
+  /** Invitaciones a ir juntos (vivas unos minutos) y su contador ("v1", "v2"…). */
+  readonly invitations = new Map<string, Invitation>();
+  invitationSeq = 0;
   /** Objetos del mapa en un estado que dura (la cafetera "en uso"): cuándo vuelven y a qué. */
   readonly objectTimers = new Map<string, { at: number; state: string; from: string }>();
   readonly itemStore: ItemStore;

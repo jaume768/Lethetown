@@ -58,7 +58,7 @@ y comprobar que `pnpm dev` arranca en modo mock.
 
 ### Paso 6 — Invitar y acompañar
 
-- [ ] `invite`, `follow` / `go_together` con ruta compartida
+- [x] `invite`, `follow` / `go_together` con ruta compartida
 
 ### Paso 7 — Notas y mensajes
 
@@ -156,6 +156,17 @@ la transcripción del grupo (más larga); se limita a `socialPartners` fichas po
 
 Sin llamadas nuevas. La entrada por decisión sube un 4 % (acciones de objetos y las secciones
 LLEVAS / HAS PRESTADO / AQUÍ HAY / PUEDES USAR, que solo aparecen si tienen algo).
+
+### Tras el paso 6 (invitar y acompañar)
+
+|        | Llamadas | decide | Entrada no cacheada | Entrada por decisión |
+| ------ | -------: | -----: | ------------------: | -------------------: |
+| Paso 5 |     3000 |    983 |           1 039 530 |                  657 |
+| Paso 6 |     3258 |   1046 |           1 176 463 |                  723 |
+
+Sin llamadas nuevas por acción. La entrada por decisión sube un 10 %: con alguien delante se
+ofrecen `invite` y `follow`, y las líneas de acción son ya la parte que más crece del prompt (ver
+la nota sobre el catálogo al final).
 
 ## Decisiones tomadas
 
@@ -314,3 +325,19 @@ LLEVAS / HAS PRESTADO / AQUÍ HAY / PUEDES USAR, que solo aparecen si tienen alg
   `vitrina`: `ownerId` = quien atiende, `placeId` = la tienda) y dos acciones del mismo estilo,
   `buy_item` (el motor comprueba dinero y que el vendedor esté) y `sell_item`; el precio sería
   `value` y el registro, eventos con `meta.action`.
+- **Invitar** (`sim/company.ts`, `sim/actions/company.ts`): `invite { with, placeId, activity }`
+  crea una invitación corta ("v3", caduca en 30 min; en la instantánea, v14) y quien invita espera
+  ahí. Los invitados la ven en la sección INVITACIONES y responden con `accept_invite` o
+  `decline_invite`. Invitar a casa propia es la base de los permisos de invitado (paso 8).
+- **Ir juntos** (`go_together`, el efecto de aceptar): `travelTogether` calcula la ruta de quien
+  invita y la comparte (mismos puntos y tiempos; cada uno acaba en una baldosa libre). Quien acepta
+  le acompaña después un rato (60 min). Evento 🚶. Se corrigió de paso un fallo latente: una
+  llegada programada ya no se ejecuta si el agente cambió de rumbo o de hora (antes, cambiar de
+  destino a medio camino dejaba la llegada vieja viva).
+- **Acompañar** (`follow { who }`): durante 60 min va donde vaya la otra persona (revisión cada 5
+  min, sin LLM). Deja de hacerlo al cumplirse, si alguien se duerme, si decide irse por su cuenta
+  (`do_activity`, `explore`, `invite`) o si el destino no es apropiado. `AgentState.companionId`
+  dice con quién va (para el mapa).
+- **Menores**: no se puede invitar a un menor (siendo adulto) a una casa que no sea la suya, ni
+  aceptar esa invitación, ni seguir a alguien (o ser seguido) a un sitio así: la misma regla que las
+  citas (`minorMeetingRule`), comprobada al invitar, al aceptar y en cada paso de acompañar.

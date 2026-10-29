@@ -14,6 +14,7 @@ import "./mock/meetings";
 import "./mock/places";
 import "./mock/groups";
 import "./mock/items";
+import "./mock/company";
 
 export {
   agentMockResponder,

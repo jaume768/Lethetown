@@ -4,6 +4,7 @@ import "./meetings";
 import "./places";
 import "./objects";
 import "./items";
+import "./company";
 
 export * from "./registry";
 export { REPLAN_MINUTES } from "./core";

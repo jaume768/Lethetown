@@ -51,6 +51,7 @@ describe("mock declarativo: reglas de decisión", () => {
       "no-mood",
       "answer-invitation",
       "return-item",
+      "answer-invite",
       "reply",
       "chime-in",
       "spread-rumor",
@@ -58,6 +59,8 @@ describe("mock declarativo: reglas de decisión", () => {
       "follow-idea",
       "propose-meeting",
       "lend-item",
+      "invite",
+      "follow",
       "greet",
       "cancel-meeting",
       "explore",
@@ -178,6 +181,22 @@ describe("mock declarativo: reglas de decisión", () => {
     });
     expect(rule("take-own-item").respond(ctx(`\n${lines}`, 4))?.response).toMatchObject({
       action: { type: "take_item", itemId: "i4" },
+    });
+  });
+
+  it("invitaciones: casi siempre acepta (lee la sección INVITACIONES)", () => {
+    const p = [
+      "",
+      "- accept_invite {}: aceptas.",
+      "- decline_invite {}: rechazas.",
+      "INVITACIONES:",
+      "- Invitación v2: Mateo Ruiz te invita a ir ahora a Plaza Mayor (plaza) a pasear. Responde con accept_invite o decline_invite.",
+    ].join("\n");
+    expect(rule("answer-invite").respond(ctx(p, 1))?.response).toMatchObject({
+      action: { type: "accept_invite", inviteId: "v2" },
+    });
+    expect(rule("answer-invite").respond(ctx(p, 5))?.response).toMatchObject({
+      action: { type: "decline_invite", inviteId: "v2" },
     });
   });
 

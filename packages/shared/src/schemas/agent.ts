@@ -234,6 +234,8 @@ export const AgentState = z.object({
   doneToday: z
     .array(z.object({ minute: z.number().int(), activity: z.string(), placeId: z.string() }))
     .optional(),
+  /** Con quién va o a quién acompaña ahora (para el mapa). */
+  companionId: z.string().nullable().optional(),
   /** Su último razonamiento al decidir (y si era sobre la voz interior), para el inspector. */
   reasoning: z
     .object({ text: z.string(), at: z.number(), innerVoice: z.boolean() })

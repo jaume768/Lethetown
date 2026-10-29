@@ -3,6 +3,7 @@ import {
   ActivityKind,
   AgentState,
   Commitment,
+  Invitation,
   Item,
   SimSpeed,
   TilePoint,
@@ -11,7 +12,7 @@ import {
 import { z } from "zod";
 
 /** Sube este número si cambias la forma de la instantánea (las antiguas se ignoran). */
-export const SIM_SNAPSHOT_VERSION = 13;
+export const SIM_SNAPSHOT_VERSION = 14;
 
 /** Percepción pendiente (misma forma que `Perception` de agent-core). */
 const Perception = z.discriminatedUnion("kind", [
@@ -29,6 +30,7 @@ const Perception = z.discriminatedUnion("kind", [
     text: z.string(),
     placeId: z.string(),
     eventId: z.string().optional(),
+    toName: z.string().optional(),
   }),
   z.object({
     kind: z.literal("overheard"),
@@ -53,6 +55,7 @@ const Heard = z.object({
   fromName: z.string(),
   text: z.string(),
   eventId: z.string(),
+  toName: z.string().optional(),
 });
 
 export const SimSnapshot = z.object({
@@ -93,6 +96,7 @@ export const SimSnapshot = z.object({
         consolidatedNight: z.number(),
         weatherChecked: z.string().nullable(),
         convWarned: z.string().nullable(),
+        following: z.object({ who: z.string(), until: z.number() }).nullable().default(null),
       }),
     }),
   ),
@@ -113,6 +117,9 @@ export const SimSnapshot = z.object({
   items: z.array(Item).default([]),
   itemSeq: z.number().int().nonnegative().default(0),
   /** Objetos del mapa que volverán solos a otro estado (spotId → cuándo, a qué y desde cuál). */
+  /** Invitaciones a ir juntos ahora mismo (caducan enseguida). */
+  invitations: z.array(Invitation).default([]),
+  invitationSeq: z.number().int().nonnegative().default(0),
   objectTimers: z
     .record(z.string(), z.object({ at: z.number(), state: z.string(), from: z.string() }))
     .default({}),

@@ -42,6 +42,8 @@ describe("catálogo de acciones", () => {
       "do_activity",
       "say",
       "propose_meeting",
+      "invite",
+      "follow",
     ]);
   });
 

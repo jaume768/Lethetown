@@ -117,6 +117,32 @@ export const LeaveItemAction = z.object({
   itemId: z.string().min(1),
 });
 
+/** Invitar a quien está aquí a ir contigo ahora a un sitio (a tu casa, a tomar algo…). */
+export const InviteAction = z.object({
+  type: z.literal("invite"),
+  with: People,
+  placeId: z.string().min(1),
+  activity: z.string().trim().min(1).max(160),
+});
+
+/** Aceptar una invitación: vais juntos (y le acompañas un rato). */
+export const AcceptInviteAction = z.object({
+  type: z.literal("accept_invite"),
+  inviteId: z.string().min(1),
+});
+
+export const DeclineInviteAction = z.object({
+  type: z.literal("decline_invite"),
+  inviteId: z.string().min(1),
+  reason: z.string().trim().max(160).optional(),
+});
+
+/** Acompañar a alguien que está aquí: vas donde vaya durante un rato. */
+export const FollowAction = z.object({
+  type: z.literal("follow"),
+  who: z.string().min(1),
+});
+
 export const AgentAction = z.discriminatedUnion("type", [
   DoActivityAction,
   SayAction,
@@ -131,6 +157,10 @@ export const AgentAction = z.discriminatedUnion("type", [
   ReturnItemAction,
   TakeItemAction,
   LeaveItemAction,
+  InviteAction,
+  AcceptInviteAction,
+  DeclineInviteAction,
+  FollowAction,
 ]);
 export type AgentAction = z.infer<typeof AgentAction>;
 export type ActionType = AgentAction["type"];
@@ -210,6 +240,26 @@ export const ACTION_SPECS: Record<ActionType, ActionSpec> = {
     type: "leave_item",
     params: '{"itemId":"…"}',
     description: "dejas aquí algo tuyo que llevas",
+  },
+  invite: {
+    type: "invite",
+    params: '{"with":["id de alguien presente"],"placeId":"…","activity":"…"}',
+    description: "invitas a quien está aquí a ir contigo ahora a un sitio",
+  },
+  accept_invite: {
+    type: "accept_invite",
+    params: '{"inviteId":"…"}',
+    description: "aceptas una invitación y vais juntos (ver INVITACIONES)",
+  },
+  decline_invite: {
+    type: "decline_invite",
+    params: '{"inviteId":"…","reason":"…"}',
+    description: "rechazas una invitación",
+  },
+  follow: {
+    type: "follow",
+    params: '{"who":"id de alguien presente"}',
+    description: "acompañas a alguien de aquí un rato, vaya donde vaya",
   },
 };
 

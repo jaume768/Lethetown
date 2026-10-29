@@ -34,6 +34,7 @@ import { gatherPerceptions, presentWith } from "./perception";
 import { syncKnownPlaces } from "./places";
 import { inventorySections, itemsTick, loadItems } from "./items";
 import { objectsTick } from "./actions/objects";
+import { companySections, companyTick, stopFollowing } from "./company";
 import { goOrDo, scheduleArrival, setAction, travel } from "./routines";
 import { SIM_SNAPSHOT_VERSION, type SimSnapshot } from "./snapshot";
 import type { WorldMap } from "./world";
@@ -150,6 +151,7 @@ export class Simulation {
       await meetingsTick(this.ctx, next);
       await itemsTick(this.ctx, next);
       objectsTick(this.ctx, next);
+      companyTick(this.ctx, next);
       this.scheduleMeetings(next);
     });
   }
@@ -223,6 +225,8 @@ export class Simulation {
       meetingSeq: this.ctx.meetingSeq,
       items: structuredClone([...this.ctx.items.values()]),
       itemSeq: this.ctx.itemSeq,
+      invitations: structuredClone([...this.ctx.invitations.values()]),
+      invitationSeq: this.ctx.invitationSeq,
       objectTimers: Object.fromEntries(structuredClone([...this.ctx.objectTimers])),
     };
   }
@@ -260,6 +264,9 @@ export class Simulation {
     this.ctx.items.clear();
     for (const i of s.items) this.ctx.items.set(i.id, i);
     this.ctx.itemSeq = s.itemSeq;
+    this.ctx.invitations.clear();
+    for (const v of s.invitations) this.ctx.invitations.set(v.id, v);
+    this.ctx.invitationSeq = s.invitationSeq;
     this.ctx.objectTimers.clear();
     for (const [id, t] of Object.entries(s.objectTimers)) this.ctx.objectTimers.set(id, t);
     this.restored = true;
@@ -427,7 +434,7 @@ export class Simulation {
       salient: perceptions.length > 0,
       actions: availableActions({ ctx, agent, now: this.clock.now() }),
       agenda: agendaLines(ctx, agent.id, this.clock.now()),
-      sections: inventorySections(ctx, agent),
+      sections: [...companySections(ctx, agent), ...inventorySections(ctx, agent)],
     });
     if (decision.reason) {
       agent.state.reasoning = {
@@ -465,6 +472,10 @@ export class Simulation {
         return goOrDo(ctx, agent, item.placeId, item.spotId, item.activity, item.activityKind);
       }
       case "act":
+        // Irse por su cuenta deja de acompañar a quien acompañaba.
+        if (["do_activity", "explore", "invite"].includes(decision.action.type)) {
+          stopFollowing(ctx, agent.id, null);
+        }
         await runAction(c, decision.action);
         return;
       case "invalid":
