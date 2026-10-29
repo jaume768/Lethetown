@@ -1,5 +1,6 @@
 import type {
   MemoryAuditEntry,
+  MemoryMeta,
   MemorySource,
   MemoryType,
   MemoryVersion,
@@ -32,6 +33,9 @@ export interface NewMemory {
   placeId?: string | null;
   eventId?: string | null;
   links?: string[];
+  meta?: MemoryMeta;
+  /** Fuerza inicial (0..1) según la atención al grabarlo (ver encoding.ts). Por defecto, 1. */
+  strength?: number;
 }
 
 export type MemoryPatch = Partial<
@@ -47,6 +51,7 @@ export type MemoryPatch = Partial<
     | "source"
     | "status"
     | "forgottenAt"
+    | "meta"
   >
 >;
 

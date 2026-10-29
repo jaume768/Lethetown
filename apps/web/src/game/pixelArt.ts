@@ -130,6 +130,30 @@ const EMOTE_ART: Record<Emote, string[]> = {
     "...kwk...",
     "...kkk...",
   ],
+  /** Cara indiferente: afinidad neutra sobre el mapa. */
+  meh: [
+    ".........",
+    "..kkkkk..",
+    ".kgggggk.",
+    "kgkgggkgk",
+    "kgggggggk",
+    "kgkkkkkgk",
+    ".kgggggk.",
+    "..kkkkk..",
+    ".........",
+  ],
+  /** Nube de tormenta: un recuerdo intrusivo. */
+  storm: [
+    "...kkk...",
+    ".kkgggkk.",
+    "kgggggggk",
+    "kgggggggk",
+    ".kkkykkk.",
+    "...ky....",
+    "..kyk....",
+    "..ky.....",
+    "..k......",
+  ],
   cloud: [
     ".........",
     "...kkk...",

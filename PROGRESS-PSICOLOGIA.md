@@ -1,0 +1,409 @@
+# PROGRESS — feat/psicologia
+
+Psicología más humana para los agentes y relaciones visibles. Si la sesión se corta, retomar
+desde el primer elemento sin marcar. Tras cada paso: `pnpm typecheck && pnpm lint && pnpm test`
+y comprobar que `pnpm dev` arranca en modo mock.
+
+## Checklist
+
+### Antes de empezar
+
+- [x] Coste de referencia: 48 h en mock (`pnpm --filter @lethetown/server cost:report 48`)
+- [x] Entrevistas de referencia (`pnpm interview --advance 48` en RAM con `SIM_SEED=7`)
+
+### Fase 0 — Protección de menores
+
+- [x] `isMinor` en `AgentSeed` (explícito u obtenido de la edad)
+- [x] Regla en el prompt de identidad de todos con la lista de menores
+- [x] `MinorGuard`: léxico + moderación con el LLM (fail-closed) sobre la salida del LLM
+- [x] Aplicado a decisiones, planes, recuerdos, fichas sociales, consolidación, reconsolidación, esencias, resúmenes, crónica y entrevistas; voz interior
+- [x] Rechazos en `moderation_log`
+- [x] Tests: el mock intenta generar contenido romántico con un menor y se bloquea
+
+### Fase 1 — Rutinas como hábitos y diario sujeto a la memoria
+
+- [x] `noteActivity` sin recuerdo episódico por actividad trivial
+- [x] Diario de hoy con precisión según la energía
+- [x] Hábitos semánticos en la consolidación (detectar rutinas repetidas, reforzar)
+- [x] "Ayer" del plan desde la memoria (con olvido) + hábitos
+- [x] Sin `gist` del LLM para importancia ≤ 2 (configurable)
+- [x] Coste después de la fase 1
+
+### Fase 2 — Perfil psicológico
+
+- [x] `personality` (Big Five) y `memoryProfile` en `AgentSeed`
+- [x] `tools/derive-personality.ts` y valores revisados de los 20 agentes
+- [x] Efectos por edad (mayores, niños)
+- [x] Perfil aplicado en decaimiento, recuperación y confusión de fuente
+
+### Fase 3 — Ánimo y necesidades
+
+- [x] Ánimo bidimensional (valencia, activación) con etiqueta circumpleja
+- [x] Nivel base por personalidad y regreso con vida media
+- [x] Necesidades → ánimo; velocidades por personalidad
+- [x] `AgentState`, inspector y prompts
+
+### Fase 4 — Codificación y sueño
+
+- [x] Fuerza inicial según atención y activación (Yerkes-Dodson)
+- [x] Sueño: refuerzo emocional y efectos de dormir poco
+
+### Fase 5 — Sesgos y fenómenos
+
+- [x] Sesgo de negatividad
+- [x] Desvanecimiento afectivo
+- [x] Recuerdos intrusivos (+ efecto visual)
+- [x] Falsos recuerdos controlados
+- [x] Memoria prospectiva (intenciones)
+
+### Fase 6 — Lo social
+
+- [x] Identidad: intereses, discrepar, negarse; `speechStyle` de los 20
+- [x] Ficha ampliada: `familiarity`, `relationshipType`, historial (`social_profile_history`)
+- [x] Credibilidad de los rumores
+- [x] Mera exposición
+- [x] Perdón y rencor mínimo
+
+### Fase 7 — Ver las relaciones
+
+- [x] Pestaña «Relaciones» en el inspector (barras, evolución, recíproca)
+- [x] Filtro, búsqueda y «personas que no conoce»
+- [x] Vista «Red del pueblo» (grafo con deslizador de tiempo)
+- [x] Indicador de afinidad sobre el mapa
+- [x] Endpoints REST paginados
+- [x] Dramas al cruzar umbrales de afinidad
+- [x] Responsive, accesible, i18n
+
+### Final
+
+- [x] README, CLAUDE.md, este archivo
+- [x] Entrevistas antes/después (Carmen, Aurora, Leo)
+- [ ] Push y PR
+
+## Coste (mock, 48 h de juego, SIM_SEED=7)
+
+### Antes (main)
+
+| Tarea         | Llamadas | Entrada (no cacheada) | Salida | Lectura de caché |
+| ------------- | -------: | --------------------: | -----: | ---------------: |
+| gist          |     1208 |                 79769 |  11603 |          1502934 |
+| importance    |      842 |                 96787 |  14965 |          1047433 |
+| decide        |      842 |                380350 |  22988 |          1047433 |
+| social        |      388 |                 46538 |   8877 |           482675 |
+| reconsolidate |      258 |                 39436 |   7166 |           313486 |
+| plan          |       40 |                 27490 |   8248 |            32352 |
+| consolidate   |       40 |                 39298 |  10818 |            49776 |
+| chronicle     |        2 |                  3295 |    102 |               72 |
+| **total**     | **3620** |            **712963** |  84767 |          4476161 |
+
+### Después de la fase 1
+
+| Tarea         | Llamadas | Entrada (no cacheada) | Salida | Lectura de caché |
+| ------------- | -------: | --------------------: | -----: | ---------------: |
+| importance    |      916 |                107151 |  17050 |          1224012 |
+| decide        |      916 |                418698 |  24553 |          1224012 |
+| social        |      402 |                 48351 |   9177 |           537278 |
+| gist          |      401 |                 27812 |   3643 |           536367 |
+| reconsolidate |      278 |                 42415 |   7762 |           363462 |
+| plan          |       40 |                 29058 |   8248 |            34780 |
+| consolidate   |       40 |                 39439 |  11129 |            53492 |
+| chronicle     |        2 |                  3281 |    102 |               72 |
+| **total**     | **2995** |            **716205** |  81664 |          3973475 |
+
+−17 % de llamadas (−625) y −11 % de lectura de caché. Las esencias caen de 1208 a 401: ya no
+hay un recuerdo por actividad y lo de importancia ≤ 2 no se resume. La entrada no cacheada
+queda igual (+0.5 %) porque, con el nuevo orden de los eventos, hay más decisiones y
+conversaciones (decide 842 → 916), que son las llamadas con más entrada.
+
+### Al final (todas las fases)
+
+| Tarea         | Llamadas | Entrada (no cacheada) | Salida | Lectura de caché |
+| ------------- | -------: | --------------------: | -----: | ---------------: |
+| importance    |      963 |                113045 |  17280 |          1434852 |
+| decide        |      963 |                463100 |  27932 |          1434852 |
+| gist          |      847 |                 60971 |   7830 |          1260968 |
+| social        |      466 |                 92814 |  13234 |           694338 |
+| reconsolidate |      281 |                 48913 |   7821 |           406622 |
+| plan          |       40 |                 28611 |   8253 |            41786 |
+| consolidate   |       40 |                 41521 |  11257 |            59702 |
+| summarize     |       10 |                  1600 |    300 |            14730 |
+| chronicle     |        2 |                  3517 |    102 |               72 |
+| confabulate   |        1 |                   140 |     21 |             1489 |
+| **total**     | **3613** |            **854232** |  94030 |          5349411 |
+
+Mismas llamadas que al principio (3613 frente a 3620), pero distinto reparto:
+
+- **Esencias: 1208 → 401 → 847.** La fase 1 las bajó, pero la codificación de la fase 4 graba los
+  recuerdos con menos fuerza, así que más recuerdos de importancia ≥ 3 llegan a vagos. Subir
+  `gist.minImportance` a 4 las recortaría (a revisar).
+- **Entrada no cacheada: +20 %.** Hay un 14 % más de decisiones y conversaciones (intenciones que se
+  cumplen hablando, muletillas…), y el prompt social pide intenciones.
+- **Lectura de caché: +19 %.** El prompt fijo es más largo (personalidad, forma de hablar y
+  menores). Es la parte barata.
+- **Moderación de menores: 0 llamadas** en mock.
+
+## Entrevistas (mock, 48 h, SIM_SEED=7)
+
+`pnpm interview --advance 48` en RAM, antes (main) y después. El mock responde con el primer
+recuerdo recuperado, así que la comparación muestra qué recuerda cada uno:
+
+- **Carmen** (memoriosa): antes, casi todo lo respondía con «mi hijo Mateo trabaja demasiado»; ahora
+  ese recuerdo sigue ahí (reforzado y reconsolidado: «y fue muy agradable») y además recuerda lo
+  que habló con Mateo («¡Ay, por cierto! Tenía que volver a quedar con Carmen»): una intención que
+  Mateo cumplió.
+- **Aurora** (82, desmemoriada): antes contestaba con frases sueltas de otros («Rafael me dijo…»,
+  más o menos); ahora todas sus respuestas salen de su juventud («Nací en Lethetown hace ochenta y
+  dos años, cuando el lago era más grande»): pico de reminiscencia y episódica frágil (lo
+  reciente le llega «más o menos»), y aparece una intención («Quiero volver a quedar con Ernesto»).
+- **Leo** (10): antes recordaba sobre todo lo que le decía su madre; ahora recuerda a Inés y a
+  Carmen, una reflexión («Hoy he hablado bastante con la gente del pueblo») y el pez gigante de
+  Tomás.
+
+## Decisiones que conviene revisar
+
+1. Protección de menores conservadora: un menor no guarda nada con léxico romántico claro, aunque
+   hable de adultos.
+2. El romance solo surge entre adultos con afinidad ≥ 0.75, familiaridad ≥ 0.6 y una opinión que lo
+   diga con léxico claro; si no, solo el de las semillas (Tomás y Pilar).
+3. Falsos recuerdos sobre todo en el mantenimiento (al volverse vagos), porque la recuperación casi
+   nunca elige recuerdos desvaídos; 0.015 × sugestionabilidad × (1 − fuerza).
+4. `gist.minImportance` = 3 (lo pedido); con la nueva codificación, 4 ahorraría ~45 % de esencias.
+5. Umbrales de amistad y rivalidad (afinidad ±0.35, familiaridad ≥ 0.35): en mock surgen amistades
+   en uno o dos días (charlas + mera exposición); rivalidades nuevas, casi ninguna, porque el mock
+   apenas baja la afinidad. Con un LLM real habrá que mirarlo.
+6. Calibración de ánimo y necesidades hecha con el mock (zona neutral ±0.1, base 0.2): con un LLM
+   real convendrá revisarla.
+7. Capturas sin los packs de LimeZu (licencia): la UI se ve sin la piel de Modern UI.
+
+## Decisiones tomadas
+
+- **Script de coste** (`pnpm --filter @lethetown/server cost:report [horas]`): siempre en mock,
+  RAM, embeddings hash y `SIM_SEED=7`, para que antes y después sean comparables.
+- **Menores, dos defensas**: regla fija en el prompt de identidad de todos (cacheable: solo
+  depende del pueblo) y `MinorGuard` en código sobre todo lo que escribe el LLM. Un texto
+  "implica a un menor" si un menor está entre los actores (quien escribe, a quién se dirige, de
+  quién trata) o se le nombra (nombre completo o de pila, sensible a mayúsculas: "leo" el verbo
+  no cuenta).
+- **Léxico fuerte → descarte directo; léxico ambiguo → moderación con el modelo `fast`**
+  (tarea `moderate_minor`, fail-closed: error, sin presupuesto o JSON raro = se descarta). Así
+  no se paga una llamada por cada frase de Leo o Inés: solo cuando hay palabras como "te
+  quiero", "cariño" o "beso", y el veredicto se cachea por texto. En 72 h de mock no hay
+  ninguna llamada de moderación.
+- **Conservador a propósito**: un menor tampoco guarda recuerdos con léxico romántico claro
+  aunque hablen de adultos ("Mateo tiene novia"). Se pierde algún cotilleo; a cambio no hay que
+  analizar quién es el sujeto de la frase.
+- **Qué pasa con lo descartado**: una frase o acción → el agente sigue su plan; un bloque del
+  plan → se quita; un recuerdo → no se guarda (`tryRemember` devuelve null; `remember` lanza
+  `BlockedContentError`); una ficha social → no cambia; una reflexión → no se crea ni cuenta
+  como cita; una reconsolidación o esencia → no se aplica; la crónica → pierde esas frases; una
+  entrevista → respuesta retirada. Todo va a `moderation_log` con `kind = minor_safety:<origen>`
+  y `userId = null`, nunca a la línea de tiempo pública.
+- **Voz interior**: además de la moderación de siempre (a la que se añadió la regla), un
+  pensamiento con léxico romántico claro dirigido a un menor o que lo nombra se rechaza en
+  `vetUserText` aunque `MODERATION=off`.
+- **Test dorado regenerado**: cambia el prompt de identidad (regla de menores) y los `await`
+  nuevos de la revisión reordenan las tareas asíncronas del mock.
+- **Diario a corto plazo**: `doneToday` sigue en `AgentState` (lo ve el inspector y el prompt de
+  decidir), pero ya no crea un recuerdo por actividad. Con energía por debajo de
+  `diary.lowEnergy`, cada anotación puede perderse o quedar en el lugar de la anterior, con una
+  probabilidad que crece linealmente al bajar la energía. El agente no sabe que se equivoca.
+- **Un recuerdo por día**: al dormirse (antes de la consolidación, que así lo ve) el diario se
+  guarda como "El día N: actividad en lugar, …" (importancia 3, sin LLM). Ese es el "ayer" del
+  plan: se recuerda por id (`recallByIds`) con las reglas de siempre (olvidado no sale, vago sale
+  como esencia, recordar refuerza) y se excluye de la recuperación general del plan para no
+  salir dos veces.
+- **Hábitos sin LLM**: el rastreador (`AgentMind.habits`, en la instantánea) cuenta días por
+  actividad + lugar + franja (mañana, mediodía, tarde, noche) en una ventana de 7 días; con 3 días
+  nace un recuerdo semántico "Suelo … en … por las …" (importancia 4, auditoría `habit`) y cada
+  repetición posterior lo refuerza (auditoría `reinforced`). La frase se compone en código.
+- **`AgentMind`**: estado interno persistente que no viaja al cliente (no infla los deltas del WS).
+  Va en `SimSnapshot.agents[].mind`; `SIM_SNAPSHOT_VERSION` = 5.
+- **`lastConsolidation = now + 1`**: lo creado durante la consolidación (diario, hechos) ya no
+  entra otra vez en la de la noche siguiente.
+- **Test dorado regenerado**: el diario ya no crea recuerdos ni consume embeddings, el plan
+  recibe otro "ayer" y aparecen los eventos «ya tiene una costumbre».
+- **Perfil = semilla × edad × personalidad** (`resolveProfile`, puro): multiplicadores sobre
+  la estabilidad episódica y semántica, la confusión de fuente, el olvido de fechas e
+  intenciones y la sugestionabilidad, más el pico de reminiscencia y el peso de la congruencia
+  con el ánimo. Los coeficientes están en `MemoryConfig.profile`.
+- **Dónde se aplica**: en la estabilidad inicial al guardar (episódico/semántico, ÷ olvido de
+  fechas si el texto menciona fechas u horas, × reminiscencia si es de juventud); en la
+  recuperación (peso `moodMatch` × congruencia, bonus a los recuerdos de juventud de los
+  mayores); en la confusión de fuente del mantenimiento (probabilidad × perfil). El
+  `MemorySystem` recibe los perfiles de todos los agentes (`profilesFor`), también el del
+  proceso api, para que el inspector puntúe igual que el worker.
+- **Recuerdos de juventud**: se detectan al sembrar (`isYouthMemory`: "nací", "de joven",
+  "hace cincuenta años"…) y se marcan en `meta.youth`. `meta` es una columna jsonb nueva de
+  `memories` (migración 0008) pensada para las marcas de fases siguientes (falso recuerdo,
+  intención…).
+- **Personalidades**: `pnpm personality:derive` propone valores por palabras clave de rasgos y
+  descripción, más una ligera tendencia por edad. Los valores del repo están revisados a mano;
+  el script se equivoca, p. ej., con Pilar (su descripción dice que Tomás es "un desastre con
+  las fechas" y el script se lo atribuye a ella) o con Mateo (lo de "cabezota" le baja demasiado
+  la amabilidad). Un test comprueba que las semillas encajan con su descripción (Carmen
+  memoriosa, Aurora desmemoriada, Andrés y Tomás con las fechas, Hugo impuntual, Ernesto
+  puntual e hipocondríaco, Leo sugestionable…).
+- **Test dorado regenerado**: los perfiles cambian la estabilidad de los recuerdos y con ella lo
+  que se recuerda y se dice.
+- **Ánimo circumplejo**: `Mood` = valencia (-1..1) + activación (0..1) + etiqueta derivada
+  (eufórico, animado, contento, relajado, tranquilo, nervioso, irritable, preocupado, triste,
+  apagado, abatido, inquieto, adormilado, neutral; zona neutral de ±0.1). En los prompts sale
+  como "contento (activación media)" (decidir, planificar y reconsolidar); el inspector muestra
+  la etiqueta (traducida en la UI) y dos barras.
+- **Nivel base y vuelta**: base = 0.2 ± extraversión ∓ neuroticismo (la gente suele estar
+  ligeramente bien); la valencia vuelve con una vida media de 4 h y la activación con una de 1 h
+  (uno se espabila o se calma antes de lo que cambia de humor). Durmiendo, la valencia vuelve en
+  2 h y la activación tiende a 0.15.
+- **Necesidades → ánimo** por hora y en proporción a lo que pasan del umbral: hambre > 0.7 baja
+  la valencia y sube la activación (irritable), energía < 0.3 baja las dos (apagado), social
+  < 0.3 baja la valencia × (0.5 + extraversión) (soledad).
+- **Necesidades por personalidad**: los ritmos por defecto son los de antes; la social baja
+  × (0.5 + extraversión) y un introvertido solo en algo tranquilo (leer, sentarse, estar,
+  cocinar) recupera algo de energía y de social. "Solo" = nadie más en el lugar.
+- **Percepciones**: además de la valencia, mueven la activación según su importancia y carga
+  emotiva (mismo peso, 0.2).
+- Calibrado con 30 h de mock (antes, casi todos "neutral" y "adormilado" a mediodía).
+  `SIM_SNAPSHOT_VERSION` = 6 (cambia la forma del ánimo). Test dorado regenerado.
+- **Codificación**: la fuerza inicial de un recuerdo (antes siempre 1) = curva de
+  Yerkes-Dodson sobre la activación (campana con pico en 0.55 y mínimo 0.6) × energía (hasta
+  0.6 con energía 0 por debajo de 0.3) × 0.75 si va caminando × 0.7 si está hablando y le llega
+  otra cosa (una llegada, algo oído a escondidas) × deuda de sueño (hasta 0.6), con un mínimo
+  de 0.2. La activación que cuenta es la mayor entre la suya y la que provoca el suceso
+  (importancia y carga emotiva).
+- **Activación extrema (≥ 0.9) → solo la esencia**: se guarda la esencia sin LLM
+  (`reduceDetails`: sin frases literales ni cifras) y `meta.gistOnly`; el agente solo ve la
+  esencia aunque el recuerdo esté nítido. El inspector sigue viendo el texto completo.
+- **Sueño**: al acostarse se calcula la calidad (la activación por encima de 0.5 y la
+  valencia negativa × (0.5 + neuroticismo) la bajan; mínimo 0.4), que es el techo de la energía
+  que se recupera durmiendo. Al despertar, si la energía no llega a 0.85 hay deuda de sueño:
+  baja la valencia (al despertar y en su nivel base ese día) y empeora la codificación.
+  Evento «😴 X ha dormido mal» si la deuda pasa de 0.2. En 3 días de mock nadie duerme mal
+  (se acuestan tranquilos); aparece con días tensos.
+- **Consolidación emocional**: al dormir, el repaso prioriza importancia × (1 + |valencia|) y
+  los recuerdos del día con |valencia| ≥ 0.4 se refuerzan × (1 + 0.5·|valencia|) aunque no se
+  citen (y no se debilitan aunque sean triviales). Auditoría `reinforced` con el motivo.
+- `AgentMind` guarda `sleepQuality` y `sleepDebt`; `SIM_SNAPSHOT_VERSION` = 7. Test dorado
+  regenerado (cambian las fuerzas iniciales y con ellas lo que se recuerda).
+- **Sesgo de negatividad** en la estabilidad inicial: un recuerdo negativo dura
+  × (1 + |valencia|·(sesgo − 1)) frente a uno positivo igual; sesgo 1.5 en la media, modulado
+  por el neuroticismo (forma parte del perfil de memoria).
+- **Desvanecimiento afectivo** en el mantenimiento, sin LLM: la valencia se acerca a 0 con vida
+  media de 12 días si es negativa y 40 si es positiva. Se aplica a saltos de 0.1 (no cada hora)
+  y cada salto deja versión ("desvanecimiento afectivo") y auditoría `affect_faded` con el antes
+  y el después. `meta.affectAt` guarda el último salto.
+- **Recuerdos intrusivos**: en cada tick despierto, probabilidad por hora 0.02 × ánimo bajo ×
+  neuroticismo, × 4 si hay una pista (estar en el lugar del recuerdo o con alguien que sale en
+  él); solo recuerdos de importancia ≥ 6 y valencia ≤ −0.4. Se tira el dado antes de leer la
+  memoria (casi siempre falla, así que no hay consulta). El recuerdo se refuerza (rumiar),
+  entra en la memoria de trabajo como "(sin querer, me vino a la cabeza) …", tiñe el ánimo
+  (más negativo y más activado) y no llama al LLM: lo verá en su próxima decisión. Evento
+  «🌩 A X le viene a la cabeza, sin querer…» y efecto `intrusive` (emote propio de nube de
+  tormenta y un escalofrío; sin temblor con `prefers-reduced-motion`). En 3 días de mock no
+  aparece (el mock no valora nada por debajo de −0.3); con un LLM real sí.
+- Test dorado regenerado (la tirada de los intrusivos consume el rng).
+- **Falsos recuerdos controlados**: nueva tarea `confabulate` (modelo `fast`) que, a partir de
+  lo poco que se recuerda, rellena uno o dos detalles plausibles. Nunca la decide el LLM: el
+  código la pide con probabilidad `falseMemory.probability` (0.015) × sugestionabilidad ×
+  (1 − fuerza), solo para recuerdos de importancia ≥ 3, de más de 24 h y no rellenados antes.
+  Dos momentos: al recuperarlo (en lugar de la reconsolidación de siempre) y, sobre todo, en el
+  mantenimiento cuando cruza el umbral de vaguedad (en vez de la esencia de esa hora; la
+  esencia sale después del texto ya reconstruido). Lo segundo es necesario porque la
+  recuperación (puntuación × fuerza) casi nunca elige recuerdos desvaídos: en 96 h de mock solo
+  6 recuperaciones vagas, y lo recuperado tiene fuerza ≈ 0.9.
+- Queda marcado en `meta.falseMemory`, con versión ("falso recuerdo: rellenó los huecos…") y
+  auditoría `false_memory` con el antes y el después; el inspector y Rashomon lo señalan
+  (⚠ falso recuerdo), sale un efecto `false_memory` y un drama. El agente no lo sabe.
+- La regla del prompt fijo sigue siendo "no inventes detalles que no recuerdas", con la
+  salvedad explícita de la tarea `confabulate`.
+- Frecuencia en mock: 10 en 96 h para 20 agentes (≈ 2-3 al día en el pueblo), sin cambiar el
+  número de llamadas (sustituyen a una esencia o a una reconsolidación).
+- **Memoria prospectiva**: nuevo tipo de recuerdo `intention` ("Quiero devolverle a Carmen su
+  libro de poemas") con pistas (persona, lugar, hora "HH:MM") y estado en
+  `meta.intention` (pending, done, forgotten, expired). El agente lleva las abiertas en
+  `AgentMind.intentions` (en la instantánea; `SIM_SNAPSHOT_VERSION` = 8) para no consultar la BD
+  en cada tick, y refleja cada cambio de estado en el recuerdo.
+- **Cuándo se acuerda**: solo cuando la pista _aparece_ (llega esa persona, llega a ese lugar,
+  entra la hora); una intención nace con la pista activa (se forma hablando con esa persona),
+  así que tiene que irse y volver. Probabilidad = 0.7 × (0.5 + 0.5·fuerza del recuerdo) ÷ olvido
+  de intenciones del perfil (que ya incluye la responsabilidad); si el recuerdo está olvidado, 0.
+  Si se acuerda: le llega como percepción ("Te acuerdas de que querías…, ahí está Carmen") y
+  decide qué hacer; queda `done`. Si falla 2 veces: `forgotten`. Después, con 0.04 por hora,
+  cae en la cuenta («¡Vaya, se me olvidó…!», recuerdo negativo) y vuelve a estar pendiente.
+  Caducan a los 7 días. Auditoría `intention_kept` / `intention_forgotten` /
+  `intention_expired`, eventos ✅ 🫥 😳 📝 y dramas `intention_kept` / `intention_forgotten`.
+- **Detección sin llamadas nuevas**: en la ficha social al acabar una charla (campo
+  `intentions` de la respuesta) y en la decisión (campo opcional `intention`). Pasan por
+  `tryRemember`, así que también por la protección de menores. El mock detecta las quedadas
+  ("Deberíamos venir juntos") y la voz interior con "tengo que / debería…"; al acordarse con la
+  persona delante, se lo dice.
+- **Semillas**: `initialIntentions` en 10 agentes (el libro de Lucía, el aniversario de Tomás, el
+  dinero que Hugo le debe a Rafael…). En 3 días de mock: 74 intenciones nuevas, 41 cumplidas, 4
+  que se le pasan (Lucía se olvida del libro de Carmen) y 2 «¡vaya, se me olvidó!».
+- **Identidad**: el prompt fijo añade "Personalidad:" (solo los rasgos Big Five marcados, en
+  frases sin género: "necesitas ratos a solas"…), "Cómo hablas:" (registro, longitud de frase,
+  muletillas) y "Temas que te salen solos" (`speechStyle`, rellenado a mano para los 20; un test
+  comprueba que todos son distintos), y la regla de que pueden discrepar, negarse, molestarse o
+  no tener ganas de hablar. El mock usa las muletillas, a veces no le apetece hablar (si es
+  introvertido y ya tiene la social cubierta) y a veces lleva la contraria (si es poco amable).
+- **Ficha ampliada**: `familiarity` (cada charla suma 0.04), `relationshipType` (family,
+  friendship, neighbor, work, rivalry, romantic; ids en inglés, la UI los traduce), `bond`
+  (vínculo de base de las semillas: familia, pareja, trabajo) y `grudge`. El tipo lo calcula el
+  código (`classifyRelationship`): el vínculo manda; si no, rivalidad con afinidad ≤ −0.35,
+  amistad con afinidad ≥ 0.35 y familiaridad ≥ 0.35, y si no, trabajo o vecindad. **Romántica**
+  solo por vínculo de las semillas (Tomás y Pilar) o si surge entre adultos (afinidad ≥ 0.75,
+  familiaridad ≥ 0.6 y una opinión con léxico romántico claro); con un menor, nunca (también lo
+  comprueba un test sobre las semillas).
+- **Relaciones de partida**: `relationships` en las semillas (58, no recíprocas: Rafael ve a
+  Mateo como rival y Mateo apenas a él) que se siembran si el agente aún no tiene fichas.
+- **Historial** (`social_profile_history`, migración 0009): cada cambio de afinidad, confianza,
+  familiaridad o tipo (≥ 0.005) con motivo ("hablaron: …", "al repasar el día: …", "coincidieron
+  3.0 h en el pueblo", "con el tiempo le perdona un poco…", "relación de partida") y evento.
+  `SocialProfileStore` gana `listAll`, `addHistory` e `history` (para la red y la UI).
+- **Credibilidad de los rumores**: lo que suena a rumor (`looksLikeRumor`) o se oye a escondidas
+  se graba con importancia × (0.6 + 0.4·credibilidad) y fuerza × (0.5 + 0.5·credibilidad), donde
+  credibilidad = confianza en quien lo cuenta × 0.7 si es chismoso (rasgo "chismoso/cotilla");
+  por debajo de 0.35 se guarda como "(no sé si creérmelo) …".
+- **Mera exposición** sin escrituras por tick: el agente suma los minutos que pasa en el mismo
+  sitio que cada vecino (`AgentMind.exposure`) y al dormirse, si pasan de 30 min, suben la
+  familiaridad (0.02/h) y un poco la afinidad (0.004/h, con tope 0.3): una entrada de historial
+  por pareja y día.
+- **Perdón y rencor**: una bajada de afinidad ≥ 0.2 deja un rencor del 50 % de la bajada
+  (acumulable). Cada noche la afinidad negativa vuelve hacia −rencor (no hasta 0) con vida media
+  de 6 días ÷ (0.5 + amabilidad).
+- **Dramas de relación**: cuando el tipo cambia a amistad, rivalidad o romance
+  ("X ya considera a Y un amigo"…).
+- `SIM_SNAPSHOT_VERSION` = 9 (`mind.exposure`). Test dorado regenerado (prompt fijo nuevo,
+  muletillas en el mock, credibilidad).
+- **Ojo: `pnpm -s typecheck` escondía errores** (en modo recursivo y silencioso, pnpm no
+  enseñaba la salida de tsc). Desde el commit de los falsos recuerdos había un error en la web
+  (iconos de los dramas nuevos) y uno en un test de agent-core; ambos se arreglan en este commit.
+  A partir de aquí se comprueba siempre el código de salida.
+- **Endpoints** (públicos, como el inspector; sin datos sensibles): `GET /agents/:id/relationships`
+  (`q` sin tildes, `type`, `limit`, `offset`; ordenadas de más a menos afinidad, cada una con la
+  recíproca y una tendencia de 24 puntos para la mini gráfica, más `unknown`, los vecinos que no
+  conoce), `GET /agents/:id/relationships/:other/history` (los dos sentidos),
+  `GET /social/graph` (nodos y fichas de ahora) y `GET /social/history?since=&limit=` (paginado
+  por instante; `next` es el `since` de la página siguiente; en el borde puede repetir cambios
+  del mismo instante, que no afectan a la reconstrucción).
+- **Lógica visual pura en shared** (`social/network.ts`, con tests): la red en un instante a
+  partir del historial (`networkAt`), color de la afinidad (rojo → gris → verde), grosor por
+  familiaridad, icono del mapa (corazón ≥ 0.3, enfado ≤ −0.3, indiferencia), trazado de la mini
+  gráfica, asimetría (≥ 0.3 se destaca con ⇄) y un layout de fuerzas determinista que se escala
+  para llenar el lienzo.
+- **Inspector**: dos sub-pestañas, «Estado y recuerdos» (lo de antes) y «Relaciones» (sustituye a
+  «Lo que piensa de los demás»). Cada persona: retrato, tipo, barras de afinidad (bipolar, con
+  color), confianza y familiaridad, resumen y mini gráfica. Al tocarla se despliega lo que la otra
+  piensa de este agente (destacando si no es recíproco) y el mapa se centra en ella (sin cambiar
+  el inspector; en móvil la hoja no se cierra salvo con «Ver en el mapa»); «Ver su ficha» la abre
+  en el inspector. Búsqueda, filtro por tipo y «Personas que no conoce».
+- **Red del pueblo** (modal): SVG con flechas dirigidas (desplazadas para ver los dos
+  sentidos), color por afinidad, grosor por familiaridad, rivalidades discontinuas, lo débil más
+  tenue y lo de quien tenga el foco resaltado; retratos como botones (teclado y lector de
+  pantalla), filtros por tipo, deslizador de tiempo que reconstruye la red con el historial (el
+  layout se calcula una vez con la red de ahora para que los nodos no salten) y lista en texto
+  como alternativa accesible. Sin librerías: con 20 nodos basta SVG propio.
+- **Mapa**: «Afinidad en el mapa» pinta sobre cada vecino lo que el seleccionado piensa de él
+  (corazón, indiferencia —emote propio `meh`— o enfado).
+- **Capturas** en `docs/capturas/` hechas sin los packs de LimeZu (Playwright bloquea
+  `assets/vendor/`), porque su licencia no permite redistribuirlos.
+- Smoke test e2e nuevo (escritorio y móvil).

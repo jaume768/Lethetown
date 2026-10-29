@@ -62,6 +62,27 @@ export class DramaDetector {
         this.ctx.placeOf(e.agentId),
         null,
       );
+    } else if (e.kind === "intention") {
+      const kept = e.outcome === "kept";
+      this.publish(
+        kept ? "intention_kept" : "intention_forgotten",
+        dramaScore.intention(importance, !kept),
+        kept
+          ? `${this.ctx.name(e.agentId)} se acuerda de ${clip(e.text)}`
+          : `A ${this.ctx.name(e.agentId)} se le olvida ${clip(e.text)}`,
+        [e.agentId, ...(e.others ?? [])],
+        this.ctx.placeOf(e.agentId),
+        null,
+      );
+    } else if (e.kind === "false_memory") {
+      this.publish(
+        "false_memory",
+        dramaScore.falseMemory(importance),
+        `${this.ctx.name(e.agentId)} «recuerda» algo que no pasó así: «${clip(e.text)}»`,
+        [e.agentId],
+        this.ctx.placeOf(e.agentId),
+        null,
+      );
     } else if (e.kind === "forget") {
       this.publish(
         "forgetting",
@@ -75,6 +96,28 @@ export class DramaDetector {
   }
 
   onSocial(before: SocialProfile | undefined, after: SocialProfile): void {
+    // La relación cambia de tipo (de vecinos a amigos, de amistad a rivalidad…).
+    const beforeType = before?.relationshipType ?? "neighbor";
+    if (
+      after.relationshipType !== beforeType &&
+      ["friendship", "rivalry", "romantic"].includes(after.relationshipType)
+    ) {
+      const a = this.ctx.name(after.ownerId);
+      const b = this.ctx.name(after.aboutId);
+      const title = {
+        friendship: `${a} ya considera a ${b} un amigo`,
+        rivalry: `${a} ya ve a ${b} como un rival`,
+        romantic: `${a} se ha enamorado de ${b}`,
+      }[after.relationshipType as "friendship" | "rivalry" | "romantic"];
+      this.publish(
+        "relationship",
+        dramaScore.relationship(after.affinity),
+        title,
+        [after.ownerId, after.aboutId],
+        this.ctx.placeOf(after.ownerId),
+        null,
+      );
+    }
     const delta = after.affinity - (before?.affinity ?? 0);
     if (Math.abs(delta) < AFFINITY_DRAMA_DELTA) return;
     const kind: DramaKind = delta < 0 ? "argument" : "friendship";
@@ -99,6 +142,9 @@ export class DramaDetector {
     return {
       get: (o, a) => store.get(o, a),
       list: (o) => store.list(o),
+      listAll: () => store.listAll(),
+      addHistory: (c) => store.addHistory(c),
+      history: (o, a, opts) => store.history(o, a, opts),
       upsert: async (p) => {
         const before = await store.get(p.ownerId, p.aboutId);
         await store.upsert(p);

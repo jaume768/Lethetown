@@ -58,5 +58,15 @@ export const DecideResponse = z.object({
   say: z.string().optional(),
   /** Por qué lo decide (una frase, en primera persona): se muestra en el inspector. */
   reason: z.string().optional(),
+  /** Algo que se propone hacer más adelante (memoria prospectiva), si surge. */
+  intention: z
+    .object({
+      text: z.string(),
+      personId: z.string().nullish(),
+      placeId: z.string().nullish(),
+      at: z.string().nullish(),
+    })
+    .nullish()
+    .catch(null),
 });
 export type DecideResponse = z.infer<typeof DecideResponse>;

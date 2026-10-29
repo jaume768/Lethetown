@@ -1,6 +1,6 @@
 import { inferActivityKind, type Agent } from "@lethetown/agent-core";
 import { facingOf, pathLength, type ActivityKind } from "@lethetown/shared";
-import { clamp01, type Arrival, type SimContext } from "./context";
+import type { Arrival, SimContext } from "./context";
 import { tileKey } from "./world";
 
 /** Rutinas sin LLM: desplazarse, hacer la actividad, necesidades. */
@@ -76,16 +76,6 @@ function occupiedTiles(ctx: SimContext, exceptId: string): Set<string> {
   return occupied;
 }
 
-export function updateNeeds(agent: Agent, dt: number): void {
-  const n = agent.state.needs;
-  const h = dt / 60;
-  const sleeping = agent.state.activityKind === "sleep";
-  const eating = agent.state.activityKind === "eat";
-  n.energy = clamp01(n.energy + (sleeping ? 0.11 * h : -0.05 * h));
-  n.hunger = clamp01(n.hunger + (eating ? -0.5 * h : sleeping ? 0.02 * h : 0.07 * h));
-  n.social = clamp01(n.social - 0.04 * h);
-}
-
 export function setAction(
   ctx: SimContext,
   agent: Agent,
@@ -100,6 +90,6 @@ export function setAction(
   // Diario del día: lo que de verdad hace (caminar, dormir y charlar ya se recuerdan aparte).
   const kindNow = agent.state.activityKind;
   if (kindNow !== "walk" && kindNow !== "sleep" && kindNow !== "talk" && !IDLE.has(action)) {
-    void agent.noteActivity(ctx.clock.now(), action, agent.state.locationId).catch(() => {});
+    agent.noteActivity(ctx.clock.now(), action, agent.state.locationId);
   }
 }

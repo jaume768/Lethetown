@@ -2,19 +2,53 @@ import type {
   ActivityKind,
   AgentSeed,
   AgentState,
-  Mood,
   Place,
   PlanItem,
   Spot,
   Weather,
 } from "@lethetown/shared";
 import type { LLMClient } from "../llm/client";
-import { socialNote, type MemoryOwner, type SocialProfileStore } from "../memory/human";
+import {
+  applySocialUpdate,
+  socialNote,
+  type MemoryOwner,
+  type SocialProfileStore,
+} from "../memory/human";
+import { credibility, exposureDelta, forgive } from "../memory/social";
+import { looksLikeRumor } from "@lethetown/shared";
+import { reinforce } from "../memory/decay";
+import {
+  encodingStrength,
+  eventArousal,
+  overwhelmed,
+  sleepDebt,
+  sleepQuality,
+} from "../memory/encoding";
 import type { MemorySystem, RecallContext } from "../memory/memory-system";
+import { dayDiaryText, dueHabits, habitText, recordDay } from "../memory/habits";
+import { isYouthMemory } from "../memory/psychology";
 import { recallText } from "../memory/retrieval";
 import type { MemorySource } from "@lethetown/shared";
 import { WorkingMemory } from "../memory/working-memory";
 import { inferActivityKind } from "./activity";
+import { newMind, type AgentMind } from "./mind";
+import {
+  cuePresent,
+  recallChance,
+  type IntentionInput,
+  type IntentionState,
+} from "../memory/prospective";
+import { currentStrength } from "../memory/decay";
+import type { MemoryRecord } from "../memory/types";
+import {
+  baselineMood,
+  blendPerceptions,
+  describeMood,
+  makeMood,
+  stepMood,
+  stepNeeds,
+} from "./mood";
+import type { MinorInfo } from "./minor-safety";
 import { untrusted } from "./moderation";
 import { DecideResponse, ImportanceResponse, PlanResponse, parseWith } from "./parse";
 import { replanAt } from "./replan";
@@ -76,6 +110,10 @@ export interface AgentDeps {
   social?: SocialProfileStore;
   /** Nombres de los demás agentes, para las notas sociales. */
   names?: Record<string, string>;
+  /** Menores del pueblo, para la regla fija del prompt de identidad. */
+  minors?: MinorInfo[];
+  /** Chismosos del pueblo: lo que cuentan se cree un poco menos. */
+  gossips?: ReadonlySet<string>;
   onError?: (agentId: string, task: string, error: unknown) => void;
 }
 
@@ -100,16 +138,29 @@ export type DecideInput = Omit<
 };
 
 const SLEEP_START = 22 * 60;
-/** Entradas del diario de hoy que se guardan (las más recientes). */
-const MAX_DONE_TODAY = 16;
 const DAY_START = 7 * 60;
 
-export function moodLabel(valence: number): string {
-  if (valence > 0.5) return "contento";
-  if (valence > 0.15) return "tranquilo y de buen humor";
-  if (valence > -0.15) return "neutral";
-  if (valence > -0.5) return "algo apagado";
-  return "triste";
+/** Qué ha pasado con una intención en este tick. */
+export interface IntentionOutcome {
+  kind: "kept" | "missed" | "late" | "expired";
+  intention: IntentionState;
+  /** Si se acordó: lo que le viene a la cabeza (se le pasa como percepción). */
+  reminder?: string;
+}
+
+/** "estando con carmen", "en cafe_ola", "a las 10:00". */
+function describeCue(i: IntentionState, names: Record<string, string> = {}): string {
+  if (i.personId) return `estando con ${names[i.personId] ?? i.personId}`;
+  if (i.placeId) return `en ${i.placeId}`;
+  if (i.atMinute !== null) return `a las ${formatClock(i.atMinute)}`;
+  return "cuando surgió";
+}
+
+/** Lo que deja el cierre del día (al dormirse): diario y hábitos. */
+export interface DayEndReport {
+  diaryMemoryId: string | null;
+  habitsFormed: string[];
+  habitsReinforced: string[];
 }
 
 /** Plan mínimo sin LLM, usado si la planificación falla. */
@@ -131,6 +182,8 @@ export class Agent {
   readonly system: string;
   readonly workingMemory = new WorkingMemory();
   state: AgentState;
+  /** Estado interno persistente que no viaja al cliente (hábitos, diario). */
+  mind: AgentMind = newMind();
   private readonly spots: Map<string, Spot>;
 
   constructor(
@@ -138,12 +191,13 @@ export class Agent {
     private readonly deps: AgentDeps,
   ) {
     this.id = seed.id;
-    this.system = identityPrompt(seed, deps.places, deps.language);
+    this.system = identityPrompt(seed, deps.places, deps.language, deps.minors);
     this.spots = new Map(deps.places.flatMap((p) => p.objects.map((o) => [o.id, o] as const)));
     const home = deps.places.find((p) => p.id === seed.homeId);
     if (!home) throw new Error(`${seed.id}: casa desconocida ${seed.homeId}`);
     const bed = this.bedSpot();
-    const mood: Mood = { valence: 0.1, label: moodLabel(0.1) };
+    const base = baselineMood(seed.personality, deps.memory.config.mood);
+    const mood = makeMood(base.valence, base.arousal);
     this.state = {
       id: seed.id,
       name: seed.name,
@@ -171,7 +225,7 @@ export class Agent {
   recallContext(): RecallContext {
     return {
       system: this.system,
-      moodLabel: this.state.mood.label,
+      moodLabel: describeMood(this.state.mood),
       socialSummary: async (people) => (await this.socialNotes(people)).join(" "),
     };
   }
@@ -209,34 +263,436 @@ export class Agent {
   async seedMemories(now: number): Promise<void> {
     for (const text of this.seed.initialMemories) {
       await this.deps.memory.remember(
-        { agentId: this.id, text, type: "semantic", importance: 6, source: "inferido" },
+        {
+          agentId: this.id,
+          text,
+          type: "semantic",
+          importance: 6,
+          source: "inferido",
+          // Recuerdos de juventud: los mayores los conservan y evocan más (reminiscencia).
+          meta: isYouthMemory(text) ? { youth: true } : {},
+        },
         now,
       );
+    }
+    for (const i of this.seed.initialIntentions) await this.intend(now, i);
+  }
+
+  /** Siembra lo que piensa de los demás al empezar (relaciones de las semillas). */
+  async seedRelationships(now: number): Promise<void> {
+    const social = this.deps.social;
+    if (!social) return;
+    for (const r of this.seed.relationships) {
+      if (!this.deps.names || !(r.with in this.deps.names)) continue;
+      await applySocialUpdate(social, {
+        ownerId: this.id,
+        aboutId: r.with,
+        summary: r.summary,
+        affinity: r.affinity,
+        trustDelta: r.trust - 0.5,
+        familiarityDelta: r.familiarity - 0.1,
+        bond: r.bond ?? null,
+        now,
+        reason: "relación de partida",
+        minorInvolved: this.involvesMinor(r.with),
+        config: this.deps.memory.config.social,
+      });
+    }
+  }
+
+  /** ¿Es menor él o la otra persona? (para que nunca haya romance). */
+  private involvesMinor(otherId: string): boolean {
+    const guard = this.deps.memory.guard;
+    return Boolean(guard?.isMinor(this.id) || guard?.isMinor(otherId));
+  }
+
+  /** Mera exposición: anota el tiempo que pasa en el mismo sitio que otros (sin LLM). */
+  noteCompany(present: string[], minutes: number): void {
+    const exposure = { ...this.mind.exposure };
+    for (const id of present) exposure[id] = (exposure[id] ?? 0) + minutes;
+    this.mind.exposure = exposure;
+  }
+
+  /**
+   * Lo social al cerrar el día (sin LLM): coincidir a menudo acerca un poco (mera exposición)
+   * y la afinidad negativa se suaviza con el tiempo (perdón), salvo el rencor de las ofensas
+   * importantes. Todo queda en el historial de las fichas.
+   */
+  private async socialDayEnd(now: number, days = 1): Promise<void> {
+    const social = this.deps.social;
+    if (!social) return;
+    const cfg = this.deps.memory.config.social;
+    for (const [id, minutes] of Object.entries(this.mind.exposure)) {
+      const prev = await social.get(this.id, id);
+      const d = exposureDelta(minutes, prev?.affinity ?? 0, cfg);
+      if (!d.familiarityDelta && !d.affinityDelta) continue;
+      await applySocialUpdate(social, {
+        ownerId: this.id,
+        aboutId: id,
+        ...d,
+        now,
+        reason: `coincidieron ${(minutes / 60).toFixed(1)} h en el pueblo`,
+        minorInvolved: this.involvesMinor(id),
+        config: cfg,
+      });
+    }
+    this.mind.exposure = {};
+    for (const p of await social.list(this.id)) {
+      const affinity = forgive(p, days, this.seed.personality.agreeableness, cfg);
+      if (affinity - p.affinity < 0.005) continue;
+      await applySocialUpdate(social, {
+        ownerId: this.id,
+        aboutId: p.aboutId,
+        affinity,
+        now,
+        reason:
+          p.grudge > 0
+            ? `con el tiempo le perdona un poco (aunque le guarda algo de rencor: ${p.grudge.toFixed(2)})`
+            : "con el tiempo le perdona un poco",
+        minorInvolved: this.involvesMinor(p.aboutId),
+        config: cfg,
+      });
     }
   }
 
   /**
-   * Anota en el diario de hoy una actividad que empieza (si no es la misma que la anterior) y la
-   * guarda como recuerdo rutinario, sin LLM: con el olvido, días después solo queda más o menos.
+   * Credibilidad de lo que le cuentan (rumores y lo oído a escondidas): la confianza en quien
+   * lo cuenta, menos si es chismoso. Devuelve null si no aplica.
    */
-  async noteActivity(now: number, activity: string, placeId: string): Promise<void> {
-    const log = this.state.doneToday ?? [];
-    const last = log.at(-1);
-    if (last && last.activity === activity && last.placeId === placeId) return;
-    this.state.doneToday = [...log, { minute: Math.floor(now % 1440), activity, placeId }].slice(
-      -MAX_DONE_TODAY,
+  private async credibilityOf(p: Perception): Promise<number | null> {
+    const social = this.deps.social;
+    if (!social) return null;
+    const teller = p.kind === "overheard" ? p.fromId : p.kind === "speech" ? p.fromId : null;
+    if (p.kind === "speech" && !looksLikeRumor(p.text)) return null;
+    if (p.kind !== "speech" && p.kind !== "overheard") return null;
+    const trust = teller ? ((await social.get(this.id, teller))?.trust ?? 0.5) : 0.3;
+    return credibility(
+      trust,
+      teller ? (this.deps.gossips?.has(teller) ?? false) : false,
+      this.deps.memory.config.social,
     );
-    const place = this.deps.places.find((p) => p.id === placeId)?.name ?? placeId;
-    await this.deps.memory.remember(
+  }
+
+  /**
+   * Se propone hacer algo más adelante (memoria prospectiva): un recuerdo de tipo `intention`
+   * con sus pistas (persona, lugar, hora) que se lleva en la cabeza (`mind.intentions`).
+   * Devuelve false si no se guarda (repetida, protección de menores, desactivado).
+   */
+  async intend(now: number, input: IntentionInput): Promise<boolean> {
+    const memory = this.deps.memory;
+    const cfg = memory.config.prospective;
+    const text = input.text.trim().replace(/[.。]+$/, "");
+    if (!cfg.enabled || !text) return false;
+    // Solo personas del pueblo (las que conoce por su id).
+    const known = (id: string | null | undefined) =>
+      id && this.deps.names && id in this.deps.names ? id : null;
+    const personId = known(input.personId) ?? null;
+    const placeId = this.validPlace(input.placeId ?? undefined) ?? null;
+    const atMinute = input.at ? parseClock(input.at) : null;
+    const open = this.mind.intentions.filter(
+      (i) => i.status === "pending" || i.status === "forgotten",
+    );
+    if (open.some((i) => i.text.toLowerCase() === text.toLowerCase())) return false;
+    const meta = {
+      intention: { status: "pending" as const, personId, placeId, atMinute, misses: 0 },
+    };
+    const record = await memory.tryRemember(
       {
         agentId: this.id,
-        text: `Estuve en ${place}: ${activity}`,
-        type: "observation",
-        importance: 2,
+        text: `Quiero ${text}`,
+        type: "intention",
+        importance: cfg.importance,
+        source: "inferido",
+        people: personId ? [personId] : [],
         placeId,
+        meta,
       },
       now,
     );
+    if (!record) return false;
+    this.mind.intentions = [
+      ...open,
+      {
+        memoryId: record.id,
+        text,
+        personId,
+        placeId,
+        atMinute,
+        status: "pending" as const,
+        misses: 0,
+        createdAt: now,
+        // Nace en su contexto (con esa persona, en ese sitio): la pista tiene que irse y volver.
+        cueActive: true,
+      },
+    ].slice(-cfg.maxOpen);
+    return true;
+  }
+
+  /**
+   * Memoria prospectiva en cada tick (sin LLM): con la pista delante (la persona, el lugar o la
+   * hora) se acuerda o no; si se le pasan varias ocasiones, se le olvida, y quizá más tarde cae
+   * en la cuenta. Lo que recuerda le llega como percepción para que decida qué hacer.
+   */
+  async checkIntentions(
+    now: number,
+    minutes: number,
+    present: string[],
+  ): Promise<IntentionOutcome[]> {
+    const memory = this.deps.memory;
+    const cfg = memory.config.prospective;
+    if (!cfg.enabled || !this.mind.intentions.length) return [];
+    const out: IntentionOutcome[] = [];
+    const profile = memory.profileOf(this.id);
+    const ctx = { placeId: this.state.locationId, present, minuteOfDay: Math.floor(now % 1440) };
+    const keep: IntentionState[] = [];
+    for (const i of this.mind.intentions) {
+      const rec = await memory.store.get(i.memoryId);
+      if (!rec || rec.status !== "active") continue;
+      if (now - i.createdAt > cfg.expireDays * 24 * 60) {
+        await this.closeIntention(i, rec, "expired", now, "pasaron los días y ya no lo hizo");
+        out.push({ kind: "expired", intention: i });
+        continue;
+      }
+      if (i.status === "forgotten") {
+        // Caer en la cuenta, tarde: "¡vaya, se me olvidó!". Vuelve a tenerlo pendiente.
+        if (memory.rng() < 1 - Math.pow(1 - cfg.lateRecallPerHour, minutes / 60)) {
+          i.status = "pending";
+          i.misses = 0;
+          await this.syncIntention(i, rec);
+          await memory.tryRemember(
+            {
+              agentId: this.id,
+              text: `¡Vaya, se me olvidó ${i.text}!`,
+              type: "observation",
+              importance: 5,
+              emotionalValence: -0.4,
+              people: i.personId ? [i.personId] : [],
+            },
+            now,
+          );
+          out.push({ kind: "late", intention: i });
+        }
+        keep.push(i);
+        continue;
+      }
+      const cue = cuePresent(i, ctx, cfg.timeWindowMinutes);
+      const appeared = cue && !i.cueActive;
+      i.cueActive = cue;
+      if (!appeared) {
+        keep.push(i);
+        continue;
+      }
+      const strength = currentStrength(rec, now);
+      const chance =
+        strength < memory.config.retrieval.forgetThreshold
+          ? 0
+          : recallChance(profile.intentionForgetting, strength, cfg);
+      if (memory.rng() < chance) {
+        await this.closeIntention(i, rec, "done", now, "se acordó en el momento oportuno");
+        await memory.store.update(rec.id, reinforce(rec, now, memory.config.decay));
+        const who = i.personId ? this.deps.names?.[i.personId] : undefined;
+        this.workingMemory.push({ text: `Quería ${i.text}`, memoryId: rec.id, addedAt: now });
+        out.push({
+          kind: "kept",
+          intention: i,
+          reminder: `Te acuerdas de que querías ${i.text}${who ? ` (ahí está ${who})` : ""}.`,
+        });
+        continue;
+      }
+      i.misses++;
+      if (i.misses >= cfg.maxMisses) {
+        i.status = "forgotten";
+        await this.syncIntention(i, rec);
+        await memory.audit({
+          agentId: this.id,
+          memoryId: rec.id,
+          memoryText: rec.text,
+          action: "intention_forgotten",
+          reason: `tuvo ${i.misses} ocasiones (${describeCue(i, this.deps.names)}) y no se acordó de ${i.text}`,
+          at: now,
+        });
+        out.push({ kind: "missed", intention: i });
+      } else {
+        await this.syncIntention(i, rec);
+      }
+      keep.push(i);
+    }
+    this.mind.intentions = keep;
+    for (const o of out) {
+      if (o.kind === "kept" || o.kind === "missed") {
+        memory.emitEffect({
+          kind: "intention",
+          agentId: this.id,
+          memoryId: o.intention.memoryId,
+          text: o.intention.text,
+          importance: cfg.importance,
+          outcome: o.kind === "kept" ? "kept" : "forgotten",
+          others: o.intention.personId ? [o.intention.personId] : [],
+        });
+      }
+    }
+    return out;
+  }
+
+  /** Refleja en el recuerdo (meta) el estado de una intención. */
+  private async syncIntention(i: IntentionState, rec: MemoryRecord) {
+    await this.deps.memory.store.update(rec.id, {
+      meta: {
+        ...rec.meta,
+        intention: {
+          status: i.status,
+          personId: i.personId,
+          placeId: i.placeId,
+          atMinute: i.atMinute,
+          misses: i.misses,
+        },
+      },
+    });
+  }
+
+  private async closeIntention(
+    i: IntentionState,
+    rec: MemoryRecord,
+    status: "done" | "expired",
+    now: number,
+    why: string,
+  ) {
+    i.status = status;
+    await this.syncIntention(i, rec);
+    await this.deps.memory.audit({
+      agentId: this.id,
+      memoryId: rec.id,
+      memoryText: rec.text,
+      action: status === "done" ? "intention_kept" : "intention_expired",
+      reason: `${i.text}: ${why}`,
+      at: now,
+    });
+  }
+
+  /**
+   * Anota en el diario de hoy (memoria a corto plazo, sin LLM ni recuerdo episódico) una
+   * actividad que empieza, si no es la misma que la anterior. Con poca energía el diario falla:
+   * a veces no la anota y a veces la anota en el lugar de la anterior (la mezcla).
+   */
+  noteActivity(now: number, activity: string, placeId: string): void {
+    const log = this.state.doneToday ?? [];
+    const last = log.at(-1);
+    if (last && last.activity === activity && last.placeId === placeId) return;
+    const cfg = this.deps.memory.config.diary;
+    const energy = this.state.needs.energy;
+    let where = placeId;
+    if (energy < cfg.lowEnergy) {
+      const tiredness = 1 - energy / cfg.lowEnergy;
+      const r = this.deps.memory.rng();
+      if (r < cfg.maxLossProbability * tiredness) return;
+      if (last && r < (cfg.maxLossProbability + cfg.maxMixProbability) * tiredness) {
+        where = last.placeId;
+      }
+    }
+    this.state.doneToday = [
+      ...log,
+      { minute: Math.floor(now % 1440), activity, placeId: where },
+    ].slice(-cfg.maxEntries);
+  }
+
+  /**
+   * Cierre del día (al dormirse, sin LLM): el diario de hoy se guarda como un único recuerdo
+   * ("El día N: …", con el olvido de siempre) y alimenta el rastreador de rutinas; lo que se
+   * repite en varios días se convierte en un recuerdo semántico de hábito o lo refuerza.
+   */
+  async endDay(now: number, day: number): Promise<DayEndReport> {
+    const report: DayEndReport = { diaryMemoryId: null, habitsFormed: [], habitsReinforced: [] };
+    await this.socialDayEnd(now);
+    const entries = this.state.doneToday ?? [];
+    if (!entries.length) return report;
+    const memory = this.deps.memory;
+    const cfg = memory.config;
+    const placeName = (id: string) => this.deps.places.find((p) => p.id === id)?.name ?? id;
+    const diary = await memory.tryRemember(
+      {
+        agentId: this.id,
+        text: dayDiaryText(day, entries, placeName),
+        type: "observation",
+        importance: cfg.diary.dayImportance,
+      },
+      now,
+    );
+    if (diary) {
+      report.diaryMemoryId = diary.id;
+      this.mind.diaryMemoryIds = [...this.mind.diaryMemoryIds, diary.id].slice(-7);
+    }
+    if (!cfg.habits.enabled) return report;
+    this.mind.habits = recordDay(this.mind.habits, entries, day, cfg.habits.windowDays);
+    for (const h of dueHabits(this.mind.habits, day, cfg.habits.minDays)) {
+      const existing = h.memoryId ? await memory.store.get(h.memoryId) : undefined;
+      if (existing?.status === "active") {
+        await memory.store.update(existing.id, {
+          ...reinforce(existing, now, cfg.decay),
+          forgottenAt: null,
+        });
+        await memory.audit({
+          agentId: this.id,
+          memoryId: existing.id,
+          memoryText: existing.text,
+          action: "reinforced",
+          reason: `el hábito se repitió otra vez (${h.days.length} de los últimos ${cfg.habits.windowDays} días)`,
+          at: now,
+        });
+        report.habitsReinforced.push(existing.text);
+        continue;
+      }
+      const created = await memory.tryRemember(
+        {
+          agentId: this.id,
+          text: habitText(h, placeName(h.placeId)),
+          type: "semantic",
+          source: "inferido",
+          importance: cfg.habits.importance,
+          placeId: h.placeId,
+        },
+        now,
+      );
+      if (!created) continue;
+      h.memoryId = created.id;
+      await memory.audit({
+        agentId: this.id,
+        memoryId: created.id,
+        memoryText: created.text,
+        action: "habit",
+        reason: `"${h.activity}" en ${placeName(h.placeId)} se repitió ${h.days.length} de los últimos ${cfg.habits.windowDays} días: ya es una costumbre`,
+        at: now,
+      });
+      report.habitsFormed.push(created.text);
+    }
+    return report;
+  }
+
+  /**
+   * Lo que recuerda de ayer y de sus costumbres para planificar: el recuerdo del diario de ayer
+   * y los hábitos, recordados con olvido y vaguedad (lo vago sale como esencia; lo olvidado, no).
+   */
+  private async recallYesterday(now: number): Promise<{ text: string; ids: string[] }> {
+    const cfg = this.deps.memory.config.habits;
+    const diary = this.mind.diaryMemoryIds.at(-1);
+    const habits = Object.values(this.mind.habits)
+      .map((h) => h.memoryId)
+      .filter((id): id is string => Boolean(id));
+    const recalled = await this.deps.memory.recallByIds(
+      [...(diary ? [diary] : []), ...habits],
+      now,
+      this.state.mood.valence,
+      // Lo vago de ayer puede reconstruirse (y rellenarse) al recordarlo.
+      this.recallContext(),
+    );
+    const yesterday = recalled.filter((s) => s.memory.id === diary);
+    const customs = recalled
+      .filter((s) => s.memory.id !== diary)
+      .sort((a, b) => b.scores.strength - a.scores.strength)
+      .slice(0, cfg.maxInPlan);
+    return {
+      text: [...yesterday, ...customs].map((s) => `- ${recallText(s)}`).join("\n"),
+      ids: [...(diary ? [diary] : []), ...habits],
+    };
   }
 
   /** "- HH:MM actividad (lugar)" de lo hecho hoy (o del diario que se le pase). */
@@ -267,8 +723,8 @@ export class Agent {
 
   /** Planifica el día con el modelo de reflexión. */
   async planDay(now: number, weather: Weather = "sunny"): Promise<PlanItem[]> {
-    // El diario de ayer orienta el plan de hoy (para no repetir lo mismo) y se empieza otro.
-    const yesterday = this.diaryText();
+    // Lo que recuerda de ayer y sus costumbres orientan el plan de hoy; se empieza otro diario.
+    const yesterday = await this.recallYesterday(now);
     this.state.doneToday = [];
     const recalled = await this.deps.memory.retrieve({
       agentId: this.id,
@@ -277,6 +733,7 @@ export class Agent {
       moodValence: this.state.mood.valence,
       k: 5,
       recall: this.recallContext(),
+      exclude: yesterday.ids,
     });
     try {
       const res = await this.deps.llm.run({
@@ -289,7 +746,8 @@ export class Agent {
           needs: this.state.needs,
           recalled: recalled.map((s) => `- ${recallText(s)}`).join("\n") || "- (nada en especial)",
           weather,
-          yesterday,
+          mood: describeMood(this.state.mood),
+          yesterday: yesterday.text,
         }),
       });
       const plan = parseWith(PlanResponse, res.text)
@@ -310,12 +768,15 @@ export class Agent {
         })
         .filter((p): p is PlanItem => p !== null)
         .sort((a, b) => a.startMinute - b.startMinute);
+      for (const p of [...plan]) {
+        if (!(await this.safe(p.activity, "plan"))) plan.splice(plan.indexOf(p), 1);
+      }
       this.state.plan = plan.length ? plan : fallbackPlan(this.seed.homeId);
     } catch (error) {
       this.deps.onError?.(this.id, "plan", error);
       this.state.plan = fallbackPlan(this.seed.homeId);
     }
-    await this.deps.memory.remember(
+    await this.deps.memory.tryRemember(
       {
         agentId: this.id,
         text: `Mi plan para hoy: ${this.state.plan.map((p) => p.activity).join(", ")}`,
@@ -332,28 +793,162 @@ export class Agent {
     if (!perceptions.length) return;
     const texts = perceptions.map(describePerception);
     const ratings = await this.rate(texts);
-    let valenceSum = 0;
+    const felt: { importance: number; valence: number }[] = [];
     for (const [i, p] of perceptions.entries()) {
       const rating = ratings[i] ?? { importance: 2, valence: 0 };
-      valenceSum += rating.valence;
-      const record = await this.deps.memory.remember(
+      felt.push(rating);
+      // Atención: lo que llega de fuera mientras habla con alguien se graba peor.
+      const arousal = Math.max(
+        this.state.mood.arousal,
+        eventArousal(rating.importance, rating.valence),
+      );
+      const distracted =
+        this.state.activityKind === "talk" && (p.kind === "arrived" || p.kind === "overheard");
+      // Rumores: según lo que se fía de quien lo cuenta, lo graba con menos fuerza e
+      // importancia, y si se fía poco, con duda.
+      const cred = await this.credibilityOf(p);
+      const doubt = cred !== null && cred < this.deps.memory.config.social.doubtBelow;
+      const encoded = this.encoding(arousal, distracted);
+      const record = await this.deps.memory.tryRemember(
         {
           agentId: this.id,
-          text: texts[i]!,
+          text: doubt ? `(no sé si creérmelo) ${texts[i]!}` : texts[i]!,
           type: "observation",
-          importance: p.kind === "thought" ? Math.max(rating.importance, 6) : rating.importance,
+          importance:
+            p.kind === "thought"
+              ? Math.max(rating.importance, 6)
+              : cred === null
+                ? rating.importance
+                : Math.max(1, Math.round(rating.importance * (0.6 + 0.4 * cred))),
           emotionalValence: rating.valence,
           source: sourceOf(p),
           people: peopleOf(p),
           placeId: "placeId" in p ? p.placeId : this.state.locationId,
           eventId: "eventId" in p ? (p.eventId ?? null) : null,
+          ...encoded,
+          strength: cred === null ? encoded.strength : encoded.strength * (0.5 + 0.5 * cred),
         },
         now,
       );
-      this.workingMemory.push({ text: record.text, memoryId: record.id, addedAt: now });
+      if (record) this.workingMemory.push({ text: record.text, memoryId: record.id, addedAt: now });
     }
-    const v = 0.8 * this.state.mood.valence + 0.2 * (valenceSum / perceptions.length);
-    this.state.mood = { valence: clamp(v, -1, 1), label: moodLabel(v) };
+    this.state.mood = blendPerceptions(
+      this.state.mood,
+      felt,
+      this.deps.memory.config.mood.perceptionWeight,
+    );
+  }
+
+  /** Nivel base del ánimo (según su personalidad). */
+  get moodBaseline(): { valence: number; arousal: number } {
+    const cfg = this.deps.memory.config;
+    const base = baselineMood(this.seed.personality, cfg.mood);
+    // Si durmió mal, ese día su nivel base está más bajo.
+    return { ...base, valence: base.valence - cfg.sleep.debtValence * this.mind.sleepDebt };
+  }
+
+  /**
+   * Fuerza inicial con la que graba algo ahora (atención y estado) y si solo le queda la
+   * esencia (activación extrema). Ver memory/encoding.ts.
+   */
+  private encoding(
+    arousal: number,
+    distracted: boolean,
+  ): { strength: number; meta?: { gistOnly: true } } {
+    const cfg = this.deps.memory.config.encoding;
+    const strength = encodingStrength(
+      {
+        arousal,
+        energy: this.state.needs.energy,
+        walking: this.state.activityKind === "walk",
+        distracted,
+        sleepDebt: this.mind.sleepDebt,
+      },
+      cfg,
+    );
+    return overwhelmed(arousal, cfg) ? { strength, meta: { gistOnly: true } } : { strength };
+  }
+
+  /**
+   * Un recuerdo malo que vuelve sin querer (ver MemorySystem.intrude): entra en la memoria de
+   * trabajo y tiñe el ánimo. Devuelve lo que le vino a la cabeza, o null.
+   */
+  async ruminate(now: number, minutes: number, present: string[]): Promise<string | null> {
+    const memory = this.deps.memory;
+    const hit = await memory.intrude({
+      agentId: this.id,
+      now,
+      minutes,
+      moodValence: this.state.mood.valence,
+      neuroticism: this.seed.personality.neuroticism,
+      placeId: this.state.locationId,
+      present,
+    });
+    if (!hit) return null;
+    const text = recallText(hit);
+    this.workingMemory.push({
+      text: `(sin querer, me vino a la cabeza) ${text}`,
+      memoryId: hit.memory.id,
+      addedAt: now,
+    });
+    const pull = memory.config.intrusive.moodPull;
+    this.state.mood = makeMood(
+      this.state.mood.valence + (hit.memory.emotionalValence - this.state.mood.valence) * pull,
+      this.state.mood.arousal + (1 - this.state.mood.arousal) * pull,
+    );
+    return text;
+  }
+
+  /** Al acostarse: lo tenso o preocupado que esté decide cómo dormirá esta noche. */
+  fallAsleep(): number {
+    const cfg = this.deps.memory.config.sleep;
+    this.mind.sleepQuality = sleepQuality(this.state.mood, this.seed.personality.neuroticism, cfg);
+    return this.mind.sleepQuality;
+  }
+
+  /**
+   * Al despertar: si no recuperó energía suficiente, arrastra una deuda de sueño ese día
+   * (peor memoria y peor ánimo). Devuelve la deuda (0 = descansado).
+   */
+  wakeUp(): number {
+    const cfg = this.deps.memory.config.sleep;
+    const debt = sleepDebt(this.state.needs.energy, cfg);
+    this.mind.sleepDebt = debt;
+    this.mind.sleepQuality = 1;
+    if (debt > 0) {
+      this.state.mood = makeMood(
+        this.state.mood.valence - cfg.debtValence * debt,
+        this.state.mood.arousal,
+      );
+    }
+    return debt;
+  }
+
+  /**
+   * El cuerpo con el paso del tiempo (sin LLM): necesidades según lo que hace y su personalidad,
+   * y ánimo que vuelve a su nivel base empujado por las necesidades.
+   */
+  live(minutes: number, alone: boolean): void {
+    const cfg = this.deps.memory.config;
+    const extraversion = this.seed.personality.extraversion;
+    const kind = this.state.activityKind;
+    this.state.needs = stepNeeds(
+      this.state.needs,
+      { kind, alone, extraversion, sleepQuality: this.mind.sleepQuality },
+      minutes,
+      cfg.needs,
+    );
+    this.state.mood = stepMood(
+      this.state.mood,
+      {
+        needs: this.state.needs,
+        sleeping: kind === "sleep",
+        baseline: this.moodBaseline,
+        extraversion,
+      },
+      minutes,
+      cfg.mood,
+    );
   }
 
   /** Decidir: seguir el plan, reaccionar o hablar. Solo llama al LLM si hay algo saliente. */
@@ -392,13 +987,16 @@ export class Agent {
           now,
           locationId: this.state.locationId,
           action: this.state.action,
-          moodLabel: this.state.mood.label,
+          moodLabel: describeMood(this.state.mood),
           needs: this.state.needs,
           planItem: this.currentPlanItem(now),
           workingMemory: this.workingMemory.render(),
         }),
       });
-      return this.toDecision(parseWith(DecideResponse, res.text), input.present);
+      const parsed = parseWith(DecideResponse, res.text);
+      // Algo que se propone hacer más adelante (memoria prospectiva).
+      if (parsed.intention?.text) await this.intend(now, parsed.intention);
+      return await this.checked(this.toDecision(parsed, input.present));
     } catch (error) {
       this.deps.onError?.(this.id, "decide", error);
       return { kind: "follow_plan" };
@@ -413,7 +1011,7 @@ export class Agent {
     now: number,
     eventId?: string,
   ) {
-    await this.deps.memory.remember(
+    await this.deps.memory.tryRemember(
       {
         agentId: this.id,
         text: `Le dije a ${toName}: "${utterance}"`,
@@ -422,9 +1020,35 @@ export class Agent {
         people: [to],
         placeId: this.state.locationId,
         eventId: eventId ?? null,
+        ...this.encoding(this.state.mood.arousal, false),
       },
       now,
     );
+  }
+
+  /** ¿Pasa la protección de menores? (sin guardián, siempre). */
+  private async safe(
+    text: string,
+    kind: "speech" | "action" | "plan",
+    actors: string[] = [],
+  ): Promise<boolean> {
+    const guard = this.deps.memory.guard;
+    return !guard || guard.allows(text, { kind, actors: [this.id, ...actors], agentId: this.id });
+  }
+
+  /** Lo que la protección de menores descarta se convierte en seguir el plan. */
+  private async checked(d: Decision): Promise<Decision> {
+    const reason = d.reason ?? "";
+    if (d.kind === "talk" && !(await this.safe(`${d.utterance} ${reason}`, "speech", [d.to]))) {
+      return { kind: "follow_plan" };
+    }
+    if (d.kind === "react" && !(await this.safe(`${d.action} ${reason}`, "action"))) {
+      return { kind: "follow_plan" };
+    }
+    if (d.kind === "follow_plan" && reason && !(await this.safe(reason, "action"))) {
+      return { kind: "follow_plan" };
+    }
+    return d;
   }
 
   private validPlace(id: string | undefined): string | undefined {

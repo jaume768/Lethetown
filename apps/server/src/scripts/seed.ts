@@ -1,5 +1,5 @@
 /**
- * Borra memorias, costes, auditoría, fichas, eventos, crónicas e instantáneas de todos los
+ * Borra memorias, costes, auditoría, fichas (y su historial), eventos, crónicas e instantáneas de todos los
  * mundos (los mundos se conservan) y vuelve a sembrar los recuerdos iniciales de seeds/agents.json.
  */
 import { loadConfig } from "../config";
@@ -12,6 +12,7 @@ import {
   memoryAudit,
   memoryVersions,
   simEvents,
+  socialProfileHistory,
   socialProfiles,
   worldSnapshots,
 } from "../db/schema";
@@ -28,6 +29,7 @@ for (const table of [
   memoryAudit,
   memoryVersions,
   socialProfiles,
+  socialProfileHistory,
   simEvents,
   chronicles,
   worldSnapshots,

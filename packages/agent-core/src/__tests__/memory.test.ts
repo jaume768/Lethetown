@@ -37,6 +37,7 @@ function mem(overrides: Partial<MemoryRecord> = {}): MemoryRecord {
     links: [],
     status: "active",
     forgottenAt: null,
+    meta: {},
     ...overrides,
   };
 }

@@ -75,7 +75,7 @@ export async function runCommand(w: WorldRuntime, cmd: WorldCommand): Promise<Co
   switch (cmd.type) {
     case "thought": {
       if (!w.sim.agents.has(cmd.agentId)) return notFound("Agente no encontrado");
-      const vetted = await w.vetUserText("thought", cmd.text, cmd.userId);
+      const vetted = await w.vetUserText("thought", cmd.text, cmd.userId, cmd.agentId);
       if (!vetted.ok) return { ok: false, status: 422, error: vetted.error };
       w.sim.injectThought(cmd.agentId, vetted.text);
       return { ok: true };

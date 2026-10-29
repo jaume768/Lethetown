@@ -1,4 +1,9 @@
 import { z } from "zod";
+import { MoodConfig, NeedsConfig } from "../agent/mood";
+import { EncodingConfig, SleepConfig } from "./encoding";
+import { ProspectiveConfig } from "./prospective";
+import { SocialConfig } from "./social";
+import { ProfileConfig } from "./psychology";
 
 /**
  * Parámetros de la memoria humana. Todos tienen valor por defecto; el servidor puede
@@ -79,8 +84,13 @@ export const MemoryConfig = z.object({
     .object({
       /** Generar la esencia con el LLM al cruzar el umbral de vaguedad. */
       enabled: z.boolean().default(true),
+      /**
+       * Importancia mínima (1-10) para pedir la esencia al LLM. Lo menos importante no se
+       * resume: simplemente se desvanece (en el prompt sale la esencia provisional).
+       */
+      minImportance: z.number().int().min(1).max(10).default(3),
     })
-    .default({ enabled: true }),
+    .prefault({}),
   reconsolidation: z
     .object({
       /** Probabilidad de reescribir un recuerdo al recuperarlo. */
@@ -139,6 +149,100 @@ export const MemoryConfig = z.object({
       idleMinutes: z.number().positive().default(30),
     })
     .default({ safetyMaxTurns: 12, idleMinutes: 30 }),
+  /** Diario de hoy (`doneToday`): memoria a corto plazo del día, imprecisa con poca energía. */
+  diary: z
+    .object({
+      /** Energía (0..1) por debajo de la cual el diario empieza a fallar. */
+      lowEnergy: z.number().min(0).max(1).default(0.35),
+      /** Probabilidad, con energía 0, de no anotar una actividad (crece linealmente al bajar). */
+      maxLossProbability: z.number().min(0).max(1).default(0.4),
+      /** Probabilidad, con energía 0, de anotarla en el lugar de la anterior (mezcla). */
+      maxMixProbability: z.number().min(0).max(1).default(0.3),
+      /** Entradas que caben en el diario de un día (las más recientes). */
+      maxEntries: z.number().int().positive().default(16),
+      /** Importancia (1-10) del recuerdo "El día N: …" que se guarda al dormirse. */
+      dayImportance: z.number().int().min(1).max(10).default(3),
+    })
+    .prefault({}),
+  /** Ánimo bidimensional (valencia, activación): nivel base, vuelta a él y efecto de las necesidades. */
+  mood: MoodConfig.prefault({}),
+  /** Ritmos de las necesidades (energía, hambre, social) y efecto de la personalidad. */
+  needs: NeedsConfig.prefault({}),
+  /** Codificación: fuerza inicial según atención y activación (Yerkes-Dodson). */
+  encoding: EncodingConfig.prefault({}),
+  /** Sueño: calidad, deuda y consolidación emocional. */
+  sleep: SleepConfig.prefault({}),
+  /** Sesgos que transforman los recuerdos con el tiempo (en el mantenimiento, sin LLM). */
+  biases: z
+    .object({
+      /**
+       * Sesgo de desvanecimiento afectivo: la valencia de un recuerdo se acerca a 0 con esta vida
+       * media (días de juego); la de los negativos, antes que la de los positivos.
+       */
+      fadeNegativeHalfLifeDays: z.number().positive().default(12),
+      fadePositiveHalfLifeDays: z.number().positive().default(40),
+      /** Cambio mínimo de valencia para aplicarlo (cada cambio deja una versión y auditoría). */
+      fadeStep: z.number().positive().max(1).default(0.1),
+      /** Por debajo de esta |valencia| ya no se suaviza más (queda neutro). */
+      fadeFloor: z.number().min(0).max(1).default(0.05),
+    })
+    .prefault({}),
+  /** Falsos recuerdos: al recordar algo vago, a veces la mente rellena los huecos. */
+  falseMemory: z
+    .object({
+      enabled: z.boolean().default(true),
+      /**
+       * Probabilidad de rellenar huecos al recuperar un recuerdo, × sugestionabilidad × (1 −
+       * fuerza): cuanto más desvaído, más huecos. (Lo recuperado suele estar fuerte, así que en
+       * la práctica es bastante menor.)
+       */
+      probability: z.number().min(0).max(1).default(0.015),
+      /** Antigüedad mínima (horas de juego): lo reciente no tiene huecos que rellenar. */
+      minAgeHours: z.number().nonnegative().default(24),
+      /** Importancia mínima (1-10) para que merezca la pena reconstruirlo. */
+      minImportance: z.number().int().min(1).max(10).default(3),
+    })
+    .prefault({}),
+  /** Relaciones: tipos, familiaridad, mera exposición, perdón, rencor y credibilidad. */
+  social: SocialConfig.prefault({}),
+  /** Memoria prospectiva: acordarse de hacer algo cuando aparece la pista. */
+  prospective: ProspectiveConfig.prefault({}),
+  /** Recuerdos intrusivos: algo malo e importante vuelve sin buscarlo. */
+  intrusive: z
+    .object({
+      enabled: z.boolean().default(true),
+      /** Probabilidad por hora de juego en calma (ánimo neutro, neuroticismo medio, sin pistas). */
+      basePerHour: z.number().min(0).max(1).default(0.02),
+      /** Con ánimo bajo: × (1 + k·max(0, −valencia)). */
+      lowMoodFactor: z.number().min(0).default(2),
+      /** Neuroticismo: × (1 + k·(neuroticism − 0.5)·2). */
+      neuroticismFactor: z.number().min(0).max(1).default(0.8),
+      /** Si hay una pista (el lugar del recuerdo o alguien que sale en él): × esto. */
+      cueFactor: z.number().min(1).default(4),
+      /** Solo recuerdos de al menos esta importancia (1-10)… */
+      minImportance: z.number().int().min(1).max(10).default(6),
+      /** …y con valencia de como mucho esto (negativos). */
+      maxValence: z.number().min(-1).max(0).default(-0.4),
+      /** Cuánto se acerca el ánimo a la valencia del recuerdo (0..1). */
+      moodPull: z.number().min(0).max(1).default(0.15),
+    })
+    .prefault({}),
+  /** Edad y personalidad → perfil de memoria de cada agente (ver psychology.ts). */
+  profile: ProfileConfig.prefault({}),
+  /** Rutinas repetidas → recuerdos semánticos de hábito ("suelo desayunar en el café…"). */
+  habits: z
+    .object({
+      enabled: z.boolean().default(true),
+      /** Días de juego que se miran hacia atrás para detectar una rutina. */
+      windowDays: z.number().int().positive().default(7),
+      /** Días distintos (dentro de la ventana) con la misma actividad, lugar y franja. */
+      minDays: z.number().int().min(2).default(3),
+      /** Importancia (1-10) de un recuerdo de hábito nuevo. */
+      importance: z.number().int().min(1).max(10).default(4),
+      /** Hábitos que entran como mucho en el prompt del plan (los más claros). */
+      maxInPlan: z.number().int().nonnegative().default(4),
+    })
+    .prefault({}),
 });
 export type MemoryConfig = z.infer<typeof MemoryConfig>;
 

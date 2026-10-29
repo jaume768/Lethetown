@@ -1,4 +1,4 @@
-import { Agent, type Decision, type MemoryEffect } from "@lethetown/agent-core";
+import { Agent, minorsOf, type Decision, type MemoryEffect } from "@lethetown/agent-core";
 import type {
   AgentState,
   Chronicle,
@@ -22,8 +22,8 @@ import { startDemo } from "./demo";
 import * as intervention from "./intervention";
 import { WEATHER_NOW } from "./intervention";
 import { consolidate, maintain, scheduleChronicle, writeChronicle } from "./memory-routines";
-import { gatherPerceptions } from "./perception";
-import { goOrDo, scheduleArrival, setAction, travel, updateNeeds } from "./routines";
+import { gatherPerceptions, presentWith } from "./perception";
+import { goOrDo, scheduleArrival, setAction, travel } from "./routines";
 import { SIM_SNAPSHOT_VERSION, type SimSnapshot } from "./snapshot";
 import type { WorldMap } from "./world";
 
@@ -52,6 +52,11 @@ export class Simulation {
     const ctx = new SimContext(deps);
     this.ctx = ctx;
     const names = Object.fromEntries(deps.seeds.map((s) => [s.id, s.name]));
+    const minors = minorsOf(deps.seeds);
+    // Chismosos: lo que cuentan se cree un poco menos (credibilidad de los rumores).
+    const gossips = new Set(
+      deps.seeds.filter((s) => s.traits.some((t) => /chism|cotill/i.test(t))).map((s) => s.id),
+    );
     for (const seed of deps.seeds) {
       const agent = new Agent(seed, {
         llm: deps.llm,
@@ -59,6 +64,8 @@ export class Simulation {
         places: deps.world.places,
         social: deps.social,
         names,
+        minors,
+        gossips,
         language: deps.language,
         onError: (agentId, task, error) =>
           ctx.emit("system", agentId, `⚠ Error en "${task}": ${errorMessage(error)}`),
@@ -96,6 +103,8 @@ export class Simulation {
         await agent.seedMemories(now);
         seeded++;
       }
+      // Relaciones de partida (si aún no piensa nada de nadie).
+      if (!(await this.ctx.deps.social.list(agent.id)).length) await agent.seedRelationships(now);
     }
     return seeded;
   }
@@ -155,6 +164,7 @@ export class Simulation {
         return {
           id: a.id,
           state: structuredClone(a.state),
+          mind: structuredClone(a.mind),
           workingMemory: structuredClone([...a.workingMemory.contents]),
           runtime: {
             ...structuredClone({ ...rt, seenHere: [], knownStates: [] }),
@@ -183,6 +193,7 @@ export class Simulation {
       const agent = this.agents.get(saved.id);
       if (!agent) continue;
       agent.state = saved.state;
+      agent.mind = saved.mind;
       agent.workingMemory.replace(saved.workingMemory);
       const r = saved.runtime;
       this.ctx.runtime.set(saved.id, {
@@ -266,7 +277,9 @@ export class Simulation {
     const rt = ctx.rt(agent.id);
     if (rt.travelling) return;
     const now = this.clock.now();
-    updateNeeds(agent, this.tickMinutes);
+    // Necesidades y ánimo (solo: un introvertido recarga pilas en algo tranquilo).
+    const around = presentWith(ctx, agent).map((p) => p.id);
+    agent.live(this.tickMinutes, around.length === 0);
     endIdleConversations(ctx, now);
     await maintain(ctx, agent, now);
 
@@ -286,9 +299,20 @@ export class Simulation {
       return;
     }
 
+    // Mera exposición: el tiempo que pasa en el mismo sitio que otros acerca un poco.
+    agent.noteCompany(around, this.tickMinutes);
     const day = Math.floor(now / 1440);
     if (rt.plannedDay !== day) {
       rt.plannedDay = day;
+      const debt = agent.wakeUp();
+      if (debt > 0.2) {
+        ctx.emit(
+          "action",
+          agent.id,
+          `😴 ${agent.seed.name} ha dormido mal (energía ${agent.state.needs.energy.toFixed(2)})`,
+          [agent.id],
+        );
+      }
       setAction(ctx, agent, "pensando en el día", "idle");
       const plan = await agent.planDay(now, ctx.world.weather);
       ctx.emit("plan", agent.id, `Plan: ${plan.map((p) => p.activity).join(" → ")}`, [agent.id]);
@@ -296,6 +320,36 @@ export class Simulation {
 
     warnOutdoorPlan(ctx, agent, now);
     warnConversationPlan(ctx, agent, now);
+    // Un recuerdo malo que vuelve sin querer (más con el ánimo bajo o si algo se lo recuerda).
+    const intrusive = await agent.ruminate(now, this.tickMinutes, around);
+    // Memoria prospectiva: lo que tenía pensado hacer, si aparece la pista.
+    for (const o of await agent.checkIntentions(now, this.tickMinutes, around)) {
+      const who = o.intention.personId ? ctx.agents.get(o.intention.personId)?.seed.name : null;
+      const name = agent.seed.name;
+      if (o.kind === "kept") {
+        rt.pending.push({ kind: "world", text: o.reminder!, placeId: null });
+        ctx.emit("memory", agent.id, `✅ ${name} se acuerda de ${o.intention.text}`, [agent.id]);
+      } else if (o.kind === "missed") {
+        ctx.emit(
+          "memory",
+          agent.id,
+          `🫥 A ${name} se le pasa ${o.intention.text}${who ? ` (y eso que estaba con ${who})` : ""}`,
+          [agent.id],
+        );
+      } else if (o.kind === "late") {
+        ctx.emit("memory", agent.id, `😳 ¡Vaya! A ${name} se le olvidó ${o.intention.text}`, [
+          agent.id,
+        ]);
+      }
+    }
+    if (intrusive) {
+      ctx.emit(
+        "memory",
+        agent.id,
+        `🌩 A ${agent.seed.name} le viene a la cabeza, sin querer: «${intrusive}»`,
+        [agent.id],
+      );
+    }
     // Percibir.
     const { present, heard, place, perceptions } = gatherPerceptions(ctx, agent);
     const innerVoice = perceptions.flatMap((p) => (p.kind === "thought" ? [p.text] : []));

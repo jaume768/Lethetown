@@ -3,6 +3,7 @@ import {
   emoteFor,
   emoteForMemoryEffect,
   pickFrame,
+  type AffinityIcon,
   type AgentState,
   type CharacterSheet,
   type Emote,
@@ -33,6 +34,8 @@ export class AgentView {
   private readonly outline: Phaser.GameObjects.Sprite[];
   private readonly label: Phaser.GameObjects.Text;
   private readonly emote: Phaser.GameObjects.Image;
+  /** Lo que el agente seleccionado piensa de este (corazón, indiferencia, enfado). */
+  private readonly mark: Phaser.GameObjects.Image;
   private readonly bubble: Phaser.GameObjects.Container;
   private readonly bubbleBg: Phaser.GameObjects.NineSlice;
   private readonly bubbleText: Phaser.GameObjects.Text;
@@ -87,6 +90,11 @@ export class AgentView {
       .image(0, -height + 4, emoteKey("dots"))
       .setOrigin(0.5, 1)
       .setVisible(false);
+    this.mark = scene.add
+      .image(8, -height + 2, emoteKey("meh"))
+      .setOrigin(0.5, 1)
+      .setScale(0.75)
+      .setVisible(false);
 
     this.bubbleBg = scene.add
       .nineslice(
@@ -122,6 +130,7 @@ export class AgentView {
       this.body,
       this.label,
       this.emote,
+      this.mark,
       this.bubble,
     ]);
     this.body
@@ -181,6 +190,12 @@ export class AgentView {
     }
   }
 
+  /** Marca de afinidad (null = sin marca). */
+  setMark(icon: AffinityIcon | null) {
+    if (!icon) return void this.mark.setVisible(false);
+    this.mark.setTexture(emoteKey(icon === "neutral" ? "meh" : icon)).setVisible(true);
+  }
+
   /** Efecto visual de memoria. */
   playEffect(kind: string) {
     const emote = emoteForMemoryEffect(kind);
@@ -189,6 +204,23 @@ export class AgentView {
     if (this.reducedMotion) return;
     if (kind === "recall") this.flash();
     if (kind === "forget" || kind === "archive") this.dissolve(kind === "forget" ? 10 : 5);
+    if (kind === "intrusive") this.shiver();
+  }
+
+  /** Escalofrío: un recuerdo que vuelve sin querer (sombra y un temblor breve). */
+  private shiver() {
+    this.body.setTint(0x8a8fb0);
+    this.scene.tweens.add({
+      targets: this.body,
+      x: { from: -1, to: 1 },
+      duration: 60,
+      yoyo: true,
+      repeat: 4,
+      onComplete: () => {
+        this.body.setX(0);
+        this.body.clearTint();
+      },
+    });
   }
 
   /** Destello: el cuerpo se pone blanco un instante. */

@@ -28,6 +28,51 @@
       "Carmen me prestó un libro de poemas hace dos semanas y todavía no se lo he devuelto.",
       "Me agobia que se acerque la fecha de entrega del cuento.",
       "Hugo, el músico de la plaza, me dedicó una canción y no supe qué decirle."
+    ],
+    "personality": {
+      "openness": 0.75,
+      "conscientiousness": 0.3,
+      "extraversion": 0.5,
+      "agreeableness": 0.7,
+      "neuroticism": 0.65
+    },
+    "memoryProfile": {
+      "intentionForgetting": 1.5
+    },
+    "initialIntentions": [
+      {
+        "text": "devolverle a Carmen su libro de poemas",
+        "personId": "carmen"
+      }
+    ],
+    "speechStyle": {
+      "register": "cálido e inseguro, con dudas",
+      "sentenceLength": "media",
+      "catchphrases": ["no sé, igual…", "¿tú crees?"],
+      "topics": ["los dibujos del cuento", "los colores y la luz", "la fecha de entrega"]
+    },
+    "relationships": [
+      {
+        "with": "mateo",
+        "affinity": 0.4,
+        "trust": 0.5,
+        "familiarity": 0.5,
+        "summary": "Prepara el mejor café con leche y siempre me pregunta por mis dibujos."
+      },
+      {
+        "with": "carmen",
+        "affinity": 0.4,
+        "trust": 0.6,
+        "familiarity": 0.4,
+        "summary": "Me prestó un libro de poemas que aún no le he devuelto."
+      },
+      {
+        "with": "hugo",
+        "affinity": 0.2,
+        "trust": 0.4,
+        "familiarity": 0.4,
+        "summary": "Me dedicó una canción y no supe qué decirle."
+      }
     ]
   },
   {
@@ -60,6 +105,43 @@
       "Lucía es la clienta más simpática del café; creo que me gusta.",
       "El proveedor de café me ha subido los precios y estoy preocupado por el negocio.",
       "Rafael, el de la taberna, dice que le robo clientes por las tardes."
+    ],
+    "personality": {
+      "openness": 0.45,
+      "conscientiousness": 0.7,
+      "extraversion": 0.85,
+      "agreeableness": 0.6,
+      "neuroticism": 0.45
+    },
+    "speechStyle": {
+      "register": "coloquial, bromista y cercano",
+      "sentenceLength": "corta",
+      "catchphrases": ["¡hombre!", "ya verás", "eso lo arreglamos con un café"],
+      "topics": ["el café", "el negocio", "el fútbol del domingo"]
+    },
+    "relationships": [
+      {
+        "with": "carmen",
+        "affinity": 0.6,
+        "trust": 0.8,
+        "familiarity": 1,
+        "summary": "Mi madre: se preocupa demasiado por mí.",
+        "bond": "family"
+      },
+      {
+        "with": "lucia",
+        "affinity": 0.6,
+        "trust": 0.6,
+        "familiarity": 0.5,
+        "summary": "La clienta más simpática del café; creo que me gusta."
+      },
+      {
+        "with": "rafael",
+        "affinity": -0.1,
+        "trust": 0.4,
+        "familiarity": 0.6,
+        "summary": "Dice que le robo clientes por las tardes."
+      }
     ]
   },
   {
@@ -91,6 +173,49 @@
       "Le presté a Lucía mi libro de poemas favorito.",
       "Cada mañana paseo por el parque y doy de comer a las palomas junto a la fuente.",
       "Sofía, la maestra nueva, fue alumna mía; me alegra verla al frente de la escuela."
+    ],
+    "personality": {
+      "openness": 0.5,
+      "conscientiousness": 0.65,
+      "extraversion": 0.65,
+      "agreeableness": 0.7,
+      "neuroticism": 0.4
+    },
+    "memoryProfile": {
+      "episodicStability": 1.6,
+      "semanticStability": 1.4,
+      "sourceConfusion": 0.6,
+      "suggestibility": 0.8
+    },
+    "speechStyle": {
+      "register": "maternal y observador; cuenta lo que sabe de los demás",
+      "sentenceLength": "larga",
+      "catchphrases": ["hija mía", "ya te digo yo", "en mis tiempos"],
+      "topics": ["la vida de los vecinos", "el huerto", "sus antiguos alumnos"]
+    },
+    "relationships": [
+      {
+        "with": "mateo",
+        "affinity": 0.8,
+        "trust": 0.8,
+        "familiarity": 1,
+        "summary": "Mi hijo; trabaja demasiado desde que murió su padre.",
+        "bond": "family"
+      },
+      {
+        "with": "sofia",
+        "affinity": 0.6,
+        "trust": 0.7,
+        "familiarity": 0.7,
+        "summary": "Fue alumna mía; me alegra verla al frente de la escuela."
+      },
+      {
+        "with": "lucia",
+        "affinity": 0.3,
+        "trust": 0.5,
+        "familiarity": 0.4,
+        "summary": "Le presté mi libro de poemas favorito."
+      }
     ]
   },
   {
@@ -122,6 +247,39 @@
       "Inés quiere irse a estudiar a la ciudad y no sé cómo decirle que me da miedo quedarme solo.",
       "Aurora siempre me pide una barra y luego olvida pagarla; no me importa.",
       "La receta de las magdalenas era de mi mujer."
+    ],
+    "personality": {
+      "openness": 0.45,
+      "conscientiousness": 0.85,
+      "extraversion": 0.25,
+      "agreeableness": 0.75,
+      "neuroticism": 0.6
+    },
+    "memoryProfile": {
+      "intentionForgetting": 0.8
+    },
+    "speechStyle": {
+      "register": "tímido y escueto, muy educado",
+      "sentenceLength": "corta",
+      "catchphrases": ["bueno…", "si no es molestia"],
+      "topics": ["el pan y el horno", "su difunta mujer", "Inés"]
+    },
+    "relationships": [
+      {
+        "with": "ines",
+        "affinity": 0.7,
+        "trust": 0.5,
+        "familiarity": 1,
+        "summary": "Mi hija; discutimos cada vez más y me da miedo que se vaya.",
+        "bond": "family"
+      },
+      {
+        "with": "aurora",
+        "affinity": 0.5,
+        "trust": 0.6,
+        "familiarity": 0.6,
+        "summary": "Siempre me pide una barra y olvida pagarla; no me importa."
+      }
     ]
   },
   {
@@ -153,6 +311,51 @@
       "Mi padre no entiende nada de lo que me importa.",
       "Valentina, la fotógrafa que acaba de llegar, me parece la persona más interesante del pueblo.",
       "Leo me sigue a todas partes como si fuera su hermana mayor."
+    ],
+    "personality": {
+      "openness": 0.85,
+      "conscientiousness": 0.3,
+      "extraversion": 0.55,
+      "agreeableness": 0.35,
+      "neuroticism": 0.6
+    },
+    "speechStyle": {
+      "register": "sarcástico y adolescente",
+      "sentenceLength": "corta",
+      "catchphrases": ["en plan…", "qué pereza", "literal"],
+      "topics": ["la fotografía", "irse a la ciudad", "la música"]
+    },
+    "relationships": [
+      {
+        "with": "julian",
+        "affinity": 0.2,
+        "trust": 0.3,
+        "familiarity": 1,
+        "summary": "Mi padre: no entiende nada de lo que me importa.",
+        "bond": "family"
+      },
+      {
+        "with": "valentina",
+        "affinity": 0.7,
+        "trust": 0.6,
+        "familiarity": 0.4,
+        "summary": "La persona más interesante del pueblo; me enseña fotografía."
+      },
+      {
+        "with": "leo",
+        "affinity": 0.3,
+        "trust": 0.5,
+        "familiarity": 0.7,
+        "summary": "Me sigue a todas partes como si fuera su hermana mayor."
+      },
+      {
+        "with": "sofia",
+        "affinity": 0.1,
+        "trust": 0.4,
+        "familiarity": 0.6,
+        "summary": "La maestra; me riñe cuando falto a clase.",
+        "bond": "work"
+      }
     ]
   },
   {
@@ -184,6 +387,44 @@
       "Nuria se opone a mis planes y quiere convertir la casa vacía en un huerto comunitario.",
       "Las elecciones son dentro de un año y necesito que el pueblo me apoye.",
       "Rafael sabe todos los rumores del pueblo; conviene llevarse bien con él."
+    ],
+    "personality": {
+      "openness": 0.5,
+      "conscientiousness": 0.8,
+      "extraversion": 0.65,
+      "agreeableness": 0.4,
+      "neuroticism": 0.45
+    },
+    "memoryProfile": {
+      "sourceConfusion": 0.8
+    },
+    "initialIntentions": [
+      {
+        "text": "hablar con Nuria de la casa vacía",
+        "personId": "nuria"
+      }
+    ],
+    "speechStyle": {
+      "register": "formal, diplomático y calculado",
+      "sentenceLength": "media",
+      "catchphrases": ["por el bien del pueblo", "lo estudiaremos"],
+      "topics": ["el futuro del pueblo", "las elecciones", "la casa vacía"]
+    },
+    "relationships": [
+      {
+        "with": "nuria",
+        "affinity": -0.4,
+        "trust": 0.3,
+        "familiarity": 0.5,
+        "summary": "Se opone a mis planes para la casa vacía."
+      },
+      {
+        "with": "rafael",
+        "affinity": 0.2,
+        "trust": 0.3,
+        "familiarity": 0.5,
+        "summary": "Sabe todos los rumores; conviene llevarse bien con él."
+      }
     ]
   },
   {
@@ -215,6 +456,46 @@
       "Dicen que quien bebe del lago olvida sus penas; yo solo olvido dónde dejo las gafas.",
       "Pilar me ha recordado tres veces que pronto es nuestro aniversario, pero no sé qué día es.",
       "Leo me pregunta siempre por el pez gigante que vi de joven."
+    ],
+    "personality": {
+      "openness": 0.35,
+      "conscientiousness": 0.5,
+      "extraversion": 0.55,
+      "agreeableness": 0.45,
+      "neuroticism": 0.45
+    },
+    "memoryProfile": {
+      "dateForgetting": 2.5,
+      "intentionForgetting": 1.3
+    },
+    "initialIntentions": [
+      {
+        "text": "felicitar a Pilar por nuestro aniversario",
+        "personId": "pilar"
+      }
+    ],
+    "speechStyle": {
+      "register": "pausado, gruñón y de cuentacuentos",
+      "sentenceLength": "larga",
+      "catchphrases": ["cuando yo era joven…", "¡bah!", "eso no es nada"],
+      "topics": ["la pesca", "el lago Leteo", "el pez gigante"]
+    },
+    "relationships": [
+      {
+        "with": "pilar",
+        "affinity": 0.7,
+        "trust": 0.8,
+        "familiarity": 1,
+        "summary": "Mi mujer desde hace cuarenta y cinco años.",
+        "bond": "romantic"
+      },
+      {
+        "with": "leo",
+        "affinity": 0.6,
+        "trust": 0.6,
+        "familiarity": 0.6,
+        "summary": "Me pregunta siempre por el pez gigante."
+      }
     ]
   },
   {
@@ -246,6 +527,39 @@
       "Si Tomás olvida otra vez nuestro aniversario, no le hablo en una semana.",
       "Nuria es la mejor jardinera que he visto, aunque es muy terca.",
       "Una ristra de ajos en la puerta protege la casa; lo decía mi abuela."
+    ],
+    "personality": {
+      "openness": 0.35,
+      "conscientiousness": 0.8,
+      "extraversion": 0.6,
+      "agreeableness": 0.55,
+      "neuroticism": 0.6
+    },
+    "memoryProfile": {
+      "suggestibility": 1.2
+    },
+    "speechStyle": {
+      "register": "práctico y mandón",
+      "sentenceLength": "media",
+      "catchphrases": ["ya te lo dije", "toca madera", "a lo que hay que estar"],
+      "topics": ["el huerto", "las supersticiones", "lo despistado que es Tomás"]
+    },
+    "relationships": [
+      {
+        "with": "tomas",
+        "affinity": 0.6,
+        "trust": 0.7,
+        "familiarity": 1,
+        "summary": "Mi marido; un desastre con las fechas.",
+        "bond": "romantic"
+      },
+      {
+        "with": "nuria",
+        "affinity": 0.5,
+        "trust": 0.6,
+        "familiarity": 0.6,
+        "summary": "La mejor jardinera que he visto, aunque es muy terca."
+      }
     ]
   },
   {
@@ -277,6 +591,45 @@
       "Sofía viene los jueves a por libros para sus alumnos; ensayo lo que voy a decirle y luego no digo nada.",
       "Alguien arrancó una página del libro de historia del pueblo y quiero saber quién fue.",
       "Carmen me recomendó un libro de poemas que nunca devolvieron."
+    ],
+    "personality": {
+      "openness": 0.6,
+      "conscientiousness": 0.75,
+      "extraversion": 0.2,
+      "agreeableness": 0.6,
+      "neuroticism": 0.55
+    },
+    "memoryProfile": {
+      "dateForgetting": 2.5,
+      "semanticStability": 1.2
+    },
+    "initialIntentions": [
+      {
+        "text": "preguntarle a Sofía qué libros necesitan sus alumnos",
+        "personId": "sofia"
+      }
+    ],
+    "speechStyle": {
+      "register": "reservado y cuidadoso, algo pedante",
+      "sentenceLength": "media",
+      "catchphrases": ["en rigor…", "según consta en los archivos"],
+      "topics": ["los libros", "la historia del pueblo", "la página arrancada"]
+    },
+    "relationships": [
+      {
+        "with": "sofia",
+        "affinity": 0.6,
+        "trust": 0.6,
+        "familiarity": 0.5,
+        "summary": "Viene los jueves a por libros; nunca me atrevo a decirle nada."
+      },
+      {
+        "with": "carmen",
+        "affinity": 0.4,
+        "trust": 0.6,
+        "familiarity": 0.6,
+        "summary": "Me recomendó un libro de poemas que nunca devolvieron."
+      }
     ]
   },
   {
@@ -308,6 +661,51 @@
       "Leo no para quieto en clase, pero es el niño más listo que conozco.",
       "Andrés, el bibliotecario, siempre se pone nervioso cuando voy a por libros.",
       "Inés falta a clase para hacer fotos con Valentina."
+    ],
+    "personality": {
+      "openness": 0.75,
+      "conscientiousness": 0.65,
+      "extraversion": 0.65,
+      "agreeableness": 0.75,
+      "neuroticism": 0.7
+    },
+    "speechStyle": {
+      "register": "entusiasta y didáctico",
+      "sentenceLength": "media",
+      "catchphrases": ["¡qué buena idea!", "a ver, pensemos"],
+      "topics": ["sus alumnos", "aprender fuera del aula", "la naturaleza"]
+    },
+    "relationships": [
+      {
+        "with": "carmen",
+        "affinity": 0.7,
+        "trust": 0.8,
+        "familiarity": 0.8,
+        "summary": "Fue mi maestra y le debo mucho."
+      },
+      {
+        "with": "leo",
+        "affinity": 0.5,
+        "trust": 0.6,
+        "familiarity": 0.7,
+        "summary": "No para quieto en clase, pero es el niño más listo que conozco.",
+        "bond": "work"
+      },
+      {
+        "with": "ines",
+        "affinity": 0.3,
+        "trust": 0.4,
+        "familiarity": 0.7,
+        "summary": "Falta a clase para hacer fotos con Valentina.",
+        "bond": "work"
+      },
+      {
+        "with": "andres",
+        "affinity": 0.3,
+        "trust": 0.5,
+        "familiarity": 0.4,
+        "summary": "Siempre se pone nervioso cuando voy a por libros."
+      }
     ]
   },
   {
@@ -339,6 +737,65 @@
       "Mateo me roba clientes con su café de la tarde; algún día se lo diré a la cara.",
       "Marta es mi mejor amiga desde el colegio.",
       "La alcaldesa Elena trama algo con la casa vacía; lo sé por cómo sonríe."
+    ],
+    "personality": {
+      "openness": 0.55,
+      "conscientiousness": 0.4,
+      "extraversion": 0.9,
+      "agreeableness": 0.65,
+      "neuroticism": 0.35
+    },
+    "memoryProfile": {
+      "sourceConfusion": 1.2
+    },
+    "initialIntentions": [
+      {
+        "text": "decirle a Mateo a la cara lo de los clientes de la tarde",
+        "personId": "mateo"
+      }
+    ],
+    "speechStyle": {
+      "register": "carismático y confianzudo",
+      "sentenceLength": "media",
+      "catchphrases": ["entre tú y yo…", "¿a que no sabes qué?", "invita la casa"],
+      "topics": ["los rumores del pueblo", "la taberna", "la noche"]
+    },
+    "relationships": [
+      {
+        "with": "marta",
+        "affinity": 0.7,
+        "trust": 0.7,
+        "familiarity": 1,
+        "summary": "Mi mejor amiga desde el colegio."
+      },
+      {
+        "with": "mateo",
+        "affinity": -0.3,
+        "trust": 0.4,
+        "familiarity": 0.6,
+        "summary": "Me roba clientes con su café de la tarde."
+      },
+      {
+        "with": "elena",
+        "affinity": -0.1,
+        "trust": 0.2,
+        "familiarity": 0.5,
+        "summary": "Trama algo con la casa vacía; lo sé por cómo sonríe."
+      },
+      {
+        "with": "hugo",
+        "affinity": -0.1,
+        "trust": 0.2,
+        "familiarity": 0.5,
+        "summary": "Me debe dinero desde el verano."
+      },
+      {
+        "with": "ernesto",
+        "affinity": 0.4,
+        "trust": 0.5,
+        "familiarity": 0.7,
+        "summary": "Compartimos los rumores del día."
+      }
     ]
   },
   {
@@ -370,6 +827,53 @@
       "Leo quiere un perro y yo no tengo tiempo ni para dormir.",
       "Rafael es mi mejor amigo, aunque cuenta todo lo que le digo.",
       "Ernesto el cartero viene todos los días a comprar pastillas para la tos que no tiene."
+    ],
+    "personality": {
+      "openness": 0.45,
+      "conscientiousness": 0.8,
+      "extraversion": 0.5,
+      "agreeableness": 0.5,
+      "neuroticism": 0.65
+    },
+    "memoryProfile": {
+      "episodicStability": 0.85
+    },
+    "initialIntentions": [
+      {
+        "text": "hacer el pedido de la tienda antes de las doce",
+        "placeId": "tienda",
+        "at": "11:00"
+      }
+    ],
+    "speechStyle": {
+      "register": "seco y sarcástico, va al grano",
+      "sentenceLength": "corta",
+      "catchphrases": ["a ver", "no tengo todo el día", "qué remedio"],
+      "topics": ["la tienda", "Leo", "el cansancio"]
+    },
+    "relationships": [
+      {
+        "with": "leo",
+        "affinity": 0.9,
+        "trust": 0.7,
+        "familiarity": 1,
+        "summary": "Mi hijo; quiere un perro y yo no tengo tiempo ni para dormir.",
+        "bond": "family"
+      },
+      {
+        "with": "rafael",
+        "affinity": 0.6,
+        "trust": 0.4,
+        "familiarity": 1,
+        "summary": "Mi mejor amigo, aunque cuenta todo lo que le digo."
+      },
+      {
+        "with": "ernesto",
+        "affinity": 0.1,
+        "trust": 0.5,
+        "familiarity": 0.6,
+        "summary": "Viene a comprar pastillas para la tos que no tiene."
+      }
     ]
   },
   {
@@ -401,6 +905,60 @@
       "Quiero un perro y mamá dice que ya veremos, que significa que no.",
       "Inés es la persona más guay del pueblo.",
       "El tobogán del parque es mi base secreta."
+    ],
+    "personality": {
+      "openness": 0.85,
+      "conscientiousness": 0.25,
+      "extraversion": 0.85,
+      "agreeableness": 0.6,
+      "neuroticism": 0.35
+    },
+    "memoryProfile": {
+      "suggestibility": 1.3
+    },
+    "initialIntentions": [
+      {
+        "text": "preguntarle a Tomás otra vez por el pez gigante",
+        "personId": "tomas"
+      }
+    ],
+    "speechStyle": {
+      "register": "infantil, curioso y exagerado",
+      "sentenceLength": "corta",
+      "catchphrases": ["¡jo!", "¿y por qué?", "¡es verdad, te lo juro!"],
+      "topics": ["el pez gigante", "los perros", "el tobogán del parque"]
+    },
+    "relationships": [
+      {
+        "with": "marta",
+        "affinity": 0.8,
+        "trust": 0.9,
+        "familiarity": 1,
+        "summary": "Mamá; dice «ya veremos», que significa que no.",
+        "bond": "family"
+      },
+      {
+        "with": "ines",
+        "affinity": 0.8,
+        "trust": 0.7,
+        "familiarity": 0.7,
+        "summary": "La persona más guay del pueblo."
+      },
+      {
+        "with": "tomas",
+        "affinity": 0.7,
+        "trust": 0.7,
+        "familiarity": 0.6,
+        "summary": "Vio el pez gigante del lago."
+      },
+      {
+        "with": "sofia",
+        "affinity": 0.4,
+        "trust": 0.6,
+        "familiarity": 0.7,
+        "summary": "La maestra.",
+        "bond": "work"
+      }
     ]
   },
   {
@@ -432,6 +990,42 @@
       "La alcaldesa Elena quiere vender la casa vacía a una empresa; no lo voy a permitir.",
       "Pilar me enseñó a plantar según la luna, aunque no me lo creo del todo.",
       "Valentina me hizo una foto entre los girasoles que me encanta."
+    ],
+    "personality": {
+      "openness": 0.7,
+      "conscientiousness": 0.65,
+      "extraversion": 0.3,
+      "agreeableness": 0.4,
+      "neuroticism": 0.35
+    },
+    "speechStyle": {
+      "register": "tranquilo y convencido, de pocas palabras",
+      "sentenceLength": "corta",
+      "catchphrases": ["mira", "la tierra no miente"],
+      "topics": ["las plantas", "la casa vacía", "la ecología"]
+    },
+    "relationships": [
+      {
+        "with": "elena",
+        "affinity": -0.5,
+        "trust": 0.2,
+        "familiarity": 0.5,
+        "summary": "Quiere vender la casa vacía a una empresa; no lo voy a permitir."
+      },
+      {
+        "with": "pilar",
+        "affinity": 0.6,
+        "trust": 0.6,
+        "familiarity": 0.7,
+        "summary": "Me enseñó a plantar según la luna."
+      },
+      {
+        "with": "valentina",
+        "affinity": 0.5,
+        "trust": 0.5,
+        "familiarity": 0.4,
+        "summary": "Me hizo una foto entre los girasoles que me encanta."
+      }
     ]
   },
   {
@@ -463,6 +1057,52 @@
       "Le dediqué una canción a Lucía; creo que se sonrojó.",
       "Le debo dinero a Rafael desde el verano.",
       "Estoy componiendo una canción sobre el lago que hace olvidar."
+    ],
+    "personality": {
+      "openness": 0.85,
+      "conscientiousness": 0.15,
+      "extraversion": 0.85,
+      "agreeableness": 0.65,
+      "neuroticism": 0.25
+    },
+    "memoryProfile": {
+      "intentionForgetting": 1.4,
+      "dateForgetting": 1.5
+    },
+    "initialIntentions": [
+      {
+        "text": "devolverle a Rafael el dinero que le debo",
+        "personId": "rafael"
+      }
+    ],
+    "speechStyle": {
+      "register": "desenfadado y bromista",
+      "sentenceLength": "media",
+      "catchphrases": ["¡qué arte!", "ya te lo pago, de verdad"],
+      "topics": ["la música", "su canción del lago", "las deudas pendientes"]
+    },
+    "relationships": [
+      {
+        "with": "lucia",
+        "affinity": 0.5,
+        "trust": 0.5,
+        "familiarity": 0.4,
+        "summary": "Le dediqué una canción y creo que se sonrojó."
+      },
+      {
+        "with": "rafael",
+        "affinity": 0.1,
+        "trust": 0.5,
+        "familiarity": 0.6,
+        "summary": "Le debo dinero desde el verano."
+      },
+      {
+        "with": "clara",
+        "affinity": 0.3,
+        "trust": 0.5,
+        "familiarity": 0.5,
+        "summary": "Siempre me da una manzana."
+      }
     ]
   },
   {
@@ -493,6 +1133,35 @@
       "Mi abuela vivió en este pueblo, pero nadie parece recordarla.",
       "Inés tiene talento con la cámara; le estoy enseñando.",
       "Aurora me miró como si me conociera."
+    ],
+    "personality": {
+      "openness": 0.85,
+      "conscientiousness": 0.35,
+      "extraversion": 0.7,
+      "agreeableness": 0.5,
+      "neuroticism": 0.55
+    },
+    "speechStyle": {
+      "register": "curioso y evasivo: pregunta mucho y cuenta poco",
+      "sentenceLength": "media",
+      "catchphrases": ["¿y eso desde cuándo?", "es una larga historia"],
+      "topics": ["la fotografía", "la historia de Lethetown", "su abuela"]
+    },
+    "relationships": [
+      {
+        "with": "ines",
+        "affinity": 0.5,
+        "trust": 0.6,
+        "familiarity": 0.4,
+        "summary": "Tiene talento con la cámara; le estoy enseñando."
+      },
+      {
+        "with": "aurora",
+        "affinity": 0.3,
+        "trust": 0.4,
+        "familiarity": 0.2,
+        "summary": "Me miró como si me conociera."
+      }
     ]
   },
   {
@@ -523,6 +1192,52 @@
       "Valentina recibe cartas sin remitente desde que llegó.",
       "El doctor Samuel dice que no tengo nada, pero yo noto algo raro en el pecho.",
       "Rafael y yo compartimos los rumores del día en la taberna."
+    ],
+    "personality": {
+      "openness": 0.35,
+      "conscientiousness": 0.85,
+      "extraversion": 0.7,
+      "agreeableness": 0.65,
+      "neuroticism": 0.8
+    },
+    "memoryProfile": {
+      "sourceConfusion": 1.2
+    },
+    "initialIntentions": [
+      {
+        "text": "pedirle al doctor Samuel que me mire lo del pecho",
+        "placeId": "consultorio"
+      }
+    ],
+    "speechStyle": {
+      "register": "parlanchín y quejica",
+      "sentenceLength": "larga",
+      "catchphrases": ["no me encuentro muy allá", "¿te has enterado?"],
+      "topics": ["sus síntomas", "el correo", "quién recibe cartas"]
+    },
+    "relationships": [
+      {
+        "with": "rafael",
+        "affinity": 0.5,
+        "trust": 0.5,
+        "familiarity": 0.7,
+        "summary": "Compartimos los rumores del día en la taberna."
+      },
+      {
+        "with": "samuel",
+        "affinity": 0.5,
+        "trust": 0.5,
+        "familiarity": 0.6,
+        "summary": "Dice que no tengo nada, pero yo noto algo raro.",
+        "bond": "work"
+      },
+      {
+        "with": "valentina",
+        "affinity": 0.0,
+        "trust": 0.3,
+        "familiarity": 0.3,
+        "summary": "Recibe cartas sin remitente desde que llegó."
+      }
     ]
   },
   {
@@ -553,6 +1268,41 @@
       "Tuve una amiga que se marchó del pueblo y nunca volvió; se llamaba Alma.",
       "A veces confundo a Clara con mi hija.",
       "Me gusta sentarme en el Jardín del Recuerdo junto a la estatua del ángel."
+    ],
+    "personality": {
+      "openness": 0.6,
+      "conscientiousness": 0.4,
+      "extraversion": 0.4,
+      "agreeableness": 0.8,
+      "neuroticism": 0.55
+    },
+    "memoryProfile": {
+      "episodicStability": 0.5,
+      "sourceConfusion": 1.6,
+      "suggestibility": 1.3
+    },
+    "speechStyle": {
+      "register": "dulce, ingenioso y algo disperso; mezcla el pasado y el presente",
+      "sentenceLength": "media",
+      "catchphrases": ["ay, criatura", "¿dónde estaba yo?"],
+      "topics": ["su juventud", "Alma", "el jardín"]
+    },
+    "relationships": [
+      {
+        "with": "clara",
+        "affinity": 0.8,
+        "trust": 0.9,
+        "familiarity": 1,
+        "summary": "Mi nieta; a veces la confundo con mi hija.",
+        "bond": "family"
+      },
+      {
+        "with": "julian",
+        "affinity": 0.4,
+        "trust": 0.6,
+        "familiarity": 0.6,
+        "summary": "El panadero; tan amable."
+      }
     ]
   },
   {
@@ -584,6 +1334,52 @@
       "Mi abuela Aurora cada vez olvida más cosas y me da miedo.",
       "El doctor Samuel dice que sería una buena enfermera.",
       "Hugo siempre me pide una manzana gratis y nunca sé decirle que no."
+    ],
+    "personality": {
+      "openness": 0.5,
+      "conscientiousness": 0.8,
+      "extraversion": 0.65,
+      "agreeableness": 0.8,
+      "neuroticism": 0.45
+    },
+    "memoryProfile": {
+      "suggestibility": 1.3
+    },
+    "initialIntentions": [
+      {
+        "text": "pedirle consejo al doctor Samuel sobre estudiar enfermería",
+        "personId": "samuel"
+      }
+    ],
+    "speechStyle": {
+      "register": "alegre, educado e ingenuo",
+      "sentenceLength": "media",
+      "catchphrases": ["¡claro que sí!", "uy, no sé"],
+      "topics": ["la fruta del mercado", "su abuela", "estudiar enfermería"]
+    },
+    "relationships": [
+      {
+        "with": "aurora",
+        "affinity": 0.9,
+        "trust": 0.7,
+        "familiarity": 1,
+        "summary": "Mi abuela; cada vez olvida más cosas y me da miedo.",
+        "bond": "family"
+      },
+      {
+        "with": "samuel",
+        "affinity": 0.6,
+        "trust": 0.8,
+        "familiarity": 0.6,
+        "summary": "Dice que sería una buena enfermera."
+      },
+      {
+        "with": "hugo",
+        "affinity": 0.2,
+        "trust": 0.4,
+        "familiarity": 0.5,
+        "summary": "Siempre me pide una manzana gratis."
+      }
     ]
   },
   {
@@ -615,6 +1411,44 @@
       "Me preocupa la memoria de Aurora; cada semana recuerda menos.",
       "Ernesto viene casi todos los días con un síntoma nuevo.",
       "Echo de menos a mi familia de Lagos, sobre todo por las noches."
+    ],
+    "personality": {
+      "openness": 0.65,
+      "conscientiousness": 0.75,
+      "extraversion": 0.5,
+      "agreeableness": 0.8,
+      "neuroticism": 0.35
+    },
+    "speechStyle": {
+      "register": "sereno, amable y profesional",
+      "sentenceLength": "media",
+      "catchphrases": ["tranquilo, vamos a ver", "en Lagos decimos…"],
+      "topics": ["la salud de los vecinos", "su familia en Lagos", "el trabajo"]
+    },
+    "relationships": [
+      {
+        "with": "aurora",
+        "affinity": 0.5,
+        "trust": 0.6,
+        "familiarity": 0.6,
+        "summary": "Me preocupa su memoria; cada semana recuerda menos.",
+        "bond": "work"
+      },
+      {
+        "with": "ernesto",
+        "affinity": 0.2,
+        "trust": 0.5,
+        "familiarity": 0.7,
+        "summary": "Viene casi todos los días con un síntoma nuevo.",
+        "bond": "work"
+      },
+      {
+        "with": "clara",
+        "affinity": 0.5,
+        "trust": 0.6,
+        "familiarity": 0.6,
+        "summary": "Sería una buena enfermera."
+      }
     ]
   }
 ]

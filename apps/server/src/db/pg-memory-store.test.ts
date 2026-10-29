@@ -38,6 +38,7 @@ describe.skipIf(!url)("PgMemoryStore (Postgres)", () => {
     placeId: null,
     eventId: null,
     links: [],
+    meta: {},
     status: "active",
     forgottenAt: null,
   });

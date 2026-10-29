@@ -12,6 +12,9 @@ import {
   LLMGistCompressor,
   LLMReconsolidator,
   MemoryConfig,
+  MinorGuard,
+  minorsOf,
+  profilesFor,
   MemoryMaintenance,
   MemorySystem,
   RandomSourceConfuser,
@@ -23,6 +26,7 @@ import {
   ResilientProvider,
   isBatchCapable,
   moderateUserText,
+  hasStrongRomance,
   sanitizeUserText,
   OpenAIProvider,
   agentMockResponder,
@@ -158,6 +162,8 @@ export interface WorldRuntime {
     kind: "thought" | "spot",
     text: string,
     userId: string | null,
+    /** Agente al que va dirigido (voz interior), para la protección de menores. */
+    agentId?: string,
   ): Promise<{ ok: true; text: string } | { ok: false; error: string }>;
   /** Programa la simulación y las instantáneas horarias (no arranca el reloj real). */
   start(): void;
@@ -382,12 +388,33 @@ export async function openWorld(services: Services, row: WorldRow): Promise<Worl
   const store: MemoryStore = db ? new PgMemoryStore(db.db, row.id) : new InMemoryStore();
   const memoryConfig = services.memoryConfig;
   const rng = seededRng(row.seed ?? config.SIM_SEED ?? Date.now());
+  // Protección de menores sobre lo que escribe el LLM; lo descartado va a moderation_log.
+  const guard = new MinorGuard({
+    minors: minorsOf(services.seeds),
+    llm,
+    onBlock: (b) => {
+      worldLog(`🛡 Descartado (${b.kind}${b.agentId ? `, ${b.agentId}` : ""}): ${b.reason}`);
+      services.track(
+        services.moderationLog
+          .add({
+            worldId: row.id,
+            userId: null,
+            kind: `minor_safety:${b.kind}`,
+            text: b.text.slice(0, 1000),
+            reason: b.reason,
+          })
+          .catch((e: unknown) => worldLog(`⚠ No se pudo registrar el descarte: ${String(e)}`)),
+      );
+    },
+  });
   const memory = new MemorySystem({
     store,
     embedder: services.embedder,
     config: memoryConfig,
     reconsolidator: new LLMReconsolidator(llm),
     rng,
+    guard,
+    profiles: profilesFor(services.seeds, memoryConfig.profile),
   });
   const seedNames = new Map(services.seeds.map((s) => [s.id, s.name]));
   // El reloj y la simulación se crean más abajo; el detector los consulta al ocurrir algo.
@@ -530,7 +557,7 @@ export async function openWorld(services: Services, row: WorldRow): Promise<Worl
       setStatus(RUNNING);
       return { ok: true };
     },
-    async vetUserText(kind, text, userId) {
+    async vetUserText(kind, text, userId, agentId) {
       const reject = async (reason: string) => {
         services.track(
           services.moderationLog
@@ -542,6 +569,13 @@ export async function openWorld(services: Services, row: WorldRow): Promise<Worl
       };
       const clean = sanitizeUserText(text, config.USER_TEXT_MAX);
       if (!clean) return reject(`vacío o de más de ${config.USER_TEXT_MAX} caracteres`);
+      // Protección de menores, también con la moderación apagada.
+      const minors = guard.involvedMinors(clean, agentId ? [agentId] : []);
+      if (minors.length && hasStrongRomance(clean)) {
+        return reject(
+          `contenido romántico o sexual con un menor (${minors.map((m) => m.name).join(", ")})`,
+        );
+      }
       if (config.MODERATION === "off") return { ok: true, text: clean };
       try {
         const verdict = await moderateUserText(llm, { kind, text: clean });

@@ -14,6 +14,9 @@ export const EMOTES = [
   "cloud",
   "exclaim",
   "sparkle",
+  "storm",
+  /** Indiferencia (afinidad neutra sobre el mapa). */
+  "meh",
 ] as const;
 export type Emote = (typeof EMOTES)[number];
 
@@ -55,6 +58,12 @@ export function emoteForMemoryEffect(kind: string): Emote | null {
       return "question";
     case "recall":
       return "sparkle";
+    case "intrusive":
+      return "storm";
+    case "false_memory":
+      return "question";
+    case "intention":
+      return "exclaim";
     default:
       return null;
   }

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { LLMClient } from "../llm/client";
+import type { MinorGuard } from "./minor-safety";
 import { parseWith } from "./parse";
 import { languageRule, type PromptLanguage } from "./prompts";
 
@@ -18,6 +19,8 @@ export async function writeChronicle(
   events: string[],
   maxEvents = 120,
   language: PromptLanguage = "es",
+  /** Protección de menores: se quitan las frases que no pasen. */
+  guard?: MinorGuard,
 ): Promise<Chronicle> {
   const lines = events.slice(-maxEvents);
   const res = await llm.run({
@@ -33,5 +36,10 @@ Escribe la crónica del día en 3-6 frases y un título corto.
 Formato:
 {"title":"...","text":"..."}`,
   });
-  return { day, ...parseWith(ChronicleResponse, res.text) };
+  const chronicle = { day, ...parseWith(ChronicleResponse, res.text) };
+  if (!guard) return chronicle;
+  const ctx = { kind: "chronicle" as const };
+  const text = await guard.filterSentences(chronicle.text, ctx);
+  const title = (await guard.allows(chronicle.title, ctx)) ? chronicle.title : `Día ${day}`;
+  return { day, title, text: text || "Fue un día tranquilo en Lethetown." };
 }

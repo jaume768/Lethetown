@@ -163,11 +163,11 @@ describe("conversación frente al plan", () => {
 });
 
 describe("diario del día", () => {
-  it("anota cada actividad nueva (sin repetir la última), la recuerda y la pasa al prompt", async () => {
+  it("anota cada actividad nueva (sin repetir la última) y la pasa al prompt", async () => {
     const { agent, provider } = agentAt("cafe_ola");
-    await agent.noteActivity(8 * 60, "tomar un café", "cafe_ola");
-    await agent.noteActivity(8 * 60 + 10, "tomar un café", "cafe_ola");
-    await agent.noteActivity(9 * 60, "leer en la biblioteca", "biblioteca");
+    agent.noteActivity(8 * 60, "tomar un café", "cafe_ola");
+    agent.noteActivity(8 * 60 + 10, "tomar un café", "cafe_ola");
+    agent.noteActivity(9 * 60, "leer en la biblioteca", "biblioteca");
     expect(agent.state.doneToday?.map((d) => d.activity)).toEqual([
       "tomar un café",
       "leer en la biblioteca",
@@ -178,12 +178,13 @@ describe("diario del día", () => {
     );
   });
 
-  it("al planificar el día siguiente se le cuenta lo de ayer y empieza un diario nuevo", async () => {
+  it("al planificar el día siguiente recuerda lo de ayer (de la memoria) y empieza otro diario", async () => {
     const { agent, provider } = agentAt("casa_azul");
-    await agent.noteActivity(10 * 60, "pasear junto al lago", "lago");
+    agent.noteActivity(10 * 60, "pasear junto al lago", "lago");
+    await agent.endDay(22 * 60, 0);
     await agent.planDay(1440 + 7 * 60);
-    expect(provider.calls.at(-1)?.prompt).toContain("Ayer hiciste, más o menos");
-    expect(provider.calls.at(-1)?.prompt).toContain("pasear junto al lago (lago)");
+    expect(provider.calls.at(-1)?.prompt).toContain("Lo que recuerdas de ayer y tus costumbres");
+    expect(provider.calls.at(-1)?.prompt).toMatch(/- El día 0: pasear junto al lago en \S/);
     expect(agent.state.doneToday).toEqual([]);
   });
 });

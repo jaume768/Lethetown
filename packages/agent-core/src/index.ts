@@ -18,6 +18,11 @@ export * from "./memory/memory-system";
 export * from "./memory/config";
 export * from "./memory/human";
 export * from "./memory/maintenance";
+export * from "./memory/habits";
+export * from "./memory/psychology";
+export * from "./memory/prospective";
+export * from "./memory/encoding";
+export * from "./memory/social";
 export * from "./util/random";
 
 export * from "./agent/agent";
@@ -29,3 +34,6 @@ export * from "./agent/activity";
 export * from "./agent/chronicle";
 export * from "./agent/interview";
 export * from "./agent/moderation";
+export * from "./agent/minor-safety";
+export * from "./agent/mind";
+export * from "./agent/mood";

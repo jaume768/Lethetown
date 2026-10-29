@@ -153,6 +153,9 @@ export function RashomonModal({ eventId, onClose }: { eventId: string; onClose: 
                       {t("memory.strength", { value: m.strength.toFixed(2) })}
                     </span>
                     <span className="tag">{t(`memory.clarity.${m.clarity}` as MessageKey)}</span>
+                    {m.memory.meta.falseMemory && (
+                      <span className="tag warn">⚠ {t("memory.falseMemory")}</span>
+                    )}
                   </div>
                   {m.versions.length > 0 && (
                     <ol className="versions readable">

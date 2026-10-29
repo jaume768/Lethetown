@@ -5,8 +5,10 @@ import {
   MemoryAuditEntry,
   MemoryVersion,
   MemoryView,
+  RelationshipType,
   ScoredMemoryView,
   SocialProfile,
+  SocialProfileChange,
 } from "./memory";
 import { SimSpeed, Weather, World } from "./world";
 
@@ -99,6 +101,63 @@ export const AgentMemoryResponse = z.object({
   audit: z.array(MemoryAuditEntry),
   social: z.array(SocialProfile),
 });
+
+/** Persona que conoce un agente: su ficha y la recíproca (lo que la otra piensa de él). */
+export const RelationshipEntry = z.object({
+  name: z.string(),
+  profile: SocialProfile,
+  /** Lo que la otra persona piensa de este agente (null si nada): no tiene por qué coincidir. */
+  reciprocal: SocialProfile.nullable(),
+  /** Últimos valores de la afinidad (mini gráfica de su evolución). */
+  trend: z.array(z.object({ at: z.number(), value: z.number() })).default([]),
+});
+export type RelationshipEntry = z.infer<typeof RelationshipEntry>;
+
+export const RelationshipsQuery = z.object({
+  /** Busca por nombre (sin distinguir mayúsculas ni tildes). */
+  q: z.string().max(100).optional(),
+  type: RelationshipType.optional(),
+  limit: z.coerce.number().int().positive().max(200).default(50),
+  offset: z.coerce.number().int().nonnegative().default(0),
+});
+
+export const RelationshipsResponse = z.object({
+  agentId: z.string(),
+  now: z.number(),
+  /** Página de relaciones, de más a menos afinidad. */
+  items: z.array(RelationshipEntry),
+  total: z.number().int().nonnegative(),
+  offset: z.number().int().nonnegative(),
+  /** Vecinos de los que aún no piensa nada. */
+  unknown: z.array(z.object({ id: z.string(), name: z.string() })),
+});
+export type RelationshipsResponse = z.infer<typeof RelationshipsResponse>;
+
+export const RelationshipHistoryResponse = z.object({
+  ownerId: z.string(),
+  aboutId: z.string(),
+  /** Cómo ha cambiado lo que `ownerId` piensa de `aboutId` (del más antiguo al más reciente). */
+  changes: z.array(SocialProfileChange),
+  /** Y lo que `aboutId` piensa de `ownerId`. */
+  reciprocal: z.array(SocialProfileChange),
+});
+export type RelationshipHistoryResponse = z.infer<typeof RelationshipHistoryResponse>;
+
+/** Red del pueblo: agentes y lo que piensa cada uno de cada otro ahora. */
+export const SocialGraphResponse = z.object({
+  now: z.number(),
+  nodes: z.array(z.object({ id: z.string(), name: z.string() })),
+  profiles: z.array(SocialProfile),
+});
+export type SocialGraphResponse = z.infer<typeof SocialGraphResponse>;
+
+/** Historial de toda la red (para el deslizador de tiempo), paginado por `since`. */
+export const SocialHistoryResponse = z.object({
+  changes: z.array(SocialProfileChange),
+  /** `since` para la página siguiente, o null si no hay más. */
+  next: z.number().nullable(),
+});
+export type SocialHistoryResponse = z.infer<typeof SocialHistoryResponse>;
 
 /** Vista Rashomon: cómo recuerda un evento cada agente implicado, y cómo ha cambiado. */
 export const RashomonAccount = z.object({

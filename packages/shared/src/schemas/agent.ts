@@ -28,6 +28,45 @@ export const PortraitRecipe = z.object({
 });
 export type PortraitRecipe = z.infer<typeof PortraitRecipe>;
 
+const unit = (fallback: number) => z.number().min(0).max(1).default(fallback);
+
+/** Personalidad (Big Five), cada rasgo de 0 a 1 (0.5 = en la media). */
+export const BigFive = z.object({
+  /** Apertura a la experiencia: curiosidad, imaginación. */
+  openness: unit(0.5),
+  /** Responsabilidad: orden, puntualidad, cumplir lo prometido. */
+  conscientiousness: unit(0.5),
+  /** Extraversión: busca compañía y estímulos. */
+  extraversion: unit(0.5),
+  /** Amabilidad: confía, perdona, coopera. */
+  agreeableness: unit(0.5),
+  /** Neuroticismo: inestabilidad emocional, preocupación. */
+  neuroticism: unit(0.5),
+});
+export type BigFive = z.infer<typeof BigFive>;
+
+const factor = z.number().positive().max(5).default(1);
+
+/**
+ * Memoria propia del agente: multiplicadores (1 = normal) que se suman a los efectos de la edad
+ * y la personalidad (ver agent-core/memory/psychology.ts).
+ */
+export const MemoryProfileSeed = z.object({
+  /** Estabilidad de lo vivido (observaciones, planes). >1 = recuerda más tiempo. */
+  episodicStability: factor,
+  /** Estabilidad de lo que sabe (semántico, reflexiones, hábitos). */
+  semanticStability: factor,
+  /** Probabilidad de confundir quién le contó algo. */
+  sourceConfusion: factor,
+  /** Olvido de fechas y horas (aniversarios, citas). >1 = las olvida antes. */
+  dateForgetting: factor,
+  /** Olvido de intenciones (lo que tenía que hacer). >1 = se le olvida más. */
+  intentionForgetting: factor,
+  /** Sugestionabilidad (rellenar huecos, creerse lo que le cuentan). */
+  suggestibility: factor,
+});
+export type MemoryProfileSeed = z.infer<typeof MemoryProfileSeed>;
+
 export const AgentSeed = z.object({
   id: z.string(),
   name: z.string(),
@@ -48,8 +87,65 @@ export const AgentSeed = z.object({
   portrait: PortraitRecipe.optional(),
   /** Recuerdos iniciales (semánticos) con los que arranca el agente. */
   initialMemories: z.array(z.string()).default([]),
+  /**
+   * Menor de edad (sin relaciones románticas ni sexuales, ni nadie que flirtee con él o ella).
+   * Si no se indica, se deduce de la edad (`seedIsMinor`).
+   */
+  isMinor: z.boolean().optional(),
+  /** Personalidad (Big Five); sin ella, todo en la media. */
+  personality: BigFive.prefault({}),
+  /** Particularidades de su memoria (opcional). */
+  memoryProfile: MemoryProfileSeed.optional(),
+  /** Cómo habla: así cada agente suena distinto (va en el prompt fijo de identidad). */
+  speechStyle: z
+    .object({
+      /** "coloquial y bromista", "formal y medido"… */
+      register: z.string(),
+      sentenceLength: z.enum(["corta", "media", "larga"]).default("media"),
+      /** Muletillas y expresiones suyas. */
+      catchphrases: z.array(z.string()).default([]),
+      /** Temas que le salen solos (sus intereses). */
+      topics: z.array(z.string()).default([]),
+    })
+    .optional(),
+  /**
+   * Relaciones de partida (lo que piensa de otros al empezar; no tienen por qué ser
+   * recíprocas). `bond` fija un vínculo que no cambia con la afinidad (familia, pareja, trabajo).
+   */
+  relationships: z
+    .array(
+      z.object({
+        with: z.string(),
+        bond: z.enum(["family", "romantic", "work"]).optional(),
+        affinity: z.number().min(-1).max(1).default(0),
+        trust: z.number().min(0).max(1).default(0.5),
+        familiarity: z.number().min(0).max(1).default(0.5),
+        summary: z.string().default(""),
+      }),
+    )
+    .default([]),
+  /** Cosas que tiene pensado hacer cuando surja (memoria prospectiva). */
+  initialIntentions: z
+    .array(
+      z.object({
+        text: z.string(),
+        personId: z.string().optional(),
+        placeId: z.string().optional(),
+        /** "HH:MM" */
+        at: z.string().optional(),
+      }),
+    )
+    .default([]),
 });
 export type AgentSeed = z.infer<typeof AgentSeed>;
+
+/** Edad a partir de la cual un agente es adulto. */
+export const ADULT_AGE = 18;
+
+/** ¿Es menor de edad? El campo explícito manda; si no, la edad. */
+export function seedIsMinor(seed: Pick<AgentSeed, "age" | "isMinor">): boolean {
+  return seed.isMinor ?? seed.age < ADULT_AGE;
+}
 
 export const Needs = z.object({
   energy: z.number().min(0).max(1),
@@ -58,9 +154,12 @@ export const Needs = z.object({
 });
 export type Needs = z.infer<typeof Needs>;
 
+/** Ánimo (modelo circumplejo): valencia y activación, con su etiqueta ("contento", "irritable"…). */
 export const Mood = z.object({
   /** -1 (muy negativo) .. 1 (muy positivo) */
   valence: z.number().min(-1).max(1),
+  /** 0 (calma, sueño) .. 1 (tensión, euforia) */
+  arousal: z.number().min(0).max(1).default(0.4),
   label: z.string(),
 });
 export type Mood = z.infer<typeof Mood>;

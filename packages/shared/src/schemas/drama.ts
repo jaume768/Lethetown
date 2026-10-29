@@ -14,6 +14,14 @@ export const DramaKind = z.enum([
   "reconsolidation",
   /** Se olvida un recuerdo importante. */
   "forgetting",
+  /** Alguien "recuerda" detalles que nunca vivió. */
+  "false_memory",
+  /** Se acuerda a tiempo de algo que tenía que hacer. */
+  "intention_kept",
+  /** Se le olvida algo que tenía que hacer. */
+  "intention_forgotten",
+  /** Una relación cambia de tipo (de amistad a rivalidad…). */
+  "relationship",
 ]);
 export type DramaKind = z.infer<typeof DramaKind>;
 
@@ -49,6 +57,10 @@ export const dramaScore = {
   affinity: (delta: number) => Math.min(1, 0.45 + Math.abs(delta) * 1.5),
   reconsolidation: (importance: number) => Math.min(1, 0.3 + importance / 20),
   forgetting: (importance: number) => Math.min(1, importance / 10),
+  falseMemory: (importance: number) => Math.min(1, 0.45 + importance / 20),
+  intention: (importance: number, forgotten: boolean) =>
+    Math.min(1, (forgotten ? 0.5 : 0.35) + importance / 20),
+  relationship: (affinity: number) => Math.min(1, 0.55 + Math.abs(affinity) * 0.4),
 };
 
 /** ¿Parece que alguien cuenta algo que oyó? (rumor que se propaga). */

@@ -1001,3 +1001,199 @@ html.ui-skin .cost,
 html.ui-skin .thinking {
   color: #8a4a12;
 }
+
+/* --- Relaciones -------------------------------------------------------------------------- */
+.bar-track.bipolar {
+  position: relative;
+}
+.bar-track.bipolar::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -2px;
+  bottom: -2px;
+  width: 1px;
+  background: var(--muted);
+}
+.bar-track.bipolar .bar-fill {
+  position: absolute;
+  top: 0;
+}
+.relationships > .btn {
+  margin-bottom: 6px;
+}
+.rel-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.card.rel-family {
+  box-shadow: inset 3px 0 0 0 #f09ad0;
+}
+.card.rel-friendship {
+  box-shadow: inset 3px 0 0 0 var(--ok);
+}
+.card.rel-rivalry {
+  box-shadow: inset 3px 0 0 0 var(--danger);
+}
+.card.rel-romantic {
+  box-shadow: inset 3px 0 0 0 #ff9ec4;
+}
+.card.rel-work {
+  box-shadow: inset 3px 0 0 0 #d6b46a;
+}
+.rel-head {
+  all: unset;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: 32px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  cursor: pointer;
+  margin-bottom: 4px;
+}
+.rel-head:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.rel-name {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+  min-width: 0;
+}
+.sparkline {
+  display: block;
+}
+.sparkline-zero {
+  stroke: var(--muted);
+  stroke-width: 1;
+  stroke-dasharray: 2 3;
+}
+.rel-detail {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--muted);
+}
+.rel-detail h5 {
+  margin: 0 0 4px;
+  font-size: 13px;
+}
+.warn-text {
+  color: var(--accent);
+}
+.rel-unknown {
+  margin: 4px 0;
+  padding-left: 16px;
+}
+button.link {
+  all: unset;
+  cursor: pointer;
+  text-decoration: underline;
+}
+button.link:focus-visible {
+  outline: 2px solid var(--focus);
+}
+
+/* --- Red del pueblo ---------------------------------------------------------------------- */
+.network-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  border: 0;
+  padding: 0;
+  margin: 6px 0;
+}
+.network-filters legend {
+  padding: 0;
+  margin-bottom: 4px;
+}
+.chip {
+  padding: 2px 8px;
+  background: #232a3a;
+  box-shadow: inset 0 0 0 1px var(--edge);
+  cursor: pointer;
+}
+.chip.active {
+  background: var(--accent);
+  color: #1d1d2b;
+}
+.chip input {
+  margin: 0;
+}
+.network-time {
+  display: grid;
+  gap: 4px;
+  margin: 6px 0;
+}
+.network-time input {
+  width: 100%;
+}
+.network {
+  position: relative;
+  /* Que quepa entero en la ventana (4:3, como el lienzo lógico del grafo). */
+  width: min(100%, calc(62vh * 4 / 3));
+  margin: 0 auto;
+  aspect-ratio: 4 / 3;
+  background: #1f2534;
+  box-shadow: inset 0 0 0 1px var(--edge);
+}
+.network svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.network-node {
+  all: unset;
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: grid;
+  justify-items: center;
+  gap: 1px;
+  cursor: pointer;
+}
+.network-node .portrait {
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--edge);
+}
+.network-node.active .portrait,
+.network-node:focus-visible .portrait {
+  box-shadow: 0 0 0 3px var(--focus);
+}
+.network-name {
+  font-size: 11px;
+  background: rgba(16, 19, 27, 0.75);
+  color: #f2ecdc;
+  padding: 0 3px;
+}
+html.ui-skin .chip {
+  background: rgba(255, 244, 220, 0.55);
+  color: #3a2a1e;
+}
+html.ui-skin .chip.active {
+  background: #8a4a12;
+  color: #fff4dc;
+}
+html.ui-skin .warn-text {
+  color: #8a4a12;
+}
+@media (max-width: 760px) {
+  .network-name {
+    font-size: 9px;
+  }
+  .network-node .portrait {
+    transform: scale(0.75);
+  }
+  .rel-head {
+    grid-template-columns: 32px 1fr;
+  }
+  .rel-head .sparkline {
+    grid-column: 1 / -1;
+  }
+}

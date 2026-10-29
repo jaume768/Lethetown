@@ -1,6 +1,7 @@
 import { WEATHER_SHELTER, type Weather } from "@lethetown/shared";
 import type { MockResponder } from "../llm/mock";
 import type { CompletionRequest } from "../llm/types";
+import { hasStrongRomance } from "./minor-safety";
 import { WEATHER_LABEL } from "./prompts";
 
 /**
@@ -20,11 +21,13 @@ const HANDLERS: Record<string, (req: CompletionRequest) => string> = {
   consolidate: mockConsolidate,
   gist: mockGist,
   reconsolidate: mockReconsolidate,
+  confabulate: mockConfabulate,
   summarize: mockSummarize,
   social: mockSocial,
   chronicle: mockChronicle,
   interview: mockInterview,
   moderate: mockModerate,
+  moderate_minor: mockModerateMinor,
 };
 
 /** Permite a otros módulos (memoria, crónica, entrevistas) registrar su respuesta mock. */
@@ -193,7 +196,12 @@ function mockPlan(req: CompletionRequest): string {
   const kitchen = home?.objects.find((o) => o.pose === "use")?.id ?? null;
   const me = hash(/^Eres (.+?),/m.exec(req.system)?.[1] ?? req.system);
   const day = Number(/Es día (\d+)/.exec(req.prompt)?.[1] ?? 0);
-  const yesterday = diary(req.prompt, "Ayer hiciste, más o menos (no hace falta repetirlo):");
+  // Lo que recuerda de ayer (texto libre, quizá vago): los lugares que nombra.
+  const yesterdayText =
+    req.prompt.split("Lo que recuerdas de ayer")[1]?.split("\nNecesidades")[0] ?? "";
+  const yesterday = places
+    .filter((p) => yesterdayText.includes(p.name))
+    .map((p) => ({ placeId: p.id }));
   // Menores de edad que "trabajan" en la escuela: son alumnos.
   const age = Number(/^Eres .+?, (\d+) años/m.exec(req.system)?.[1] ?? 99);
   const student = age < 18;
@@ -376,7 +384,14 @@ function mockDecide(req: CompletionRequest): string {
     .filter((l) => /\s[A-ZÁÉÍÓÚ][a-záéíóúñ]{2,}/.test(l) && !p.includes(`cosa? ${l}`));
   const plan = /^Tu plan ahora: (.+) en \S+ \(desde/m.exec(p)?.[1];
 
-  const reply = (o: Record<string, unknown>, reason: string) => JSON.stringify({ ...o, reason });
+  // La voz interior que dice "tengo que…" o "debería…" se queda como intención.
+  const voiceIntent =
+    /^VOZ INTERIOR[^\n]*\n- ⟦.*?\b(?:tengo que|debería|quiero acordarme de) (.+?)[.!]?⟧$/im.exec(
+      p,
+    )?.[1];
+  const intention = voiceIntent ? { intention: { text: voiceIntent } } : {};
+  const reply = (o: Record<string, unknown>, reason: string) =>
+    JSON.stringify({ ...o, reason, ...intention });
   // Voz interior recién recibida (sección VOZ INTERIOR): casi siempre se le hace caso.
   const voice = /^VOZ INTERIOR[^\n]*\n- ⟦(.+)⟧$/m.exec(p)?.[1];
   // Diario de hoy: lo que ya ha hecho, para no repetirlo al cambiar de planes.
@@ -384,6 +399,16 @@ function mockDecide(req: CompletionRequest): string {
   const visited = (id: string) => done.some((d) => d.placeId === id);
   const did = (activity: string) => done.some((d) => d.activity.startsWith(activity));
 
+  // Se acaba de acordar de algo que quería hacer con alguien que está aquí: lo hace.
+  const remembered = /^- Te acuerdas de que querías (.+?) \(ahí está (.+)\)\.$/m.exec(p);
+  const withWhom =
+    remembered && present.find((id) => presentLine.includes(`${id}=${remembered[2]}`));
+  if (remembered && withWhom) {
+    return reply(
+      { choice: "talk", to: withWhom, say: `¡Ay, por cierto! Tenía que ${remembered[1]}.` },
+      "Menos mal que me he acordado justo ahora.",
+    );
+  }
   // Un objeto roto: va a mirarlo (si no lo ha mirado ya hoy).
   if (broken && h % 2 === 0 && !did(`mirar qué le pasa a ${broken[1]}`)) {
     return reply(
@@ -513,15 +538,39 @@ function mockDecide(req: CompletionRequest): string {
     }
     return reply({ choice: "continue" }, `Se me hace tarde para ${activity}; me voy ya.`);
   }
+  // Personalidad y forma de hablar (del prompt fijo): muletillas propias, ganas de hablar.
+  const personality = /^Personalidad: (.+)\.$/m.exec(req.system)?.[1] ?? "";
+  const catchphrases = [
+    ...(/muletillas: (.+?)\.$/m.exec(req.system)?.[1] ?? "").matchAll(/«([^»]+)»/g),
+  ].map((m) => m[1]!);
+  const styled = (say: string) => {
+    const c = catchphrases[h % Math.max(1, catchphrases.length)];
+    if (!c || h % 3 !== 0) return say;
+    const lead = `${c.charAt(0).toUpperCase()}${c.slice(1)}`;
+    // "¡Hombre! Hola…" o "Hija mía, hola…".
+    return /[…!?]$/.test(c)
+      ? `${lead} ${say}`
+      : `${lead}, ${say.charAt(0).toLowerCase()}${say.slice(1)}`;
+  };
+  const social = Number(/social (\d\.\d+)\./.exec(p)?.[1] ?? 0.5);
+  const loner = personality.includes("necesitas ratos a solas");
+  if (speaker && present.includes(speaker.from) && loner && social > 0.7 && h % 4 === 1) {
+    return reply({ choice: "continue" }, "Ahora mismo no me apetece hablar con nadie.");
+  }
   if (speaker && present.includes(speaker.from) && h % 3 !== 0) {
     const asked = speaker.text.trim().endsWith("?");
-    const say =
-      !asked && h % 4 === 1
-        ? FOLLOW_UPS[h % FOLLOW_UPS.length]
+    const blunt = personality.includes("dices lo que piensas") && h % 5 === 2;
+    const say = blunt
+      ? "Pues no estoy de acuerdo, la verdad."
+      : !asked && h % 4 === 1
+        ? FOLLOW_UPS[h % FOLLOW_UPS.length]!
         : raining && h % 5 === 0
-          ? RAIN_TALK[h % RAIN_TALK.length]
-          : REPLIES[h % REPLIES.length];
-    return reply({ choice: "talk", to: speaker.from, say }, "Me han hablado y quiero contestar.");
+          ? RAIN_TALK[h % RAIN_TALK.length]!
+          : REPLIES[h % REPLIES.length]!;
+    return reply(
+      { choice: "talk", to: speaker.from, say: styled(say) },
+      blunt ? "No pienso darle la razón en esto." : "Me han hablado y quiero contestar.",
+    );
   }
   const someone = present[h % Math.max(1, present.length)];
   if (!speaker && someone && rumor && h % 4 === 0) {
@@ -564,7 +613,7 @@ function mockDecide(req: CompletionRequest): string {
       ...(plan ? [`Yo vengo de paso, que luego toca ${plan}.`] : []),
     ];
     return reply(
-      { choice: "talk", to: someone, say: contextual[h % contextual.length] },
+      { choice: "talk", to: someone, say: styled(contextual[h % contextual.length]!) },
       "Hay alguien conocido y me apetece charlar.",
     );
   }
@@ -643,8 +692,8 @@ function mockGist(req: CompletionRequest): string {
 function mockReconsolidate(req: CompletionRequest): string {
   const text = /Estás recordando esto: "(.+)"$/m.exec(req.prompt)?.[1] ?? "";
   const mood = /Tu ánimo ahora: ([^.]+)\./.exec(req.prompt)?.[1] ?? "neutral";
-  const sad = /apagado|triste/.test(mood);
-  const happy = /contento|buen humor/.test(mood);
+  const sad = /apagado|abatido|triste|preocupado|irritable|nervioso/.test(mood);
+  const happy = /contento|animado|eufórico|relajado|tranquilo/.test(mood);
   const suffix = sad
     ? " (aunque ahora me parece más triste de lo que fue)"
     : happy
@@ -657,6 +706,24 @@ function mockReconsolidate(req: CompletionRequest): string {
   });
 }
 
+/** Detalles plausibles con los que el mock "rellena" un recuerdo vago. */
+const INVENTED = [
+  "y recuerdo que estaba lloviendo",
+  "y que alguien se rió al fondo",
+  "y que olía a pan recién hecho",
+  "y que fue justo después de comer",
+  "y que llevaba una bufanda roja",
+];
+
+function mockConfabulate(req: CompletionRequest): string {
+  const vague = /apenas te acuerdas: "(.+)"$/m.exec(req.prompt)?.[1] ?? "algo";
+  const base = vague.replace(/^\(vagamente\) /, "").replace(/…$/, "");
+  return JSON.stringify({
+    text: `${base}, ${INVENTED[hash(vague) % INVENTED.length]}`,
+    valence: 0,
+  });
+}
+
 function mockSummarize(req: CompletionRequest): string {
   const lines = numbered(req.prompt);
   return JSON.stringify({
@@ -665,12 +732,20 @@ function mockSummarize(req: CompletionRequest): string {
 }
 
 function mockSocial(req: CompletionRequest): string {
-  const name = /Acabas de hablar con ([^(]+) \(/.exec(req.prompt)?.[1]?.trim() ?? "esa persona";
+  const match = /Acabas de hablar con ([^(]+) \((\S+)\)/.exec(req.prompt);
+  const name = match?.[1]?.trim() ?? "esa persona";
   const negative = /liado|mal|triste/i.test(req.prompt);
+  // Promesas y quedadas de la charla (memoria prospectiva).
+  const talk = req.prompt.split("Conversación:")[1] ?? "";
+  const first = name.split(" ")[0];
+  const intentions = /Deberíamos venir juntos/.test(talk)
+    ? [{ text: `volver a quedar con ${first}`, personId: match?.[2] ?? null }]
+    : [];
   return JSON.stringify({
     summary: negative ? `${name} parece agobiado últimamente.` : `${name} es agradable de tratar.`,
     affinityDelta: negative ? -0.02 : 0.06,
     trustDelta: 0.02,
+    intentions,
   });
 }
 
@@ -711,6 +786,21 @@ function mockModerate(req: CompletionRequest): string {
   const text = /Texto del jugador: ⟦([\s\S]*)⟧/.exec(req.prompt)?.[1] ?? "";
   if (MOCK_BLOCKLIST.test(text)) {
     return JSON.stringify({ allowed: false, reason: "parece una instrucción al sistema" });
+  }
+  return JSON.stringify({ allowed: true, reason: "" });
+}
+
+/** Cariño de familia (se acepta) frente a afecto de pareja (se rechaza con un menor). */
+const FAMILY =
+  /(mamá|papá|madre|padre|hij[oa]|abuel[oa]|herman[oa]|tí[oa]|sobrin[oa]|nieto|nieta)/i;
+const COUPLE =
+  /(te quiero|me gustas|guap[oa]|precios[oa]|mi vida|corazón|amor|bes[aeoéó]|darling|love|kiss)/i;
+
+/** Moderación de contenido con menores: rechaza lo romántico; acepta el cariño de familia. */
+function mockModerateMinor(req: CompletionRequest): string {
+  const text = /Texto: ⟦([\s\S]*)⟧/.exec(req.prompt)?.[1] ?? "";
+  if (hasStrongRomance(text) || (COUPLE.test(text) && !FAMILY.test(text))) {
+    return JSON.stringify({ allowed: false, reason: "afecto romántico hacia un menor" });
   }
   return JSON.stringify({ allowed: true, reason: "" });
 }

@@ -6,6 +6,7 @@ import {
   recolorPalette,
   recolorPixels,
   positionAt,
+  type AffinityIcon,
   type AgentState,
   type AssetPack,
   type Weather,
@@ -38,6 +39,7 @@ export class TownScene extends Phaser.Scene {
   private ambience: Ambience | null = null;
   private minimap: Phaser.Cameras.Scene2D.Camera | null = null;
   private selectedId: string | null = null;
+  private marks: Record<string, AffinityIcon> | null = null;
   private followId: string | null = null;
   private following = false;
   private assetsOk = false;
@@ -129,6 +131,26 @@ export class TownScene extends Phaser.Scene {
   setSelected(id: string | null) {
     this.selectedId = id;
     for (const [agentId, v] of this.views) v.setSelected(agentId === id);
+  }
+
+  /** Marcas de afinidad sobre los demás (lo que piensa de ellos el seleccionado), o ninguna. */
+  setAffinityMarks(marks: Record<string, AffinityIcon> | null) {
+    this.marks = marks;
+    for (const [agentId, v] of this.views) v.setMark(marks?.[agentId] ?? null);
+  }
+
+  /** Centra la cámara en un agente (sin seguirlo) y lo hace destellar. */
+  focusAgent(id: string) {
+    const view = this.views.get(id);
+    if (!view) return;
+    this.setFollow(null);
+    this.onFollowChange(null);
+    const cam = this.cameras.main;
+    const { x, y } = view.container;
+    if (this.reducedMotion) cam.centerOn(x, y);
+    else cam.pan(x, y, 500, "Sine.easeInOut");
+    cam.setZoom(Math.max(cam.zoom, 3));
+    view.playEffect("recall");
   }
 
   /** Seguir con la cámara a un agente (null = cámara libre). */
@@ -306,6 +328,7 @@ export class TownScene extends Phaser.Scene {
     this.views.set(agent.id, view);
     this.loadPortrait(agent.id, view);
     if (agent.id === this.selectedId) view.setSelected(true);
+    view.setMark(this.marks?.[agent.id] ?? null);
     return view;
   }
 

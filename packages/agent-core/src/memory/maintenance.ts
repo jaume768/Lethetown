@@ -2,7 +2,7 @@ import { estimateTextTokens } from "../util/random";
 import { currentStrength } from "./decay";
 import type { EpisodeSummarizer, GistCompressor, MemoryOwner, SourceConfuser } from "./human";
 import type { MemorySystem } from "./memory-system";
-import { cosine } from "./retrieval";
+import { cosine, scoreMemory } from "./retrieval";
 import type { MemoryRecord } from "./types";
 
 export interface MaintenanceDeps {
@@ -20,6 +20,10 @@ export interface MaintenanceReport {
   deleted: string[];
   archived: string[];
   summaries: string[];
+  /** Recuerdos cuya carga emocional se suavizó (desvanecimiento afectivo). */
+  faded: string[];
+  /** Recuerdos que, al volverse vagos, se rellenaron con detalles inventados. */
+  falseMemories: string[];
 }
 
 const HOUR = 60;
@@ -46,6 +50,8 @@ export class MemoryMaintenance {
       deleted: [],
       archived: [],
       summaries: [],
+      faded: [],
+      falseMemories: [],
     };
     const cfg = this.memory.config;
     const since = this.lastRun.get(owner.agentId) ?? now;
@@ -60,17 +66,51 @@ export class MemoryMaintenance {
         if (m.forgottenAt === null) await this.markForgotten(owner, m, s, now, report);
         continue;
       }
-      if (s < cfg.retrieval.vagueThreshold && !m.gist && cfg.gist.enabled && this.deps.gist) {
-        await this.makeGist(owner, m, now, report);
+      if (
+        s < cfg.retrieval.vagueThreshold &&
+        !m.gist &&
+        cfg.gist.enabled &&
+        m.importance >= cfg.gist.minImportance &&
+        this.deps.gist
+      ) {
+        // Al volverse vago, a veces la mente lo reconstruye con detalles que no vivió (falso
+        // recuerdo) en vez de quedarse con la esencia; la esencia llegará después.
+        const filled = await this.memory
+          .maybeConfabulate(
+            {
+              memory: m,
+              scores: scoreMemory(
+                m,
+                { embedding: [], now, moodValence: 0 },
+                this.memory.retrievalFor(owner.agentId),
+                1,
+              ).scores,
+            },
+            {
+              system: owner.system,
+              moodLabel: "neutral (activación baja)",
+              socialSummary: async () => "",
+            },
+            now,
+          )
+          .catch((error: unknown) => {
+            this.deps.onError?.("confabulate", error);
+            return false;
+          });
+        if (filled) report.falseMemories.push(m.id);
+        else await this.makeGist(owner, m, now, report);
       }
       if (
         this.deps.confuser &&
         confuseP > 0 &&
         now - m.createdAt >= cfg.sourceConfusion.minAgeHours * HOUR
       ) {
-        const next = this.deps.confuser.confuse(m, confuseP, others);
+        // Niños y despistados confunden más la fuente (perfil del dueño).
+        const p = Math.min(1, confuseP * this.memory.profileOf(owner.agentId).sourceConfusion);
+        const next = this.deps.confuser.confuse(m, p, others);
         if (next && next !== m.source) await this.changeSource(owner, m, next, now, report);
       }
+      await this.fadeAffect(owner, m, now, report);
     }
     await this.enforceBudget(owner, now, report);
     return report;
@@ -110,6 +150,12 @@ export class MemoryMaintenance {
   ) {
     try {
       const gist = await this.deps.gist!.compress(owner, m);
+      const safe = await this.memory.guard?.allows(gist, {
+        kind: "gist",
+        actors: [owner.agentId, ...m.people],
+        agentId: owner.agentId,
+      });
+      if (safe === false) return;
       await this.memory.store.update(m.id, { gist });
       await this.memory.audit({
         agentId: owner.agentId,
@@ -153,6 +199,50 @@ export class MemoryMaintenance {
       at: now,
     });
     report.sourceChanged.push(m.id);
+  }
+
+  /**
+   * Sesgo de desvanecimiento afectivo (sin LLM): la valencia se acerca a 0 con el tiempo, la de
+   * lo negativo antes que la de lo positivo. Solo se aplica a saltos de `fadeStep`, y cada salto
+   * deja versión y auditoría.
+   */
+  private async fadeAffect(
+    owner: MemoryOwner,
+    m: MemoryRecord,
+    now: number,
+    report: MaintenanceReport,
+  ) {
+    const cfg = this.memory.config.biases;
+    const v = m.emotionalValence;
+    if (Math.abs(v) <= cfg.fadeFloor) return;
+    const days = (now - (m.meta?.affectAt ?? m.createdAt)) / (24 * HOUR);
+    if (days <= 0) return;
+    const halfLife = v < 0 ? cfg.fadeNegativeHalfLifeDays : cfg.fadePositiveHalfLifeDays;
+    const faded = v * Math.pow(0.5, days / halfLife);
+    if (Math.abs(v - faded) < cfg.fadeStep) return;
+    const next = Math.abs(faded) <= cfg.fadeFloor ? 0 : Math.round(faded * 100) / 100;
+    await this.memory.store.transaction(async (tx) => {
+      const versions = await tx.versions(m.id);
+      await tx.addVersion({
+        memoryId: m.id,
+        version: versions.length,
+        text: m.text,
+        emotionalValence: v,
+        source: m.source,
+        at: now,
+        reason: "desvanecimiento afectivo",
+      });
+      await tx.update(m.id, { emotionalValence: next, meta: { ...m.meta, affectAt: now } });
+      await tx.addAudit({
+        agentId: owner.agentId,
+        memoryId: m.id,
+        memoryText: m.text,
+        action: "affect_faded",
+        reason: `con el tiempo ya no le ${v < 0 ? "duele" : "emociona"} tanto: valencia ${v.toFixed(2)} → ${next.toFixed(2)}${v < 0 ? " (lo malo se suaviza antes que lo bueno)" : ""}`,
+        at: now,
+      });
+    });
+    report.faded.push(m.id);
   }
 
   /** Nunca se olvidan los planes recientes ni lo que citan, ni el conocimiento base importante. */
@@ -205,7 +295,7 @@ export class MemoryMaintenance {
         if (tokens() <= cfg.tokensPerAgent) break;
         try {
           const summary = await this.deps.summarizer.summarize(owner, cluster);
-          const created = await this.memory.remember(
+          const created = await this.memory.tryRemember(
             {
               agentId: owner.agentId,
               text: summary,
@@ -219,6 +309,7 @@ export class MemoryMaintenance {
             },
             now,
           );
+          if (!created) continue;
           report.summaries.push(created.id);
           // Archivar el grupo entero (y auditarlo) de forma atómica.
           await this.memory.store.transaction(async (tx) => {

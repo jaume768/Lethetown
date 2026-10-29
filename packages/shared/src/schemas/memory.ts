@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const MemoryType = z.enum(["observation", "reflection", "plan", "semantic"]);
+export const MemoryType = z.enum(["observation", "reflection", "plan", "semantic", "intention"]);
 export type MemoryType = z.infer<typeof MemoryType>;
 
 /** "vivido" | "contado por <agentId>" | "inferido" */
@@ -10,6 +10,29 @@ export const MemorySource = z.union([
   z.string().regex(/^contado por .+$/),
 ]);
 export type MemorySource = z.infer<typeof MemorySource>;
+
+/** Marcas de un recuerdo que cambian cómo se comporta (ver fases de psicología). */
+export const MemoryMeta = z.object({
+  /** Recuerdo de juventud (pico de reminiscencia en los mayores). */
+  youth: z.boolean().optional(),
+  /** Se vivió con una activación extrema: solo se grabó la esencia (sin detalles). */
+  gistOnly: z.boolean().optional(),
+  /** Instante (min de juego) del último desvanecimiento afectivo aplicado. */
+  affectAt: z.number().optional(),
+  /** Al reconsolidarlo rellenó huecos con detalles que no vivió (falso recuerdo). */
+  falseMemory: z.boolean().optional(),
+  /** Intención (memoria prospectiva): pistas y estado. */
+  intention: z
+    .object({
+      status: z.enum(["pending", "done", "forgotten", "expired"]),
+      personId: z.string().nullable(),
+      placeId: z.string().nullable(),
+      atMinute: z.number().nullable(),
+      misses: z.number().int().nonnegative(),
+    })
+    .optional(),
+});
+export type MemoryMeta = z.infer<typeof MemoryMeta>;
 
 /** Recuerdo tal como viaja por la API (sin el vector de embedding). */
 export const MemoryView = z.object({
@@ -35,6 +58,7 @@ export const MemoryView = z.object({
   status: z.enum(["active", "archived"]),
   /** Instante en que cruzó el umbral de olvido (null si no se ha olvidado). */
   forgottenAt: z.number().nullable(),
+  meta: MemoryMeta.default({}),
 });
 export type MemoryView = z.infer<typeof MemoryView>;
 
@@ -80,6 +104,18 @@ export const MemoryAuditAction = z.enum([
   "source_changed",
   "weakened",
   "reinforced",
+  /** Una rutina repetida se convirtió en hábito (recuerdo semántico). */
+  "habit",
+  /** Su carga emocional se suavizó con el tiempo (sesgo de desvanecimiento afectivo). */
+  "affect_faded",
+  /** Al recordarlo vagamente rellenó los huecos con detalles inventados. */
+  "false_memory",
+  /** Se acordó de hacer lo que tenía pensado (memoria prospectiva). */
+  "intention_kept",
+  /** Se le pasó hacer lo que tenía pensado. */
+  "intention_forgotten",
+  /** Una intención caducó sin hacerse. */
+  "intention_expired",
 ]);
 export type MemoryAuditAction = z.infer<typeof MemoryAuditAction>;
 
@@ -94,7 +130,23 @@ export const MemoryAuditEntry = z.object({
 });
 export type MemoryAuditEntry = z.infer<typeof MemoryAuditEntry>;
 
-/** Ficha social: lo que un agente cree saber de otro. */
+/** Tipo de relación (lo que un agente cree que es para él otro). */
+export const RelationshipType = z.enum([
+  "family",
+  "friendship",
+  "neighbor",
+  "work",
+  "rivalry",
+  /** Nunca entre un adulto y un menor ni entre menores (protección de menores). */
+  "romantic",
+]);
+export type RelationshipType = z.infer<typeof RelationshipType>;
+
+/** Vínculo de base que no cambia con la afinidad (de las semillas): familia, pareja, trabajo. */
+export const RelationshipBond = z.enum(["family", "romantic", "work"]);
+export type RelationshipBond = z.infer<typeof RelationshipBond>;
+
+/** Ficha social: lo que un agente cree saber de otro (no tiene por qué ser recíproca). */
 export const SocialProfile = z.object({
   ownerId: z.string(),
   aboutId: z.string(),
@@ -103,6 +155,30 @@ export const SocialProfile = z.object({
   affinity: z.number().min(-1).max(1),
   /** 0..1 */
   trust: z.number().min(0).max(1),
+  /** Cuánto lo conoce o lo trata (0 = desconocido, 1 = de toda la vida). */
+  familiarity: z.number().min(0).max(1).default(0.1),
+  relationshipType: RelationshipType.default("neighbor"),
+  /** Vínculo de base (de las semillas), si lo hay. */
+  bond: RelationshipBond.nullable().default(null),
+  /** Rencor mínimo (0..1) que dejan las ofensas importantes: el perdón no baja de −rencor. */
+  grudge: z.number().min(0).max(1).default(0),
   lastUpdated: z.number(),
 });
 export type SocialProfile = z.infer<typeof SocialProfile>;
+
+/** Cambio de una ficha social (historial, para ver cómo evoluciona una relación). */
+export const SocialProfileChange = z.object({
+  ownerId: z.string(),
+  aboutId: z.string(),
+  /** Minutos de juego. */
+  at: z.number(),
+  affinity: z.number(),
+  trust: z.number(),
+  familiarity: z.number(),
+  relationshipType: RelationshipType,
+  /** Por qué cambió ("hablaron en el café", "con el tiempo le perdona un poco"…). */
+  reason: z.string(),
+  /** Evento que lo causó (conversación…), si lo hay. */
+  eventId: z.string().nullable(),
+});
+export type SocialProfileChange = z.infer<typeof SocialProfileChange>;
