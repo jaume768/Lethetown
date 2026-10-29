@@ -19,7 +19,7 @@ y comprobar que `pnpm dev` arranca en modo mock.
 - [x] 0.4 `MemoryStore.listActive(agentId, { withEmbedding })`
 - [x] 0.5 Retención de datos configurable por tabla + job + test
 - [x] 0.6 `gist.minImportance` = 4 (y medir)
-- [ ] 0.7 `docs/decisiones/` (ADR breves), CLAUDE.md corto, sin PROGRESS antiguos
+- [x] 0.7 `docs/decisiones/` (ADR breves), CLAUDE.md corto, sin PROGRESS antiguos
 - [ ] 0.8 Tests unitarios de la lógica no visual de la web
 
 ### Paso 1 — Catálogo de acciones
@@ -144,3 +144,9 @@ LLM: se desvanece con la esencia provisional.
   (todo en uno o worker) lo llama cada `everyMinutes` minutos **reales** con un intervalo `unref`:
   el reloj de juego no se toca y el dorado no cambia. En RAM se podan los almacenes en memoria con
   los mismos criterios. Tests en RAM, en Postgres y del inspector y Rashomon tras podar.
+- **`docs/decisiones/`**: las decisiones de PROGRESS.md, PROGRESS-PRODUCCION.md y
+  PROGRESS-PSICOLOGIA.md, condensadas en un archivo por área (mundo, simulación, memoria,
+  psicología, relaciones, menores, LLM y coste, producción, interfaz y acciones). Se quedaron fuera
+  los checklists y las notas de bloqueos ya resueltos. Los tres PROGRESS antiguos se borran;
+  CLAUDE.md queda en convenciones cortas con enlaces. Este archivo se consolidará en
+  `docs/decisiones/acciones.md` al final de la rama.

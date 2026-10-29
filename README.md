@@ -133,7 +133,7 @@ Todos los parámetros (pesos, umbrales, probabilidades, presupuesto) están en `
 
 Toda la lógica es pura (agent-core, con tests), sin LLM salvo donde se dice, y todos los parámetros están en
 `MemoryConfig` (`packages/agent-core/src/memory/config.ts` y los esquemas que importa), sobrescribibles con
-`config/memory.json`. Detalle y decisiones: [PROGRESS-PSICOLOGIA.md](PROGRESS-PSICOLOGIA.md).
+`config/memory.json`. Detalle y decisiones: [docs/decisiones/psicologia.md](docs/decisiones/psicologia.md).
 
 | Fenómeno              | Qué hace                                                                                                                                                                                                                                                        | Parámetros                                                     |
 | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
@@ -293,6 +293,12 @@ LLM_CONCURRENCY=4
 - **OpenAI**: Responses API con `reasoning.effort` y `prompt_cache_key` por agente.
 
 Antes de dejarlo corriendo, empieza en pausa (`SIM_SPEED=0`) y mira el contador de coste. Con la memoria humana activa hay unas 2.000 llamadas por día de juego con los 20 agentes (la mayoría con el modelo `fast`): ajusta los presupuestos `BUDGET_*` antes de usar un proveedor real.
+
+## Decisiones de diseño
+
+El porqué de lo que no se deduce del código está en [docs/decisiones/](docs/decisiones/README.md)
+(un archivo por área: mundo, simulación, memoria, psicología, relaciones, menores, LLM,
+producción, interfaz y acciones).
 
 ## Assets y créditos
 
