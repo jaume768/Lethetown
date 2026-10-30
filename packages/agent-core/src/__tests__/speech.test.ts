@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { toDecision } from "../agent/agent-decision";
 import { DecideResponse } from "../agent/parse";
-import { identityPrompt, speechLine } from "../agent/prompts";
+import { decidePrompt, identityPrompt, speechLine } from "../agent/prompts";
 import { clipText, speechMax } from "../agent/speech";
 import { DEFAULT_MEMORY_CONFIG } from "../memory/config";
 
@@ -81,5 +81,27 @@ describe("habla natural en el prompt fijo", () => {
     ).toMatch(/una frase corta o menos/);
     expect(identityPrompt(seed(12, "media"), places)).toMatch(/Tienes 12 años: hablas como/);
     expect(identityPrompt(seed(40, "media"), places)).not.toMatch(/hablas como alguien de tu edad/);
+  });
+
+  it("decide lleva lo último de la conversación con la instrucción de no repetir", () => {
+    const p = decidePrompt({
+      now: 600,
+      locationId: "cafe_ola",
+      action: "charlar",
+      moodLabel: "tranquila",
+      needs: { energy: 0.8, hunger: 0.2, social: 0.5 },
+      planItem: undefined,
+      present: [],
+      heard: [],
+      conversationWith: "mateo",
+      conversationLines: ['tú: "¿Vienes?"', 'Mateo: "Ya voy."'],
+      objectStates: [],
+      weather: "soleado",
+      socialNotes: [],
+      actions: ["say"],
+      workingMemory: "",
+    });
+    expect(p).toMatch(/LO ÚLTIMO QUE SE HA DICHO \(en orden; no repitas nada de esto/);
+    expect(p).toContain('- tú: "¿Vienes?"\n- Mateo: "Ya voy."');
   });
 });

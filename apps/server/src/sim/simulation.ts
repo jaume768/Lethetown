@@ -24,7 +24,12 @@ import {
   type SimSignal,
   type SimulationDeps,
 } from "./context";
-import { activeConversationOf, endIdleConversations, leaveConversation } from "./conversations";
+import {
+  activeConversationOf,
+  endIdleConversations,
+  leaveConversation,
+  recentLines,
+} from "./conversations";
 import { startDemo } from "./demo";
 import * as intervention from "./intervention";
 import { WEATHER_NOW } from "./intervention";
@@ -492,6 +497,7 @@ export class Simulation {
       present,
       heard,
       conversationWith: speaker ?? activeConversationOf(ctx, agent.id)?.other ?? null,
+      conversationLines: recentLines(ctx, agent.id),
       objectStates: place.objects
         .filter((o) => o.state !== "idle")
         .map((o) => ({ id: o.id, state: o.state })),

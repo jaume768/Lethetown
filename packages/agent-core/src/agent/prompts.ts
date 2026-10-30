@@ -232,6 +232,8 @@ export interface DecideContext {
   heard: { fromId: string; fromName: string; text: string; toName?: string }[];
   /** Con quién está conversando ahora, si con alguien. */
   conversationWith: string | null;
+  /** Últimas frases de la conversación actual, en orden (las propias como "tú: …"). */
+  conversationLines?: string[];
   /** Estado de los objetos del lugar que no están en "idle". */
   objectStates: { id: string; state: string }[];
   /** El tiempo y cómo le afecta donde está (`weatherLine`). */
@@ -292,7 +294,11 @@ PRESENTES: ${present}
 CONVERSACIÓN: ${opts.conversationWith ?? "ninguna"}
 HABLAN:
 ${heard}
-${innerVoice}Lo que piensas de los presentes:
+${
+  opts.conversationLines?.length
+    ? `LO ÚLTIMO QUE SE HA DICHO (en orden; no repitas nada de esto, ni saludes otra vez):\n${opts.conversationLines.map((l) => `- ${l}`).join("\n")}\n`
+    : ""
+}${innerVoice}Lo que piensas de los presentes:
 ${opts.socialNotes.length ? opts.socialNotes.map((n) => `- ${n}`).join("\n") : "- (nada)"}
 Memoria de trabajo:
 ${opts.workingMemory}

@@ -24,6 +24,21 @@ export function activeConversationOf(
   return undefined;
 }
 
+/**
+ * Las últimas `n` frases de su conversación, en orden, con las suyas como "tú: …" (para que
+ * no se repita ni salude otra vez).
+ */
+export function recentLines(ctx: SimContext, agentId: string, n = 4): string[] {
+  const conv = activeConversationOf(ctx, agentId)?.conv;
+  const name = ctx.agents.get(agentId)?.seed.name;
+  if (!conv || !name) return [];
+  return conv.transcript
+    .slice(-n)
+    .map((l) =>
+      l.startsWith(`${name}: `) || l.startsWith(`${name} (a `) ? `tú${l.slice(name.length)}` : l,
+    );
+}
+
 /** Con quién ha hablado más (en los dos sentidos), de más a menos. */
 function partnersOf(conv: Conversation, agentId: string, n: number): string[] {
   const score = new Map<string, number>();
