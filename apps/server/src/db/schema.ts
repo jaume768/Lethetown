@@ -29,6 +29,8 @@ export const worlds = pgTable("worlds", {
   status: text("status").notNull().default("running"),
   /** Idioma en el que hablan y escriben los agentes y el cronista (es | en). */
   language: text("language").notNull().default("es"),
+  /** Sistemas desactivados en este mundo (`{ "notes": false }`); los que no aparecen, activos. */
+  systems: jsonb("systems").$type<Record<string, boolean>>().notNull().default({}),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

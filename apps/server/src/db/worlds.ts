@@ -14,6 +14,8 @@ export interface WorldRow {
   status: WorldStatus;
   /** Idioma de los prompts (es | en). */
   language: "es" | "en";
+  /** Sistemas desactivados (`{ notes: false }`); por defecto, todos activos. */
+  systems: Record<string, boolean>;
   createdAt: Date;
 }
 
@@ -22,9 +24,10 @@ export const WorldId = z
   .string()
   .regex(/^[a-z0-9][a-z0-9-]{0,39}$/, "id: minúsculas, números y guiones (máx. 40)");
 
-export type NewWorldRow = Omit<WorldRow, "createdAt" | "status" | "language"> & {
+export type NewWorldRow = Omit<WorldRow, "createdAt" | "status" | "language" | "systems"> & {
   status?: WorldStatus;
   language?: "es" | "en";
+  systems?: Record<string, boolean>;
 };
 
 export interface WorldRepo {
@@ -48,6 +51,7 @@ const toRow = (r: typeof worlds.$inferSelect): WorldRow => ({
   ...r,
   status: WorldStatus.catch("running").parse(r.status),
   language: r.language === "en" ? "en" : "es",
+  systems: z.record(z.string(), z.boolean()).catch({}).parse(r.systems),
 });
 
 export class PgWorldRepo implements WorldRepo {
@@ -91,7 +95,13 @@ export class InMemoryWorldRepo implements WorldRepo {
   }
   async create(w: NewWorldRow) {
     if (this.rows.has(w.id)) throw new Error(`El mundo ${w.id} ya existe`);
-    const row: WorldRow = { status: "running", language: "es", ...w, createdAt: new Date() };
+    const row: WorldRow = {
+      status: "running",
+      language: "es",
+      systems: {},
+      ...w,
+      createdAt: new Date(),
+    };
     this.rows.set(w.id, row);
     return row;
   }

@@ -5,7 +5,7 @@ import { loadConfig } from "../config";
 import { runAction } from "./actions";
 import { objectsTick } from "./actions/objects";
 import type { SimContext } from "./context";
-import { inventorySections, itemsTick } from "./items";
+import { inventorySections, itemsState, itemsTick } from "./items";
 
 let app: App;
 let ctx: SimContext;
@@ -21,7 +21,8 @@ beforeAll(async () => {
 afterAll(() => app.close());
 
 const agent = (id: string) => ctx.agents.get(id)!;
-const itemNamed = (name: string) => [...ctx.items.values()].find((i) => i.name === name)!;
+const itemNamed = (name: string) =>
+  [...itemsState(ctx).items.values()].find((i) => i.name === name)!;
 const act = (id: string, action: Parameters<typeof runAction>[1]) =>
   runAction({ ctx, agent: agent(id), now: NOW }, action);
 const lastText = (id: string) => {

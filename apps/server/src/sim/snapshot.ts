@@ -1,19 +1,9 @@
 import { AgentMind } from "@lethetown/agent-core";
-import {
-  ActivityKind,
-  AgentState,
-  Commitment,
-  Invitation,
-  Note,
-  Item,
-  SimSpeed,
-  TilePoint,
-  Weather,
-} from "@lethetown/shared";
+import { ActivityKind, AgentState, SimSpeed, TilePoint, Weather } from "@lethetown/shared";
 import { z } from "zod";
 
 /** Sube este número si cambias la forma de la instantánea (las antiguas se ignoran). */
-export const SIM_SNAPSHOT_VERSION = 17;
+export const SIM_SNAPSHOT_VERSION = 18;
 
 /** Percepción pendiente (misma forma que `Perception` de agent-core). */
 const Perception = z.discriminatedUnion("kind", [
@@ -113,23 +103,12 @@ export const SimSnapshot = z.object({
       pairs: z.record(z.string(), z.number()).default({}),
     }),
   ),
-  /** Citas vivas y recientes, y el contador de ids. */
-  meetings: z.array(Commitment).default([]),
-  meetingSeq: z.number().int().nonnegative().default(0),
-  /** Objetos del inventario y el contador de ids. */
-  items: z.array(Item).default([]),
-  itemSeq: z.number().int().nonnegative().default(0),
-  /** Objetos del mapa que volverán solos a otro estado (spotId → cuándo, a qué y desde cuál). */
-  /** Invitaciones a ir juntos ahora mismo (caducan enseguida). */
-  invitations: z.array(Invitation).default([]),
-  invitationSeq: z.number().int().nonnegative().default(0),
-  /** Notas vivas y el contador de ids. */
-  notes: z.array(Note).default([]),
-  noteSeq: z.number().int().nonnegative().default(0),
-  /** Invitados de cada casa (lugar → agente → hasta cuándo). */
-  guests: z.record(z.string(), z.record(z.string(), z.number())).default({}),
-  objectTimers: z
-    .record(z.string(), z.object({ at: z.number(), state: z.string(), from: z.string() }))
+  /**
+   * Estado de cada sistema (sim/systems/), con su propia versión: cambiar uno no obliga a subir
+   * SIM_SNAPSHOT_VERSION (si su versión no coincide, solo ese sistema empieza de cero).
+   */
+  systems: z
+    .record(z.string(), z.object({ version: z.number().int(), data: z.unknown() }))
     .default({}),
 });
 export type SimSnapshot = z.infer<typeof SimSnapshot>;

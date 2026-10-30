@@ -14,6 +14,7 @@ import type { SimContext } from "../context";
 import {
   acceptedOf,
   MEETING_WINDOW,
+  meetingsState,
   newMeetingId,
   openMeetingsOf,
   releaseSlot,
@@ -152,7 +153,7 @@ registerAction<z.infer<typeof ProposeMeetingAction>>({
 
 /** La cita en la que está y en qué estado. */
 function meetingFor(c: ActionContext, id: string): Commitment | string {
-  const m = c.ctx.meetings.get(id);
+  const m = meetingsState(c.ctx).meetings.get(id);
   if (!m || !m.participants.includes(c.agent.id)) return `no tengo ninguna cita "${id}"`;
   if (m.status !== "proposed" && m.status !== "accepted") return "esa cita ya no sigue en pie";
   return m;
@@ -169,10 +170,12 @@ registerAction<z.infer<typeof AcceptMeetingAction>>({
     if (typeof m === "string") return m;
     return m.responses[c.agent.id] === "pending" ? null : "ya respondí a esa cita";
   },
-  describe: ({ ctx }, a) =>
-    `aceptar la cita ${a.meetingId}${ctx.meetings.get(a.meetingId) ? ` con ${firstOf(ctx, ctx.meetings.get(a.meetingId)!.organizerId)}` : ""}`,
+  describe: ({ ctx }, a) => {
+    const m = meetingsState(ctx).meetings.get(a.meetingId);
+    return `aceptar la cita ${a.meetingId}${m ? ` con ${firstOf(ctx, m.organizerId)}` : ""}`;
+  },
   execute: async ({ ctx, agent, now }, a) => {
-    const m = ctx.meetings.get(a.meetingId)!;
+    const m = meetingsState(ctx).meetings.get(a.meetingId)!;
     const firstAcceptance = m.status === "proposed";
     m.responses[agent.id] = "accepted";
     m.status = "accepted";
@@ -221,7 +224,7 @@ registerAction<z.infer<typeof DeclineMeetingAction>>({
   },
   describe: (_c, a) => `rechazar la cita ${a.meetingId}`,
   execute: ({ ctx, agent }, a) => {
-    const m = ctx.meetings.get(a.meetingId)!;
+    const m = meetingsState(ctx).meetings.get(a.meetingId)!;
     m.responses[agent.id] = "declined";
     // Si ya nadie más que quien la propuso va a ir, se anula.
     if (acceptedOf(m).length < 2 && !m.participants.some((p) => m.responses[p] === "pending")) {
@@ -256,7 +259,7 @@ registerAction<z.infer<typeof CancelMeetingAction>>({
   },
   describe: (_c, a) => `anular la cita ${a.meetingId}`,
   execute: async ({ ctx, agent, now }, a) => {
-    const m = ctx.meetings.get(a.meetingId)!;
+    const m = meetingsState(ctx).meetings.get(a.meetingId)!;
     const organizer = m.organizerId === agent.id;
     m.responses[agent.id] = "declined";
     releaseSlot(ctx, agent, m);

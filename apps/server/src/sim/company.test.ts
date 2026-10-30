@@ -3,7 +3,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { bootstrap, type App } from "../bootstrap";
 import { loadConfig } from "../config";
 import { runAction } from "./actions";
-import { companySections, companyTick, FOLLOW_MINUTES } from "./company";
+import { companySections, companyState, companyTick, FOLLOW_MINUTES } from "./company";
 import type { SimContext } from "./context";
 
 let app: App;
@@ -42,7 +42,7 @@ function at(placeId: string, ...ids: string[]) {
 }
 
 beforeEach(() => {
-  ctx.invitations.clear();
+  companyState(ctx).invitations.clear();
   for (const id of ctx.agents.keys()) at(id === "leo" ? "escuela" : "casa_roja", id);
 });
 
@@ -57,7 +57,7 @@ describe("ir con otros", () => {
         activity: "pasear",
       }),
     ).toBe(true);
-    const [v] = [...ctx.invitations.values()];
+    const [v] = [...companyState(ctx).invitations.values()];
     expect(companySections(ctx, agent("lucia"))[0]!.lines[0]).toMatch(
       new RegExp(`Invitación ${v!.id}: Mateo Ruiz te invita a ir ahora a Plaza Mayor`),
     );
@@ -76,14 +76,14 @@ describe("ir con otros", () => {
   it("rechazar avisa a quien invitó; la invitación caduca", async () => {
     at("cafe_ola", "mateo", "lucia");
     await act("mateo", { type: "invite", with: ["lucia"], placeId: "plaza", activity: "pasear" });
-    const [v] = [...ctx.invitations.values()];
+    const [v] = [...companyState(ctx).invitations.values()];
     expect(await act("lucia", { type: "decline_invite", inviteId: v!.id, reason: "llueve" })).toBe(
       true,
     );
     expect(lastText("mateo")).toMatch(/no quiere venir: llueve/);
     await act("mateo", { type: "invite", with: ["lucia"], placeId: "plaza", activity: "pasear" });
     companyTick(ctx, now() + 31);
-    expect(ctx.invitations.size).toBe(0);
+    expect(companyState(ctx).invitations.size).toBe(0);
   });
 
   it("un adulto no puede invitar a un menor a una casa ni llevárselo a una", async () => {

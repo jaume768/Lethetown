@@ -52,6 +52,8 @@ export const NewWorld = z.object({
   seed: z.number().int().nullable().default(null),
   /** Idioma en el que hablan los agentes y escribe el cronista. */
   language: z.enum(["es", "en"]).default("es"),
+  /** Sistemas que se desactivan en este mundo (`{ "notes": false }`); por defecto, todos. */
+  systems: z.record(z.string().max(40), z.boolean()).default({}),
 });
 export type NewWorld = z.infer<typeof NewWorld>;
 

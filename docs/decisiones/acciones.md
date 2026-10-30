@@ -27,9 +27,10 @@ el motivo como percepción ("No pude …: motivo"), lo recuerda y puede reconsid
   hay un menor y algún adulto, solo en un sitio público (o en la casa del propio menor). Lo aplican
   citas, invitaciones, acompañar, regalar y prestar; las notas privadas entre adulto y menor no se
   permiten, y la revisión de normas saca a un menor de una casa ajena con adultos.
-- **Estado nuevo**: en el runtime y en la instantánea (`SimSnapshot`, v16) y escrito en su tabla
-  (Postgres o RAM, siempre con `world_id`): `commitments`, `known_places`, `inventory_items`,
-  `notes`. El api lee de las tablas; al restaurar, el almacén se sincroniza con la instantánea.
+- **Estado nuevo**: en su sistema (`SimSystem`, ver [sistemas](sistemas.md)), con su parte de
+  la instantánea y su versión, y escrito en su tabla (Postgres o RAM, siempre con `world_id`):
+  `commitments`, `known_places`, `inventory_items`, `notes`. El api lee de las tablas; al
+  restaurar, el almacén se sincroniza con la instantánea.
 
 ## Catálogo
 
@@ -89,8 +90,9 @@ el motivo como percepción ("No pude …: motivo"), lo recuerda y puede reconsid
    `registerAction({ type, available, check, describe, execute })`. `available` debe ser barato y
    estricto (cada acción ofrecida cuesta tokens); `check` devuelve el motivo legible si no se puede;
    `execute` cambia el estado, emite el evento con `meta.action` y avisa a quien afecte con una
-   percepción. Si hay estado nuevo: runtime, instantánea (subir `SIM_SNAPSHOT_VERSION`), tabla con
-   `world_id` y migración.
+   percepción. Si hay estado nuevo, va en su sistema (ver [sistemas](sistemas.md#cómo-añadir-un-sistema)):
+   estado con `ctx.state`, instantánea con su versión, tabla con `world_id` y migración; la acción
+   se lista en `actions` del sistema.
 3. **menores**: si nombra a alguien o lleva a un sitio, `minorMeetingRule`; si tiene texto libre,
    ya lo revisa `checked()`.
 4. **mock** (`agent/mock/<área>.ts`): una regla con `registerDecideRule(…, { before })` que solo

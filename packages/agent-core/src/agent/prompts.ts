@@ -141,6 +141,8 @@ export function identityPrompt(
   language: PromptLanguage = "es",
   /** Menores del pueblo (regla fija de protección; ver minor-safety.ts). */
   minors: MinorInfo[] = [],
+  /** Reglas fijas que añaden los sistemas del mundo (sin nada variable, para la caché). */
+  worldRules: string[] = [],
 ): string {
   return `Eres ${seed.name}, ${seed.age} años, habitante de un pequeño pueblo.
 Rasgos: ${seed.traits.join(", ")}.
@@ -172,7 +174,7 @@ ${(Object.keys(ACTION_SPECS) as ActionType[]).map(actionLine).join("\n")}
 - Si estás hablando con alguien y según tu plan toca irte, no le dejes con la palabra en la boca: despídete o cierra la conversación (say) o quédate un rato más (do_activity).
 - Solo puedes hacer las acciones que se te ofrecen; si una no sale bien, te enterarás de por qué.
 - activityKind es uno de: ${ACTIVITY_KINDS}.
-- Responde SIEMPRE con un único objeto JSON válido, sin texto antes ni después.${minorsRule(minors, seed.id)}${languageRule(language)}`;
+- Responde SIEMPRE con un único objeto JSON válido, sin texto antes ni después.${worldRules.map((r) => `\n- ${r}`).join("")}${minorsRule(minors, seed.id)}${languageRule(language)}`;
 }
 
 export function planPrompt(opts: {
@@ -250,9 +252,24 @@ export interface DecideContext {
   agenda?: string[];
   /** Lugares que ha descubierto (líneas `placeLine`; los de siempre están en el prompt fijo). */
   discovered?: string[];
-  /** Secciones que añade el motor (LLEVAS, AQUÍ HAY, PUEDES USAR…), ya escritas. */
-  sections?: { title: string; lines: string[] }[];
+  /**
+   * Secciones que añade el motor (AGENDA, LLEVAS, AQUÍ HAY, PUEDES USAR…), ya escritas y en
+   * orden. Las de `order` menor que `DISCOVERED_SECTION_ORDER` van antes de los lugares
+   * descubiertos.
+   */
+  sections?: { title: string; lines: string[]; order?: number }[];
   workingMemory: string;
+}
+
+/** Posición de LUGARES QUE HAS DESCUBIERTO entre las secciones del motor (ver `sections`). */
+export const DISCOVERED_SECTION_ORDER = 5;
+
+/** Secciones con líneas, como "TÍTULO:\n- línea\n" (las vacías no aparecen). */
+function sectionsText(sections: { title: string; lines: string[] }[]): string {
+  return sections
+    .filter((x) => x.lines.length)
+    .map((x) => `${x.title}:\n${x.lines.map((l) => `- ${l}`).join("\n")}\n`)
+    .join("");
 }
 
 /** Lugares que ha descubierto desde que empezó (vacío si ninguno). */
@@ -278,18 +295,16 @@ export function decidePrompt(opts: DecideContext): string {
   const objects = opts.objectStates.length
     ? opts.objectStates.map((o) => `${o.id}: ${o.state}`).join("; ")
     : "todo normal";
+  const sections = opts.sections ?? [];
+  const early = sections.filter((x) => (x.order ?? 50) < DISCOVERED_SECTION_ORDER);
+  const late = sections.filter((x) => (x.order ?? 50) >= DISCOVERED_SECTION_ORDER);
   return `TAREA: decide
 Es ${formatGameTime(opts.now)}. Estás en ${opts.locationId} haciendo: ${opts.action}. Tiempo: ${opts.weather}.
 Ánimo: ${opts.moodLabel}. Energía ${opts.needs.energy.toFixed(2)}, hambre ${opts.needs.hunger.toFixed(2)}, social ${opts.needs.social.toFixed(2)}.
 Tu plan ahora: ${plan}
 HOY YA HAS HECHO:
 ${opts.doneToday || "- (nada todavía)"}
-${opts.agenda?.length ? `AGENDA:\n${opts.agenda.map((l) => `- ${l}`).join("\n")}\n` : ""}${discoveredSection(opts.discovered)}${(
-    opts.sections ?? []
-  )
-    .filter((x) => x.lines.length)
-    .map((x) => `${x.title}:\n${x.lines.map((l) => `- ${l}`).join("\n")}\n`)
-    .join("")}OBJETOS: ${objects}
+${opts.agenda?.length ? `AGENDA:\n${opts.agenda.map((l) => `- ${l}`).join("\n")}\n` : ""}${sectionsText(early)}${discoveredSection(opts.discovered)}${sectionsText(late)}OBJETOS: ${objects}
 PRESENTES: ${present}
 CONVERSACIÓN: ${opts.conversationWith ?? "ninguna"}
 HABLAN:

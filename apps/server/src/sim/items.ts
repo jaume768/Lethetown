@@ -1,7 +1,7 @@
 /**
  * Inventario: objetos que los agentes llevan encima, con dueño y préstamos (ver
- * sim/actions/items.ts). Viven en el runtime (`ctx.items`, en la instantánea) y se escriben en
- * `inventory_items` en cada cambio. Un préstamo que vence sin devolverse lo nota el dueño.
+ * sim/actions/items.ts). Viven en el estado del sistema (`itemsState`, en la instantánea) y se
+ * escriben en `inventory_items` en cada cambio. Un préstamo que vence sin devolverse lo nota el dueño.
  */
 import { applySocialUpdate, type Agent } from "@lethetown/agent-core";
 import { verbsFor, type Item } from "@lethetown/shared";
@@ -13,15 +13,23 @@ const OVERDUE_AFFINITY = -0.05;
 const firstName = (ctx: SimContext, id: string | null) =>
   (id && ctx.agents.get(id)?.seed.name.split(" ")[0]) ?? id ?? "nadie";
 
+/** Estado del inventario: los objetos y su contador ("i1", "i2"…). */
+export interface ItemsState {
+  items: Map<string, Item>;
+  seq: number;
+}
+
+export const itemsState = (ctx: SimContext) =>
+  ctx.state<ItemsState>("items", () => ({ items: new Map(), seq: 0 }));
+
 export function newItemId(ctx: SimContext): string {
-  ctx.itemSeq += 1;
-  return `i${ctx.itemSeq}`;
+  return `i${++itemsState(ctx).seq}`;
 }
 
 /** Guarda el objeto en el runtime y lo escribe (en segundo plano). */
 export function saveItem(ctx: SimContext, item: Item, touch = true): void {
   if (touch) item.updatedAt = ctx.clock.now();
-  ctx.items.set(item.id, item);
+  itemsState(ctx).items.set(item.id, item);
   const write = ctx.itemStore
     .upsert(structuredClone(item))
     .catch((e: unknown) =>
@@ -36,13 +44,14 @@ export function saveItem(ctx: SimContext, item: Item, touch = true): void {
  */
 export function loadItems(ctx: SimContext, stored: Item[], now: number): void {
   // Restaurados de la instantánea: se vuelven a guardar (el almacén sigue a la instantánea).
-  if (ctx.items.size) {
-    for (const item of ctx.items.values()) saveItem(ctx, item, false);
+  const state = itemsState(ctx);
+  if (state.items.size) {
+    for (const item of state.items.values()) saveItem(ctx, item, false);
     return;
   }
   if (stored.length) {
-    for (const i of stored) ctx.items.set(i.id, i);
-    ctx.itemSeq = Math.max(ctx.itemSeq, ...stored.map((i) => Number(i.id.slice(1)) || 0));
+    for (const i of stored) state.items.set(i.id, i);
+    state.seq = Math.max(state.seq, ...stored.map((i) => Number(i.id.slice(1)) || 0));
     return;
   }
   for (const seed of ctx.deps.seeds) {
@@ -93,7 +102,7 @@ export function inventorySections(
   ctx: SimContext,
   agent: Agent,
 ): { title: string; lines: string[] }[] {
-  const items = [...ctx.items.values()];
+  const items = [...itemsState(ctx).items.values()];
   const here = agent.state.locationId;
   const place = ctx.world.place(here);
   return [
@@ -130,7 +139,7 @@ export function inventorySections(
 
 /** Préstamos vencidos: el dueño lo nota (una vez), le sienta mal y queda un drama. */
 export async function itemsTick(ctx: SimContext, now: number): Promise<void> {
-  for (const item of ctx.items.values()) {
+  for (const item of itemsState(ctx).items.values()) {
     const loan = item.loan;
     if (!loan || loan.overdueNoticed || now < loan.dueAt) continue;
     loan.overdueNoticed = true;

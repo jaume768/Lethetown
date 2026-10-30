@@ -17,13 +17,21 @@ const READ_AT_ONCE = 3;
 
 export const boardPlace = (ctx: SimContext) => ctx.world.spot(BOARD_SPOT)?.placeId ?? null;
 
+/** Estado de las notas: las vivas (tablón y privadas) y su contador ("n1"…). */
+export interface NotesState {
+  notes: Map<string, Note>;
+  seq: number;
+}
+
+export const notesState = (ctx: SimContext) =>
+  ctx.state<NotesState>("notes", () => ({ notes: new Map(), seq: 0 }));
+
 export function newNoteId(ctx: SimContext): string {
-  ctx.noteSeq += 1;
-  return `n${ctx.noteSeq}`;
+  return `n${++notesState(ctx).seq}`;
 }
 
 export function saveNote(ctx: SimContext, note: Note): void {
-  ctx.notes.set(note.id, note);
+  notesState(ctx).notes.set(note.id, note);
   const write = ctx.noteStore
     .upsert(structuredClone(note))
     .catch((e: unknown) => ctx.emit("system", null, `⚠ No se pudo guardar la nota: ${String(e)}`));
@@ -34,7 +42,7 @@ export function saveNote(ctx: SimContext, note: Note): void {
 export function readNotes(ctx: SimContext, agent: Agent): void {
   const here = agent.state.locationId;
   const now = ctx.clock.now();
-  const unread = [...ctx.notes.values()]
+  const unread = [...notesState(ctx).notes.values()]
     .filter(
       (n) =>
         n.placeId === here &&
@@ -63,12 +71,14 @@ export function readNotes(ctx: SimContext, agent: Agent): void {
 
 /** Quita del runtime las notas caducadas (en la tabla quedan hasta la retención). */
 export function notesTick(ctx: SimContext, now: number): void {
-  for (const [id, n] of [...ctx.notes]) if (n.expiresAt <= now) ctx.notes.delete(id);
+  const notes = notesState(ctx).notes;
+  for (const [id, n] of [...notes]) if (n.expiresAt <= now) notes.delete(id);
 }
 
 /** Notas al arrancar sin instantánea (las vivas guardadas). */
 export function loadNotes(ctx: SimContext, stored: Note[]): void {
-  if (ctx.notes.size) return;
-  for (const n of stored) ctx.notes.set(n.id, n);
-  ctx.noteSeq = Math.max(ctx.noteSeq, ...stored.map((n) => Number(n.id.slice(1)) || 0));
+  const state = notesState(ctx);
+  if (state.notes.size) return;
+  for (const n of stored) state.notes.set(n.id, n);
+  state.seq = Math.max(state.seq, ...stored.map((n) => Number(n.id.slice(1)) || 0));
 }

@@ -5,7 +5,7 @@ import { bootstrap, type App } from "../bootstrap";
 import { loadConfig } from "../config";
 import { runAction } from "./actions";
 import type { SimContext } from "./context";
-import { MEETING_WINDOW, agendaLines, meetingsTick, saveMeeting } from "./meetings";
+import { MEETING_WINDOW, agendaLines, meetingsState, meetingsTick, saveMeeting } from "./meetings";
 
 let app: App;
 let ctx: SimContext;
@@ -32,7 +32,7 @@ function place(id: string, placeId: string, kind: "idle" | "talk" = "idle") {
 }
 
 beforeEach(() => {
-  ctx.meetings.clear();
+  meetingsState(ctx).meetings.clear();
   for (const id of ctx.agents.keys()) place(id, "casa_roja", "talk");
 });
 
@@ -59,7 +59,7 @@ describe("citas", () => {
         reason: "pasear",
       }),
     ).toBe(true);
-    const [m] = [...ctx.meetings.values()];
+    const [m] = [...meetingsState(ctx).meetings.values()];
     expect(m).toMatchObject({
       status: "proposed",
       responses: { lucia: "accepted", mateo: "pending" },
@@ -166,7 +166,7 @@ describe("citas", () => {
       day: "hoy",
       reason: "x",
     });
-    const [m] = [...ctx.meetings.values()];
+    const [m] = [...meetingsState(ctx).meetings.values()];
     await act("mateo", { type: "accept_meeting", meetingId: m!.id });
     expect(await act("lucia", { type: "cancel_meeting", meetingId: m!.id, reason: "lluvia" })).toBe(
       true,

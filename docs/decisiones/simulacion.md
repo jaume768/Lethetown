@@ -18,7 +18,8 @@
   añadir ticks de microtareas (el orden de los eventos depende de ello).
 - **Instantáneas** síncronas cada hora de juego y al apagar (la escritura va en segundo plano).
   Todo estado del runtime o del agente va en `SimSnapshot`; si cambia su forma se sube
-  `SIM_SNAPSHOT_VERSION` y las antiguas se ignoran (arranque limpio del runtime). El estado
+  `SIM_SNAPSHOT_VERSION` y las antiguas se ignoran (arranque limpio del runtime). El estado de
+  cada sistema va en `SimSnapshot.systems` con su propia versión (ver [sistemas](sistemas.md)). El estado
   interno del agente que no viaja al cliente va en `AgentMind`.
 - **Test dorado** (`sim/golden.test.ts`): 3 días en mock con `SIM_SEED=7`. Un refactor no lo
   cambia; un cambio de comportamiento lo regenera a propósito y lo dice en el commit. Ojo con
@@ -29,6 +30,6 @@
 - **Conversaciones de dos o más** (grupos de hasta 5): unirse es hablarle a quien conversa;
   marcharse, no contestar. Las fichas sociales se revisan con las 2 personas con quienes más se
   habló. Ver [acciones.md](acciones.md).
-- **Revisiones periódicas sin LLM** cada 5 min de juego: citas, préstamos vencidos, objetos que
-  vuelven a su estado, acompañar e invitaciones, notas caducadas y normas (abrir y cerrar,
-  intrusos, menores). Las llegadas programadas solo se ejecutan si siguen vigentes.
+- **Revisiones periódicas sin LLM** cada 5 min de juego, una por sistema y en su orden de
+  registro: citas, préstamos vencidos, objetos que vuelven a su estado, acompañar e invitaciones,
+  notas caducadas y normas (abrir y cerrar, intrusos, menores). Ver [sistemas](sistemas.md). Las llegadas programadas solo se ejecutan si siguen vigentes.

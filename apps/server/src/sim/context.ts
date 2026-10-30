@@ -13,10 +13,6 @@ import type {
 import type {
   ActivityKind,
   AgentSeed,
-  Commitment,
-  Invitation,
-  Item,
-  Note,
   ServerMessage,
   SimEvent,
   SimEventKind,
@@ -150,6 +146,8 @@ export interface SimulationDeps {
    * (en vez de esperar a su siguiente tick). Sin definir o 0, se espera al tick normal.
    */
   replyDelayMinutes?: number;
+  /** Sistemas desactivados en este mundo (`{ notes: false }`); los que no aparecen, activos. */
+  systems?: Record<string, boolean>;
 }
 
 /** Señales que la simulación emite hacia los clientes (además de los eventos del log). */
@@ -166,31 +164,15 @@ export class SimContext {
   readonly agents = new Map<string, Agent>();
   readonly runtime = new Map<string, Runtime>();
   readonly conversations = new Map<string, Conversation>();
-  /** Citas vivas (propuestas o aceptadas) y recientes; también en la instantánea. */
-  readonly meetings = new Map<string, Commitment>();
-  /** Contador de ids cortos de cita ("c1", "c2"…). */
-  meetingSeq = 0;
-  /** Objetos del inventario (también en la instantánea) y su contador ("i1", "i2"…). */
-  readonly items = new Map<string, Item>();
-  itemSeq = 0;
-  /** Invitaciones a ir juntos (vivas unos minutos) y su contador ("v1", "v2"…). */
-  readonly invitations = new Map<string, Invitation>();
-  invitationSeq = 0;
-  /** Notas vivas (tablón y privadas) y su contador ("n1"…). */
-  readonly notes = new Map<string, Note>();
-  noteSeq = 0;
-  /** Invitados de cada casa (lugar → agente → hasta cuándo puede estar). */
-  readonly guests = new Map<string, Map<string, number>>();
-  /** Lugares con horario: abiertos o no en la última revisión (para avisar al abrir y cerrar). */
-  readonly openPlaces = new Map<string, boolean>();
+  /** Almacenes de los sistemas (Postgres o RAM, siempre por mundo). */
   readonly noteStore: NoteStore;
-  /** Objetos del mapa en un estado que dura (la cafetera "en uso"): cuándo vuelven y a qué. */
-  readonly objectTimers = new Map<string, { at: number; state: string; from: string }>();
   readonly itemStore: ItemStore;
   readonly commitments: CommitmentStore;
   readonly knownPlaces: KnownPlaceStore;
   /** Adelanta el siguiente tick de un agente (lo pone la simulación; ver `Simulation.wake`). */
   wake: (agentId: string, at: number) => void = () => {};
+  /** Estado en memoria de cada sistema (ver `state`). */
+  private readonly systemStates = new Map<string, unknown>();
   private readonly eventListeners: ((e: SimEvent) => void)[] = [];
   private readonly signalListeners: ((s: SimSignal) => void)[] = [];
 
@@ -207,6 +189,21 @@ export class SimContext {
 
   get world(): WorldMap {
     return this.deps.world;
+  }
+
+  /**
+   * Estado en memoria de un sistema (sim/systems/): lo crea con `init` la primera vez. Cada
+   * sistema lo lee con su accesor tipado (p. ej. `meetingsState(ctx)`), así el contexto no
+   * crece con cada sistema nuevo.
+   */
+  state<T>(systemId: string, init: () => T): T {
+    if (!this.systemStates.has(systemId)) this.systemStates.set(systemId, init());
+    return this.systemStates.get(systemId) as T;
+  }
+
+  /** ¿Está activo el sistema en este mundo? (por defecto, sí). */
+  enabled(systemId: string): boolean {
+    return this.deps.systems?.[systemId] !== false;
   }
 
   rt(agentId: string): Runtime {

@@ -55,7 +55,7 @@ export class Agent {
   ) {
     this.id = seed.id;
     const known = seedKnownPlaces(seed, deps.places);
-    this.system = identityPrompt(seed, known, deps.language, deps.minors);
+    this.system = identityPrompt(seed, known, deps.language, deps.minors, deps.worldRules);
     for (const p of known) this.mind.knownPlaces[p.id] = { source: "seed", at: 0, toldBy: null };
     this.spots = new Map(deps.places.flatMap((p) => p.objects.map((o) => [o.id, o] as const)));
     const home = deps.places.find((p) => p.id === seed.homeId);
