@@ -47,6 +47,29 @@ disparar el número de llamadas.
   manda `NO_VIEWERS_MODE`.
 - **Sin límites de gasto** en el servidor (ver [producción](produccion.md)).
 
+## Medición
+
+|                | Llamadas (mock, 48 h) | Espera de respuesta (mock) |                                        Espera de respuesta (LLM real) |
+| -------------- | --------------------: | -------------------------: | --------------------------------------------------------------------: |
+| Antes (`main`) |                 3.289 |   6,2 min de juego (p90 9) |                                                             sin medir |
+| Esta rama      |                 4.420 |   1,7 min de juego (p90 1) | 10,1 s reales de media (mediana 8,8; p90 10,4), unos 1,7 min de juego |
+
+La medición con el LLM real sale de la partida de estudio de 48 h: 20 agentes con Haiku 5.5 y
+Sonnet 5.5, a x10, 1.043 frases y 792 respuestas medidas, 3,65 $. Además, `latency:probe 6 10`
+dio 11,2 s. La espera en cola fue 0 con `LLM_CONCURRENCY=12`. No hay medida «antes» con el LLM
+real: se cortó para no retrasar la partida.
+
+Lo que vio la partida y se corrigió, o queda por estudiar:
+
+- Las réplicas de 1–3 palabras son el 0,6 %: el modelo casi siempre añade una segunda frase. Lo
+  que más se repite son las muletillas de la semilla, no los ejemplos del prompt.
+- El tope de seguridad de turnos (12) cortó 16 de 204 charlas, algunas en pleno interés.
+- Una muletilla («ya te lo pago, de verdad») se convirtió en una deuda que nadie sembró, a
+  través de las intenciones, la reconsolidación y la consolidación.
+- Corregido en esta rama: el JSON con texto detrás, el turno que se cortaba si fallaba una
+  reconsolidación, las necesidades extremas que no hacían pensar al agente, las cenas que no
+  quitaban el hambre, el plan de reserva sin comidas y la crónica que solo veía la noche.
+
 ## Pendiente (diseñado, no implementado)
 
 - **Charlas en lote** (`CONVERSATION_BATCH=off|trivial|all`): generar varios turnos de una charla
