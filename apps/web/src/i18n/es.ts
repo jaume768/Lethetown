@@ -39,8 +39,6 @@ const es = {
   "map.exitFullscreen": "Salir de pantalla completa",
 
   "status.paused": "Mundo en pausa",
-  "status.budget":
-    "Se ha agotado el presupuesto de LLM de este mundo. Se reanudará cuando cambie el periodo o un administrador suba el límite.",
   "status.kill_switch": "Un administrador ha detenido todas las llamadas al LLM (kill switch).",
   "status.no_viewers": "Sin espectadores: el mundo descansa y se reanuda al volver alguien.",
   "status.manual": "Pausado por un director.",

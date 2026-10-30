@@ -41,8 +41,6 @@ const en: Record<MessageKey, string> = {
   "map.exitFullscreen": "Exit full screen",
 
   "status.paused": "World paused",
-  "status.budget":
-    "This world ran out of LLM budget. It will resume when the period changes or an admin raises the limit.",
   "status.kill_switch": "An admin stopped every LLM call (kill switch).",
   "status.no_viewers": "No viewers: the world rests and resumes when someone comes back.",
   "status.manual": "Paused by a director.",

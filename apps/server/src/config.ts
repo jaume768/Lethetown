@@ -99,12 +99,6 @@ const Env = z.object({
   WS_MAX_PER_IP: z.coerce.number().int().positive().default(8),
   WS_HEARTBEAT_SECONDS: z.coerce.number().positive().default(30),
 
-  // --- Presupuesto de gasto en LLM (USD; 0 = sin límite) --------------------------------------
-  BUDGET_DAILY_USD: z.coerce.number().nonnegative().default(5),
-  BUDGET_MONTHLY_USD: z.coerce.number().nonnegative().default(50),
-  WORLD_BUDGET_DAILY_USD: z.coerce.number().nonnegative().default(2),
-  WORLD_BUDGET_MONTHLY_USD: z.coerce.number().nonnegative().default(20),
-
   // --- Texto del usuario --------------------------------------------------------------------
   /** Longitud máxima de la voz interior y de los estados de objetos. */
   USER_TEXT_MAX: z.coerce.number().int().positive().default(280),

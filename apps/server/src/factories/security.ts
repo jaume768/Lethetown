@@ -25,18 +25,9 @@ export async function devUsers(config: AppConfig, log: (msg: string) => void): P
   return users;
 }
 
-/** Guardián del presupuesto, con el gasto de hoy y de este mes ya registrado en llm_calls. */
-export async function createBudget(
-  config: AppConfig,
-  db: DbHandle | undefined,
-): Promise<BudgetGuard> {
-  const guard = new BudgetGuard({
-    global: { dailyUsd: config.BUDGET_DAILY_USD, monthlyUsd: config.BUDGET_MONTHLY_USD },
-    perWorld: {
-      dailyUsd: config.WORLD_BUDGET_DAILY_USD,
-      monthlyUsd: config.WORLD_BUDGET_MONTHLY_USD,
-    },
-  });
+/** Gasto en LLM (solo para verlo) y kill switch, con lo ya registrado en llm_calls. */
+export async function createBudget(db: DbHandle | undefined): Promise<BudgetGuard> {
+  const guard = new BudgetGuard();
   if (!db) return guard;
   guard.load(await budgetTotals(db.db));
   return guard;

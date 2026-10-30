@@ -71,7 +71,7 @@ export async function createServices(
     storeKind: db ? "postgres" : "memory",
     worldRepo: db ? new PgWorldRepo(db.db) : new InMemoryWorldRepo(),
     snapshots: db ? new PgSnapshotStore(db.db) : new InMemorySnapshotStore(),
-    budget: await createBudget(config, db),
+    budget: await createBudget(db),
     moderationLog: db ? new PgModerationLog(db.db) : new InMemoryModerationLog(),
     metrics: new Metrics(processName),
     users: db ? new PgUserStore(db.db) : await devUsers(config, log),

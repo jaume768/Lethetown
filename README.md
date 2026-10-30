@@ -296,8 +296,8 @@ Producción en un VPS (Caddy con HTTPS, api, workers y Postgres): **[docs/despli
 - El texto de los jugadores se sanea, se limita (`USER_TEXT_MAX`), se modera con el modelo `fast`
   y entra en los prompts entre `⟦ ⟧` como dato no confiable. Los rechazos quedan en
   `moderation_log`.
-- **Presupuesto** en USD por día y mes, por mundo y global (`BUDGET_*`, `WORLD_BUDGET_*`). Al
-  superarlo, el mundo se pausa solo, se emite un evento y la web lo muestra. Kill switch para admin.
+- **Gasto**: el servidor lo suma (por mundo, día y mes) para verlo, pero no lo limita: eso se
+  controla con el saldo de la API key. Kill switch para admin.
 - LLM con timeout propio, reintentos con backoff y jitter en 429/5xx y circuit breaker; Batch API
   opcional (`LLM_BATCH=on`, Anthropic) para la consolidación nocturna y las crónicas.
 
@@ -361,7 +361,7 @@ Todas las rutas de un mundo cuelgan de `/api/worlds/:worldId/…`; `/api/…` es
 | ----------- | ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | 👁 GET       | `/api/health` · `/api/worlds`                           | Health mínimo y lista de mundos.                                                                                                        |
 | 👁 POST      | `/api/auth/login` · `/api/auth/logout` · GET `/me`      | Sesión por cookie.                                                                                                                      |
-| 🔑 GET      | `/api/admin/health` · `/api/admin/budget`               | Health detallado (leases, cola LLM, breaker) y presupuesto.                                                                             |
+| 🔑 GET      | `/api/admin/health` · `/api/admin/budget`               | Health detallado (leases, cola LLM, breaker) y gasto.                                                                                   |
 | 🔑 POST     | `/api/admin/kill` `{ on }`                              | Kill switch.                                                                                                                            |
 | 🔑 GET/POST | `/api/admin/worlds` · `/:id/status` · `/:id/moderation` | Gestión de mundos (crear con `language`) y textos rechazados.                                                                           |
 | 🔑 GET      | `/metrics`                                              | Prometheus (o `Authorization: Bearer METRICS_TOKEN`).                                                                                   |
@@ -426,7 +426,7 @@ LLM_CONCURRENCY=4
 - **Anthropic**: Messages API con `cache_control` en el prompt de sistema y `output_config.effort`. En Sonnet 5.5 se activa el fallback del lado servidor (`fallbacks: "default"`).
 - **OpenAI**: Responses API con `reasoning.effort` y `prompt_cache_key` por agente.
 
-Antes de dejarlo corriendo, empieza en pausa (`SIM_SPEED=0`) y mira el contador de coste. Con la memoria humana activa hay unas 2.000 llamadas por día de juego con los 20 agentes (la mayoría con el modelo `fast`): ajusta los presupuestos `BUDGET_*` antes de usar un proveedor real.
+Antes de dejarlo corriendo, empieza en pausa (`SIM_SPEED=0`) y mira el contador de coste. Con la memoria humana activa hay unas 2.000 llamadas por día de juego con los 20 agentes (la mayoría con el modelo `fast`): el servidor no limita el gasto, así que controla el saldo de la API key antes de usar un proveedor real.
 
 ## Decisiones de diseño
 

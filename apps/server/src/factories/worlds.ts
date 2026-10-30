@@ -32,7 +32,6 @@ import { GameClock } from "../sim/clock";
 import { DramaDetector } from "../sim/dramas";
 import { Simulation } from "../sim/simulation";
 import { parseSnapshot } from "../sim/snapshot";
-import { describeBreach } from "../security/budget";
 import { WorldMap } from "../sim/world";
 import { readJson } from "./files";
 import {
@@ -217,7 +216,7 @@ export async function openWorld(services: Services, row: WorldRow): Promise<Worl
     restoredFrom: snapshot?.time ?? null,
     status: () => status,
     pause(reason, detail) {
-      // Una pausa "más fuerte" (presupuesto, kill switch) sustituye a una manual o por falta de público.
+      // Una pausa "más fuerte" (kill switch) sustituye a una manual o por falta de público.
       if (status.state === "paused" && status.reason === reason) return;
       if (clock.speed !== 0) resumeSpeed = clock.speed;
       clock.setSpeed(0);
@@ -259,19 +258,13 @@ export async function openWorld(services: Services, row: WorldRow): Promise<Worl
 
 /**
  * Enlaza los servicios compartidos con los mundos que corre este proceso: la Batch API solo si
- * ningún mundo va más rápido que LLM_BATCH_MAX_SPEED, y al superar el presupuesto se pausa el
- * mundo afectado (o todos, si es el global).
+ * ningún mundo va más rápido que LLM_BATCH_MAX_SPEED.
  */
 export function attachWorlds(services: Services, worlds: () => Iterable<WorldRuntime>): void {
   const max = services.config.LLM_BATCH_MAX_SPEED;
   services.setBatchGate(() =>
     [...worlds()].every((w) => w.clock.speed === 0 || w.clock.speed <= max),
   );
-  services.budget.onBreach((b) => {
-    for (const w of worlds()) {
-      if (b.scope === "global" || w.id === b.worldId) w.pause("budget", describeBreach(b));
-    }
-  });
 }
 
 async function resumeTime(store: MemoryStore): Promise<number> {

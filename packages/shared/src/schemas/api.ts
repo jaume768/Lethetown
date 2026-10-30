@@ -79,7 +79,7 @@ export type ClockState = z.infer<typeof ClockState>;
  */
 export const WorldRunStatus = z.object({
   state: z.enum(["running", "paused"]),
-  reason: z.enum(["budget", "kill_switch", "no_viewers", "manual"]).nullable(),
+  reason: z.enum(["kill_switch", "no_viewers", "manual"]).nullable(),
   /** Texto legible (p. ej. "Presupuesto diario del mundo superado: $2.01 de $2.00"). */
   detail: z.string().nullable(),
 });

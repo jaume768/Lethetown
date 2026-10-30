@@ -40,7 +40,6 @@ beforeAll(async () => {
     DATABASE_URL: "",
     SIM_SEED: "3",
     DEV_ADMIN_PASSWORD: "admin-password-123",
-    WORLD_BUDGET_DAILY_USD: "0",
   });
   app = await bootstrap(config, () => {});
   api = await buildApi(localContext(app), app);
@@ -167,15 +166,10 @@ describe("autorización", () => {
     ).rejects.toThrow();
   });
 
-  // Va el último: deja el mundo pausado por presupuesto.
-  it("al superar el presupuesto global el mundo se pausa solo, avisa y no se puede reanudar", async () => {
-    const events: string[] = [];
-    app.defaultWorld.sim.onEvent((e) => events.push(e.text));
-    app.budget.record("default", 6); // BUDGET_DAILY_USD por defecto: 5
+  it("no hay límite de gasto: el gasto se registra, pero el mundo no se pausa", async () => {
+    app.budget.record("default", 1000);
     const state = (await get("/api/state", null)).json();
-    expect(state.status).toMatchObject({ state: "paused", reason: "budget" });
-    expect(state.status.detail).toMatch(/diario global/);
-    expect(events.some((t) => t.includes("Mundo en pausa"))).toBe(true);
-    expect((await post("/api/speed", "director", { speed: 10 })).statusCode).toBe(409);
+    expect(state.status).toMatchObject({ state: "running" });
+    expect((await get("/api/admin/budget", "admin")).json()).toMatchObject({ killed: false });
   });
 });

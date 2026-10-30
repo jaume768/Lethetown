@@ -12,10 +12,12 @@
   servicios); `bootstrap.ts` solo orquesta.
 - **Sesiones propias** con cookie httpOnly + SameSite=Lax (+ Secure), solo su SHA-256 en la BD;
   argon2id; roles viewer/director/admin. Las peticiones que mutan exigen `Origin` permitido.
-- **Moderación dentro de la orden** (`vetUserText` del mundo, quien tiene el LLM y el presupuesto),
+- **Moderación dentro de la orden** (`vetUserText` del mundo, quien tiene el LLM),
   fail-closed; el texto del usuario va entre `⟦ ⟧` como dato no confiable.
-- **Presupuesto** por día y mes, por mundo y global: `BudgetGuard` pausa el mundo y
-  `BudgetedProvider` rechaza llamadas; kill switch para admin.
+- **Sin límites de gasto** en el servidor (se controlan con el saldo de la API key): `BudgetGuard`
+  solo suma el gasto para verlo y lleva el kill switch del admin, que `BudgetedProvider` aplica.
+  Antes había límites por día y mes que pausaban el mundo; se quitaron porque duplicaban el
+  control del proveedor y cortaban partidas largas a medias.
 - **LOD sin espectadores**; deltas por WS en vez del estado completo.
 - **Retención** (`retention.ts`, `config/retention.json`): política por tabla (días de juego o
   reales; borrar o resumir). Recuerdos olvidados o archivados 14 días de juego; auditoría y
