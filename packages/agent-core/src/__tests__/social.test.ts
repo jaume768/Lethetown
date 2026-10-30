@@ -200,7 +200,7 @@ describe("lo social en el agente", () => {
     const { agent } = setup("ines");
     expect(agent.system).toContain("Personalidad: ");
     expect(agent.system).toMatch(
-      /Cómo hablas: sarcástico y adolescente; frases cortas; muletillas: «en plan…»/,
+      /Cómo hablas: sarcástico y adolescente; cada vez que hablas, una frase corta o menos; muletillas: «en plan…»/,
     );
     expect(agent.system).toMatch(
       /puedes discrepar, negarte, molestarte o no tener ganas de hablar/,

@@ -180,6 +180,22 @@ export const MemoryConfig = z.object({
       exclamationValence: z.number().min(0).max(1).default(0.15),
     })
     .prefault({}),
+  /** Tope en código del habla (caracteres): `say` según `sentenceLength` y `reason`. */
+  speech: z
+    .object({
+      maxChars: z
+        .object({
+          corta: z.number().int().positive().default(90),
+          media: z.number().int().positive().default(160),
+          larga: z.number().int().positive().default(240),
+        })
+        .prefault({}),
+      /** Los menores, frases más cortas (como mucho esto, aunque su estilo sea más largo). */
+      minorMaxChars: z.number().int().positive().default(120),
+      /** El porqué de cada decisión (inspector). */
+      reasonMaxChars: z.number().int().positive().default(120),
+    })
+    .prefault({}),
   /** Diario de hoy (`doneToday`): memoria a corto plazo del día, imprecisa con poca energía. */
   diary: z
     .object({

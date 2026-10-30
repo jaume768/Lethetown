@@ -4,6 +4,7 @@ import { describeMood } from "./mood";
 import { untrusted } from "./moderation";
 import { DecideResponse, decideAction, parseWith } from "./parse";
 import { decidePrompt } from "./prompts";
+import { clipText, speechMax } from "./speech";
 import type { Agent } from "./agent";
 import type { Decision, DecideInput } from "./agent-types";
 
@@ -69,7 +70,11 @@ export async function decide(a: Agent, now: number, input: DecideInput): Promise
     const parsed = parseWith(DecideResponse, res.text);
     // Algo que se propone hacer más adelante (memoria prospectiva).
     if (parsed.intention?.text) await a.intend(now, parsed.intention);
-    return await checked(a, toDecision(parsed));
+    const cfg = a.deps.memory.config.speech;
+    return await checked(
+      a,
+      toDecision(parsed, { say: speechMax(a.seed, cfg), reason: cfg.reasonMaxChars }),
+    );
   } catch (error) {
     a.deps.onError?.(a.id, "decide", error);
     return { kind: "follow_plan" };
@@ -105,10 +110,14 @@ export async function checked(a: Agent, d: Decision): Promise<Decision> {
 
 /**
  * Respuesta → decisión. Solo se comprueba la forma (el catálogo); si la acción es posible
- * (el lugar existe, la persona está…) lo decide el motor.
+ * (el lugar existe, la persona está…) lo decide el motor. Lo que dice (`say`) y el porqué se
+ * recortan a `max` caracteres (`clipText`).
  */
-export function toDecision(r: DecideResponse): Decision {
-  const why = r.reason?.trim().slice(0, 240);
+export function toDecision(
+  r: DecideResponse,
+  max: { say: number; reason: number } = { say: 240, reason: 240 },
+): Decision {
+  const why = r.reason ? clipText(r.reason, max.reason) : "";
   const reason = why ? { reason: why } : {};
   if (r.choice === "continue") return { kind: "follow_plan", ...reason };
   const parsed = AgentAction.safeParse(decideAction(r));
@@ -119,5 +128,9 @@ export function toDecision(r: DecideResponse): Decision {
       : "acción no válida";
     return { kind: "invalid", error, ...reason };
   }
-  return { kind: "act", action: parsed.data, ...reason };
+  const action =
+    parsed.data.type === "say"
+      ? { ...parsed.data, text: clipText(parsed.data.text, max.say) }
+      : parsed.data;
+  return { kind: "act", action, ...reason };
 }
