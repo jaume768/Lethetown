@@ -76,6 +76,8 @@ export interface Runtime {
   following: { who: string; until: number } | null;
   /** Bloque del plan ya avisado de que no puede ir (casa ajena, cerrado): "inicio:lugar". */
   normWarned: string | null;
+  /** Hora ya avisada de una necesidad extrema ("hora:hambre|soledad"). */
+  needsWarned: string | null;
 }
 
 export function newRuntime(): Runtime {
@@ -96,6 +98,7 @@ export function newRuntime(): Runtime {
     convWarned: null,
     following: null,
     normWarned: null,
+    needsWarned: null,
   };
 }
 

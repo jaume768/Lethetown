@@ -42,6 +42,7 @@ const rule = (name: string) => decideRules().find((r) => r.name === name)!;
 describe("mock declarativo: reglas de decisión", () => {
   it("están registradas en orden", () => {
     expect(decideRules().map((r) => r.name)).toEqual([
+      "hungry",
       "remembered",
       "repair-object",
       "broken-object",
@@ -202,7 +203,7 @@ describe("mock declarativo: reglas de decisión", () => {
   });
 
   it("una acción nueva añade su regla donde quiere (y se puede sustituir)", () => {
-    registerDecideRule({ name: "test-first", respond: () => null }, { before: "remembered" });
+    registerDecideRule({ name: "test-first", respond: () => null }, { before: "hungry" });
     expect(decideRules()[0]!.name).toBe("test-first");
     registerDecideRule({
       name: "test-first",

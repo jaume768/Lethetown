@@ -2,7 +2,7 @@
 import { readFileSync } from "node:fs";
 import { AgentSeed, parseTiledMap } from "@lethetown/shared";
 import { describe, expect, it } from "vitest";
-import { Agent } from "../agent/agent";
+import { Agent, fallbackPlan } from "../agent/agent";
 import { rateHeard } from "../agent/heard-rating";
 import { agentMockResponder } from "../agent/mock-responder";
 import { LLMClient } from "../llm/client";
@@ -114,5 +114,48 @@ describe("reconsolidación en segundo plano", () => {
     expect(tasks.indexOf("reconsolidate")).toBeGreaterThan(tasks.indexOf("decide"));
     const [m] = await memory.store.listByAgent("lucia");
     expect(m!.text).toMatch(/con otro color/);
+  });
+});
+
+describe("lo que salió de la partida de estudio", () => {
+  it("si falla reescribir un recuerdo al recordar, no se corta nada (Inés)", async () => {
+    const { agent, memory } = setup(1);
+    (memory as unknown as { reconsolidator: unknown }).reconsolidator = {
+      reconsolidate: async () => {
+        throw new Error("La respuesta no contiene JSON");
+      },
+    };
+    await memory.remember(
+      { agentId: "lucia", text: "Fui al huerto con Sofía.", type: "observation", importance: 6 },
+      0,
+    );
+    const errors: string[] = [];
+    (agent.deps as { onError?: unknown }).onError = (_: string, task: string) => errors.push(task);
+    await expect(agent.planDay(1440 + 7 * 60)).resolves.toBeTruthy();
+    expect(errors).toContain("reconsolidate");
+  });
+
+  it("el plan de reserva incluye comidas", () => {
+    const plan = fallbackPlan("casa_azul");
+    expect(plan.filter((p) => p.activityKind === "eat").map((p) => p.activity)).toEqual([
+      "desayunar en casa",
+      "comer en casa",
+      "cenar en casa",
+    ]);
+  });
+
+  it("«cenar en casa y descansar» quita el hambre aunque el modelo diga sit", () => {
+    const { agent } = setup();
+    agent.state.needs.hunger = 0.9;
+    agent.state.action = "Cenar en casa y descansar";
+    agent.state.activityKind = "sit";
+    agent.live(60, true);
+    expect(agent.state.needs.hunger).toBeLessThan(0.9);
+    // Trabajar en el café no es comer.
+    agent.state.needs.hunger = 0.5;
+    agent.state.action = "Atender el café";
+    agent.state.activityKind = "work";
+    agent.live(60, true);
+    expect(agent.state.needs.hunger).toBeGreaterThan(0.5);
   });
 });

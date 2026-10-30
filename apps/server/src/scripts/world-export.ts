@@ -13,7 +13,9 @@ import { loadConfig } from "../config";
 const args = process.argv.slice(2).filter((a) => a !== "--");
 const wi = args.indexOf("--world");
 const worldId = wi >= 0 ? args[wi + 1]! : "default";
-const outDir = resolve(args.find((a, i) => !a.startsWith("--") && i !== wi + 1) ?? "export");
+const outDir = resolve(
+  args.find((a, i) => !a.startsWith("--") && (wi < 0 || i !== wi + 1)) ?? "export",
+);
 const config = loadConfig();
 if (!config.DATABASE_URL) throw new Error("world:export necesita DATABASE_URL");
 

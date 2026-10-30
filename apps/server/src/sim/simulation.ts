@@ -454,6 +454,7 @@ export class Simulation {
     }
 
     warnOutdoorPlan(ctx, agent, now);
+    warnNeeds(ctx, agent, now, around.length === 0);
     warnConversationPlan(ctx, agent, now);
     // Un recuerdo malo que vuelve sin querer (más con el ánimo bajo o si algo se lo recuerda).
     const intrusive = await agent.ruminate(now, this.tickMinutes, around);
@@ -606,6 +607,30 @@ function warnConversationPlan(ctx: SimContext, agent: Agent, now: number): void 
   rt.pending.push({
     kind: "world",
     text: `Según tu plan ahora toca ${item.activity} en ${ctx.world.place(item.placeId).name}, pero estás hablando con ${other}.`,
+    placeId: null,
+  });
+}
+
+/**
+ * Necesidad extrema (mucha hambre sin estar comiendo, o soledad estando solo): se le avisa una
+ * vez por hora, así que se para a pensar (con el LLM) aunque no pase nada. Sin esto, un agente
+ * solo en casa sin plan no decidía nada en todo el día (partida de estudio, Lucía).
+ */
+function warnNeeds(ctx: SimContext, agent: Agent, now: number, alone: boolean): void {
+  const cfg = ctx.deps.memory.config.needs;
+  const { hunger, social } = agent.state.needs;
+  const hungry = hunger >= cfg.urgentHunger && agent.state.activityKind !== "eat";
+  const lonely = alone && social <= cfg.urgentSocial;
+  if (!hungry && !lonely) return;
+  const rt = ctx.rt(agent.id);
+  const key = `${Math.floor(now / 60)}:${hungry ? "hambre" : "soledad"}`;
+  if (rt.needsWarned === key) return;
+  rt.needsWarned = key;
+  rt.pending.push({
+    kind: "world",
+    text: hungry
+      ? "Tienes mucha hambre y no estás comiendo."
+      : "Llevas mucho rato sin hablar con nadie y te pesa la soledad.",
     placeId: null,
   });
 }

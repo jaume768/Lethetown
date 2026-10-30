@@ -92,6 +92,7 @@ export class Agent {
       system: this.system,
       moodLabel: describeMood(this.state.mood),
       socialSummary: async (people) => (await this.socialNotes(people)).join(" "),
+      onError: (error) => this.deps.onError?.(this.id, "reconsolidate", error),
     };
   }
 

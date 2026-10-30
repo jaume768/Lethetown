@@ -75,6 +75,8 @@ export interface RecallContext {
    * hacerlo después (p. ej. cuando ya ha decidido, sin retrasar la respuesta).
    */
   defer?: (work: () => Promise<void>) => void;
+  /** Un fallo al reescribir (no corta nada; solo se avisa). */
+  onError?: (error: unknown) => void;
 }
 
 export interface RetrieveOptions {
@@ -361,9 +363,14 @@ export class MemorySystem {
         }
         continue;
       }
-      // Puede rellenar huecos (falso recuerdo); si no, lo nítido puede reconsolidarse.
-      if (!(await this.maybeConfabulate(s, recall, now))) {
-        await this.maybeReconsolidate(s, recall, now);
+      // Puede rellenar huecos (falso recuerdo); si no, lo nítido puede reconsolidarse. Si el
+      // LLM falla, el recuerdo se queda como estaba: recordar no puede cortar el turno.
+      try {
+        if (!(await this.maybeConfabulate(s, recall, now))) {
+          await this.maybeReconsolidate(s, recall, now);
+        }
+      } catch (error) {
+        recall.onError?.(error);
       }
     }
   }

@@ -160,6 +160,16 @@ describe("extractJson", () => {
     expect(extractJson('Claro:\n```json\n{"a":1}\n```')).toEqual({ a: 1 });
     expect(() => extractJson("sin json")).toThrow();
   });
+
+  it("el primer objeto equilibrado, aunque detrás haya texto con llaves (plan de Lucía)", () => {
+    expect(extractJson('{"plan":[{"start":"07:00"}]}\nNota: {ajusté} el plan')).toEqual({
+      plan: [{ start: "07:00" }],
+    });
+    // Llaves dentro de cadenas y comillas escapadas no cuentan.
+    expect(extractJson('{"a":"x}{\\"y"} y luego {"b":2}')).toEqual({ a: 'x}{"y' });
+    // "{" suelta antes del JSON.
+    expect(extractJson('Uso {llaves} así: {"ok":true}')).toEqual({ ok: true });
+  });
 });
 
 describe("decisión con el catálogo de acciones", () => {
