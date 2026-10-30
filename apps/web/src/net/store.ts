@@ -34,10 +34,14 @@ const clockEstimate = new ClockEstimator();
 
 function handle(msg: ServerMessage) {
   if (msg.type === "snapshot") {
-    clockEstimate.sync(msg.snapshot.clock.time, msg.snapshot.clock.speed, performance.now());
+    clockEstimate.sync(
+      msg.snapshot.clock.time,
+      msg.snapshot.clock.rate ?? msg.snapshot.clock.speed,
+      performance.now(),
+    );
     loadRecentEvents(msg.snapshot.clock.time);
   } else if (msg.type === "tick" || msg.type === "delta") {
-    clockEstimate.sync(msg.clock.time, msg.clock.speed, performance.now());
+    clockEstimate.sync(msg.clock.time, msg.clock.rate ?? msg.clock.speed, performance.now());
   }
   if (msg.type === "memory_effect") for (const l of effectListeners) l(msg);
   const next = applyMessage(state, msg);

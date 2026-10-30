@@ -281,7 +281,17 @@ function ponder(c: DecideCtx): DecideReply | null {
   );
 }
 
+/** Mucha hambre (aviso del motor): come algo donde esté. */
+function hungry(c: DecideCtx): DecideReply | null {
+  if (!c.p.includes("Tienes mucha hambre") || c.speaker) return null;
+  return say(
+    { choice: "react", action: "comer algo", activityKind: "eat", placeId: c.here },
+    "Tengo muchísima hambre; primero como algo.",
+  );
+}
+
 for (const [name, respond] of [
+  ["hungry", hungry],
   ["remembered", remembered],
   ["broken-object", brokenObject],
   ["inner-voice", innerVoice],

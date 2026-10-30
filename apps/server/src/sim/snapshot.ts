@@ -13,7 +13,7 @@ import {
 import { z } from "zod";
 
 /** Sube este número si cambias la forma de la instantánea (las antiguas se ignoran). */
-export const SIM_SNAPSHOT_VERSION = 16;
+export const SIM_SNAPSHOT_VERSION = 17;
 
 /** Percepción pendiente (misma forma que `Perception` de agent-core). */
 const Perception = z.discriminatedUnion("kind", [
@@ -99,6 +99,7 @@ export const SimSnapshot = z.object({
         convWarned: z.string().nullable(),
         following: z.object({ who: z.string(), until: z.number() }).nullable().default(null),
         normWarned: z.string().nullable().default(null),
+        needsWarned: z.string().nullable().default(null),
       }),
     }),
   ),

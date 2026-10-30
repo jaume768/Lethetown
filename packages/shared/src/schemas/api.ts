@@ -69,7 +69,13 @@ export type SimEvent = z.infer<typeof SimEvent>;
 
 export const ClockState = z.object({
   time: z.number(),
+  /** Velocidad elegida. */
   speed: SimSpeed,
+  /**
+   * Ritmo real (minutos de juego por minuto real) si es menor que `speed`: p. ej. x10 mientras
+   * hay conversaciones (SIM_SLOWDOWN_IN_CONVERSATION).
+   */
+  rate: z.number().optional(),
 });
 export type ClockState = z.infer<typeof ClockState>;
 
@@ -79,7 +85,7 @@ export type ClockState = z.infer<typeof ClockState>;
  */
 export const WorldRunStatus = z.object({
   state: z.enum(["running", "paused"]),
-  reason: z.enum(["budget", "kill_switch", "no_viewers", "manual"]).nullable(),
+  reason: z.enum(["kill_switch", "no_viewers", "manual"]).nullable(),
   /** Texto legible (p. ej. "Presupuesto diario del mundo superado: $2.01 de $2.00"). */
   detail: z.string().nullable(),
 });

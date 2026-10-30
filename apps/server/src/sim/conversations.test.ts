@@ -4,7 +4,7 @@ import { bootstrap, type App } from "../bootstrap";
 import { loadConfig } from "../config";
 import { runAction } from "./actions";
 import type { SimContext } from "./context";
-import { activeConversationOf, leaveConversation, talk } from "./conversations";
+import { activeConversationOf, leaveConversation, recentLines, talk } from "./conversations";
 
 let app: App;
 let ctx: SimContext;
@@ -96,5 +96,19 @@ describe("conversaciones en grupo", () => {
     talk(ctx, agent("carmen"), "lucia", "¡Lucía!");
     expect(members("carmen")).toEqual(["lucia", "mateo", "carmen"]);
     expect(members("julian")).toEqual([]);
+  });
+
+  it("contexto para decidir: las últimas 4 frases en orden, las propias como «tú»", () => {
+    const lines = ["Hola.", "¿Qué tal?", "Bien.", "¿Y Carmen?", "Ni idea.", "Vale."];
+    lines.forEach((l, i) =>
+      talk(ctx, agent(i % 2 ? "mateo" : "lucia"), i % 2 ? "lucia" : "mateo", l),
+    );
+    expect(recentLines(ctx, "lucia")).toEqual([
+      'tú: "Bien."',
+      'Mateo Ruiz: "¿Y Carmen?"',
+      'tú: "Ni idea."',
+      'Mateo Ruiz: "Vale."',
+    ]);
+    expect(recentLines(ctx, "carmen")).toEqual([]);
   });
 });

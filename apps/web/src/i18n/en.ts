@@ -41,8 +41,6 @@ const en: Record<MessageKey, string> = {
   "map.exitFullscreen": "Exit full screen",
 
   "status.paused": "World paused",
-  "status.budget":
-    "This world ran out of LLM budget. It will resume when the period changes or an admin raises the limit.",
   "status.kill_switch": "An admin stopped every LLM call (kill switch).",
   "status.no_viewers": "No viewers: the world rests and resumes when someone comes back.",
   "status.manual": "Paused by a director.",
@@ -246,6 +244,9 @@ const en: Record<MessageKey, string> = {
   "director.weather.wind": "💨 wind",
   "director.weather.heat": "🥵 heat",
   "header.weather": "Weather in town",
+  "header.slowed": "(now x{rate}: conversations going on)",
+  "header.slowed.title":
+    "While people are talking the clock runs at x10 so you can follow along (SIM_SLOWDOWN_IN_CONVERSATION).",
   "director.objects": "Objects",
   "director.pickObject": "Pick an object…",
   "director.apply": "Apply",

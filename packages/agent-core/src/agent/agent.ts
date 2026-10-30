@@ -92,6 +92,7 @@ export class Agent {
       system: this.system,
       moodLabel: describeMood(this.state.mood),
       socialSummary: async (people) => (await this.socialNotes(people)).join(" "),
+      onError: (error) => this.deps.onError?.(this.id, "reconsolidate", error),
     };
   }
 
@@ -217,8 +218,12 @@ export class Agent {
   }
 
   /** Percibir → guardar: convierte percepciones en recuerdos con importancia y valencia. */
-  perceive(perceptions: Perception[], now: number): Promise<void> {
-    return _perception.perceive(this, perceptions, now);
+  perceive(
+    perceptions: Perception[],
+    now: number,
+    opts?: { inConversation?: boolean },
+  ): Promise<void> {
+    return _perception.perceive(this, perceptions, now, opts);
   }
 
   /** Nivel base del ánimo (según su personalidad). */

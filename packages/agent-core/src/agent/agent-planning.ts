@@ -19,15 +19,22 @@ export const DAY_START = 7 * 60;
 
 /** Plan mínimo sin LLM, usado si la planificación falla. */
 export function fallbackPlan(homeId: string): PlanItem[] {
+  // Con comidas: sin plan del LLM, un día entero «en casa» sin comer hundía el ánimo.
+  const block = (start: number, end: number, activity: string, kind: PlanItem["activityKind"]) => ({
+    startMinute: start,
+    durationMin: end - start,
+    activity,
+    activityKind: kind,
+    placeId: homeId,
+    spotId: null,
+  });
   return [
-    {
-      startMinute: DAY_START,
-      durationMin: SLEEP_START - DAY_START,
-      activity: "estar en casa",
-      activityKind: "idle",
-      placeId: homeId,
-      spotId: null,
-    },
+    block(DAY_START, 8 * 60, "desayunar en casa", "eat"),
+    block(8 * 60, 13 * 60 + 30, "estar en casa", "idle"),
+    block(13 * 60 + 30, 14 * 60 + 30, "comer en casa", "eat"),
+    block(14 * 60 + 30, 20 * 60 + 30, "estar en casa", "idle"),
+    block(20 * 60 + 30, 21 * 60 + 30, "cenar en casa", "eat"),
+    block(21 * 60 + 30, SLEEP_START, "estar en casa", "idle"),
   ];
 }
 

@@ -38,11 +38,6 @@ ACME_EMAIL=tu@correo.com
 POSTGRES_PASSWORD=<openssl rand -base64 24>
 LLM_PROVIDER=anthropic
 ANTHROPIC_API_KEY=sk-ant-...
-# Presupuesto: al superarlo, el mundo se pausa solo
-BUDGET_DAILY_USD=5
-BUDGET_MONTHLY_USD=50
-WORLD_BUDGET_DAILY_USD=2
-WORLD_BUDGET_MONTHLY_USD=20
 NO_VIEWERS_MODE=pause
 # Opcional
 SENTRY_DSN=
@@ -100,9 +95,8 @@ docker compose -f docker-compose.prod.yml up -d --scale worker=3
 - **Kill switch** (para todas las llamadas al LLM y pausa todos los mundos):
   `curl -X POST https://$DOMAIN/api/admin/kill -H 'content-type: application/json' -H "origin: https://$DOMAIN" -b cookie.txt -d '{"on":true}'`
   (o desde el modo Director con una cuenta admin).
-- **Presupuesto**: `GET /api/admin/budget`. Al superar un límite el mundo se pausa, se emite un
-  evento y la web muestra la pantalla de "mundo pausado por presupuesto". Se reanuda (admin o
-  director) cuando el periodo cambia o se suben los límites.
+- **Gasto**: `GET /api/admin/budget` (gasto de hoy y del mes, por mundo, y kill switch). No hay
+  límites de gasto en el servidor: se controlan con el saldo de la API key del proveedor.
 - **Métricas**: Prometheus en la red interna contra `http://api:3001/metrics` con
   `Authorization: Bearer $METRICS_TOKEN` (Caddy no expone `/metrics`). Coste por hora:
   `rate(lethetown_llm_cost_usd_total[1h]) * 3600`; cache hit:

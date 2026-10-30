@@ -6,6 +6,7 @@ import { WorldCommand } from "../worlds/gateway";
 const LiveStateMsg = z.object({
   time: z.number(),
   speed: z.number(),
+  rate: z.number().optional(),
   agents: z.array(z.unknown()),
   weather: z.string(),
   status: z.unknown(),

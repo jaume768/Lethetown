@@ -13,6 +13,7 @@ márcala como sustituida) en el mismo commit.
 | Relaciones                                                    | [social.md](social.md)         |
 | Protección de menores                                         | [menores.md](menores.md)       |
 | LLM, mock y coste                                             | [llm.md](llm.md)               |
-| Producción (procesos, seguridad, presupuesto, datos)          | [produccion.md](produccion.md) |
+| Producción (procesos, seguridad, gasto, datos)                | [produccion.md](produccion.md) |
 | Interfaz                                                      | [interfaz.md](interfaz.md)     |
 | Acciones de los agentes                                       | [acciones.md](acciones.md)     |
+| Ritmo y habla de las conversaciones                           | [ritmo.md](ritmo.md)           |

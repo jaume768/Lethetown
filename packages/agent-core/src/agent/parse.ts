@@ -1,12 +1,42 @@
 import { ActivityKind } from "@lethetown/shared";
 import { z } from "zod";
 
-/** Extrae el primer objeto JSON del texto (tolera ```json ... ``` y texto alrededor). */
+/**
+ * Extrae el primer objeto JSON del texto (tolera ```json ... ``` y texto alrededor, también con
+ * llaves después: en la partida de estudio un plan con una nota detrás dejó a un agente sin
+ * plan). Busca el primer objeto con las llaves equilibradas (fuera de las cadenas) que se pueda
+ * leer; si no lo hay, prueba del primer "{" al último "}".
+ */
 export function extractJson(text: string): unknown {
+  for (let start = text.indexOf("{"); start !== -1; start = text.indexOf("{", start + 1)) {
+    const end = balancedEnd(text, start);
+    if (end === -1) break;
+    try {
+      return JSON.parse(text.slice(start, end + 1));
+    } catch {
+      // No era JSON (p. ej. "{" dentro de una frase): el siguiente.
+    }
+  }
   const start = text.indexOf("{");
   const end = text.lastIndexOf("}");
   if (start === -1 || end <= start) throw new Error("La respuesta no contiene JSON");
   return JSON.parse(text.slice(start, end + 1));
+}
+
+/** Índice de la "}" que cierra la "{" de `start` (sin contar las de dentro de cadenas), o -1. */
+function balancedEnd(text: string, start: number): number {
+  let depth = 0;
+  let inString = false;
+  for (let i = start; i < text.length; i++) {
+    const c = text[i];
+    if (inString) {
+      if (c === "\\") i++;
+      else if (c === '"') inString = false;
+    } else if (c === '"') inString = true;
+    else if (c === "{") depth++;
+    else if (c === "}" && --depth === 0) return i;
+  }
+  return -1;
 }
 
 export function parseWith<T>(schema: z.ZodType<T>, text: string): T {

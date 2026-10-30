@@ -14,7 +14,7 @@ const Env = z.object({
   ANTHROPIC_MODEL_REFLECTION: z.string().default("claude-sonnet-5-5"),
   OPENAI_MODEL_FAST: z.string().default("gpt-6-luna"),
   OPENAI_MODEL_REFLECTION: z.string().default("gpt-6-sol"),
-  LLM_CONCURRENCY: z.coerce.number().int().positive().default(4),
+  LLM_CONCURRENCY: z.coerce.number().int().positive().default(8),
   /** Timeout propio por intento, reintentos (429/5xx/red) y circuit breaker del proveedor. */
   LLM_TIMEOUT_SECONDS: z.coerce.number().positive().default(60),
   LLM_RETRIES: z.coerce.number().int().nonnegative().default(3),
@@ -42,7 +42,11 @@ const Env = z.object({
   EMBEDDINGS_THREAD: z.enum(["on", "off"]).default("on"),
   PORT: z.coerce.number().int().default(3001),
   SIM_TICK_MINUTES: z.coerce.number().positive().default(10),
+  /** Turnos reactivos: minutos de juego hasta que contesta quien recibe una frase (0 = al tick). */
+  SIM_REPLY_DELAY_MINUTES: z.coerce.number().nonnegative().default(1),
   SIM_SPEED: z.coerce.number().default(10),
+  /** Por encima de x10, el reloj va a x10 mientras haya alguna conversación en el mundo. */
+  SIM_SLOWDOWN_IN_CONVERSATION: z.enum(["on", "off"]).default("on"),
   /** Velocidad de paseo de los agentes, en baldosas por minuto de juego. */
   /** Semilla del azar de la memoria (reconsolidación, rumores...). Vacía = aleatoria. */
   SIM_SEED: z.preprocess(emptyToUndefined, z.coerce.number().int().optional()),
@@ -98,12 +102,6 @@ const Env = z.object({
   WS_MAX_PAYLOAD_BYTES: z.coerce.number().int().positive().default(4096),
   WS_MAX_PER_IP: z.coerce.number().int().positive().default(8),
   WS_HEARTBEAT_SECONDS: z.coerce.number().positive().default(30),
-
-  // --- Presupuesto de gasto en LLM (USD; 0 = sin límite) --------------------------------------
-  BUDGET_DAILY_USD: z.coerce.number().nonnegative().default(5),
-  BUDGET_MONTHLY_USD: z.coerce.number().nonnegative().default(50),
-  WORLD_BUDGET_DAILY_USD: z.coerce.number().nonnegative().default(2),
-  WORLD_BUDGET_MONTHLY_USD: z.coerce.number().nonnegative().default(20),
 
   // --- Texto del usuario --------------------------------------------------------------------
   /** Longitud máxima de la voz interior y de los estados de objetos. */

@@ -31,7 +31,12 @@ export const DoActivityAction = z.object({
 export const SayAction = z.object({
   type: z.literal("say"),
   to: z.string().min(1),
-  text: z.string().trim().min(1).max(400),
+  /** Lo que se pasa de largo se recorta después (según su forma de hablar), no se rechaza. */
+  text: z
+    .string()
+    .trim()
+    .min(1)
+    .transform((t) => t.slice(0, 400)),
 });
 
 /** Una o varias personas (acepta un id suelto). */
@@ -198,7 +203,8 @@ export const ACTION_SPECS: Record<ActionType, ActionSpec> = {
   say: {
     type: "say",
     params: '{"to":"id de alguien presente","text":"…"}',
-    description: "dices algo breve a alguien que está aquí",
+    description:
+      "le dices algo a alguien que está aquí, como se habla de verdad: una réplica corta (a veces una o dos palabras), sin saludar en cada turno ni repetir lo ya dicho",
   },
   propose_meeting: {
     type: "propose_meeting",

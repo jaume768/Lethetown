@@ -21,7 +21,11 @@ export function localContext(app: App): ApiContext {
           models: app.models,
           store: app.storeKind,
           embedder: app.embedder.name,
-          llmQueue: { active: app.llmQueue.activeCount, pending: app.llmQueue.pendingCount },
+          llmQueue: {
+            active: app.llmQueue.activeCount,
+            pending: app.llmQueue.pendingCount,
+            waits: app.llmQueue.waitStats(),
+          },
           llmBreaker: app.llmResilience.breakerState,
           killSwitch: app.budget.killed,
           worlds: [...app.worlds.values()].map((w) => ({

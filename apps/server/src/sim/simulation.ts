@@ -24,7 +24,12 @@ import {
   type SimSignal,
   type SimulationDeps,
 } from "./context";
-import { activeConversationOf, endIdleConversations, leaveConversation } from "./conversations";
+import {
+  activeConversationOf,
+  endIdleConversations,
+  leaveConversation,
+  recentLines,
+} from "./conversations";
 import { startDemo } from "./demo";
 import * as intervention from "./intervention";
 import { WEATHER_NOW } from "./intervention";
@@ -62,6 +67,15 @@ export class Simulation {
   private readonly tickListeners: (() => void)[] = [];
   /** Nivel de detalle: los agentes piensan cada tickMinutes × tickMultiplier (LOD sin público). */
   private tickMultiplier = 1;
+  /**
+   * Un único tick pendiente por agente: cuándo toca y su generación (un tick programado con otra
+   * generación ya no vale; así se adelanta sin duplicar). `busy`: el tick está en curso y, si
+   * piden adelantarlo, `wakeAt` dice cuándo debe ser el siguiente.
+   */
+  private readonly ticks = new Map<
+    string,
+    { at: number; gen: number; busy: boolean; wakeAt: number | null }
+  >();
 
   constructor(deps: SimulationDeps) {
     const ctx = new SimContext(deps);
@@ -100,6 +114,7 @@ export class Simulation {
       ctx.signal({ type: "thinking", agentId: e.agentId, task: e.task, phase: e.phase });
     });
     deps.memory.onEffect((e: MemoryEffect) => ctx.signal({ type: "memory_effect", ...e }));
+    ctx.wake = (agentId, at) => this.wake(agentId, at);
   }
 
   get agents(): Map<string, Agent> {
@@ -139,7 +154,7 @@ export class Simulation {
       const rt = this.ctx.rt(agent.id);
       if (!this.restored) rt.lastConsolidation = now;
       if (rt.arrival) scheduleArrival(this.ctx, agent, rt.arrival);
-      this.clock.schedule(now + i, () => this.agentTick(agent));
+      this.scheduleTick(agent, now + i);
     });
     scheduleChronicle(this.ctx, now);
     this.scheduleMeetings(now);
@@ -294,6 +309,11 @@ export class Simulation {
     this.restored = true;
   }
 
+  /** Conversaciones abiertas ahora mismo. */
+  conversationCount(): number {
+    return this.ctx.conversations.size;
+  }
+
   thinkingAgents(): string[] {
     return [...this.thinking.entries()].filter(([, n]) => n > 0).map(([id]) => id);
   }
@@ -344,14 +364,46 @@ export class Simulation {
 
   // --- Bucle del agente --------------------------------------------------------------
 
+  /** Programa el (único) siguiente tick del agente; el que hubiera pendiente deja de valer. */
+  private scheduleTick(agent: Agent, at: number): void {
+    const t = this.ticks.get(agent.id) ?? { at, gen: 0, busy: false, wakeAt: null };
+    t.at = at;
+    t.gen++;
+    this.ticks.set(agent.id, t);
+    const gen = t.gen;
+    this.clock.schedule(at, () => (t.gen === gen ? this.agentTick(agent) : undefined));
+  }
+
+  /**
+   * Turno reactivo: que el agente piense como tarde en `at` (le han hablado). Si su tick ya
+   * tocaba antes, nada; si está pensando ahora, el siguiente será a esa hora.
+   */
+  private wake(agentId: string, at: number): void {
+    const agent = this.agents.get(agentId);
+    const t = this.ticks.get(agentId);
+    if (!agent || !t) return;
+    if (t.busy) {
+      t.wakeAt = Math.min(t.wakeAt ?? Infinity, at);
+      return;
+    }
+    if (t.at > at) this.scheduleTick(agent, at);
+  }
+
   private async agentTick(agent: Agent): Promise<void> {
     for (const l of this.tickListeners) l();
+    const t = this.ticks.get(agent.id)!;
+    t.busy = true;
     try {
       await this.step(agent);
     } catch (error) {
       this.ctx.emit("system", agent.id, `⚠ Error en el tick: ${errorMessage(error)}`);
     } finally {
-      this.clock.schedule(this.clock.now() + this.tickMinutes, () => this.agentTick(agent));
+      t.busy = false;
+      const now = this.clock.now();
+      const next = now + this.tickMinutes;
+      const woken = t.wakeAt;
+      t.wakeAt = null;
+      this.scheduleTick(agent, woken === null ? next : Math.min(next, Math.max(now, woken)));
     }
   }
 
@@ -402,6 +454,7 @@ export class Simulation {
     }
 
     warnOutdoorPlan(ctx, agent, now);
+    warnNeeds(ctx, agent, now, around.length === 0);
     warnConversationPlan(ctx, agent, now);
     // Un recuerdo malo que vuelve sin querer (más con el ánimo bajo o si algo se lo recuerda).
     const intrusive = await agent.ruminate(now, this.tickMinutes, around);
@@ -436,8 +489,11 @@ export class Simulation {
     // Percibir.
     const { present, heard, place, perceptions } = gatherPerceptions(ctx, agent);
     const innerVoice = perceptions.flatMap((p) => (p.kind === "thought" ? [p.text] : []));
-    // Guardar.
-    await agent.perceive(perceptions, this.clock.now());
+    // Guardar (en una conversación en curso, lo que oye se valora por reglas, sin LLM).
+    const conv = activeConversationOf(ctx, agent.id)?.conv;
+    await agent.perceive(perceptions, this.clock.now(), {
+      inConversation: !!conv && conv.turns > 1,
+    });
     // Al pararse a pensar, repasa su agenda (las citas que tiene presentes se olvidan menos).
     if (perceptions.length) await rehearseAgenda(ctx, agent, this.clock.now());
     // Decidir.
@@ -447,6 +503,7 @@ export class Simulation {
       present,
       heard,
       conversationWith: speaker ?? activeConversationOf(ctx, agent.id)?.other ?? null,
+      conversationLines: recentLines(ctx, agent.id),
       objectStates: place.objects
         .filter((o) => o.state !== "idle")
         .map((o) => ({ id: o.id, state: o.state })),
@@ -550,6 +607,30 @@ function warnConversationPlan(ctx: SimContext, agent: Agent, now: number): void 
   rt.pending.push({
     kind: "world",
     text: `Según tu plan ahora toca ${item.activity} en ${ctx.world.place(item.placeId).name}, pero estás hablando con ${other}.`,
+    placeId: null,
+  });
+}
+
+/**
+ * Necesidad extrema (mucha hambre sin estar comiendo, o soledad estando solo): se le avisa una
+ * vez por hora, así que se para a pensar (con el LLM) aunque no pase nada. Sin esto, un agente
+ * solo en casa sin plan no decidía nada en todo el día (partida de estudio, Lucía).
+ */
+function warnNeeds(ctx: SimContext, agent: Agent, now: number, alone: boolean): void {
+  const cfg = ctx.deps.memory.config.needs;
+  const { hunger, social } = agent.state.needs;
+  const hungry = hunger >= cfg.urgentHunger && agent.state.activityKind !== "eat";
+  const lonely = alone && social <= cfg.urgentSocial;
+  if (!hungry && !lonely) return;
+  const rt = ctx.rt(agent.id);
+  const key = `${Math.floor(now / 60)}:${hungry ? "hambre" : "soledad"}`;
+  if (rt.needsWarned === key) return;
+  rt.needsWarned = key;
+  rt.pending.push({
+    kind: "world",
+    text: hungry
+      ? "Tienes mucha hambre y no estás comiendo."
+      : "Llevas mucho rato sin hablar con nadie y te pesa la soledad.",
     placeId: null,
   });
 }

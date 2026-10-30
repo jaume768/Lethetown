@@ -6,6 +6,27 @@ import { errorMessage, type SimContext } from "./context";
 
 const MAINTENANCE_EVERY = 60;
 const CHRONICLE_MINUTE = 23 * 60;
+/** Líneas del día que ve el cronista. */
+const CHRONICLE_LINES = 120;
+
+/**
+ * Rutina que no cuenta para la crónica: "Nombre: actividad" (cambios de actividad, caminar).
+ * En la partida de estudio era la mayoría de los eventos y dejaba fuera la mañana.
+ */
+function isRoutine(ctx: SimContext, kind: string, text: string): boolean {
+  if (kind !== "action") return false;
+  for (const a of ctx.agents.values()) if (text.startsWith(`${a.seed.name}: `)) return true;
+  return false;
+}
+
+/**
+ * Como mucho `n` líneas repartidas por todo el día (antes eran las últimas `n`: la crónica solo
+ * contaba la noche).
+ */
+export function spreadOverDay(lines: string[], n: number): string[] {
+  if (lines.length <= n) return lines;
+  return Array.from({ length: n }, (_, i) => lines[Math.floor((i * lines.length) / n)]!);
+}
 
 export async function maintain(ctx: SimContext, agent: Agent, now: number): Promise<void> {
   const rt = ctx.rt(agent.id);
@@ -67,15 +88,19 @@ export function scheduleChronicle(ctx: SimContext, now: number): void {
 
 export async function writeChronicle(ctx: SimContext, day: number): Promise<Chronicle | null> {
   try {
-    const events = await ctx.deps.events.range(day * 1440, (day + 1) * 1440, 2000);
-    const lines = events
-      .filter((e) => ["speech", "action", "world", "thought", "memory"].includes(e.kind))
-      .map((e) => e.text);
+    const events = await ctx.deps.events.range(day * 1440, (day + 1) * 1440, 5000);
+    const lines = spreadOverDay(
+      events
+        .filter((e) => ["speech", "action", "world", "thought", "memory"].includes(e.kind))
+        .filter((e) => !isRoutine(ctx, e.kind, e.text))
+        .map((e) => e.text),
+      CHRONICLE_LINES,
+    );
     const chronicle = await composeChronicle(
       ctx.deps.llm,
       day,
       lines,
-      120,
+      CHRONICLE_LINES,
       ctx.deps.language,
       ctx.deps.memory.guard,
     );

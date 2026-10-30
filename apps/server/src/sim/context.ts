@@ -76,6 +76,8 @@ export interface Runtime {
   following: { who: string; until: number } | null;
   /** Bloque del plan ya avisado de que no puede ir (casa ajena, cerrado): "inicio:lugar". */
   normWarned: string | null;
+  /** Hora ya avisada de una necesidad extrema ("hora:hambre|soledad"). */
+  needsWarned: string | null;
 }
 
 export function newRuntime(): Runtime {
@@ -96,6 +98,7 @@ export function newRuntime(): Runtime {
     convWarned: null,
     following: null,
     normWarned: null,
+    needsWarned: null,
   };
 }
 
@@ -142,6 +145,11 @@ export interface SimulationDeps {
   discoveryRadius?: number;
   /** Escrituras en segundo plano (para esperarlas al cerrar). */
   track?: (write: Promise<unknown>) => void;
+  /**
+   * Turnos reactivos: minutos de juego hasta que piensa quien recibe una frase dirigida a él
+   * (en vez de esperar a su siguiente tick). Sin definir o 0, se espera al tick normal.
+   */
+  replyDelayMinutes?: number;
 }
 
 /** Señales que la simulación emite hacia los clientes (además de los eventos del log). */
@@ -181,6 +189,8 @@ export class SimContext {
   readonly itemStore: ItemStore;
   readonly commitments: CommitmentStore;
   readonly knownPlaces: KnownPlaceStore;
+  /** Adelanta el siguiente tick de un agente (lo pone la simulación; ver `Simulation.wake`). */
+  wake: (agentId: string, at: number) => void = () => {};
   private readonly eventListeners: ((e: SimEvent) => void)[] = [];
   private readonly signalListeners: ((s: SimSignal) => void)[] = [];
 

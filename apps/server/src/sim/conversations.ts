@@ -24,6 +24,21 @@ export function activeConversationOf(
   return undefined;
 }
 
+/**
+ * Las últimas `n` frases de su conversación, en orden, con las suyas como "tú: …" (para que
+ * no se repita ni salude otra vez).
+ */
+export function recentLines(ctx: SimContext, agentId: string, n = 4): string[] {
+  const conv = activeConversationOf(ctx, agentId)?.conv;
+  const name = ctx.agents.get(agentId)?.seed.name;
+  if (!conv || !name) return [];
+  return conv.transcript
+    .slice(-n)
+    .map((l) =>
+      l.startsWith(`${name}: `) || l.startsWith(`${name} (a `) ? `tú${l.slice(name.length)}` : l,
+    );
+}
+
 /** Con quién ha hablado más (en los dos sentidos), de más a menos. */
 function partnersOf(conv: Conversation, agentId: string, n: number): string[] {
   const score = new Map<string, number>();
@@ -171,6 +186,9 @@ export function talk(ctx: SimContext, agent: Agent, toId: string, utterance: str
       toName: target.seed.name,
     });
   }
+  // Turno reactivo: quien recibe la frase piensa enseguida (no a su siguiente tick).
+  const delay = ctx.deps.replyDelayMinutes ?? 0;
+  if (delay > 0) ctx.wake(toId, now + delay);
   const overhearers = eavesdrop(ctx, agent, target, conv, utterance);
   // Si nombra un sitio que quien escucha no conoce, quizá se lo crea y lo aprenda.
   for (const listener of [toId, ...rest]) {

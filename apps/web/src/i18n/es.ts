@@ -39,8 +39,6 @@ const es = {
   "map.exitFullscreen": "Salir de pantalla completa",
 
   "status.paused": "Mundo en pausa",
-  "status.budget":
-    "Se ha agotado el presupuesto de LLM de este mundo. Se reanudará cuando cambie el periodo o un administrador suba el límite.",
   "status.kill_switch": "Un administrador ha detenido todas las llamadas al LLM (kill switch).",
   "status.no_viewers": "Sin espectadores: el mundo descansa y se reanuda al volver alguien.",
   "status.manual": "Pausado por un director.",
@@ -244,6 +242,9 @@ const es = {
   "director.weather.wind": "💨 viento",
   "director.weather.heat": "🥵 calor",
   "header.weather": "Tiempo en el pueblo",
+  "header.slowed": "(ahora x{rate}: hay conversaciones)",
+  "header.slowed.title":
+    "Con conversaciones abiertas el reloj va a x10 para que se puedan seguir (SIM_SLOWDOWN_IN_CONVERSATION).",
   "director.objects": "Objetos",
   "director.pickObject": "Elige un objeto…",
   "director.apply": "Aplicar",

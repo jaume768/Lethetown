@@ -3,6 +3,9 @@ import { recallText } from "../memory/retrieval";
 import { baselineMood, makeMood, stepMood, stepNeeds } from "./mood";
 import type { Agent } from "./agent";
 
+/** Actividades que son una comida, las marque el modelo como las marque. */
+const MEAL = /\b(comer|comiendo|desayun\w*|cenar|cenando|merend\w*|almorz\w*)\b/i;
+
 /** Nivel base del ánimo (según su personalidad). */
 export function moodBaseline(a: Agent): { valence: number; arousal: number } {
   const cfg = a.deps.memory.config;
@@ -98,7 +101,15 @@ export function wakeUp(a: Agent): number {
 export function live(a: Agent, minutes: number, alone: boolean): void {
   const cfg = a.deps.memory.config;
   const extraversion = a.seed.personality.extraversion;
-  const kind = a.state.activityKind;
+  // Si lo que hace dice que come («cenar en casa y descansar»), come, aunque el modelo la
+  // marcara como "sit": en la partida de estudio una cena así no quitaba el hambre.
+  const kind =
+    a.state.activityKind !== "eat" &&
+    a.state.activityKind !== "sleep" &&
+    a.state.activityKind !== "walk" &&
+    MEAL.test(a.state.action)
+      ? "eat"
+      : a.state.activityKind;
   a.state.needs = stepNeeds(
     a.state.needs,
     { kind, alone, extraversion, sleepQuality: a.mind.sleepQuality },

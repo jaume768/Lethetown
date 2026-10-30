@@ -21,6 +21,12 @@ export const REPLIES = [
   "Pues yo he oído otra versión, ¿eh?",
   "Tienes razón, este pueblo nunca cambia.",
   "Eso mismo le dije yo a alguien ayer, y no me hizo caso.",
+  // Réplicas cortas, como se habla de verdad.
+  "¿Y eso?",
+  "Ya.",
+  "Ni de broma.",
+  "Pues no sé yo.",
+  "¿En serio?",
 ];
 export const FOLLOW_UPS = [
   "Oye, ¿y tú qué planes tienes para luego?",

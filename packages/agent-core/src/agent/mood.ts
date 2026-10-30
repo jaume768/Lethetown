@@ -58,6 +58,13 @@ export const NeedsConfig = z.object({
    * × (0.5 − extraversion)·2 (nada si es extravertido).
    */
   introvertRecoveryPerHour: z.number().min(0).default(0.04),
+  /**
+   * Necesidad extrema que le hace pararse a pensar (una vez por hora), aunque no pase nada:
+   * hambre por encima de esto…
+   */
+  urgentHunger: z.number().min(0).max(1).default(0.85),
+  /** …o social por debajo de esto. */
+  urgentSocial: z.number().min(0).max(1).default(0.1),
 });
 export type NeedsConfig = z.infer<typeof NeedsConfig>;
 

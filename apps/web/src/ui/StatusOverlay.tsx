@@ -23,7 +23,7 @@ export function ConnectionBanner({ connected, retries }: { connected: boolean; r
   );
 }
 
-/** Mundo en pausa: a pantalla completa si es por presupuesto o kill switch; si no, discreto. */
+/** Mundo en pausa: a pantalla completa si es por el kill switch; si no, discreto. */
 export function PausedOverlay({
   status,
   canResume,
@@ -35,7 +35,7 @@ export function PausedOverlay({
 }) {
   const { t } = useI18n();
   if (status.state !== "paused" || !status.reason) return null;
-  const blocking = status.reason === "budget" || status.reason === "kill_switch";
+  const blocking = status.reason === "kill_switch";
   const text = t(`status.${status.reason}` as MessageKey);
   return (
     <div className={blocking ? "paused-screen" : "banner"} role="status" aria-live="polite">

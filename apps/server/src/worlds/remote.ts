@@ -134,7 +134,7 @@ export class RemoteWorldGateway implements WorldGateway {
     const elapsed = Math.min(MAX_EXTRAPOLATION_MS, Math.max(0, Date.now() - this.stateAt));
     const running = this.state.status.state === "running";
     const time = running
-      ? this.state.time + (elapsed / 60_000) * this.state.speed
+      ? this.state.time + (elapsed / 60_000) * (this.state.rate ?? this.state.speed)
       : this.state.time;
     return { ...this.state, time };
   }
@@ -174,6 +174,7 @@ export class RemoteWorldGateway implements WorldGateway {
       this.state = {
         time: l.time,
         speed: SimSpeed.catch(0).parse(l.speed),
+        ...(l.rate !== undefined ? { rate: l.rate } : {}),
         agents: l.agents.flatMap((a) => {
           const p = AgentState.safeParse(a);
           return p.success ? [p.data] : [];
