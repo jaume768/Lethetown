@@ -74,7 +74,11 @@ class WorldChannel {
     for (const id of removed) this.sent.delete(id);
     this.broadcast({
       type: "delta",
-      clock: { time: live.time, speed: live.speed },
+      clock: {
+        time: live.time,
+        speed: live.speed,
+        ...(live.rate !== undefined ? { rate: live.rate } : {}),
+      },
       agents: changed,
       removed,
     });

@@ -45,6 +45,8 @@ const Env = z.object({
   /** Turnos reactivos: minutos de juego hasta que contesta quien recibe una frase (0 = al tick). */
   SIM_REPLY_DELAY_MINUTES: z.coerce.number().nonnegative().default(1),
   SIM_SPEED: z.coerce.number().default(10),
+  /** Por encima de x10, el reloj va a x10 mientras haya alguna conversación en el mundo. */
+  SIM_SLOWDOWN_IN_CONVERSATION: z.enum(["on", "off"]).default("on"),
   /** Velocidad de paseo de los agentes, en baldosas por minuto de juego. */
   /** Semilla del azar de la memoria (reconsolidación, rumores...). Vacía = aleatoria. */
   SIM_SEED: z.preprocess(emptyToUndefined, z.coerce.number().int().optional()),

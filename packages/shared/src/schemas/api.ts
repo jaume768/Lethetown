@@ -69,7 +69,13 @@ export type SimEvent = z.infer<typeof SimEvent>;
 
 export const ClockState = z.object({
   time: z.number(),
+  /** Velocidad elegida. */
   speed: SimSpeed,
+  /**
+   * Ritmo real (minutos de juego por minuto real) si es menor que `speed`: p. ej. x10 mientras
+   * hay conversaciones (SIM_SLOWDOWN_IN_CONVERSATION).
+   */
+  rate: z.number().optional(),
 });
 export type ClockState = z.infer<typeof ClockState>;
 

@@ -244,6 +244,9 @@ const en: Record<MessageKey, string> = {
   "director.weather.wind": "💨 wind",
   "director.weather.heat": "🥵 heat",
   "header.weather": "Weather in town",
+  "header.slowed": "(now x{rate}: conversations going on)",
+  "header.slowed.title":
+    "While people are talking the clock runs at x10 so you can follow along (SIM_SLOWDOWN_IN_CONVERSATION).",
   "director.objects": "Objects",
   "director.pickObject": "Pick an object…",
   "director.apply": "Apply",

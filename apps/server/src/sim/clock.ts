@@ -22,6 +22,8 @@ export class GameClock {
   private anchorReal = Date.now();
   private running = false;
   private _speed: SimSpeed;
+  /** Tope de ritmo (minutos de juego por minuto real), p. ej. x10 durante una conversación. */
+  private _cap: number | null = null;
 
   constructor(
     startTime: number,
@@ -33,19 +35,33 @@ export class GameClock {
     this._speed = speed;
   }
 
+  /** Velocidad elegida (la que se muestra). */
   get speed(): SimSpeed {
     return this._speed;
+  }
+
+  /** Ritmo real: la velocidad elegida, limitada por el tope si lo hay. */
+  get rate(): number {
+    return this._cap === null ? this._speed : Math.min(this._speed, this._cap);
   }
 
   /** Tiempo de juego actual (minutos), interpolado entre eventos. */
   now(): number {
     if (!this.running) return this.anchorGame;
-    return this.anchorGame + ((this.realNow() - this.anchorReal) / 60_000) * this._speed;
+    return this.anchorGame + ((this.realNow() - this.anchorReal) / 60_000) * this.rate;
   }
 
   setSpeed(speed: SimSpeed): void {
     this.reanchor();
     this._speed = speed;
+    this.arm();
+  }
+
+  /** Pone (o quita, con null) un tope al ritmo sin cambiar la velocidad elegida. */
+  setCap(cap: number | null): void {
+    if (cap === this._cap) return;
+    this.reanchor();
+    this._cap = cap;
     this.arm();
   }
 
@@ -97,8 +113,8 @@ export class GameClock {
     if (this.timer) clearTimeout(this.timer);
     this.timer = null;
     const next = this.queue[0];
-    if (!this.running || !next || this._speed === 0) return;
-    const delayMs = Math.max(0, ((next.at - this.now()) / this._speed) * 60_000);
+    if (!this.running || !next || this.rate === 0) return;
+    const delayMs = Math.max(0, ((next.at - this.now()) / this.rate) * 60_000);
     this.timer = setTimeout(() => this.fire(), Math.min(delayMs, 2 ** 31 - 1));
   }
 

@@ -242,6 +242,9 @@ const es = {
   "director.weather.wind": "💨 viento",
   "director.weather.heat": "🥵 calor",
   "header.weather": "Tiempo en el pueblo",
+  "header.slowed": "(ahora x{rate}: hay conversaciones)",
+  "header.slowed.title":
+    "Con conversaciones abiertas el reloj va a x10 para que se puedan seguir (SIM_SLOWDOWN_IN_CONVERSATION).",
   "director.objects": "Objetos",
   "director.pickObject": "Elige un objeto…",
   "director.apply": "Aplicar",

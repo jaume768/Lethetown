@@ -69,7 +69,11 @@ export function snapshot(w: WorldGateway, provider: string): WorldSnapshot {
   const live = w.live();
   return {
     world: w.world,
-    clock: { time: live.time, speed: live.speed },
+    clock: {
+      time: live.time,
+      speed: live.speed,
+      ...(live.rate !== undefined ? { rate: live.rate } : {}),
+    },
     agents: live.agents,
     provider,
     weather: live.weather,

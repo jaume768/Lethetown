@@ -309,6 +309,11 @@ export class Simulation {
     this.restored = true;
   }
 
+  /** Conversaciones abiertas ahora mismo. */
+  conversationCount(): number {
+    return this.ctx.conversations.size;
+  }
+
   thinkingAgents(): string[] {
     return [...this.thinking.entries()].filter(([, n]) => n > 0).map(([id]) => id);
   }

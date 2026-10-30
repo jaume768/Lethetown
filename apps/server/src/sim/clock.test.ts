@@ -40,4 +40,30 @@ describe("GameClock", () => {
     expect(clock.now()).toBeCloseTo(220);
     clock.stop();
   });
+
+  it("el tope frena el ritmo sin cambiar la velocidad elegida (conversaciones a x10)", () => {
+    let real = 0;
+    const clock = new GameClock(
+      0,
+      60,
+      () => {},
+      () => real,
+    );
+    clock.start();
+    real = 60_000;
+    expect(clock.now()).toBe(60);
+    clock.setCap(10);
+    expect(clock.speed).toBe(60);
+    expect(clock.rate).toBe(10);
+    real = 120_000;
+    expect(clock.now()).toBe(70);
+    clock.setCap(null);
+    real = 180_000;
+    expect(clock.now()).toBe(130);
+    // Por debajo del tope no cambia nada.
+    clock.setSpeed(1);
+    clock.setCap(10);
+    expect(clock.rate).toBe(1);
+    clock.stop();
+  });
 });

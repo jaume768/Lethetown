@@ -26,6 +26,12 @@ export function Header(p: Props) {
       <span className="clock" aria-live="off">
         {formatGameTime(p.clock.time)}
         {p.clock.speed !== 1 && <span className="muted small"> · x{p.clock.speed}</span>}
+        {p.clock.rate !== undefined && (
+          <span className="muted small" title={t("header.slowed.title")}>
+            {" "}
+            {t("header.slowed", { rate: p.clock.rate })}
+          </span>
+        )}
       </span>
       <span className="badge weather" title={t("header.weather")} aria-label={t("header.weather")}>
         {t(`director.weather.${p.weather}` as MessageKey)}

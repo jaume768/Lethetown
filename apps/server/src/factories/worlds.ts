@@ -55,6 +55,8 @@ import type { Services, WorldRuntime } from "./types";
 /** Mapa Tiled: fuente única de verdad del mundo (lo genera `pnpm map:generate`). */
 export const MAP_FILE = "seeds/town.tmj";
 
+/** Ritmo máximo del reloj mientras hay alguna conversación (SIM_SLOWDOWN_IN_CONVERSATION). */
+const CONVERSATION_SPEED = 10;
 /** Cada cuántos minutos de juego se guarda una instantánea. */
 const SNAPSHOT_EVERY = 60;
 
@@ -155,6 +157,10 @@ export async function openWorld(services: Services, row: WorldRow): Promise<Worl
   );
   sim.onEvent((e) => services.metrics.simEvents.inc({ world: row.id, kind: e.kind }));
   sim.onTick(() => services.metrics.simTicks.inc({ world: row.id }));
+  // Con conversaciones abiertas, el reloj no pasa de x10 (se pueden seguir; ver ritmo.md).
+  if (config.SIM_SLOWDOWN_IN_CONVERSATION === "on") {
+    sim.onEvent(() => clock.setCap(sim.conversationCount() > 0 ? CONVERSATION_SPEED : null));
+  }
   const seeded = await sim.seedMemoriesIfEmpty(startTime);
   if (seeded) worldLog(`Sembrados los recuerdos iniciales de ${seeded} agentes.`);
   sim.setMeetingSeq(await commitments.maxSeq());
