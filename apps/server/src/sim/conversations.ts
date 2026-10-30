@@ -171,6 +171,9 @@ export function talk(ctx: SimContext, agent: Agent, toId: string, utterance: str
       toName: target.seed.name,
     });
   }
+  // Turno reactivo: quien recibe la frase piensa enseguida (no a su siguiente tick).
+  const delay = ctx.deps.replyDelayMinutes ?? 0;
+  if (delay > 0) ctx.wake(toId, now + delay);
   const overhearers = eavesdrop(ctx, agent, target, conv, utterance);
   // Si nombra un sitio que quien escucha no conoce, quizá se lo crea y lo aprenda.
   for (const listener of [toId, ...rest]) {

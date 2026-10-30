@@ -62,6 +62,15 @@ export class Simulation {
   private readonly tickListeners: (() => void)[] = [];
   /** Nivel de detalle: los agentes piensan cada tickMinutes × tickMultiplier (LOD sin público). */
   private tickMultiplier = 1;
+  /**
+   * Un único tick pendiente por agente: cuándo toca y su generación (un tick programado con otra
+   * generación ya no vale; así se adelanta sin duplicar). `busy`: el tick está en curso y, si
+   * piden adelantarlo, `wakeAt` dice cuándo debe ser el siguiente.
+   */
+  private readonly ticks = new Map<
+    string,
+    { at: number; gen: number; busy: boolean; wakeAt: number | null }
+  >();
 
   constructor(deps: SimulationDeps) {
     const ctx = new SimContext(deps);
@@ -100,6 +109,7 @@ export class Simulation {
       ctx.signal({ type: "thinking", agentId: e.agentId, task: e.task, phase: e.phase });
     });
     deps.memory.onEffect((e: MemoryEffect) => ctx.signal({ type: "memory_effect", ...e }));
+    ctx.wake = (agentId, at) => this.wake(agentId, at);
   }
 
   get agents(): Map<string, Agent> {
@@ -139,7 +149,7 @@ export class Simulation {
       const rt = this.ctx.rt(agent.id);
       if (!this.restored) rt.lastConsolidation = now;
       if (rt.arrival) scheduleArrival(this.ctx, agent, rt.arrival);
-      this.clock.schedule(now + i, () => this.agentTick(agent));
+      this.scheduleTick(agent, now + i);
     });
     scheduleChronicle(this.ctx, now);
     this.scheduleMeetings(now);
@@ -344,14 +354,46 @@ export class Simulation {
 
   // --- Bucle del agente --------------------------------------------------------------
 
+  /** Programa el (único) siguiente tick del agente; el que hubiera pendiente deja de valer. */
+  private scheduleTick(agent: Agent, at: number): void {
+    const t = this.ticks.get(agent.id) ?? { at, gen: 0, busy: false, wakeAt: null };
+    t.at = at;
+    t.gen++;
+    this.ticks.set(agent.id, t);
+    const gen = t.gen;
+    this.clock.schedule(at, () => (t.gen === gen ? this.agentTick(agent) : undefined));
+  }
+
+  /**
+   * Turno reactivo: que el agente piense como tarde en `at` (le han hablado). Si su tick ya
+   * tocaba antes, nada; si está pensando ahora, el siguiente será a esa hora.
+   */
+  private wake(agentId: string, at: number): void {
+    const agent = this.agents.get(agentId);
+    const t = this.ticks.get(agentId);
+    if (!agent || !t) return;
+    if (t.busy) {
+      t.wakeAt = Math.min(t.wakeAt ?? Infinity, at);
+      return;
+    }
+    if (t.at > at) this.scheduleTick(agent, at);
+  }
+
   private async agentTick(agent: Agent): Promise<void> {
     for (const l of this.tickListeners) l();
+    const t = this.ticks.get(agent.id)!;
+    t.busy = true;
     try {
       await this.step(agent);
     } catch (error) {
       this.ctx.emit("system", agent.id, `⚠ Error en el tick: ${errorMessage(error)}`);
     } finally {
-      this.clock.schedule(this.clock.now() + this.tickMinutes, () => this.agentTick(agent));
+      t.busy = false;
+      const now = this.clock.now();
+      const next = now + this.tickMinutes;
+      const woken = t.wakeAt;
+      t.wakeAt = null;
+      this.scheduleTick(agent, woken === null ? next : Math.min(next, Math.max(now, woken)));
     }
   }
 

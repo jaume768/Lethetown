@@ -42,6 +42,8 @@ const Env = z.object({
   EMBEDDINGS_THREAD: z.enum(["on", "off"]).default("on"),
   PORT: z.coerce.number().int().default(3001),
   SIM_TICK_MINUTES: z.coerce.number().positive().default(10),
+  /** Turnos reactivos: minutos de juego hasta que contesta quien recibe una frase (0 = al tick). */
+  SIM_REPLY_DELAY_MINUTES: z.coerce.number().nonnegative().default(1),
   SIM_SPEED: z.coerce.number().default(10),
   /** Velocidad de paseo de los agentes, en baldosas por minuto de juego. */
   /** Semilla del azar de la memoria (reconsolidación, rumores...). Vacía = aleatoria. */

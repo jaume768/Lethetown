@@ -121,6 +121,7 @@ export async function openWorld(services: Services, row: WorldRow): Promise<Worl
     clock,
     tickMinutes: config.SIM_TICK_MINUTES,
     walkSpeed: config.SIM_WALK_TILES_PER_MINUTE,
+    replyDelayMinutes: config.SIM_REPLY_DELAY_MINUTES,
     social,
     events,
     chronicles,
