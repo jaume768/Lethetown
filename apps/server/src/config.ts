@@ -14,7 +14,7 @@ const Env = z.object({
   ANTHROPIC_MODEL_REFLECTION: z.string().default("claude-sonnet-5-5"),
   OPENAI_MODEL_FAST: z.string().default("gpt-6-luna"),
   OPENAI_MODEL_REFLECTION: z.string().default("gpt-6-sol"),
-  LLM_CONCURRENCY: z.coerce.number().int().positive().default(4),
+  LLM_CONCURRENCY: z.coerce.number().int().positive().default(8),
   /** Timeout propio por intento, reintentos (429/5xx/red) y circuit breaker del proveedor. */
   LLM_TIMEOUT_SECONDS: z.coerce.number().positive().default(60),
   LLM_RETRIES: z.coerce.number().int().nonnegative().default(3),

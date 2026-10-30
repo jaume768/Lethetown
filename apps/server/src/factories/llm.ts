@@ -52,9 +52,13 @@ export function createProvider(config: AppConfig): LLMProvider {
 
 /**
  * Pila del LLM compartida por los mundos del proceso: proveedor → reintentos/breaker → cola de
- * concurrencia → (opcional) Batch API, que solo se usa si `setBatchGate` lo permite.
+ * concurrencia con prioridad (conversación y decisiones primero) → (opcional) Batch API, que solo se usa si `setBatchGate` lo permite.
  */
-export function createLlmStack(config: AppConfig, log: (msg: string) => void) {
+export function createLlmStack(
+  config: AppConfig,
+  log: (msg: string) => void,
+  onQueueWait?: (task: string, ms: number) => void,
+) {
   const base = createProvider(config);
   const llmResilience = new ResilientProvider(
     base,
@@ -72,7 +76,7 @@ export function createLlmStack(config: AppConfig, log: (msg: string) => void) {
       onBreaker: (state) => log(`⚡ Circuit breaker del LLM: ${state}`),
     },
   );
-  const llmQueue = new LimitedProvider(llmResilience, config.LLM_CONCURRENCY);
+  const llmQueue = new LimitedProvider(llmResilience, config.LLM_CONCURRENCY, onQueueWait);
   let batchGate: () => boolean = () => false;
   let provider: LLMProvider = llmQueue;
   if (config.LLM_BATCH === "on") {

@@ -33,6 +33,13 @@ export class Metrics {
     buckets: [0.1, 0.25, 0.5, 1, 2, 4, 8, 16, 32, 64],
     registers: [this.registry],
   });
+  readonly llmQueueWait = new Histogram({
+    name: "lethetown_llm_queue_wait_seconds",
+    help: "Espera en la cola del LLM antes de llamar, por tarea (prioridad: conversación primero)",
+    labelNames: ["task"] as const,
+    buckets: [0.01, 0.05, 0.1, 0.25, 0.5, 1, 2, 4, 8, 16, 32, 64],
+    registers: [this.registry],
+  });
   readonly llmCost = new Counter({
     name: "lethetown_llm_cost_usd_total",
     help: "Gasto en LLM (USD). Coste por hora: rate(...[1h]) * 3600",
@@ -87,6 +94,10 @@ export class Metrics {
     if (e.durationMs !== undefined)
       this.llmLatency.observe({ world, task: e.task }, e.durationMs / 1000);
     if (!e.ok) this.llmErrors.inc({ world, error: e.error ?? "Error" });
+  }
+
+  recordQueueWait(task: string, ms: number) {
+    this.llmQueueWait.observe({ task }, ms / 1000);
   }
 
   recordCost(world: string, r: CostRecord) {

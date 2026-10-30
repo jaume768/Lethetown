@@ -48,7 +48,12 @@ export async function createServices(
     readJson(z.array(AgentSeed), "seeds/agents.json"),
     loadPricing(),
   ]);
-  const { provider, llmQueue, llmResilience, setBatchGate } = createLlmStack(config, log);
+  const metrics = new Metrics(processName);
+  const { provider, llmQueue, llmResilience, setBatchGate } = createLlmStack(
+    config,
+    log,
+    (task, ms) => metrics.recordQueueWait(task, ms),
+  );
   const models = modelsFor(config);
   log(`Proveedor LLM: ${provider.name} (fast=${models.fast}, reflection=${models.reflection})`);
   const db = await connectDb(config, log);
@@ -73,7 +78,7 @@ export async function createServices(
     snapshots: db ? new PgSnapshotStore(db.db) : new InMemorySnapshotStore(),
     budget: await createBudget(db),
     moderationLog: db ? new PgModerationLog(db.db) : new InMemoryModerationLog(),
-    metrics: new Metrics(processName),
+    metrics,
     users: db ? new PgUserStore(db.db) : await devUsers(config, log),
     sessions: db ? new PgSessionStore(db.db) : new InMemorySessionStore(),
     log,
