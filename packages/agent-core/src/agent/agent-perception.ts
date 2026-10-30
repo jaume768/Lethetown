@@ -9,6 +9,7 @@ import { importancePrompt } from "./prompts";
 import type { Agent } from "./agent";
 import type { Perception } from "./agent-types";
 import { encoding } from "./agent-body";
+import { rateHeard } from "./heard-rating";
 
 export function describePerception(p: Perception): string {
   switch (p.kind) {
@@ -58,11 +59,29 @@ function clamp(x: number, lo: number, hi: number): number {
   return Number.isFinite(x) ? Math.min(hi, Math.max(lo, x)) : lo;
 }
 
-/** Percibir → guardar: convierte percepciones en recuerdos con importancia y valencia. */
-export async function perceive(a: Agent, perceptions: Perception[], now: number): Promise<void> {
+/**
+ * Percibir → guardar: convierte percepciones en recuerdos con importancia y valencia. En una
+ * conversación en curso (`inConversation`), lo que se oye se valora por reglas (`rateHeard`) y
+ * solo lo demás va a la tarea "importance" del LLM (si no queda nada, no hay llamada).
+ */
+export async function perceive(
+  a: Agent,
+  perceptions: Perception[],
+  now: number,
+  opts: { inConversation?: boolean } = {},
+): Promise<void> {
   if (!perceptions.length) return;
   const texts = perceptions.map(describePerception);
-  const ratings = await rate(a, texts);
+  const cfg = a.deps.memory.config.heardRating;
+  const byRules = (p: Perception) =>
+    opts.inConversation === true && cfg.enabled && (p.kind === "speech" || p.kind === "overheard");
+  const rest = perceptions.flatMap((p, i) => (byRules(p) ? [] : [texts[i]!]));
+  const llmRatings = rest.length ? await rate(a, rest) : [];
+  let next = 0;
+  const ratings = perceptions.map((p) => {
+    if (!byRules(p)) return llmRatings[next++];
+    return rateHeard(p.kind === "speech" ? p.text : p.kind === "overheard" ? p.fragment : "", cfg);
+  });
   const felt: { importance: number; valence: number }[] = [];
   for (const [i, p] of perceptions.entries()) {
     const rating = ratings[i] ?? { importance: 2, valence: 0 };

@@ -69,6 +69,12 @@ export interface RecallContext {
   moodLabel: string;
   /** Resumen de lo que el agente piensa de las personas implicadas. */
   socialSummary: (people: string[]) => Promise<string>;
+  /**
+   * Si se pasa, las reescrituras (falso recuerdo, reconsolidación) no se hacen al recuperar:
+   * se tira el dado ya (mismo orden del `Rng`) y el trabajo con el LLM se entrega aquí, para
+   * hacerlo después (p. ej. cuando ya ha decidido, sin retrasar la respuesta).
+   */
+  defer?: (work: () => Promise<void>) => void;
 }
 
 export interface RetrieveOptions {
@@ -346,6 +352,15 @@ export class MemorySystem {
         text: recallText(s),
       });
       if (!recall) continue;
+      if (recall.defer) {
+        // Los dados ahora; el LLM después (sin el segundo intento si no rellenó nada).
+        if (this.rollConfabulate(s, now)) {
+          recall.defer(async () => void (await this.confabulateNow(s, recall, now)));
+        } else if (this.rollReconsolidate(s)) {
+          recall.defer(() => this.reconsolidateNow(s, recall, now));
+        }
+        continue;
+      }
       // Puede rellenar huecos (falso recuerdo); si no, lo nítido puede reconsolidarse.
       if (!(await this.maybeConfabulate(s, recall, now))) {
         await this.maybeReconsolidate(s, recall, now);
@@ -359,6 +374,11 @@ export class MemorySystem {
    * versión y auditoría) para el inspector y Rashomon, aunque el agente no lo sabe.
    */
   async maybeConfabulate(s: ScoredMemory, ctx: RecallContext, now: number): Promise<boolean> {
+    return this.rollConfabulate(s, now) && this.confabulateNow(s, ctx, now);
+  }
+
+  /** ¿Toca rellenar huecos al recordarlo? (tira el dado del `Rng` si puede tocar). */
+  private rollConfabulate(s: ScoredMemory, now: number): boolean {
     const cfg = this.config.falseMemory;
     const m = s.memory;
     if (!cfg.enabled || !this.reconsolidator?.confabulate) return false;
@@ -368,7 +388,12 @@ export class MemorySystem {
     if (now - m.createdAt < cfg.minAgeHours * 60) return false;
     const holes = 1 - s.scores.strength;
     const p = Math.min(1, cfg.probability * this.profileOf(m.agentId).suggestibility * holes);
-    if (this.rng() >= p) return false;
+    return this.rng() < p;
+  }
+
+  private async confabulateNow(s: ScoredMemory, ctx: RecallContext, now: number) {
+    const m = s.memory;
+    if (!this.reconsolidator?.confabulate) return false;
     const vague = recallText(s);
     const filled = await this.reconsolidator.confabulate(m, vague, {
       now,
@@ -421,11 +446,21 @@ export class MemorySystem {
   }
 
   private async maybeReconsolidate(s: ScoredMemory, ctx: RecallContext, now: number) {
+    if (this.rollReconsolidate(s)) await this.reconsolidateNow(s, ctx, now);
+  }
+
+  /** ¿Toca reconsolidarlo al recordarlo? (tira el dado del `Rng` si puede tocar). */
+  private rollReconsolidate(s: ScoredMemory): boolean {
     const cfg = this.config.reconsolidation;
     const m = s.memory;
-    if (!this.reconsolidator || s.scores.clarity !== "clear") return;
-    if (m.importance < cfg.minImportance || m.type === "plan") return;
-    if (this.rng() >= cfg.probability) return;
+    if (!this.reconsolidator || s.scores.clarity !== "clear") return false;
+    if (m.importance < cfg.minImportance || m.type === "plan") return false;
+    return this.rng() < cfg.probability;
+  }
+
+  private async reconsolidateNow(s: ScoredMemory, ctx: RecallContext, now: number) {
+    const m = s.memory;
+    if (!this.reconsolidator) return;
     const rewritten = await this.reconsolidator.reconsolidate(m, {
       now,
       system: ctx.system,

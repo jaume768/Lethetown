@@ -21,14 +21,23 @@ export async function decide(a: Agent, now: number, input: DecideInput): Promise
     ...input.present.map((p) => p.name),
     ...input.objectStates.map((o) => `${o.id} ${o.state}`),
   ].join(". ");
+  // Reescribir lo recordado (reconsolidación, falso recuerdo) no retrasa la respuesta: se
+  // hace después de decidir, en segundo plano.
+  const rewrites: (() => Promise<void>)[] = [];
   const recalled = await a.deps.memory.retrieve({
     agentId: a.id,
     query: cue || a.state.action,
     now,
     moodValence: a.state.mood.valence,
     k: 3,
-    recall: a.recallContext(),
+    recall: { ...a.recallContext(), defer: (w) => rewrites.push(w) },
   });
+  const rewriteLater = () => {
+    if (!rewrites.length) return;
+    void (async () => {
+      for (const w of rewrites) await w();
+    })().catch((error: unknown) => a.deps.onError?.(a.id, "reconsolidate", error));
+  };
   for (const s of recalled) {
     a.workingMemory.push({ text: recallText(s), memoryId: s.memory.id, addedAt: now });
   }
@@ -64,6 +73,8 @@ export async function decide(a: Agent, now: number, input: DecideInput): Promise
   } catch (error) {
     a.deps.onError?.(a.id, "decide", error);
     return { kind: "follow_plan" };
+  } finally {
+    rewriteLater();
   }
 }
 

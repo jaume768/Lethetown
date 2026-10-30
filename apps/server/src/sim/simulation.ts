@@ -478,8 +478,11 @@ export class Simulation {
     // Percibir.
     const { present, heard, place, perceptions } = gatherPerceptions(ctx, agent);
     const innerVoice = perceptions.flatMap((p) => (p.kind === "thought" ? [p.text] : []));
-    // Guardar.
-    await agent.perceive(perceptions, this.clock.now());
+    // Guardar (en una conversación en curso, lo que oye se valora por reglas, sin LLM).
+    const conv = activeConversationOf(ctx, agent.id)?.conv;
+    await agent.perceive(perceptions, this.clock.now(), {
+      inConversation: !!conv && conv.turns > 1,
+    });
     // Al pararse a pensar, repasa su agenda (las citas que tiene presentes se olvidan menos).
     if (perceptions.length) await rehearseAgenda(ctx, agent, this.clock.now());
     // Decidir.

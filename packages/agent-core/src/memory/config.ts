@@ -158,6 +158,28 @@ export const MemoryConfig = z.object({
       socialPartners: z.number().int().positive().default(2),
     })
     .prefault({}),
+  /**
+   * Importancia y valencia de lo que se oye en una conversación en curso, por reglas (sin la
+   * tarea "importance" del LLM). Importancias en la escala 1-10; valencias en -1..1.
+   */
+  heardRating: z
+    .object({
+      /** Si está apagado, todo se valora con el LLM como antes. */
+      enabled: z.boolean().default(true),
+      /** Importancia de una frase normal. */
+      base: z.number().min(1).max(10).default(3),
+      /** Más importancia si suena a rumor ("dicen que…"). */
+      rumorBonus: z.number().nonnegative().default(2),
+      /** Más importancia si habla de algo que pesa (secretos, bodas, despidos, enfermedad). */
+      weightyBonus: z.number().nonnegative().default(3),
+      /** Importancia máxima por reglas (lo vital lo sigue valorando el LLM en otras tareas). */
+      max: z.number().min(1).max(10).default(8),
+      /** Valencia de una frase con palabras con carga. */
+      wordValence: z.number().min(0).max(1).default(0.4),
+      /** Valencia extra por cada "!" (como mucho dos). */
+      exclamationValence: z.number().min(0).max(1).default(0.15),
+    })
+    .prefault({}),
   /** Diario de hoy (`doneToday`): memoria a corto plazo del día, imprecisa con poca energía. */
   diary: z
     .object({

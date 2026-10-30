@@ -217,8 +217,12 @@ export class Agent {
   }
 
   /** Percibir → guardar: convierte percepciones en recuerdos con importancia y valencia. */
-  perceive(perceptions: Perception[], now: number): Promise<void> {
-    return _perception.perceive(this, perceptions, now);
+  perceive(
+    perceptions: Perception[],
+    now: number,
+    opts?: { inConversation?: boolean },
+  ): Promise<void> {
+    return _perception.perceive(this, perceptions, now, opts);
   }
 
   /** Nivel base del ánimo (según su personalidad). */
