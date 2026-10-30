@@ -34,6 +34,10 @@ TypeScript estricto. El porqué de cada decisión está en [docs/decisiones/](do
   Cada acción: esquema en shared, manejador, regla del mock, icono en la web y tests; con alguien
   o un lugar de por medio, `minorMeetingRule`; para ir a un sitio, `mayEnter` (casas privadas y
   horarios). Pasos en [acciones](docs/decisiones/acciones.md#cómo-añadir-una-acción).
+- **Ritmo y habla**: quien recibe una frase piensa al minuto (`ctx.wake`, un solo tick pendiente
+  por agente); lo que se oye en una charla en curso se valora por reglas (`rateHeard`); lo que se
+  dice se recorta en código (`clipText`); tareas urgentes en `URGENT_TASKS` de la cola LLM. Ver
+  [ritmo](docs/decisiones/ritmo.md).
 - **Azar** solo por el `Rng` inyectado (`seededRng`); nunca `Math.random()` (salvo efectos visuales).
 - **Datos**: Drizzle (`db/schema.ts`); tras cambiar el esquema, `pnpm db:generate` y commit de la
   migración. Todo dato persistente lleva `world_id` y funciona también en RAM. Embeddings de 384.
@@ -55,7 +59,9 @@ TypeScript estricto. El porqué de cada decisión está en [docs/decisiones/](do
 - `pnpm dev` (funciona sin Postgres ni API keys) · `pnpm test:e2e` · `TEST_DATABASE_URL=… pnpm test`.
 - Antes de cada commit: `pnpm typecheck && pnpm lint && pnpm format:check && pnpm test` (lo que
   ejecuta la CI). `pnpm -s typecheck` puede esconder errores de tsc: mira el código de salida.
-- `pnpm --filter @lethetown/server cost:report 48` (coste reproducible) · `sim:text <horas>` ·
+- `pnpm --filter @lethetown/server cost:report 48` (coste reproducible y espera de respuesta) ·
+  `latency:probe [min] [x]` (prueba real corta) · `record <dir>` / `world:export <dir>` (grabar
+  una partida) · `sim:text <horas>` ·
   `pnpm interview [--advance h]` · `pnpm personality:derive` · `pnpm map:generate` ·
   `pnpm assets:check` · `pnpm portraits:compose` · `pnpm user:create <usuario> [rol]`.
 - Postgres de docker-compose en el puerto **5433**. Retención de datos: `config/retention.json`.

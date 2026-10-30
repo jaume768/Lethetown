@@ -209,6 +209,15 @@ Todos los parámetros (pesos, umbrales, probabilidades, presupuesto) están en `
   dormirse, el día se guarda como un único recuerdo («El día N: …») y las rutinas repetidas se vuelven hábitos;
   al planificar recuerda ayer y sus costumbres desde la memoria (con olvido y vaguedad).
 
+### Conversaciones con ritmo
+
+- **Turnos reactivos**: quien recibe una frase contesta al minuto de juego (`SIM_REPLY_DELAY_MINUTES`), no a su siguiente tick de 10 minutos.
+- **Habla oral**: réplicas cortas, a veces de una a tres palabras, sin saludar en cada turno ni repetir lo dicho. Cada agente ve las 4 últimas frases de la charla (las suyas como «tú: …»). Lo que dice se recorta en código según su forma de hablar (90/160/240 caracteres; los menores, 120).
+- **Menos espera**: en una charla en curso, la importancia de lo que se oye sale de reglas y no de otra llamada; la reconsolidación de lo recordado se hace después de contestar; la cola del LLM atiende antes conversación y decisiones que esencias, fichas, resúmenes y crónicas.
+- **A más de x10**, mientras hay conversaciones el reloj va a x10 (`SIM_SLOWDOWN_IN_CONVERSATION`) para que se puedan seguir.
+
+Detalle y mediciones en [docs/decisiones/ritmo.md](docs/decisiones/ritmo.md).
+
 ### Agentes y coste
 
 - **Sin llamadas extra por acción**: todas van en la misma decisión. Cómo se usa cada acción va en el prompt fijo (cacheado); en cada decisión solo «Posibles ahora: …».
@@ -287,7 +296,7 @@ Producción en un VPS (Caddy con HTTPS, api, workers y Postgres): **[docs/despli
 - En móvil el mapa ocupa la pantalla y los paneles van en una hoja inferior con pestañas.
 - Primera visita: onboarding de 3 pasos (botón «Ayuda» para verlo otra vez). Textos en es/en.
 
-### Seguridad y presupuesto
+### Seguridad y gasto
 
 - Sesiones con cookie `httpOnly` + `SameSite=Lax` (+ `Secure` en producción), contraseñas con
   argon2id, `pnpm user:create`. Las peticiones que mutan exigen rol y un `Origin` permitido.
@@ -316,7 +325,9 @@ Todas las variables, con su explicación, están en [`.env.example`](.env.exampl
 | `pnpm test:e2e`                                  | Smoke tests de la interfaz con Playwright (escritorio y 375 px), con su propio servidor mock.                                                    |
 | `pnpm interview [--advance horas]`               | Entrevista a cada agente con una batería fija de preguntas y guarda las respuestas en `interviews/`. Sirve como test de regresión de la memoria. |
 | `pnpm --filter @lethetown/server sim:text 16`    | Simulación en modo texto, sin servidor: 16 horas de juego con eventos y costes.                                                                  |
-| `pnpm --filter @lethetown/server cost:report 48` | Llamadas y tokens por tarea en 48 h de mock reproducible (tabla Markdown).                                                                       |
+| `pnpm --filter @lethetown/server cost:report 48` | Llamadas y tokens por tarea en 48 h de mock reproducible (tabla Markdown) y espera media de las respuestas.                                      |
+| `pnpm --filter @lethetown/server latency:probe`  | Prueba corta en tiempo real con el proveedor de `.env`: espera entre mensajes (s reales) y espera en la cola del LLM por tarea.                  |
+| `pnpm --filter @lethetown/server record <dir>`   | Con `pnpm dev` en marcha, graba una partida (mensajes del WebSocket y estado de los agentes); `world:export <dir>` vuelca la BD del mundo.       |
 | `pnpm personality:derive [--write]`              | Propone personalidad y perfil de memoria a partir de rasgos, edad y descripción de `seeds/agents.json`.                                          |
 | `pnpm db:generate`                               | Genera una migración de Drizzle tras cambiar el esquema.                                                                                         |
 
@@ -420,7 +431,7 @@ ANTHROPIC_MODEL_FAST=claude-haiku-5-5
 ANTHROPIC_MODEL_REFLECTION=claude-sonnet-5-5
 OPENAI_MODEL_FAST=gpt-6-luna
 OPENAI_MODEL_REFLECTION=gpt-6-sol
-LLM_CONCURRENCY=4
+LLM_CONCURRENCY=8
 ```
 
 - **Anthropic**: Messages API con `cache_control` en el prompt de sistema y `output_config.effort`. En Sonnet 5.5 se activa el fallback del lado servidor (`fallbacks: "default"`).
