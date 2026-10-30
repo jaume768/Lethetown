@@ -5,6 +5,7 @@
  */
 import { bootstrap } from "../bootstrap";
 import { loadConfig } from "../config";
+import { ReplyLatencyMeter } from "../sim/reply-latency";
 
 const hours = Number(process.argv.slice(2).find((a) => a !== "--") ?? 48);
 const config = loadConfig({
@@ -17,6 +18,8 @@ const config = loadConfig({
 });
 const app = await bootstrap(config, () => {});
 const w = app.defaultWorld;
+const replies = new ReplyLatencyMeter();
+w.sim.onEvent((e) => replies.add(e));
 w.start();
 await w.clock.runUntil(w.clock.now() + hours * 60);
 const { byTask, total } = w.costs.summary();
@@ -31,3 +34,7 @@ for (const [task, b] of Object.entries(byTask).sort((a, b) => b[1].calls - a[1].
   console.log(row(task, b));
 }
 console.log(row("**total**", total));
+const r = replies.summary();
+console.log(
+  `\nRespuestas en conversación: ${r.replies}; espera media ${r.meanMinutes.toFixed(1)} min de juego (p90 ${r.p90Minutes.toFixed(1)}).`,
+);
