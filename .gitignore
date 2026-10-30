@@ -20,4 +20,6 @@ interviews/
 test-results/
 playwright-report/
 backups/
-estudio/
+estudio/**
+!estudio/**/
+!estudio/**/ESTUDIO.md
