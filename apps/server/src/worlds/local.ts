@@ -10,6 +10,7 @@ export function localContext(app: App): ApiContext {
     config: app.config,
     worlds,
     defaultWorldId: app.defaultWorld.id,
+    seeds: app.seeds,
     provider: app.provider.name,
     metrics: app.metrics,
     admin: {

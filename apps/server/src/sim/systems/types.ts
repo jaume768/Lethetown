@@ -80,6 +80,8 @@ export interface SimSystem<S = unknown> {
   description?: string;
   /** Acciones del catálogo que son suyas (registradas con `registerAction` en `sim/actions/`). */
   actions?: readonly ActionType[];
+  /** Tareas del LLM que son suyas (para el coste por sistema en «Evolución»). */
+  llmTasks?: readonly string[];
   /** Tipos de acuerdo hablado que sabe llevar a cabo (puente de la conversación a la acción). */
   agreements?: readonly AgreementKind[];
   snapshot?: SystemSnapshot<S>;

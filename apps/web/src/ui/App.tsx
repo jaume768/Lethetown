@@ -9,6 +9,7 @@ import { ChroniclePanel } from "./ChroniclePanel";
 import { ClipRecorder } from "./ClipRecorder";
 import { CreditsModal } from "./Credits";
 import { DirectorPanel } from "./DirectorPanel";
+import { EvolutionPanel } from "./EvolutionPanel";
 import { DramaFeed } from "./DramaFeed";
 import { EventLog } from "./EventLog";
 import { Header, type Mode } from "./Header";
@@ -22,7 +23,7 @@ import { ConnectionBanner, LoadingScreen, PausedOverlay } from "./StatusOverlay"
 import { Tabs, type TabDef } from "./Tabs";
 import { usePolled } from "./usePolled";
 
-type TabId = "dramas" | "agent" | "events" | "chronicles" | "director";
+type TabId = "dramas" | "agent" | "events" | "chronicles" | "director" | "evolution";
 const MODE_KEY = "lethetown.mode";
 const MOBILE = "(max-width: 760px)";
 
@@ -166,6 +167,9 @@ export function App() {
     ...(mobile ? [{ id: "events" as const, label: t("tabs.events") }] : []),
     { id: "chronicles", label: t("tabs.chronicles") },
     ...(director ? [{ id: "director" as const, label: t("tabs.director") }] : []),
+    ...(director && hasRole(user, "admin")
+      ? [{ id: "evolution" as const, label: t("tabs.evolution") }]
+      : []),
   ];
   const activeTab = tabs.some((x) => x.id === tab) ? tab : "dramas";
 
@@ -201,6 +205,8 @@ export function App() {
         return <ChroniclePanel chronicles={game.chronicles} />;
       case "director":
         return user ? <DirectorPanel game={game} user={user} /> : null;
+      case "evolution":
+        return <EvolutionPanel />;
     }
   })();
 

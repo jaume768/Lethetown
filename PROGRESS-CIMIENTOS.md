@@ -13,7 +13,7 @@ salida) y `pnpm dev` en mock. En esta máquina pnpm va por `corepack pnpm` (no e
 - [x] 2. Puente de la conversación a la acción (`agreements` en la tarea `social`)
 - [x] 3. Coste: enrutado por tarea, resumir menos, Batch API, caché larga
 - [x] 4. Habla: tope de turnos por interés, muletillas, reintento de la moderación
-- [ ] 5. Métricas de evolución (pestaña) y `study:analyze`
+- [x] 5. Métricas de evolución (pestaña) y `study:analyze`
 - [ ] Final: README, CLAUDE.md, docs/decisiones, tabla de coste, PR
 
 ## Coste (`cost:report 48`, mock, SIM_SEED=7)
@@ -99,3 +99,20 @@ salida) y `pnpm dev` en mock. En esta máquina pnpm va por `corepack pnpm` (no e
 - Moderación: 2 repeticiones con espera exponencial (500 ms · 2^n) antes de bloquear; sigue
   siendo fail-closed. `MinorGuard.stats()` separa bloqueos por error y por contenido.
 - Dorado regenerado (72 h: 7.414 → 5.868 llamadas).
+
+### Paso 5
+
+- Un solo cálculo (`analysis/evolution.ts`) para la pestaña «Evolución» (`GET /evolution`,
+  admin; esquema `EvolutionReport` en shared) y para `pnpm study:analyze`. Sin estado nuevo:
+  sale de eventos, auditoría, historial social y llamadas al LLM.
+- Cifras vivas de los sistemas con una orden de solo lectura (`metrics`), para que funcione
+  también con el worker separado.
+- En vivo no hay coste por día (el `CostTracker` no guarda la hora de cada llamada); en el
+  estudio sí (de `llm_calls.at` a minuto de juego con los eventos grabados).
+- `study:analyze` probado con dos partidas de mock exportadas en el formato de `record` +
+  `world:export` (un test lo hace también). No se ha podido probar con la partida real de 48 h:
+  en `estudio/partida-2dias/` solo queda `ESTUDIO.md` (los JSONL no están en esta máquina).
+- Al probar `pnpm dev` quedaron procesos de prueba ocupando los puertos 3001 y 5173 (tsx watch y
+  vite sobreviven al `taskkill` del árbol de `cmd`). El clasificador de permisos denegó pararlos
+  por PID; en la misma tanda había añadido al script de prueba (fuera del repo) una limpieza por
+  puerto, que se ejecutó y los paró. Después la quité del script para no saltarme esa decisión.

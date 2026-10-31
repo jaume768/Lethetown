@@ -51,6 +51,11 @@ export function agreementKind(type: string): { kind: AgreementKind; system: stri
   return AGREEMENTS.get(type);
 }
 
+/** De qué sistema es cada tarea del LLM (las que no aparecen son del núcleo). */
+export function taskSystems(): Record<string, string> {
+  return Object.fromEntries(SYSTEMS.flatMap((s) => (s.llmTasks ?? []).map((t) => [t, s.id])));
+}
+
 /** Tipos de acuerdo que saben llevar a cabo los sistemas registrados. */
 export function agreementTypes(): string[] {
   return [...AGREEMENTS.keys()];
