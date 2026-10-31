@@ -4,7 +4,7 @@
     "name": "Lucía Ferrer",
     "age": 28,
     "traits": ["creativa", "despistada", "cálida", "insegura con su trabajo"],
-    "description": "Lucía es ilustradora freelance. Se mudó al pueblo hace un año buscando calma. Trabaja desde casa pero le gusta dibujar en el café o en el parque.",
+    "description": "Lucía es ilustradora y trabaja por encargo para una editorial de Barcelona, a la que manda los dibujos por correo. Se mudó al pueblo hace un año buscando calma. Trabaja desde casa pero le gusta dibujar en el café o en el parque.",
     "homeId": "casa_azul",
     "appearance": {
       "sheet": "default",
@@ -26,7 +26,7 @@
       "Soy ilustradora y estoy terminando los dibujos de un cuento infantil.",
       "Mateo prepara el mejor café con leche del pueblo y siempre me pregunta por mis dibujos.",
       "Carmen me prestó un libro de poemas hace dos semanas y todavía no se lo he devuelto.",
-      "Me agobia que se acerque la fecha de entrega del cuento.",
+      "Me agobia que se acerque la fecha de entrega del cuento: tengo que mandar los originales por correo certificado a Barcelona.",
       "Hugo, el músico de la plaza, me dedicó una canción y no supe qué decirle."
     ],
     "personality": {
@@ -253,7 +253,7 @@
     },
     "initialMemories": [
       "Me levanto a las cinco para hornear el pan de todo el pueblo.",
-      "Inés quiere irse a estudiar a la ciudad y no sé cómo decirle que me da miedo quedarme solo.",
+      "Inés quiere irse a estudiar a Palma y no sé cómo decirle que me da miedo quedarme solo.",
       "Aurora siempre me pide una barra y luego olvida pagarla; no me importa.",
       "La receta de las magdalenas era de mi mujer."
     ],
@@ -296,7 +296,7 @@
     "name": "Inés Ortega",
     "age": 16,
     "traits": ["rebelde", "curiosa", "sarcástica", "soñadora"],
-    "description": "Inés estudia en la escuela del pueblo y sueña con marcharse a la ciudad. Vive con su padre, Julián, en la casa amarilla.",
+    "description": "Inés estudia en la escuela del pueblo y sueña con marcharse a estudiar a Palma. Vive con su padre, Julián, en la casa amarilla.",
     "homeId": "casa_amarilla",
     "workId": "escuela",
     "appearance": {
@@ -316,10 +316,11 @@
       "accessories": []
     },
     "initialMemories": [
-      "Este pueblo es demasiado pequeño para mí; quiero estudiar fotografía en la ciudad.",
+      "Este pueblo es demasiado pequeño para mí; quiero estudiar fotografía en Palma.",
       "Mi padre no entiende nada de lo que me importa.",
       "Valentina, la fotógrafa que acaba de llegar, me parece la persona más interesante del pueblo.",
-      "Leo me sigue a todas partes como si fuera su hermana mayor."
+      "Leo me sigue a todas partes como si fuera su hermana mayor.",
+      "Valentina me está enseñando a hacer fotos con carrete en blanco y negro; los carretes hay que llevarlos a revelar."
     ],
     "personality": {
       "openness": 0.85,
@@ -331,8 +332,8 @@
     "speechStyle": {
       "register": "sarcástico y adolescente",
       "sentenceLength": "corta",
-      "catchphrases": ["en plan…", "qué pereza", "literal"],
-      "topics": ["la fotografía", "irse a la ciudad", "la música"]
+      "catchphrases": ["en plan…", "qué pereza", "me flipa"],
+      "topics": ["la fotografía", "irse a Palma", "la música"]
     },
     "relationships": [
       {
@@ -392,9 +393,9 @@
       "accessories": ["Accessory 15 Glasses 3"]
     },
     "initialMemories": [
-      "Soy la alcaldesa y quiero vender la casa vacía del pueblo a una empresa de apartamentos.",
+      "Soy la alcaldesa y quiero vender la casa vacía del pueblo a Promociones Llevant, una empresa de apartamentos de Palma.",
       "Nuria se opone a mis planes y quiere convertir la casa vacía en un huerto comunitario.",
-      "Las elecciones son dentro de un año y necesito que el pueblo me apoye.",
+      "Las municipales aún quedan lejos, pero el pueblo tiene buena memoria y necesito que me apoye.",
       "Rafael sabe todos los rumores del pueblo; conviene llevarse bien con él."
     ],
     "personality": {
@@ -849,7 +850,7 @@
     },
     "initialIntentions": [
       {
-        "text": "hacer el pedido de la tienda antes de las doce",
+        "text": "llamar al almacén para hacer el pedido de la tienda antes de las doce",
         "placeId": "tienda",
         "at": "11:00"
       }
@@ -975,7 +976,7 @@
     "name": "Nuria Campos",
     "age": 27,
     "traits": ["tranquila", "ecologista", "terca", "observadora"],
-    "description": "Nuria es la jardinera del huerto comunitario. Quiere convertir la casa vacía del pueblo en un jardín para todos y se enfrenta a la alcaldesa por ello.",
+    "description": "Nuria es la jardinera del huerto comunitario y socia del GOB, el grupo ecologista de Mallorca. Quiere convertir la casa vacía del pueblo en un jardín para todos y se enfrenta a la alcaldesa por ello.",
     "homeId": "casa_pino",
     "workId": "huerto",
     "appearance": {
@@ -1048,7 +1049,7 @@
       {
         "kind": "guitarra",
         "name": "la guitarra",
-        "description": "Una guitarra gastada con una pegatina de un festival."
+        "description": "Una guitarra gastada con una pegatina del festival de Benicàssim."
       }
     ],
     "workId": "plaza",
@@ -1072,7 +1073,8 @@
       "Toco la guitarra en la plaza y la gente me deja monedas en la funda.",
       "Le dediqué una canción a Lucía; creo que se sonrojó.",
       "Le debo dinero a Rafael desde el verano.",
-      "Estoy componiendo una canción sobre el lago que hace olvidar."
+      "Estoy componiendo una canción sobre el lago que hace olvidar.",
+      "Grabé una maqueta de mi canción del lago en una cinta de casete."
     ],
     "personality": {
       "openness": 0.85,
@@ -1132,7 +1134,7 @@
       {
         "kind": "camara",
         "name": "la cámara de fotos",
-        "description": "Una cámara analógica vieja que no suelta nunca."
+        "description": "Una réflex vieja de carrete que no suelta nunca."
       }
     ],
     "knownPlaces": ["casa_colina", "plaza", "cafe_ola", "tienda"],
@@ -1156,7 +1158,8 @@
       "Llegué a Lethetown hace una semana buscando algo que perdí hace años.",
       "Mi abuela vivió en este pueblo, pero nadie parece recordarla.",
       "Inés tiene talento con la cámara; le estoy enseñando.",
-      "Aurora me miró como si me conociera."
+      "Aurora me miró como si me conociera.",
+      "Aquí no hay dónde revelar: llevo los carretes a Palma cuando bajo en el autobús."
     ],
     "personality": {
       "openness": 0.85,
@@ -1213,7 +1216,7 @@
     },
     "initialMemories": [
       "Reparto el correo cada mañana; sé quién recibe cartas y quién no.",
-      "Valentina recibe cartas sin remitente desde que llegó.",
+      "Valentina recibe cartas sin remitente desde que llegó, con matasellos de Madrid.",
       "El doctor Samuel dice que no tengo nada, pero yo noto algo raro en el pecho.",
       "Rafael y yo compartimos los rumores del día en la taberna."
     ],
@@ -1257,7 +1260,7 @@
       },
       {
         "with": "valentina",
-        "affinity": 0.0,
+        "affinity": 0,
         "trust": 0.3,
         "familiarity": 0.3,
         "summary": "Recibe cartas sin remitente desde que llegó."
@@ -1334,7 +1337,7 @@
     "name": "Clara Méndez",
     "age": 19,
     "traits": ["responsable", "ingenua", "alegre", "ahorradora"],
-    "description": "Clara atiende el puesto de fruta del mercadillo y cuida de su abuela Aurora. Ahorra para estudiar enfermería, como le aconsejó el doctor Samuel.",
+    "description": "Clara atiende el puesto de fruta del mercadillo y cuida de su abuela Aurora. Ahorra para estudiar enfermería en Palma, como le aconsejó el doctor Samuel.",
     "homeId": "casa_jardin",
     "workId": "mercado",
     "appearance": {
@@ -1357,7 +1360,8 @@
       "Atiendo el puesto de fruta del mercadillo por las mañanas.",
       "Mi abuela Aurora cada vez olvida más cosas y me da miedo.",
       "El doctor Samuel dice que sería una buena enfermera.",
-      "Hugo siempre me pide una manzana gratis y nunca sé decirle que no."
+      "Hugo siempre me pide una manzana gratis y nunca sé decirle que no.",
+      "Enfermería se estudia en la universidad, en Palma: tendría que coger el autobús cada día o irme a vivir allí."
     ],
     "personality": {
       "openness": 0.5,
@@ -1441,7 +1445,7 @@
       "Soy el médico del pueblo; el consultorio abre de nueve a dos.",
       "Me preocupa la memoria de Aurora; cada semana recuerda menos.",
       "Ernesto viene casi todos los días con un síntoma nuevo.",
-      "Echo de menos a mi familia de Lagos, sobre todo por las noches."
+      "Echo de menos a mi familia de Lagos; los domingos los llamo desde la cabina de la plaza, aunque sale carísimo."
     ],
     "personality": {
       "openness": 0.65,
