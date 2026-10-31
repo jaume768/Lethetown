@@ -30,7 +30,7 @@ pnpm va por `corepack pnpm` (no está en el PATH: `pnpm typecheck` falla porque 
 - [x] README, CLAUDE.md, docs/decisiones (mundo.md, metas.md), coste antes/después
 - [x] `pnpm interview --advance 48` antes y después (Inés, Mateo, Aurora)
 - [x] Comandos de la partida real corta de validación
-- [ ] Push y PR
+- [x] Push y PR (#10)
 
 ## Coste (`cost:report 48`, mock, SIM_SEED=7)
 
