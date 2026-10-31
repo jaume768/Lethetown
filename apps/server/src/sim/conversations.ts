@@ -1,5 +1,11 @@
 import { randomUUID } from "node:crypto";
-import { updateSocialAfterConversation, type Agent } from "@lethetown/agent-core";
+import {
+  conversationEnd,
+  stripCatchphrases,
+  updateSocialAfterConversation,
+  usedCatchphrases,
+  type Agent,
+} from "@lethetown/agent-core";
 import { facingOf } from "@lethetown/shared";
 import { errorMessage, type Conversation, type SimContext } from "./context";
 import { setAction } from "./routines";
@@ -62,10 +68,23 @@ function names(ctx: SimContext, ids: string[]): string {
   return list.length > 1 ? `${list.slice(0, -1).join(", ")} y ${list.at(-1)}` : (list[0] ?? "");
 }
 
-/** Máximo de turnos de seguridad (más cuanto más grande es el grupo). */
-function maxTurns(ctx: SimContext, conv: Conversation): number {
-  const cfg = ctx.deps.memory.config.conversation;
-  return cfg.safetyMaxTurns + cfg.turnsPerExtraMember * Math.max(0, conv.members.length - 2);
+/** El texto de una línea del transcript (`Nombre: "…"` o `Nombre (a X): "…"`). */
+const textOf = (line: string) => /"(.*)"$/s.exec(line)?.[1] ?? line;
+
+/** Lo que ha dicho alguien en una conversación (solo el texto, en orden). */
+function saidBy(conv: Conversation, name: string): string[] {
+  return conv.transcript
+    .filter((l) => l.startsWith(`${name}: `) || l.startsWith(`${name} (a `))
+    .map(textOf);
+}
+
+/** Muletillas de su semilla que ya ha dicho en su conversación (para el prompt de decidir). */
+export function catchphrasesSaid(ctx: SimContext, agentId: string): string[] {
+  const agent = ctx.agents.get(agentId);
+  const conv = activeConversationOf(ctx, agentId)?.conv;
+  const phrases = agent?.seed.speechStyle?.catchphrases ?? [];
+  if (!agent || !conv || !phrases.length) return [];
+  return usedCatchphrases(saidBy(conv, agent.seed.name), phrases);
 }
 
 /**
@@ -97,7 +116,7 @@ function join(ctx: SimContext, conv: Conversation, agent: Agent): void {
   );
 }
 
-export function talk(ctx: SimContext, agent: Agent, toId: string, utterance: string): void {
+export function talk(ctx: SimContext, agent: Agent, toId: string, said: string): void {
   const target = ctx.agents.get(toId);
   const targetRt = ctx.runtime.get(toId);
   if (
@@ -140,8 +159,23 @@ export function talk(ctx: SimContext, agent: Agent, toId: string, utterance: str
     };
     ctx.conversations.set(conv.id, conv);
   }
-  if (conv.turns >= maxTurns(ctx, conv)) {
-    void endConversation(ctx, conv.id, `máximo de seguridad (${maxTurns(ctx, conv)} turnos)`);
+  // Cada muletilla de la semilla, una vez por charla: si la repite, se quita de la frase.
+  const used = usedCatchphrases(
+    saidBy(conv, agent.seed.name),
+    agent.seed.speechStyle?.catchphrases ?? [],
+  );
+  const utterance = used.length ? stripCatchphrases(said, used) : said;
+  // Pasado lo normal, sigue mientras aporte (hasta un máximo absoluto); si se repiten, se acaba.
+  const cfg = ctx.deps.memory.config;
+  const end = conversationEnd(
+    [...conv.transcript.map(textOf), utterance],
+    conv.turns,
+    conv.members.length,
+    cfg.conversation,
+    cfg.heardRating,
+  );
+  if (end) {
+    void endConversation(ctx, conv.id, end);
     return;
   }
   conv.turns++;

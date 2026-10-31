@@ -46,6 +46,19 @@ disparar el número de llamadas.
   la cabecera lo indica. «Mundo visible» es el que corre en ese proceso: sin espectadores ya
   manda `NO_VIEWERS_MODE`.
 - **Sin límites de gasto** en el servidor (ver [producción](produccion.md)).
+- **Tope de turnos según el interés** (`conversationEnd`, agent-core). El tope fijo de 12 cortó
+  16 de 204 charlas en la partida real, alguna en pleno interés. Ahora 12 (más 4 por persona
+  extra) es lo normal: pasado eso, la charla sigue si la frase nueva aporta (al menos la mitad
+  de sus palabras no habían salido, importancia por reglas ≥ 5 o un acuerdo a medio cerrar:
+  «quedamos», «a las…», «te lo dejo») hasta `absoluteMaxTurns` (30). Se acaba antes, a partir
+  del turno 6, si las dos últimas frases repiten algo ya dicho (parecido de palabras ≥ 0,7). Por
+  reglas y sin estado nuevo: sale del `transcript`. En mock, donde las frases salen de una lista
+  corta, muchas charlas acaban ahora por repetirse (23 de 340 en el dorado).
+- **Muletillas, una vez por charla**. Lo que más se repitió en la partida real fueron las
+  muletillas de la semilla («¡claro que sí!» 24 veces). En el prompt de decidir: «MULETILLAS QUE
+  YA HAS DICHO EN ESTA CHARLA (no las repitas): …»; y en código (`stripCatchphrases`), si la
+  repite, se quita de la frase con su puntuación (sin tildes ni mayúsculas para reconocerla). Si
+  la frase era solo la muletilla, se deja. Sale del `transcript`: sin estado nuevo.
 
 ## Medición
 

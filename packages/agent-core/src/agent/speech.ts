@@ -19,6 +19,52 @@ export function clipText(text: string, max: number): string {
   return `${cut}…`;
 }
 
+/** Sin tildes ni mayúsculas (para reconocer una muletilla dicha de otra manera). */
+const fold = (s: string) =>
+  s
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase();
+
+/** La muletilla sin signos de los extremos («¡claro que sí!» → «claro que sí»). */
+const core = (phrase: string) => phrase.replace(/^[\s¡¿"«]+|[\s.!?…,"»]+$/gu, "");
+
+/** Muletillas de la semilla que aparecen en algo de lo que ha dicho (en esta charla). */
+export function usedCatchphrases(said: string[], catchphrases: string[]): string[] {
+  const text = fold(said.join(" \n "));
+  return catchphrases.filter((c) => core(c) && text.includes(fold(core(c))));
+}
+
+/**
+ * Quita de una frase las muletillas que ya ha dicho en esta charla, sin romperla: se va la
+ * muletilla con su puntuación y la frase empieza en mayúscula. Si no queda nada, se queda como
+ * estaba (mejor repetirse que callarse). En la partida real, «¡claro que sí!» salió 24 veces.
+ */
+export function stripCatchphrases(text: string, used: string[]): string {
+  let out = text;
+  for (const phrase of used) {
+    const target = fold(core(phrase));
+    if (!target) continue;
+    // Se busca sobre el texto sin tildes (misma longitud por carácter en español) y se corta
+    // en el original.
+    for (let i = fold(out).indexOf(target); i >= 0; i = fold(out).indexOf(target)) {
+      let start = i;
+      let end = i + target.length;
+      while (start > 0 && /[¡¿"«\s]/u.test(out[start - 1]!)) start--;
+      while (end < out.length && /[!?.,…"»]/u.test(out[end]!)) end++;
+      out = `${out.slice(0, start)} ${out.slice(end)}`;
+    }
+  }
+  const tidy = out
+    .replace(/\s+([,.!?…])/gu, "$1")
+    .replace(/^[\s,.;:…]+/u, "")
+    .replace(/\s{2,}/g, " ")
+    .trim()
+    .replace(/[,;:]$/u, ".");
+  if (tidy.replace(/[\p{P}\s]/gu, "").length < 2) return text;
+  return tidy.charAt(0).toLocaleUpperCase("es") + tidy.slice(1);
+}
+
 /** Máximo de caracteres de lo que dice este agente (los menores, como mucho el de media). */
 export function speechMax(seed: AgentSeed, cfg: MemoryConfig["speech"]): number {
   const length = seed.speechStyle?.sentenceLength ?? "media";

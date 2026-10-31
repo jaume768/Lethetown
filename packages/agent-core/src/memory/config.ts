@@ -150,8 +150,21 @@ export const MemoryConfig = z.object({
     .default({ probability: 0.6, fragmentRatio: 0.6, recognizeSpeaker: 0.5 }),
   conversation: z
     .object({
-      /** Máximo de seguridad de turnos por conversación (lo normal es que la corten ellos). */
+      /**
+       * Turnos normales de una conversación (lo normal es que la corten ellos); a partir de
+       * aquí solo sigue si aporta (ver agent/conversation-interest.ts).
+       */
       safetyMaxTurns: z.number().int().positive().default(12),
+      /** Máximo absoluto de turnos (de dos personas), por mucho que aporte. */
+      absoluteMaxTurns: z.number().int().positive().default(30),
+      /** Parecido (0-1, por palabras) a partir del cual una frase repite algo ya dicho. */
+      repeatSimilarity: z.number().min(0).max(1).default(0.7),
+      /** Turnos antes de los que no se corta por repetirse (los saludos se parecen). */
+      minTurnsBeforeRepeat: z.number().int().nonnegative().default(6),
+      /** Pasado lo normal, sigue si al menos esta parte de la frase es nueva en la charla. */
+      noveltyMin: z.number().min(0).max(1).default(0.5),
+      /** … o si lo dicho tiene esta importancia por reglas (`heardRating`, 1-10). */
+      interestImportance: z.number().min(1).max(10).default(5),
       /** Minutos sin hablar tras los que una conversación se da por acabada. */
       idleMinutes: z.number().positive().default(30),
       /** Personas como máximo en un grupo de conversación. */

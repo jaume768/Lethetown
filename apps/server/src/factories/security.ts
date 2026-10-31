@@ -44,7 +44,9 @@ export function createMinorGuard(
     minors: minorsOf(services.seeds),
     llm,
     onBlock: (b) => {
-      worldLog(`🛡 Descartado (${b.kind}${b.agentId ? `, ${b.agentId}` : ""}): ${b.reason}`);
+      // Se distingue lo bloqueado por no poder moderar (fail-closed) de lo rechazado por contenido.
+      const reason = b.cause === "error" ? `error de moderación: ${b.reason}` : b.reason;
+      worldLog(`🛡 Descartado (${b.kind}${b.agentId ? `, ${b.agentId}` : ""}): ${reason}`);
       services.track(
         services.moderationLog
           .add({
@@ -52,7 +54,7 @@ export function createMinorGuard(
             userId: null,
             kind: `minor_safety:${b.kind}`,
             text: b.text.slice(0, 1000),
-            reason: b.reason,
+            reason,
           })
           .catch((e: unknown) => worldLog(`⚠ No se pudo registrar el descarte: ${String(e)}`)),
       );

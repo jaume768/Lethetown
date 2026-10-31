@@ -236,6 +236,8 @@ export interface DecideContext {
   conversationWith: string | null;
   /** Últimas frases de la conversación actual, en orden (las propias como "tú: …"). */
   conversationLines?: string[];
+  /** Muletillas de su semilla que ya ha dicho en esta charla (cada una, una vez por charla). */
+  usedCatchphrases?: string[];
   /** Estado de los objetos del lugar que no están en "idle". */
   objectStates: { id: string; state: string }[];
   /** El tiempo y cómo le afecta donde está (`weatherLine`). */
@@ -313,7 +315,11 @@ ${
   opts.conversationLines?.length
     ? `LO ÚLTIMO QUE SE HA DICHO (en orden; no repitas nada de esto, ni saludes otra vez):\n${opts.conversationLines.map((l) => `- ${l}`).join("\n")}\n`
     : ""
-}${innerVoice}Lo que piensas de los presentes:
+}${
+    opts.usedCatchphrases?.length
+      ? `MULETILLAS QUE YA HAS DICHO EN ESTA CHARLA (no las repitas): ${opts.usedCatchphrases.map((c) => `«${c}»`).join(", ")}\n`
+      : ""
+  }${innerVoice}Lo que piensas de los presentes:
 ${opts.socialNotes.length ? opts.socialNotes.map((n) => `- ${n}`).join("\n") : "- (nada)"}
 Memoria de trabajo:
 ${opts.workingMemory}

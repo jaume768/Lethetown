@@ -12,7 +12,7 @@ salida) y `pnpm dev` en mock. En esta máquina pnpm va por `corepack pnpm` (no e
 - [x] 1. Registro de sistemas (`SimSystem`) y migración sin cambiar el dorado
 - [x] 2. Puente de la conversación a la acción (`agreements` en la tarea `social`)
 - [x] 3. Coste: enrutado por tarea, resumir menos, Batch API, caché larga
-- [ ] 4. Habla: tope de turnos por interés, muletillas, reintento de la moderación
+- [x] 4. Habla: tope de turnos por interés, muletillas, reintento de la moderación
 - [ ] 5. Métricas de evolución (pestaña) y `study:analyze`
 - [ ] Final: README, CLAUDE.md, docs/decisiones, tabla de coste, PR
 
@@ -24,6 +24,7 @@ salida) y `pnpm dev` en mock. En esta máquina pnpm va por `corepack pnpm` (no e
 | Paso 1 (sistemas)         |    4.420 |  1.503 |    725 |       242 |           1.579.976 |   1,7 min (p90 1,0) |
 | Paso 2 (puente)           |    5.756 |  1.885 |    887 |       512 |           2.398.819 |   1,6 min (p90 1,0) |
 | Paso 3 (coste)            |    4.739 |  1.594 |    753 |       147 |           1.883.708 |   1,4 min (p90 1,0) |
+| Paso 4 (habla)            |    3.791 |  1.362 |    625 |        48 |           1.434.434 |   1,4 min (p90 1,0) |
 
 ## Decisiones (para revisar en la PR)
 
@@ -86,3 +87,15 @@ salida) y `pnpm dev` en mock. En esta máquina pnpm va por `corepack pnpm` (no e
   puente: `summarize` 1,10 $ → ≈ 0,02 $ (Haiku, ≈ 30 % de las llamadas); consolidación y
   crónica a mitad por lote (1,01 $ → ≈ 0,5 $). Del orden de 2 $ (−45 %). Hay que confirmarlo con
   una partida real corta (ver el final).
+
+### Paso 4
+
+- Tope por interés: 12 turnos es lo normal; luego sigue si aporta, hasta 30. Corta antes si las
+  dos últimas frases repiten algo ya dicho (desde el turno 6). En mock baja mucho el número de
+  llamadas (4.739 → 3.791; ≈ 0,65 $ estimados) porque las frases del mock salen de una lista
+  corta y se repiten: es un efecto del mock. Con el LLM real se espera lo contrario en las
+  charlas vivas (más turnos donde antes se cortaba a los 12).
+- Muletillas: sin estado nuevo (salen del `transcript`), así que la instantánea no cambia.
+- Moderación: 2 repeticiones con espera exponencial (500 ms · 2^n) antes de bloquear; sigue
+  siendo fail-closed. `MinorGuard.stats()` separa bloqueos por error y por contenido.
+- Dorado regenerado (72 h: 7.414 → 5.868 llamadas).

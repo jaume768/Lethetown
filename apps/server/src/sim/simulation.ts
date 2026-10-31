@@ -24,6 +24,7 @@ import {
 } from "./context";
 import {
   activeConversationOf,
+  catchphrasesSaid,
   endIdleConversations,
   leaveConversation,
   recentLines,
@@ -475,6 +476,7 @@ export class Simulation {
       heard,
       conversationWith: speaker ?? activeConversationOf(ctx, agent.id)?.other ?? null,
       conversationLines: recentLines(ctx, agent.id),
+      usedCatchphrases: catchphrasesSaid(ctx, agent.id),
       objectStates: place.objects
         .filter((o) => o.state !== "idle")
         .map((o) => ({ id: o.id, state: o.state })),

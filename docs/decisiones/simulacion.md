@@ -5,7 +5,8 @@
   hay algo saliente (percepciones).
 - **Conversaciones** con id propio, que es el `eventId` de los recuerdos (vista Rashomon); las
   frases tienen id `<conversación>:<turno>`. Terminan cuando quien recibe una frase no contesta,
-  por inactividad o por un máximo de seguridad; al terminar se actualiza la ficha social.
+  por inactividad, si se repiten o, pasados 12 turnos, si ya no aportan (máximo absoluto 30; ver
+  [ritmo](ritmo.md)); al terminar se actualiza la ficha social.
 - **Escuchar a escondidas**: un fragmento contiguo (60 %), reconociendo o no a quien habla; se
   guarda con el mismo `eventId`.
 - **Mantenimiento** de memoria cada hora de juego por agente; **consolidación** en el primer tick

@@ -35,10 +35,14 @@ const ines = AgentSeed.parse({ ...base, id: "ines", name: "Inés Ortega", age: 1
 const marta = AgentSeed.parse({ ...base, id: "marta", name: "Marta Gil", age: 37 });
 const minors = minorsOf([hugo, leo, ines, marta]);
 
-/** El mock de siempre, salvo las tareas que el test sobrescribe (el "LLM" que se porta mal). */
-function setup(overrides: Record<string, MockResponder> = {}, failModeration = false) {
+/**
+ * El mock de siempre, salvo las tareas que el test sobrescribe (el "LLM" que se porta mal).
+ * `failModeration`: cuántas moderaciones fallan antes de que vuelva a funcionar.
+ */
+function setup(overrides: Record<string, MockResponder> = {}, failModeration = 0) {
+  let failures = failModeration;
   const provider = new MockProvider((req) => {
-    if (failModeration && req.meta.task === "moderate_minor") throw new Error("sin red");
+    if (req.meta.task === "moderate_minor" && failures-- > 0) throw new Error("sin red");
     return overrides[req.meta.task]?.(req) ?? agentMockResponder(req);
   });
   const llm = new LLMClient(
@@ -47,7 +51,12 @@ function setup(overrides: Record<string, MockResponder> = {}, failModeration = f
     new CostTracker({}),
   );
   const blocks: SafetyBlock[] = [];
-  const guard = new MinorGuard({ minors, llm, onBlock: (b) => blocks.push(b) });
+  const guard = new MinorGuard({
+    minors,
+    llm,
+    onBlock: (b) => blocks.push(b),
+    sleep: async () => {},
+  });
   const store = new InMemoryStore();
   const memory = new MemorySystem({ store, embedder: new HashEmbedder(), guard });
   return { provider, llm, guard, blocks, store, memory };
@@ -113,10 +122,24 @@ describe("MinorGuard", () => {
     expect(provider.calls).toHaveLength(2);
   });
 
-  it("si la moderación falla, se descarta (fail-closed)", async () => {
-    const { guard, blocks } = setup({}, true);
+  it("si la moderación falla, se repite; si sigue fallando, se descarta (fail-closed)", async () => {
+    const { guard, blocks, provider } = setup({}, Infinity);
     expect(await guard.allows("Te quiero mucho, Leo", { kind: "speech" })).toBe(false);
     expect(blocks[0]!.reason).toMatch(/no se pudo moderar/);
+    expect(blocks[0]!.cause).toBe("error");
+    // Una vez y dos repeticiones.
+    expect(provider.calls).toHaveLength(3);
+    expect(guard.stats()).toEqual({ blockedContent: 0, blockedError: 1, retries: 2 });
+  });
+
+  it("un fallo pasajero de la moderación no bloquea: se repite y decide el contenido", async () => {
+    const { guard, blocks } = setup({}, 1);
+    const family = "Mamá me dijo: «te quiero, cariño» antes de ir al colegio";
+    expect(await guard.allows(family, { kind: "memory", actors: ["leo"] })).toBe(true);
+    expect(blocks).toHaveLength(0);
+    expect(await guard.allows("Leo, estás guapísimo hoy, mi amor", { kind: "speech" })).toBe(false);
+    expect(blocks[0]!.cause).toBe("content");
+    expect(guard.stats()).toEqual({ blockedContent: 1, blockedError: 0, retries: 1 });
   });
 });
 

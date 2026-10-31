@@ -189,7 +189,7 @@ Todos los parámetros (pesos, umbrales, probabilidades, presupuesto) están en `
 | Confusión de fuente    | Mantenimiento (5 % al día)           | "contado por X" pasa a "vivido" o a otra persona.                                                                                                                  |
 | Olvido por presupuesto | Si se superan 4000 tokens por agente | 1) borra triviales viejos, 2) resume grupos de episodios en una reflexión enlazada, 3) descarta lo de menor importancia × fuerza. Nunca toca los planes recientes. |
 | Rumores                | Al hablar                            | Quien esté cerca capta fragmentos, con fuente difusa.                                                                                                              |
-| Fin de conversación    | Al recibir una frase                 | Cada agente decide si sigue (con un máximo de seguridad de 12 turnos); al terminar se actualizan las fichas sociales.                                              |
+| Fin de conversación    | Al recibir una frase                 | Cada agente decide si sigue; pasados 12 turnos, solo si aporta (máximo 30), y se corta si se repiten. Al terminar, fichas sociales y acuerdos hablados.            |
 
 ### Tiempo, voz interior y cambios de planes
 
