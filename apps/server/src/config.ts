@@ -20,8 +20,11 @@ const Env = z.object({
   LLM_RETRIES: z.coerce.number().int().nonnegative().default(3),
   LLM_BREAKER_THRESHOLD: z.coerce.number().int().positive().default(5),
   LLM_BREAKER_COOLDOWN_SECONDS: z.coerce.number().positive().default(30),
-  /** Batch API (50 % más barata) para tareas sin prisa; solo Anthropic. */
-  LLM_BATCH: z.enum(["on", "off"]).default("off"),
+  /**
+   * Batch API (50 % más barata) para tareas sin prisa; solo Anthropic (con otro proveedor no
+   * hace nada). Activa por defecto: la consolidación nocturna y la crónica no tienen prisa.
+   */
+  LLM_BATCH: z.enum(["on", "off"]).default("on"),
   LLM_BATCH_TASKS: z
     .string()
     .default("consolidate,chronicle")

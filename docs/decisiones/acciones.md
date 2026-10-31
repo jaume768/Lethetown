@@ -27,9 +27,10 @@ el motivo como percepción ("No pude …: motivo"), lo recuerda y puede reconsid
   hay un menor y algún adulto, solo en un sitio público (o en la casa del propio menor). Lo aplican
   citas, invitaciones, acompañar, regalar y prestar; las notas privadas entre adulto y menor no se
   permiten, y la revisión de normas saca a un menor de una casa ajena con adultos.
-- **Estado nuevo**: en el runtime y en la instantánea (`SimSnapshot`, v16) y escrito en su tabla
-  (Postgres o RAM, siempre con `world_id`): `commitments`, `known_places`, `inventory_items`,
-  `notes`. El api lee de las tablas; al restaurar, el almacén se sincroniza con la instantánea.
+- **Estado nuevo**: en su sistema (`SimSystem`, ver [sistemas](sistemas.md)), con su parte de
+  la instantánea y su versión, y escrito en su tabla (Postgres o RAM, siempre con `world_id`):
+  `commitments`, `known_places`, `inventory_items`, `notes`. El api lee de las tablas; al
+  restaurar, el almacén se sincroniza con la instantánea.
 
 ## Catálogo
 
@@ -80,6 +81,37 @@ el motivo como percepción ("No pude …: motivo"), lo recuerda y puede reconsid
   lo usan las acciones y el plan; `normsTick` abre y cierra, saca a quien se queda al cerrar,
   caduca permisos y detecta intrusos (afinidad y confianza, evento 🚪, drama `intruder`).
 
+## Puente de la conversación a la acción
+
+La partida de 48 h con LLM real tuvo 359 intenciones habladas y solo 5 citas formales: casi todo
+se acordaba hablando («quedamos el viernes en la fuente») y se quedaba en intención.
+
+- **Misma llamada**: la tarea `social` de fin de charla devuelve también `agreements` (tipo,
+  `from`, `to`, objeto, lugar, hora, para qué y la frase que lo cierra). No hay llamadas nuevas;
+  el prompt de `social` crece unos 230 tokens no cacheados (tipos y contexto: quién estaba y los
+  objetos que llevan, con sus ids).
+- **Mismo manejador** (`sim/agreements.ts`): cada acuerdo se convierte en los pasos de la acción
+  formal (cita: proponer y aceptar; préstamo, regalo, devolución; invitar y aceptar) y cada paso
+  pasa por `check` y `execute` de su manejador: validación, normas, `minorMeetingRule`,
+  `mayEnter`. El texto (para qué y la frase) pasa por `MinorGuard`.
+- **Presencia**: quien estaba en la charla cuenta como presente aunque acabe de irse
+  (`ActionContext.agreedWith`): la charla suele acabar porque uno se va. No vale para invitar
+  (es para ir juntos ahora).
+- **Si no se puede**, se descarta con el motivo en la auditoría de quien lo contó
+  (`agreement_discarded`), no como percepción «No pude…»: nadie lo intentó a propósito.
+- **Duplicados**: los dos lados de la charla cuentan el mismo acuerdo; el segundo no lo repite
+  (clave: conversación, tipo, gente y objeto o lugar). Una cita con la misma gente a menos de 90
+  minutos de otra abierta se descarta («ya habían quedado»). Las intenciones de la misma
+  respuesta que corresponden a un acuerdo en pie (`covers` de cada tipo) no se apuntan: el
+  compromiso ya creó la suya (la cita, «ir a la cita con…»).
+- **Marcado**: evento 🗣 con `meta.agreed` (y la acción formal en `meta.action`); la cita lleva
+  el flag `agreed`. En el log, icono propio (🗣) y etiqueta «acordado hablando».
+- **Tipos abiertos**: cada sistema declara los suyos (`SimSystem.agreements`); `pay` y `teach`
+  vendrán con la economía y los oficios. Un tipo sin sistema se descarta con motivo.
+- **Mock**: «Deberíamos venir juntos» cierra una cita mañana en el café en una de cada cuatro
+  charlas (la hora sale de la charla, así los dos lados dicen lo mismo); quien lleva algo
+  prestado a veces queda en devolverlo.
+
 ## Cómo añadir una acción
 
 1. **shared** (`actions/catalog.ts`): el esquema zod (`type` literal y parámetros tolerantes con
@@ -89,8 +121,9 @@ el motivo como percepción ("No pude …: motivo"), lo recuerda y puede reconsid
    `registerAction({ type, available, check, describe, execute })`. `available` debe ser barato y
    estricto (cada acción ofrecida cuesta tokens); `check` devuelve el motivo legible si no se puede;
    `execute` cambia el estado, emite el evento con `meta.action` y avisa a quien afecte con una
-   percepción. Si hay estado nuevo: runtime, instantánea (subir `SIM_SNAPSHOT_VERSION`), tabla con
-   `world_id` y migración.
+   percepción. Si hay estado nuevo, va en su sistema (ver [sistemas](sistemas.md#cómo-añadir-un-sistema)):
+   estado con `ctx.state`, instantánea con su versión, tabla con `world_id` y migración; la acción
+   se lista en `actions` del sistema.
 3. **menores**: si nombra a alguien o lleva a un sitio, `minorMeetingRule`; si tiene texto libre,
    ya lo revisa `checked()`.
 4. **mock** (`agent/mock/<área>.ts`): una regla con `registerDecideRule(…, { before })` que solo

@@ -5,6 +5,7 @@
  * menor solos, solo en sitios públicos). Ver sim/actions/company.ts.
  */
 import type { Agent } from "@lethetown/agent-core";
+import type { Invitation } from "@lethetown/shared";
 import type { SimContext } from "./context";
 import { minorMeetingRule } from "./actions/meetings";
 import { travel } from "./routines";
@@ -16,6 +17,15 @@ export const INVITE_MINUTES = 30;
 export const FOLLOW_MINUTES = 60;
 
 const nameOf = (ctx: SimContext, id: string) => ctx.agents.get(id)?.seed.name ?? id;
+
+/** Estado de ir con otros: invitaciones vivas (unos minutos) y su contador ("v1", "v2"…). */
+export interface CompanyState {
+  invitations: Map<string, Invitation>;
+  seq: number;
+}
+
+export const companyState = (ctx: SimContext) =>
+  ctx.state<CompanyState>("company", () => ({ invitations: new Map(), seq: 0 }));
 
 /** Empieza a acompañar a alguien. */
 export function startFollowing(ctx: SimContext, agent: Agent, who: string, now: number): void {
@@ -46,8 +56,9 @@ const whereTo = (a: Agent) => a.state.targetId ?? a.state.locationId;
  * Revisión periódica: quien acompaña sigue a la otra persona; las invitaciones caducan. Sin LLM.
  */
 export function companyTick(ctx: SimContext, now: number): void {
-  for (const [id, v] of [...ctx.invitations]) {
-    if (now >= v.expiresAt) ctx.invitations.delete(id);
+  const invitations = companyState(ctx).invitations;
+  for (const [id, v] of [...invitations]) {
+    if (now >= v.expiresAt) invitations.delete(id);
   }
   for (const agent of ctx.agents.values()) {
     const rt = ctx.rt(agent.id);
@@ -84,7 +95,7 @@ export function companySections(
   ctx: SimContext,
   agent: Agent,
 ): { title: string; lines: string[] }[] {
-  const lines = [...ctx.invitations.values()]
+  const lines = [...companyState(ctx).invitations.values()]
     .filter((v) => v.responses[agent.id] === "pending")
     .map((v) => {
       const place = ctx.world.places.find((p) => p.id === v.placeId)?.name ?? v.placeId;

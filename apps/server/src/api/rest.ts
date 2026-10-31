@@ -1,6 +1,7 @@
 import { clarityFor, currentStrength, type MemoryRecord } from "@lethetown/agent-core";
 import type {
   AgentMemoryResponse,
+  AgentSeed,
   CommitmentsResponse,
   InventoryResponse,
   KnownPlacesResponse,
@@ -29,6 +30,8 @@ import type { AppConfig } from "../config";
 import { WorldId } from "../db/worlds";
 import type { Metrics } from "../observability";
 import { requireRole } from "../security/http";
+import { analyzeEvolution } from "../analysis/evolution";
+import { taskSystems } from "../sim/systems/registry";
 import type { CommandResult, WorldCommand, WorldGateway } from "../worlds/gateway";
 
 /** Operaciones de administración (en modo separado las ejecuta el worker vía bus). */
@@ -52,6 +55,8 @@ export const NewWorld = z.object({
   seed: z.number().int().nullable().default(null),
   /** Idioma en el que hablan los agentes y escribe el cronista. */
   language: z.enum(["es", "en"]).default("es"),
+  /** Sistemas que se desactivan en este mundo (`{ "notes": false }`); por defecto, todos. */
+  systems: z.record(z.string().max(40), z.boolean()).default({}),
 });
 export type NewWorld = z.infer<typeof NewWorld>;
 
@@ -60,6 +65,8 @@ export interface ApiContext {
   config: AppConfig;
   worlds: Map<string, WorldGateway>;
   defaultWorldId: string;
+  /** Semillas de los agentes (edad y estilo de habla, para «Evolución»). */
+  seeds: AgentSeed[];
   provider: string;
   admin: AdminOps;
   metrics: Metrics;
@@ -140,6 +147,9 @@ async function sendResult(reply: FastifyReply, r: CommandResult) {
   if (!r.ok) return reply.code(r.status).send({ error: r.error });
   return r.value ?? { ok: true };
 }
+
+/** Filas que se leen como mucho de cada almacén para «Evolución». */
+const EVOLUTION_LIMIT = 200_000;
 
 const director = { preHandler: requireRole("director") };
 const admin = { preHandler: requireRole("admin") };
@@ -515,6 +525,27 @@ export function registerWorldRest(server: FastifyInstance, ctx: ApiContext): voi
   server.get("/costs", admin, async (req, reply) => {
     const w = worldOf(ctx, req, reply);
     return w ? w.costs() : reply;
+  });
+
+  // Métricas de evolución por día de juego (y las de cada sistema): pestaña de admin.
+  server.get("/evolution", admin, async (req, reply) => {
+    const w = worldOf(ctx, req, reply);
+    if (!w) return reply;
+    const live = w.live();
+    const audits = (
+      await Promise.all(live.agents.map((a) => w.memory.store.audit(a.id, EVOLUTION_LIMIT)))
+    ).flat();
+    const metrics = await w.command({ type: "metrics" });
+    return analyzeEvolution({
+      seeds: ctx.seeds,
+      events: await w.events.range(0, live.time + 1, EVOLUTION_LIMIT),
+      audits,
+      socialHistory: await w.social.history(null, undefined, { limit: EVOLUTION_LIMIT }),
+      llmCalls: [],
+      costByTask: w.costs().byTask,
+      taskSystems: taskSystems(),
+      ...(metrics.ok ? { systems: metrics.value as Record<string, Record<string, number>> } : {}),
+    });
   });
 
   server.post("/pause", director, async (req, reply) => command(req, reply, { type: "pause" }));

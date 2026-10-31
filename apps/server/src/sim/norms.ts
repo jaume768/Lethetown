@@ -20,6 +20,17 @@ const INTRUDER_TRUST = -0.05;
 
 const nameOf = (ctx: SimContext, id: string) => ctx.agents.get(id)?.seed.name ?? id;
 
+/** Estado de las normas: invitados de cada casa y si cada lugar con horario estaba abierto. */
+export interface NormsState {
+  /** Lugar → agente → hasta cuándo puede estar. */
+  guests: Map<string, Map<string, number>>;
+  /** Abierto o no en la última revisión (para avisar al abrir y cerrar). */
+  openPlaces: Map<string, boolean>;
+}
+
+export const normsState = (ctx: SimContext) =>
+  ctx.state<NormsState>("norms", () => ({ guests: new Map(), openPlaces: new Map() }));
+
 /** Quienes viven en una casa. */
 export function residentsOf(ctx: SimContext, placeId: string): Agent[] {
   return [...ctx.agents.values()].filter((a) => a.seed.homeId === placeId);
@@ -27,15 +38,15 @@ export function residentsOf(ctx: SimContext, placeId: string): Agent[] {
 
 /** Da permiso de invitado en una casa hasta un minuto de juego. */
 export function grantGuest(ctx: SimContext, placeId: string, agentId: string, until: number) {
-  const guests = ctx.guests.get(placeId) ?? new Map<string, number>();
+  const guests = normsState(ctx).guests.get(placeId) ?? new Map<string, number>();
   guests.set(agentId, Math.max(guests.get(agentId) ?? 0, until));
-  ctx.guests.set(placeId, guests);
+  normsState(ctx).guests.set(placeId, guests);
 }
 
 /** ¿Puede estar en ese lugar privado? (vive allí, está invitado o acompaña a alguien de allí). */
 function welcome(ctx: SimContext, agent: Agent, place: Place, now: number): boolean {
   if (!place.private || agent.seed.homeId === place.id) return true;
-  if ((ctx.guests.get(place.id)?.get(agent.id) ?? -1) > now) return true;
+  if ((normsState(ctx).guests.get(place.id)?.get(agent.id) ?? -1) > now) return true;
   const f = ctx.rt(agent.id).following;
   return Boolean(f && ctx.agents.get(f.who)?.seed.homeId === place.id);
 }
@@ -54,6 +65,8 @@ export function mayEnter(
   placeId: string,
   at: number,
 ): string | null {
+  // Sin el sistema de normas en este mundo, se puede ir a cualquier sitio a cualquier hora.
+  if (!ctx.enabled("norms")) return null;
   const place = ctx.world.places.find((p) => p.id === placeId);
   if (!place) return null;
   if (!welcome(ctx, agent, place, at)) {
@@ -77,16 +90,16 @@ function sendAway(ctx: SimContext, agent: Agent, why: string): void {
 /** Revisión periódica de las normas (sin LLM). */
 export async function normsTick(ctx: SimContext, now: number): Promise<void> {
   // Permisos de invitado caducados.
-  for (const [placeId, guests] of ctx.guests) {
+  for (const [placeId, guests] of normsState(ctx).guests) {
     for (const [id, until] of guests) if (until <= now) guests.delete(id);
-    if (!guests.size) ctx.guests.delete(placeId);
+    if (!guests.size) normsState(ctx).guests.delete(placeId);
   }
   for (const place of ctx.world.places) {
     // Abrir y cerrar.
     if (place.hours) {
       const open = isOpen(place, now);
-      const was = ctx.openPlaces.get(place.id);
-      ctx.openPlaces.set(place.id, open);
+      const was = normsState(ctx).openPlaces.get(place.id);
+      normsState(ctx).openPlaces.set(place.id, open);
       if (was !== undefined && was !== open) {
         const staff = [...ctx.agents.values()].find(
           (a) => a.seed.workId === place.id && a.state.locationId === place.id,

@@ -22,6 +22,7 @@
     "seed": "pnpm --filter @lethetown/server seed",
     "map:generate": "tsx tools/generate-map.ts",
     "interview": "pnpm --filter @lethetown/server interview --",
+    "study:analyze": "pnpm --filter @lethetown/server study:analyze --",
     "assets:placeholder": "tsx tools/generate-placeholder-assets.ts",
     "assets:check": "tsx tools/check-assets.ts",
     "portraits:compose": "tsx tools/compose-portraits.ts",

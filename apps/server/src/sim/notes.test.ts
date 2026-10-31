@@ -4,7 +4,7 @@ import { bootstrap, type App } from "../bootstrap";
 import { loadConfig } from "../config";
 import { runAction } from "./actions";
 import type { SimContext } from "./context";
-import { notesTick, readNotes } from "./notes";
+import { notesState, notesTick, readNotes } from "./notes";
 
 let app: App;
 let ctx: SimContext;
@@ -32,7 +32,7 @@ function at(placeId: string, ...ids: string[]) {
   }
 }
 
-beforeEach(() => ctx.notes.clear());
+beforeEach(() => notesState(ctx).notes.clear());
 
 describe("notas", () => {
   it("el tablón: solo en la plaza; quien pasa lo lee (como dato) una vez", async () => {
@@ -69,7 +69,7 @@ describe("notas", () => {
     at("plaza", "hugo");
     await act("hugo", { type: "post_note", text: "Hoy" });
     notesTick(ctx, now() + 4 * 1440);
-    expect(ctx.notes.size).toBe(0);
+    expect(notesState(ctx).notes.size).toBe(0);
   });
 
   it("nada de notas privadas entre un adulto y un menor", async () => {

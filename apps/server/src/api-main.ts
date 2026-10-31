@@ -61,6 +61,7 @@ async function runApi() {
     config,
     worlds,
     defaultWorldId: "default",
+    seeds: services.seeds,
     provider: services.provider.name,
     metrics: services.metrics,
     admin: {

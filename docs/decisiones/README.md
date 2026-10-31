@@ -17,3 +17,5 @@ márcala como sustituida) en el mismo commit.
 | Interfaz                                                      | [interfaz.md](interfaz.md)     |
 | Acciones de los agentes                                       | [acciones.md](acciones.md)     |
 | Ritmo y habla de las conversaciones                           | [ritmo.md](ritmo.md)           |
+| Sistemas de la simulación (`SimSystem`)                       | [sistemas.md](sistemas.md)     |
+| Métricas de evolución y análisis de partidas                  | [evolucion.md](evolucion.md)   |

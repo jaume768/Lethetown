@@ -4,7 +4,8 @@ import { bootstrap, type App } from "../bootstrap";
 import { loadConfig } from "../config";
 import { runAction } from "./actions";
 import type { SimContext } from "./context";
-import { GUEST_MINUTES, grantGuest, mayEnter, normsTick } from "./norms";
+import { companyState } from "./company";
+import { GUEST_MINUTES, grantGuest, mayEnter, normsState, normsTick } from "./norms";
 
 let app: App;
 let ctx: SimContext;
@@ -49,9 +50,9 @@ const goTo = (placeId: string) =>
   }) as const;
 
 beforeEach(() => {
-  ctx.guests.clear();
-  ctx.openPlaces.clear();
-  ctx.invitations.clear();
+  normsState(ctx).guests.clear();
+  normsState(ctx).openPlaces.clear();
+  companyState(ctx).invitations.clear();
   for (const id of ctx.agents.keys()) at(agent(id).seed.homeId, id);
 });
 
@@ -83,7 +84,7 @@ describe("casas privadas", () => {
         activity: "x",
       }),
     ).toBe(false);
-    const [v] = [...ctx.invitations.values()];
+    const [v] = [...companyState(ctx).invitations.values()];
     expect(await act("lucia", NOON, { type: "accept_invite", inviteId: v!.id })).toBe(true);
     expect(mayEnter(ctx, agent("lucia"), "casa_rio", NOON + 60)).toBeNull();
     // Ya no le acompaña (eso también le dejaría pasar) y el permiso caduca.

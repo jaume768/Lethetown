@@ -1,9 +1,18 @@
 import { randomUUID } from "node:crypto";
-import { updateSocialAfterConversation, type Agent } from "@lethetown/agent-core";
+import {
+  conversationEnd,
+  stripCatchphrases,
+  updateSocialAfterConversation,
+  usedCatchphrases,
+  type Agent,
+} from "@lethetown/agent-core";
 import { facingOf } from "@lethetown/shared";
 import { errorMessage, type Conversation, type SimContext } from "./context";
 import { setAction } from "./routines";
 import { learnFromSpeech } from "./places";
+import { applyAgreements, coveredBy, noteLinkedIntention } from "./agreements";
+import { itemsState } from "./items";
+import type { ResolvedAgreement } from "./systems/types";
 
 /**
  * Conversaciones de dos o más (grupos): turnos, unirse y marcharse, rumores oídos a escondidas
@@ -59,10 +68,23 @@ function names(ctx: SimContext, ids: string[]): string {
   return list.length > 1 ? `${list.slice(0, -1).join(", ")} y ${list.at(-1)}` : (list[0] ?? "");
 }
 
-/** Máximo de turnos de seguridad (más cuanto más grande es el grupo). */
-function maxTurns(ctx: SimContext, conv: Conversation): number {
-  const cfg = ctx.deps.memory.config.conversation;
-  return cfg.safetyMaxTurns + cfg.turnsPerExtraMember * Math.max(0, conv.members.length - 2);
+/** El texto de una línea del transcript (`Nombre: "…"` o `Nombre (a X): "…"`). */
+const textOf = (line: string) => /"(.*)"$/s.exec(line)?.[1] ?? line;
+
+/** Lo que ha dicho alguien en una conversación (solo el texto, en orden). */
+function saidBy(conv: Conversation, name: string): string[] {
+  return conv.transcript
+    .filter((l) => l.startsWith(`${name}: `) || l.startsWith(`${name} (a `))
+    .map(textOf);
+}
+
+/** Muletillas de su semilla que ya ha dicho en su conversación (para el prompt de decidir). */
+export function catchphrasesSaid(ctx: SimContext, agentId: string): string[] {
+  const agent = ctx.agents.get(agentId);
+  const conv = activeConversationOf(ctx, agentId)?.conv;
+  const phrases = agent?.seed.speechStyle?.catchphrases ?? [];
+  if (!agent || !conv || !phrases.length) return [];
+  return usedCatchphrases(saidBy(conv, agent.seed.name), phrases);
 }
 
 /**
@@ -94,7 +116,7 @@ function join(ctx: SimContext, conv: Conversation, agent: Agent): void {
   );
 }
 
-export function talk(ctx: SimContext, agent: Agent, toId: string, utterance: string): void {
+export function talk(ctx: SimContext, agent: Agent, toId: string, said: string): void {
   const target = ctx.agents.get(toId);
   const targetRt = ctx.runtime.get(toId);
   if (
@@ -137,8 +159,23 @@ export function talk(ctx: SimContext, agent: Agent, toId: string, utterance: str
     };
     ctx.conversations.set(conv.id, conv);
   }
-  if (conv.turns >= maxTurns(ctx, conv)) {
-    void endConversation(ctx, conv.id, `máximo de seguridad (${maxTurns(ctx, conv)} turnos)`);
+  // Cada muletilla de la semilla, una vez por charla: si la repite, se quita de la frase.
+  const used = usedCatchphrases(
+    saidBy(conv, agent.seed.name),
+    agent.seed.speechStyle?.catchphrases ?? [],
+  );
+  const utterance = used.length ? stripCatchphrases(said, used) : said;
+  // Pasado lo normal, sigue mientras aporte (hasta un máximo absoluto); si se repiten, se acaba.
+  const cfg = ctx.deps.memory.config;
+  const end = conversationEnd(
+    [...conv.transcript.map(textOf), utterance],
+    conv.turns,
+    conv.members.length,
+    cfg.conversation,
+    cfg.heardRating,
+  );
+  if (end) {
+    void endConversation(ctx, conv.id, end);
     return;
   }
   conv.turns++;
@@ -285,10 +322,35 @@ export async function endConversation(ctx: SimContext, id: string, reason: strin
   await updateSocial(ctx, conv, conv.members);
 }
 
+/**
+ * Contexto de los acuerdos para la tarea social: quién estaba (con su id) y los objetos que
+ * llevan, para que un préstamo o una devolución puedan nombrar el objeto por su id.
+ */
+function agreementContext(ctx: SimContext, people: string[]): string[] {
+  const lines = [
+    `PERSONAS EN LA CHARLA: ${people.map((id) => `${id}=${ctx.agents.get(id)?.seed.name ?? id}`).join(", ")}`,
+  ];
+  const items = [...itemsState(ctx).items.values()].filter(
+    (i) => i.holderId && people.includes(i.holderId),
+  );
+  if (items.length) {
+    lines.push("OBJETOS QUE LLEVÁIS:");
+    for (const i of items) {
+      const loan = i.loan ? ` (prestado por ${i.loan.from} a ${i.loan.to})` : "";
+      lines.push(`- ${i.id} ${i.name}: de ${i.ownerId ?? "nadie"}, lo lleva ${i.holderId}${loan}`);
+    }
+  }
+  return lines;
+}
+
 /** Cada uno revisa lo que piensa de con quienes más habló (como mucho `socialPartners`). */
 async function updateSocial(ctx: SimContext, conv: Conversation, owners: string[]): Promise<void> {
   const now = ctx.clock.now();
   const n = ctx.deps.memory.config.conversation.socialPartners;
+  // Quienes han estado en la charla (también quien ya se fue): con ellos valen los acuerdos.
+  const people = [
+    ...new Set([...conv.members, ...Object.keys(conv.pairs).flatMap((p) => p.split(">"))]),
+  ];
   for (const ownerId of owners) {
     const owner = ctx.agents.get(ownerId);
     if (!owner) continue;
@@ -300,6 +362,8 @@ async function updateSocial(ctx: SimContext, conv: Conversation, owners: string[
     for (const otherId of others) {
       const other = ctx.agents.get(otherId);
       if (!other) continue;
+      // Acuerdos en pie de esta respuesta (para no duplicar sus intenciones).
+      let standing: ResolvedAgreement[] = [];
       try {
         await updateSocialAfterConversation(ctx.deps.llm, ctx.deps.social, {
           owner: owner.owner,
@@ -309,8 +373,17 @@ async function updateSocial(ctx: SimContext, conv: Conversation, owners: string[
           guard: ctx.deps.memory.guard,
           eventId: conv.id,
           config: ctx.deps.memory.config.social,
+          context: agreementContext(ctx, people),
+          onAgreements: async (list) => {
+            standing = await applyAgreements(ctx, { id: conv.id, people }, owner.id, list);
+          },
           onIntentions: async (list) => {
             for (const i of list) {
+              // Lo que ya es un compromiso (la cita creada) no se apunta otra vez.
+              if (coveredBy(i, standing)) {
+                noteLinkedIntention(ctx);
+                continue;
+              }
               if (await owner.intend(now, i)) {
                 ctx.emit("memory", owner.id, `📝 ${owner.seed.name} se propone ${i.text}`, [
                   owner.id,

@@ -12,6 +12,14 @@ import { registerAction } from "./registry";
 /** Probabilidad de arreglar algo roto en un intento. */
 const REPAIR_SUCCESS = 0.7;
 
+/** Objetos del mapa en un estado que dura (la cafetera "en uso"): cuándo vuelven y a qué. */
+export interface ObjectsState {
+  timers: Map<string, { at: number; state: string; from: string }>;
+}
+
+export const objectsState = (ctx: SimContext) =>
+  ctx.state<ObjectsState>("objects", () => ({ timers: new Map() }));
+
 /** Cambia el estado de un objeto sin avisos (quien está delante ya lo ve cambiar). */
 function setState(ctx: SimContext, spotId: string, state: string): void {
   const spot = ctx.world.setSpotState(spotId, state);
@@ -23,9 +31,9 @@ function setState(ctx: SimContext, spotId: string, state: string): void {
 
 /** Devuelve a su estado los objetos cuyo rato ha pasado (si nadie los ha cambiado entretanto). */
 export function objectsTick(ctx: SimContext, now: number): void {
-  for (const [spotId, t] of [...ctx.objectTimers]) {
+  for (const [spotId, t] of [...objectsState(ctx).timers]) {
     if (now < t.at) continue;
-    ctx.objectTimers.delete(spotId);
+    objectsState(ctx).timers.delete(spotId);
     if (ctx.world.spot(spotId)?.state === t.from) setState(ctx, spotId, t.state);
   }
 }
@@ -69,9 +77,10 @@ registerAction<z.infer<typeof UseObjectAction>>({
     const before = spot.state;
     setState(ctx, spot.id, verb.to);
     if (verb.minutes && verb.after) {
-      ctx.objectTimers.set(spot.id, { at: now + verb.minutes, state: verb.after, from: verb.to });
+      const at = now + verb.minutes;
+      objectsState(ctx).timers.set(spot.id, { at, state: verb.after, from: verb.to });
     } else {
-      ctx.objectTimers.delete(spot.id);
+      objectsState(ctx).timers.delete(spot.id);
     }
     const icon = verb.verb === "arreglar" ? "🔧" : "🛠";
     const text =

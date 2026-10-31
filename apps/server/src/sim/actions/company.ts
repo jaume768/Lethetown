@@ -8,7 +8,7 @@ import type {
 } from "@lethetown/shared";
 import type { z } from "zod";
 import type { SimContext } from "../context";
-import { INVITE_MINUTES, startFollowing } from "../company";
+import { INVITE_MINUTES, companyState, startFollowing } from "../company";
 import { learn } from "../places";
 import { grantGuest, GUEST_MINUTES, mayEnter } from "../norms";
 import { setAction, travel, travelTogether } from "../routines";
@@ -34,7 +34,7 @@ const someoneHere = (c: ActionContext) => [...c.ctx.agents.keys()].some((id) => 
 
 /** La invitación pendiente para este agente, o el motivo. */
 function pendingFor(c: ActionContext, id: string): Invitation | string {
-  const v = c.ctx.invitations.get(id);
+  const v = companyState(c.ctx).invitations.get(id);
   if (!v || v.responses[c.agent.id] === undefined) return `no tengo ninguna invitación "${id}"`;
   if (v.responses[c.agent.id] !== "pending") return "ya respondí a esa invitación";
   if (c.now >= v.expiresAt) return "esa invitación ya ha caducado";
@@ -42,7 +42,7 @@ function pendingFor(c: ActionContext, id: string): Invitation | string {
 }
 
 const hasInvitation = (c: ActionContext) =>
-  [...c.ctx.invitations.values()].some((v) => v.responses[c.agent.id] === "pending");
+  [...companyState(c.ctx).invitations.values()].some((v) => v.responses[c.agent.id] === "pending");
 
 registerAction<z.infer<typeof InviteAction>>({
   type: "invite",
@@ -63,10 +63,9 @@ registerAction<z.infer<typeof InviteAction>>({
   describe: ({ ctx }, a) =>
     `invitar a ${a.with.map((id) => firstOf(ctx, id)).join(" y ")} a ${ctx.world.places.find((p) => p.id === a.placeId)?.name ?? a.placeId}`,
   execute: ({ ctx, agent, now }, a) => {
-    ctx.invitationSeq += 1;
     const to = [...new Set(a.with)];
     const v: Invitation = {
-      id: `v${ctx.invitationSeq}`,
+      id: `v${++companyState(ctx).seq}`,
       fromId: agent.id,
       to,
       responses: Object.fromEntries(to.map((id) => [id, "pending"] as const)),
@@ -75,7 +74,7 @@ registerAction<z.infer<typeof InviteAction>>({
       createdAt: now,
       expiresAt: now + INVITE_MINUTES,
     };
-    ctx.invitations.set(v.id, v);
+    companyState(ctx).invitations.set(v.id, v);
     const place = ctx.world.place(a.placeId).name;
     // Espera la respuesta aquí un rato (no se va con el plan).
     ctx.rt(agent.id).overrideUntil = now + INVITE_MINUTES;
@@ -113,11 +112,11 @@ registerAction<z.infer<typeof AcceptInviteAction>>({
     return minorMeetingRule(c.ctx, [v.fromId, c.agent.id], v.placeId);
   },
   describe: ({ ctx }, a) => {
-    const v = ctx.invitations.get(a.inviteId);
+    const v = companyState(ctx).invitations.get(a.inviteId);
     return `aceptar la invitación${v ? ` de ${firstOf(ctx, v.fromId)}` : ""}`;
   },
   execute: ({ ctx, agent, now }, a) => {
-    const v = ctx.invitations.get(a.inviteId)!;
+    const v = companyState(ctx).invitations.get(a.inviteId)!;
     v.responses[agent.id] = "accepted";
     const host = ctx.agents.get(v.fromId)!;
     const place = ctx.world.place(v.placeId);
@@ -160,7 +159,7 @@ registerAction<z.infer<typeof DeclineInviteAction>>({
   },
   describe: (_c, a) => `rechazar la invitación ${a.inviteId}`,
   execute: ({ ctx, agent }, a) => {
-    const v = ctx.invitations.get(a.inviteId)!;
+    const v = companyState(ctx).invitations.get(a.inviteId)!;
     v.responses[agent.id] = "declined";
     const why = a.reason ? `: ${a.reason}` : "";
     ctx.rt(v.fromId).pending.push({

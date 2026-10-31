@@ -3,7 +3,13 @@
  * confusión de fuente, fichas sociales y resumen de episodios. Interfaces + implementaciones
  * con LLM (inyectado). Los prompts siguen el formato "TAREA: <nombre>" que entiende el MockProvider.
  */
-import type { MemorySource, SocialProfile, SocialProfileChange } from "@lethetown/shared";
+import {
+  AGREEMENT_TYPES,
+  Agreement,
+  type MemorySource,
+  type SocialProfile,
+  type SocialProfileChange,
+} from "@lethetown/shared";
 import { z } from "zod";
 import { hasStrongRomance, type MinorGuard } from "../agent/minor-safety";
 import { parseWith } from "../agent/parse";
@@ -272,13 +278,23 @@ export function socialNote(profile: SocialProfile, name: string): string {
   return `${name} (${relationshipLabel(profile.relationshipType)}${known}): ${feel}, ${trust}. ${profile.summary}`.trim();
 }
 
+/** Un acuerdo que no se entiende se queda vacío (y se descarta), sin tirar los demás. */
+const NO_AGREEMENT = Agreement.parse({ type: "" });
+
 const SocialResponse = z.object({
   summary: z.string().default(""),
   affinityDelta: z.coerce.number().default(0),
   trustDelta: z.coerce.number().default(0),
   /** Lo que se ha propuesto hacer a raíz de la charla (memoria prospectiva). */
   intentions: z.array(IntentionInput).catch([]).default([]),
+  /** Lo acordado de forma explícita (citas, préstamos…): el motor lo lleva a cabo. */
+  agreements: z.array(Agreement.catch(NO_AGREEMENT)).catch([]).default([]),
 });
+
+/** Tipos de acuerdo para el prompt de la tarea social (una línea por tipo). */
+const AGREEMENT_LINES = Object.entries(AGREEMENT_TYPES)
+  .map(([type, what]) => `  · ${type}: ${what}`)
+  .join("\n");
 
 /** Actualiza la ficha social tras una conversación (modelo "fast"). */
 export async function updateSocialAfterConversation(
@@ -293,6 +309,13 @@ export async function updateSocialAfterConversation(
     guard?: MinorGuard;
     /** Intenciones que surgen de la charla (promesas, quedadas…). */
     onIntentions?: (intentions: IntentionInput[]) => Promise<void>;
+    /**
+     * Acuerdos explícitos de la charla (puente a las acciones del motor). Se llama antes que
+     * `onIntentions`, para que las intenciones de un compromiso ya creado se enlacen a él.
+     */
+    onAgreements?: (agreements: Agreement[]) => Promise<void>;
+    /** Líneas de contexto para los acuerdos (p. ej. los objetos que lleváis y sus ids). */
+    context?: string[];
     /** Conversación (para el historial de la ficha). */
     eventId?: string;
     config?: SocialConfig;
@@ -313,10 +336,14 @@ ${opts.transcript.map((l) => `- ${l}`).join("\n")}
 
 Actualiza tu opinión. summary: una frase sobre esa persona. affinityDelta y trustDelta entre -0.3 y 0.3.
 Si en la charla has quedado en algo o te has propuesto hacer algo más adelante (una promesa, una quedada, devolver algo), ponlo en intentions: text en infinitivo y, si aplica, personId, placeId o la hora (at, "HH:MM"). Si no, [].
+Si habéis acordado algo concreto entre los dos (no solo mencionado: que el otro haya dicho que sí), ponlo también en agreements, con type, from (id de quien lo propone, da o invita), to (ids de los demás), los datos que hagan falta y quote (la frase que lo cierra). Si no, [].
+${AGREEMENT_LINES}${opts.context?.length ? `\n${opts.context.join("\n")}` : ""}
 Formato:
-{"summary":"...","affinityDelta":0.05,"trustDelta":0,"intentions":[{"text":"...","personId":"...","placeId":null,"at":null}]}`,
+{"summary":"...","affinityDelta":0.05,"trustDelta":0,"intentions":[{"text":"...","personId":"...","placeId":null,"at":null}],"agreements":[{"type":"meeting","from":"...","to":["..."],"placeId":"...","at":"17:00","day":"mañana","itemId":null,"what":"tomar algo","quote":"Vale, a las cinco."}]}`,
   });
   const r = parseWith(SocialResponse, res.text);
+  const agreements = r.agreements.filter((a) => a.type);
+  if (agreements.length) await opts.onAgreements?.(agreements);
   if (r.intentions.length) await opts.onIntentions?.(r.intentions);
   const safe = await opts.guard?.allows(r.summary, {
     kind: "social",

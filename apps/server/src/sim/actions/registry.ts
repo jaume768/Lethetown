@@ -6,11 +6,30 @@
 import type { Agent } from "@lethetown/agent-core";
 import { ACTION_SPECS, type ActionType, type AgentAction } from "@lethetown/shared";
 import type { SimContext } from "../context";
+import { actionEnabled } from "../systems/registry";
 
 export interface ActionContext {
   ctx: SimContext;
   agent: Agent;
   now: number;
+  /**
+   * Acordado hablando (sim/agreements.ts): quienes estaban en la conversación cuentan como
+   * presentes aunque acaben de irse (se despidieron con el acuerdo cerrado).
+   */
+  agreedWith?: readonly string[];
+}
+
+/** ¿Está aquí, despierto y quieto? (o, si es un acuerdo, estaba en la charla). */
+export function isHere(c: ActionContext, id: string): boolean {
+  if (id === c.agent.id) return false;
+  if (c.agreedWith?.includes(id)) return c.ctx.agents.has(id);
+  const other = c.ctx.agents.get(id);
+  return Boolean(
+    other &&
+    other.state.locationId === c.agent.state.locationId &&
+    other.state.activityKind !== "sleep" &&
+    !c.ctx.rt(id).travelling,
+  );
 }
 
 export interface ActionHandler<T extends AgentAction = AgentAction> {
@@ -42,7 +61,9 @@ export function registeredActions(): ActionType[] {
 /** Acciones que se le ofrecen ahora, en el orden del registro. */
 export function availableActions(c: ActionContext): ActionType[] {
   // En el orden del catálogo (no en el de registro, que depende de los imports).
-  return (Object.keys(ACTION_SPECS) as ActionType[]).filter((t) => HANDLERS.get(t)?.available(c));
+  return (Object.keys(ACTION_SPECS) as ActionType[]).filter(
+    (t) => actionEnabled(c.ctx, t) && HANDLERS.get(t)?.available(c),
+  );
 }
 
 /**
@@ -51,7 +72,11 @@ export function availableActions(c: ActionContext): ActionType[] {
  */
 export async function runAction(c: ActionContext, action: AgentAction): Promise<boolean> {
   const handler = HANDLERS.get(action.type);
-  const reason = handler ? await handler.check(c, action) : `no sé hacer "${action.type}"`;
+  const reason = !actionEnabled(c.ctx, action.type)
+    ? "eso no se puede hacer en este pueblo"
+    : handler
+      ? await handler.check(c, action)
+      : `no sé hacer "${action.type}"`;
   if (reason !== null || !handler) {
     failAction(c, handler ? handler.describe(c, action) : action.type, reason ?? "", action.type);
     return false;

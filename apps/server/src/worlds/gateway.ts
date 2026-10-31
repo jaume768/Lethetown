@@ -36,6 +36,8 @@ export const WorldCommand = z.discriminatedUnion("type", [
   z.object({ type: z.literal("chronicle"), day: z.number().int().nonnegative() }),
   z.object({ type: z.literal("pause") }),
   z.object({ type: z.literal("resume") }),
+  /** Solo lectura: cifras vivas de los sistemas y del guardián de menores (pestaña «Evolución»). */
+  z.object({ type: z.literal("metrics") }),
 ]);
 export type WorldCommand = z.infer<typeof WorldCommand>;
 
@@ -120,6 +122,13 @@ export async function runCommand(w: WorldRuntime, cmd: WorldCommand): Promise<Co
     case "chronicle": {
       const c: Chronicle | null = await w.sim.writeChronicle(cmd.day);
       return c ? { ok: true, value: c } : { ok: false, status: 500, error: "no se pudo generar" };
+    }
+    case "metrics": {
+      const guard = w.memory.guard?.stats();
+      return {
+        ok: true,
+        value: { ...w.sim.systemMetrics(), ...(guard ? { minorGuard: { ...guard } } : {}) },
+      };
     }
   }
 }

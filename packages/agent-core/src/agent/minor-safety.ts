@@ -101,6 +101,16 @@ export interface SafetyBlock {
   agentId: string | null;
   text: string;
   reason: string;
+  /** content = lo rechazó el contenido; error = no se pudo moderar (fail-closed). */
+  cause: "content" | "error";
+}
+
+/** Recuento de lo que hace el guardián (para «Evolución» y las métricas). */
+export interface GuardStats {
+  blockedContent: number;
+  blockedError: number;
+  /** Moderaciones que fallaron y se repitieron. */
+  retries: number;
 }
 
 export interface MinorGuardOptions {
@@ -110,6 +120,17 @@ export interface MinorGuardOptions {
   onBlock?: (block: SafetyBlock) => void;
   /** Veredictos de la moderación que se recuerdan (mismo texto, misma respuesta). */
   cacheSize?: number;
+  /**
+   * Si la moderación falla (error, timeout, respuesta rara), cuántas veces se repite antes de
+   * bloquear (por defecto 2). Cada llamada ya lleva los reintentos de ResilientProvider en
+   * 429/5xx; esto cubre lo que llega a fallar igualmente. En la partida real, los 3 bloqueos
+   * fueron por esto y no por el contenido.
+   */
+  retries?: number;
+  /** Espera antes de cada repetición: base · 2^intento (ms reales; por defecto 500). */
+  retryDelayMs?: number;
+  /** Para los tests (por defecto, setTimeout). */
+  sleep?: (ms: number) => Promise<void>;
 }
 
 /** Revisa los textos que genera el LLM antes de que entren en el mundo. */
@@ -119,6 +140,7 @@ export class MinorGuard {
   private readonly patterns: { minor: MinorInfo; re: RegExp }[];
   private readonly verdicts = new Map<string, boolean>();
   private readonly listeners: ((b: SafetyBlock) => void)[] = [];
+  private readonly counts: GuardStats = { blockedContent: 0, blockedError: 0, retries: 0 };
 
   constructor(private readonly opts: MinorGuardOptions) {
     this.byId = new Map(opts.minors.map((m) => [m.id, m]));
@@ -132,6 +154,10 @@ export class MinorGuard {
 
   get minors(): MinorInfo[] {
     return this.opts.minors;
+  }
+
+  stats(): GuardStats {
+    return { ...this.counts };
   }
 
   isMinor(agentId: string): boolean {
@@ -162,12 +188,22 @@ export class MinorGuard {
     if (!minors.length) return true;
     const who = minors.map((m) => m.name).join(", ");
     if (hasStrongRomance(text)) {
-      return this.block(text, ctx, `contenido romántico o sexual que implica a un menor (${who})`);
+      return this.block(
+        text,
+        ctx,
+        `contenido romántico o sexual que implica a un menor (${who})`,
+        "content",
+      );
     }
     if (!hasSoftRomance(text)) return true;
     const verdict = await this.moderate(text, minors);
     if (verdict.allowed) return true;
-    return this.block(text, ctx, `${verdict.reason || "la moderación lo rechazó"} (${who})`);
+    return this.block(
+      text,
+      ctx,
+      `${verdict.reason || "la moderación lo rechazó"} (${who})`,
+      verdict.error ? "error" : "content",
+    );
   }
 
   /** Versión de `allows` que devuelve el texto o null. */
@@ -186,13 +222,35 @@ export class MinorGuard {
   private async moderate(
     text: string,
     minors: MinorInfo[],
-  ): Promise<{ allowed: boolean; reason: string }> {
+  ): Promise<{ allowed: boolean; reason: string; error?: boolean }> {
     const cached = this.verdicts.get(text);
     if (cached !== undefined) return { allowed: cached, reason: "" };
-    if (!this.opts.llm) return { allowed: false, reason: "sin moderación disponible" };
-    let verdict: { allowed: boolean; reason: string };
+    if (!this.opts.llm) return { allowed: false, reason: "sin moderación disponible", error: true };
+    const retries = this.opts.retries ?? 2;
+    for (let attempt = 0; ; attempt++) {
+      const verdict = await this.ask(text, minors);
+      if (verdict) {
+        this.verdicts.set(text, verdict.allowed);
+        if (this.verdicts.size > (this.opts.cacheSize ?? 500)) {
+          this.verdicts.delete(this.verdicts.keys().next().value!);
+        }
+        return verdict;
+      }
+      // Fail-closed: si después de repetir sigue sin poder moderarse, no entra.
+      if (attempt >= retries) return { allowed: false, reason: "no se pudo moderar", error: true };
+      this.counts.retries++;
+      const wait = (this.opts.retryDelayMs ?? 500) * 2 ** attempt;
+      await (this.opts.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms))))(wait);
+    }
+  }
+
+  /** Una llamada a la moderación: el veredicto, o null si falló (error o respuesta rara). */
+  private async ask(
+    text: string,
+    minors: MinorInfo[],
+  ): Promise<{ allowed: boolean; reason: string } | null> {
     try {
-      const res = await this.opts.llm.run({
+      const res = await this.opts.llm!.run({
         kind: "fast",
         task: "moderate_minor",
         system: MINOR_SAFETY_SYSTEM,
@@ -204,20 +262,26 @@ Texto: ${untrusted(text)}
 Formato:
 {"allowed":true|false,"reason":"motivo breve si se rechaza"}`,
       });
-      verdict = parseWith(SafetyResponse, res.text);
+      return parseWith(SafetyResponse, res.text);
     } catch {
-      // Fail-closed: si no se puede moderar (error, sin presupuesto, respuesta rara), no entra.
-      return { allowed: false, reason: "no se pudo moderar" };
+      return null;
     }
-    this.verdicts.set(text, verdict.allowed);
-    if (this.verdicts.size > (this.opts.cacheSize ?? 500)) {
-      this.verdicts.delete(this.verdicts.keys().next().value!);
-    }
-    return verdict;
   }
 
-  private block(text: string, ctx: SafetyContext, reason: string): false {
-    const block: SafetyBlock = { kind: ctx.kind, agentId: ctx.agentId ?? null, text, reason };
+  private block(
+    text: string,
+    ctx: SafetyContext,
+    reason: string,
+    cause: SafetyBlock["cause"],
+  ): false {
+    this.counts[cause === "error" ? "blockedError" : "blockedContent"]++;
+    const block: SafetyBlock = {
+      kind: ctx.kind,
+      agentId: ctx.agentId ?? null,
+      text,
+      reason,
+      cause,
+    };
     for (const l of this.listeners) l(block);
     return false;
   }

@@ -35,6 +35,9 @@ export const ACTION_ICONS: Record<string, string> = {
   intruder: "🚪",
 };
 
+/** Lo acordado hablando (puente de la conversación a la acción), sea cual sea la acción. */
+export const AGREED_ICON = "🗣";
+
 const ITEM_ICONS: Record<string, string> = {
   libro: "📕",
   camara: "📷",
@@ -49,9 +52,10 @@ export function itemIcon(kind: string): string {
 /** Icono y si salió bien de un evento de acción (null si no es de una acción del catálogo). */
 export function actionBadge(
   e: Pick<SimEvent, "meta">,
-): { action: string; icon: string; ok: boolean } | null {
+): { action: string; icon: string; ok: boolean; agreed?: true } | null {
   const action = e.meta?.action;
   if (!action) return null;
+  if (e.meta?.agreed) return { action, icon: AGREED_ICON, ok: e.meta.ok !== false, agreed: true };
   return { action, icon: ACTION_ICONS[action] ?? "•", ok: e.meta?.ok !== false };
 }
 

@@ -1214,3 +1214,24 @@ html.ui-skin .warn-text {
   color: var(--danger);
   font-weight: 700;
 }
+
+/* Pestaña «Evolución»: tabla por día con desplazamiento horizontal si no cabe. */
+.table-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+}
+.evolution table {
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+.evolution th,
+.evolution td {
+  padding: 2px 6px;
+  border-bottom: 1px solid rgba(127, 127, 127, 0.25);
+  text-align: right;
+  white-space: nowrap;
+}
+.evolution th[scope="row"] {
+  text-align: left;
+  white-space: normal;
+}

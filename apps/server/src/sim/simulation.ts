@@ -9,8 +9,6 @@ import type {
   AgentState,
   Chronicle,
   Drama,
-  Item,
-  Note,
   SimEvent,
   Weather,
   WorldRunStatus,
@@ -26,6 +24,7 @@ import {
 } from "./context";
 import {
   activeConversationOf,
+  catchphrasesSaid,
   endIdleConversations,
   leaveConversation,
   recentLines,
@@ -35,23 +34,27 @@ import * as intervention from "./intervention";
 import { WEATHER_NOW } from "./intervention";
 import { consolidate, maintain, scheduleChronicle, writeChronicle } from "./memory-routines";
 import { availableActions, failAction, runAction } from "./actions";
-import { agendaLines, fixedPlanFor, meetingsTick, rehearseAgenda } from "./meetings";
 import { gatherPerceptions, presentWith } from "./perception";
-import { syncKnownPlaces } from "./places";
-import { inventorySections, itemsTick, loadItems } from "./items";
-import { objectsTick } from "./actions/objects";
-import { companySections, companyTick, stopFollowing } from "./company";
-import { loadNotes, notesTick } from "./notes";
-import { mayEnter, normsTick } from "./norms";
+import { mayEnter } from "./norms";
 import { goOrDo, scheduleArrival, setAction, travel } from "./routines";
 import { SIM_SNAPSHOT_VERSION, type SimSnapshot } from "./snapshot";
+import {
+  loadSystems,
+  restoreSystems,
+  scheduleSystemTicks,
+  snapshotSystems,
+  systemFixedPlan,
+  systemIdentityLines,
+  systemMetrics,
+  systemSections,
+  systemsBeforeAction,
+  systemsBeforeDecide,
+} from "./systems";
 import type { WorldMap } from "./world";
 
 export type { SimSignal, SimulationDeps } from "./context";
 
 const SPEECH_BUBBLE_MINUTES = 20;
-/** Cada cuántos minutos de juego se revisan las citas. */
-const MEETINGS_EVERY = 5;
 
 /**
  * Orquesta la simulación de un mundo: el bucle de cada agente (percibir → guardar → decidir →
@@ -64,6 +67,8 @@ export class Simulation {
   /** Llamadas al LLM en curso por agente (para el snapshot). */
   private readonly thinking = new Map<string, number>();
   private restored = false;
+  /** Sistemas cuyo estado vino de la instantánea (su almacén sigue a la instantánea). */
+  private restoredSystems = new Set<string>();
   private readonly tickListeners: (() => void)[] = [];
   /** Nivel de detalle: los agentes piensan cada tickMinutes × tickMultiplier (LOD sin público). */
   private tickMultiplier = 1;
@@ -86,6 +91,8 @@ export class Simulation {
     const gossips = new Set(
       deps.seeds.filter((s) => s.traits.some((t) => /chism|cotill/i.test(t))).map((s) => s.id),
     );
+    // Lo fijo que aportan los sistemas activos (va en el prompt de identidad, cacheable).
+    const worldRules = systemIdentityLines(deps.world, (id) => ctx.enabled(id));
     for (const raw of deps.seeds) {
       // Sin lista en la semilla: lo de quien vive aquí de siempre.
       const seed = {
@@ -100,6 +107,7 @@ export class Simulation {
         names,
         minors,
         gossips,
+        worldRules,
         language: deps.language,
         onError: (agentId, task, error) =>
           ctx.emit("system", agentId, `⚠ Error en "${task}": ${errorMessage(error)}`),
@@ -157,43 +165,23 @@ export class Simulation {
       this.scheduleTick(agent, now + i);
     });
     scheduleChronicle(this.ctx, now);
-    this.scheduleMeetings(now);
+    // Revisiones periódicas de los sistemas (citas, préstamos, objetos, normas…).
+    scheduleSystemTicks(this.ctx, now);
     if (this.ctx.deps.demoEveryMinutes) startDemo(this.ctx, this.ctx.deps.demoEveryMinutes);
     this.ctx.emit("system", null, `Simulación iniciada con ${this.agents.size} agentes`);
   }
 
-  /** Revisión de las citas cada pocos minutos de juego (quién sale, quién llega, plantones). */
-  private scheduleMeetings(from: number): void {
-    const next = (Math.floor(from / MEETINGS_EVERY) + 1) * MEETINGS_EVERY;
-    this.clock.schedule(next, async () => {
-      await meetingsTick(this.ctx, next);
-      await itemsTick(this.ctx, next);
-      objectsTick(this.ctx, next);
-      companyTick(this.ctx, next);
-      notesTick(this.ctx, next);
-      await normsTick(this.ctx, next);
-      this.scheduleMeetings(next);
-    });
+  /**
+   * Al abrir el mundo, tras `restore` (si había instantánea): cada sistema carga de su almacén
+   * (objetos, notas, lugares conocidos, contador de citas).
+   */
+  loadSystems(): Promise<void> {
+    return loadSystems(this.ctx, this.restoredSystems, this.clock.now());
   }
 
-  /** Guarda lo que conoce cada agente (al arrancar). */
-  syncKnownPlaces(): Promise<void> {
-    return syncKnownPlaces(this.ctx);
-  }
-
-  /** Objetos al arrancar (si no vienen de la instantánea): los guardados o los de las semillas. */
-  loadItems(stored: Item[]): void {
-    loadItems(this.ctx, stored, this.clock.now());
-  }
-
-  /** Notas al arrancar (si no vienen de la instantánea). */
-  loadNotes(stored: Note[]): void {
-    loadNotes(this.ctx, stored);
-  }
-
-  /** Primer id libre de cita (si no se restauró una instantánea, los guardados mandan). */
-  setMeetingSeq(seq: number): void {
-    this.ctx.meetingSeq = Math.max(this.ctx.meetingSeq, seq);
+  /** Cifras de cada sistema activo (pestaña «Evolución»). */
+  systemMetrics(): Record<string, Record<string, number>> {
+    return systemMetrics(this.ctx);
   }
 
   onEvent(listener: (e: SimEvent) => void): () => void {
@@ -246,18 +234,7 @@ export class Simulation {
         };
       }),
       conversations: [...this.ctx.conversations.values()].map((c) => structuredClone(c)),
-      meetings: structuredClone([...this.ctx.meetings.values()]),
-      meetingSeq: this.ctx.meetingSeq,
-      items: structuredClone([...this.ctx.items.values()]),
-      itemSeq: this.ctx.itemSeq,
-      invitations: structuredClone([...this.ctx.invitations.values()]),
-      invitationSeq: this.ctx.invitationSeq,
-      notes: structuredClone([...this.ctx.notes.values()]),
-      noteSeq: this.ctx.noteSeq,
-      guests: Object.fromEntries(
-        [...this.ctx.guests].map(([placeId, g]) => [placeId, Object.fromEntries(g)]),
-      ),
-      objectTimers: Object.fromEntries(structuredClone([...this.ctx.objectTimers])),
+      systems: snapshotSystems(this.ctx),
     };
   }
 
@@ -288,24 +265,15 @@ export class Simulation {
       const members = c.members.filter((m) => this.agents.has(m));
       if (members.length >= 2) this.ctx.conversations.set(c.id, { ...c, members });
     }
-    this.ctx.meetings.clear();
-    for (const m of s.meetings) this.ctx.meetings.set(m.id, m);
-    this.ctx.meetingSeq = s.meetingSeq;
-    this.ctx.items.clear();
-    for (const i of s.items) this.ctx.items.set(i.id, i);
-    this.ctx.itemSeq = s.itemSeq;
-    this.ctx.invitations.clear();
-    for (const v of s.invitations) this.ctx.invitations.set(v.id, v);
-    this.ctx.invitationSeq = s.invitationSeq;
-    this.ctx.notes.clear();
-    for (const n of s.notes) this.ctx.notes.set(n.id, n);
-    this.ctx.noteSeq = s.noteSeq;
-    this.ctx.guests.clear();
-    for (const [placeId, g] of Object.entries(s.guests)) {
-      this.ctx.guests.set(placeId, new Map(Object.entries(g)));
+    const { restored, skipped } = restoreSystems(this.ctx, s.systems);
+    this.restoredSystems = new Set(restored);
+    if (skipped.length) {
+      this.ctx.emit(
+        "system",
+        null,
+        `⚠ Instantánea de otra versión para ${skipped.join(", ")}: esos sistemas empiezan de cero`,
+      );
     }
-    this.ctx.objectTimers.clear();
-    for (const [id, t] of Object.entries(s.objectTimers)) this.ctx.objectTimers.set(id, t);
     this.restored = true;
   }
 
@@ -449,7 +417,7 @@ export class Simulation {
         );
       }
       setAction(ctx, agent, "pensando en el día", "idle");
-      const plan = await agent.planDay(now, ctx.world.weather, fixedPlanFor(ctx, agent.id, day));
+      const plan = await agent.planDay(now, ctx.world.weather, systemFixedPlan(ctx, agent, day));
       ctx.emit("plan", agent.id, `Plan: ${plan.map((p) => p.activity).join(" → ")}`, [agent.id]);
     }
 
@@ -494,8 +462,12 @@ export class Simulation {
     await agent.perceive(perceptions, this.clock.now(), {
       inConversation: !!conv && conv.turns > 1,
     });
-    // Al pararse a pensar, repasa su agenda (las citas que tiene presentes se olvidan menos).
-    if (perceptions.length) await rehearseAgenda(ctx, agent, this.clock.now());
+    // Al pararse a pensar, los sistemas preparan lo suyo (p. ej. repasar la agenda: las citas que
+    // tiene presentes se olvidan menos). Solo se espera si hay algo que esperar.
+    if (perceptions.length) {
+      const ready = systemsBeforeDecide(ctx, agent, this.clock.now());
+      if (ready) await ready;
+    }
     // Decidir.
     // Quien le habla a él o ella (en un grupo, lo que se dice a otros no pide respuesta).
     const speaker = heard.find((h) => !h.toName)?.fromId ?? null;
@@ -504,6 +476,7 @@ export class Simulation {
       heard,
       conversationWith: speaker ?? activeConversationOf(ctx, agent.id)?.other ?? null,
       conversationLines: recentLines(ctx, agent.id),
+      usedCatchphrases: catchphrasesSaid(ctx, agent.id),
       objectStates: place.objects
         .filter((o) => o.state !== "idle")
         .map((o) => ({ id: o.id, state: o.state })),
@@ -512,8 +485,7 @@ export class Simulation {
       innerVoice,
       salient: perceptions.length > 0,
       actions: availableActions({ ctx, agent, now: this.clock.now() }),
-      agenda: agendaLines(ctx, agent.id, this.clock.now()),
-      sections: [...companySections(ctx, agent), ...inventorySections(ctx, agent)],
+      sections: systemSections(ctx, agent, this.clock.now()),
     });
     if (decision.reason) {
       agent.state.reasoning = {
@@ -562,10 +534,8 @@ export class Simulation {
         return goOrDo(ctx, agent, item.placeId, item.spotId, item.activity, item.activityKind);
       }
       case "act":
-        // Irse por su cuenta deja de acompañar a quien acompañaba.
-        if (["do_activity", "explore", "invite"].includes(decision.action.type)) {
-          stopFollowing(ctx, agent.id, null);
-        }
+        // Lo que hagan los sistemas antes (irse por su cuenta deja de acompañar…).
+        systemsBeforeAction(ctx, agent, decision.action);
         await runAction(c, decision.action);
         return;
       case "invalid":

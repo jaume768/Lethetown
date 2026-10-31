@@ -40,7 +40,15 @@ export class AnthropicProvider implements BatchCapableProvider {
       max_tokens: req.maxTokens,
       // Identidad estable en `system` con breakpoint de caché; lo volátil va en el mensaje.
       system: [
-        { type: "text" as const, text: req.system, cache_control: { type: "ephemeral" as const } },
+        {
+          type: "text" as const,
+          text: req.system,
+          cache_control: {
+            type: "ephemeral" as const,
+            // TTL de 1 h (documentado: escritura a 2× la entrada); sin él, 5 min.
+            ...(req.cacheTtl === "1h" ? { ttl: "1h" as const } : {}),
+          },
+        },
       ],
       messages: [{ role: "user" as const, content: req.prompt }],
       output_config: { effort: req.effort },
@@ -126,6 +134,7 @@ function toResult(response: BetaMessage): CompletionResult {
   return {
     text,
     model: response.model,
+    cacheWrite1hTokens: usage.cache_creation?.ephemeral_1h_input_tokens ?? 0,
     usage: {
       inputTokens: usage.input_tokens,
       outputTokens: usage.output_tokens,

@@ -11,6 +11,7 @@
     "latency:probe": "tsx src/scripts/latency-probe.ts",
     "record": "tsx src/scripts/record.ts",
     "world:export": "tsx src/scripts/world-export.ts",
+    "study:analyze": "tsx src/scripts/study-analyze.ts",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",

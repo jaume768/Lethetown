@@ -7,7 +7,8 @@ export function EventText({ event }: { event: Pick<SimEvent, "text" | "meta"> })
   const { t } = useI18n();
   const badge = actionBadge(event);
   if (!badge) return <>{event.text}</>;
-  const label = t("action.label", { action: badge.action.replace(/_/g, " ") });
+  const action = badge.action.replace(/_/g, " ");
+  const label = t(badge.agreed ? "action.agreed" : "action.label", { action });
   return (
     <>
       <span className={`act-badge ${badge.ok ? "" : "failed"}`} title={label}>

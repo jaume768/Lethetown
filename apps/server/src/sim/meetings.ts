@@ -34,15 +34,23 @@ export function whenText(at: number, now: number): string {
   return `${day} a las ${formatClock(at % 1440)}`;
 }
 
+/** Estado del sistema de citas: las vivas y recientes y el contador de ids cortos ("c1"…). */
+export interface MeetingsState {
+  meetings: Map<string, Commitment>;
+  seq: number;
+}
+
+export const meetingsState = (ctx: SimContext) =>
+  ctx.state<MeetingsState>("meetings", () => ({ meetings: new Map(), seq: 0 }));
+
 export function newMeetingId(ctx: SimContext): string {
-  ctx.meetingSeq += 1;
-  return `c${ctx.meetingSeq}`;
+  return `c${++meetingsState(ctx).seq}`;
 }
 
 /** Guarda la cita (en el runtime y, en segundo plano, en el almacén). */
 export function saveMeeting(ctx: SimContext, c: Commitment): void {
   c.updatedAt = ctx.clock.now();
-  ctx.meetings.set(c.id, c);
+  meetingsState(ctx).meetings.set(c.id, c);
   const write = ctx.commitments
     .upsert(structuredClone(c))
     .catch((e: unknown) => ctx.emit("system", null, `⚠ No se pudo guardar la cita: ${String(e)}`));
@@ -56,7 +64,7 @@ export function acceptedOf(c: Commitment): string[] {
 
 /** Citas abiertas (propuestas o aceptadas) de un agente. */
 export function openMeetingsOf(ctx: SimContext, agentId: string): Commitment[] {
-  return [...ctx.meetings.values()]
+  return [...meetingsState(ctx).meetings.values()]
     .filter((c) => c.participants.includes(agentId))
     .filter((c) => c.status === "proposed" || c.status === "accepted")
     .sort((a, b) => a.at - b.at);
@@ -299,7 +307,7 @@ async function finish(ctx: SimContext, c: Commitment, now: number): Promise<void
 
 /** Revisión periódica de las citas (la llama la simulación cada pocos minutos de juego). */
 export async function meetingsTick(ctx: SimContext, now: number): Promise<void> {
-  for (const c of [...ctx.meetings.values()]) {
+  for (const c of [...meetingsState(ctx).meetings.values()]) {
     if (c.status === "proposed" && now >= c.at) {
       c.status = "cancelled";
       saveMeeting(ctx, c);
@@ -307,7 +315,7 @@ export async function meetingsTick(ctx: SimContext, now: number): Promise<void> 
     }
     if (c.status !== "accepted") {
       // Las cerradas se quedan un día en el runtime (para la agenda) y luego solo en el almacén.
-      if (now - c.at > 1440) ctx.meetings.delete(c.id);
+      if (now - c.at > 1440) meetingsState(ctx).meetings.delete(c.id);
       continue;
     }
     const before = JSON.stringify(c);

@@ -6,6 +6,7 @@ import {
   boardPlace,
   BOARD_SPOT,
   newNoteId,
+  notesState,
   PRIVATE_NOTE_DAYS,
   PUBLIC_NOTE_DAYS,
   saveNote,
@@ -20,7 +21,7 @@ registerAction<z.infer<typeof PostNoteAction>>({
   available: ({ ctx, agent }) => agent.state.locationId === boardPlace(ctx),
   check: ({ ctx, agent, now }) => {
     if (agent.state.locationId !== boardPlace(ctx)) return "aquí no hay ningún tablón";
-    const mine = [...ctx.notes.values()].filter(
+    const mine = [...notesState(ctx).notes.values()].filter(
       (n) => n.kind === "public" && n.authorId === agent.id && n.expiresAt > now,
     );
     return mine.length >= MAX_PUBLIC ? "ya tengo bastantes notas en el tablón" : null;

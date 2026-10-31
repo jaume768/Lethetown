@@ -137,6 +137,7 @@ export async function openWorld(services: Services, row: WorldRow): Promise<Worl
     items,
     notes,
     discoveryRadius: config.SIM_DISCOVERY_RADIUS,
+    systems: row.systems,
     track: (w) => services.track(w),
   });
   placeOf = (id) => sim.agents.get(id)?.state.locationId ?? null;
@@ -163,14 +164,14 @@ export async function openWorld(services: Services, row: WorldRow): Promise<Worl
   }
   const seeded = await sim.seedMemoriesIfEmpty(startTime);
   if (seeded) worldLog(`Sembrados los recuerdos iniciales de ${seeded} agentes.`);
-  sim.setMeetingSeq(await commitments.maxSeq());
   if (snapshot) {
     sim.restore(snapshot);
     worldLog(`Estado restaurado de la instantánea de ${formatGameTime(snapshot.time)}.`);
   }
-  await sim.syncKnownPlaces();
-  sim.loadItems(snapshot ? [] : await items.listAll());
-  sim.loadNotes(snapshot ? [] : await notes.active(startTime));
+  // Cada sistema carga lo suyo (objetos, notas, lugares conocidos, contador de citas).
+  await sim.loadSystems();
+  const off = Object.entries(row.systems).filter(([, on]) => !on);
+  if (off.length) worldLog(`Sistemas desactivados: ${off.map(([id]) => id).join(", ")}`);
 
   const saveSnapshot = (reason: string) =>
     services.snapshots.save(row.id, clock.now(), reason, sim.snapshot());

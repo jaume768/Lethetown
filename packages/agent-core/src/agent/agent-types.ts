@@ -55,6 +55,8 @@ export interface AgentDeps {
   minors?: MinorInfo[];
   /** Chismosos del pueblo: lo que cuentan se cree un poco menos. */
   gossips?: ReadonlySet<string>;
+  /** Reglas fijas del mundo que aportan los sistemas del servidor (van en el prompt fijo). */
+  worldRules?: string[];
   onError?: (agentId: string, task: string, error: unknown) => void;
 }
 

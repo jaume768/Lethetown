@@ -14,32 +14,23 @@ import type {
 } from "@lethetown/shared";
 import type { z } from "zod";
 import type { SimContext } from "../context";
-import { saveItem } from "../items";
+import { itemsState, saveItem } from "../items";
 import { minorMeetingRule } from "./meetings";
-import { registerAction, type ActionContext } from "./registry";
+import { isHere, registerAction, type ActionContext } from "./registry";
 
 const nameOf = (ctx: SimContext, id: string) => ctx.agents.get(id)?.seed.name ?? id;
 const firstOf = (ctx: SimContext, id: string) => nameOf(ctx, id).split(" ")[0]!;
 
-/** ¿Está aquí, despierto y quieto? */
-function here(c: ActionContext, id: string): boolean {
-  const other = c.ctx.agents.get(id);
-  return Boolean(
-    other &&
-    id !== c.agent.id &&
-    other.state.locationId === c.agent.state.locationId &&
-    other.state.activityKind !== "sleep" &&
-    !c.ctx.rt(id).travelling,
-  );
-}
+/** Aquí (o en la charla del acuerdo): ver `isHere`. */
+const here = isHere;
 
 const someoneHere = (c: ActionContext) => [...c.ctx.agents.keys()].some((id) => here(c, id));
 const carried = (c: ActionContext) =>
-  [...c.ctx.items.values()].filter((i) => i.holderId === c.agent.id);
+  [...itemsState(c.ctx).items.values()].filter((i) => i.holderId === c.agent.id);
 
 /** El objeto si lo lleva encima; si no, el motivo. */
 function mine(c: ActionContext, itemId: string): Item | string {
-  const item = c.ctx.items.get(itemId);
+  const item = itemsState(c.ctx).items.get(itemId);
   if (!item) return `no tengo ningún "${itemId}"`;
   if (item.holderId !== c.agent.id) return `no llevo ${item.name} encima`;
   return item;
@@ -72,10 +63,10 @@ registerAction<z.infer<typeof GiveItemAction>>({
   available: (c) => someoneHere(c) && carried(c).some((i) => i.ownerId === c.agent.id && !i.loan),
   check: (c, a) => checkHandOver(c, a.itemId, a.to),
   describe: ({ ctx }, a) =>
-    `regalarle ${ctx.items.get(a.itemId)?.name ?? a.itemId} a ${firstOf(ctx, a.to)}`,
+    `regalarle ${itemsState(ctx).items.get(a.itemId)?.name ?? a.itemId} a ${firstOf(ctx, a.to)}`,
   execute: async (c, a) => {
     const { ctx, agent, now } = c;
-    const item = ctx.items.get(a.itemId)!;
+    const item = itemsState(ctx).items.get(a.itemId)!;
     item.ownerId = a.to;
     item.holderId = a.to;
     saveItem(ctx, item);
@@ -102,10 +93,10 @@ registerAction<z.infer<typeof LendItemAction>>({
   available: (c) => someoneHere(c) && carried(c).some((i) => i.ownerId === c.agent.id && !i.loan),
   check: (c, a) => checkHandOver(c, a.itemId, a.to),
   describe: ({ ctx }, a) =>
-    `prestarle ${ctx.items.get(a.itemId)?.name ?? a.itemId} a ${firstOf(ctx, a.to)}`,
+    `prestarle ${itemsState(ctx).items.get(a.itemId)?.name ?? a.itemId} a ${firstOf(ctx, a.to)}`,
   execute: async (c, a) => {
     const { ctx, agent, now } = c;
-    const item = ctx.items.get(a.itemId)!;
+    const item = itemsState(ctx).items.get(a.itemId)!;
     item.holderId = a.to;
     item.loan = {
       from: agent.id,
@@ -139,10 +130,10 @@ registerAction<z.infer<typeof ReturnItemAction>>({
     if (item.loan?.to !== c.agent.id) return `${item.name} no me lo han prestado`;
     return here(c, item.loan.from) ? null : `${nameOf(c.ctx, item.loan.from)} no está aquí`;
   },
-  describe: ({ ctx }, a) => `devolver ${ctx.items.get(a.itemId)?.name ?? a.itemId}`,
+  describe: ({ ctx }, a) => `devolver ${itemsState(ctx).items.get(a.itemId)?.name ?? a.itemId}`,
   execute: async (c, a) => {
     const { ctx, agent, now } = c;
-    const item = ctx.items.get(a.itemId)!;
+    const item = itemsState(ctx).items.get(a.itemId)!;
     const loan = item.loan!;
     item.holderId = loan.from;
     item.loan = null;
@@ -174,14 +165,14 @@ registerAction<z.infer<typeof ReturnItemAction>>({
 registerAction<z.infer<typeof TakeItemAction>>({
   type: "take_item",
   available: (c) =>
-    [...c.ctx.items.values()].some(
+    [...itemsState(c.ctx).items.values()].some(
       (i) =>
         !i.holderId &&
         i.placeId === c.agent.state.locationId &&
         (i.ownerId === null || i.ownerId === c.agent.id),
     ),
   check: ({ ctx, agent }, a) => {
-    const item = ctx.items.get(a.itemId);
+    const item = itemsState(ctx).items.get(a.itemId);
     if (!item || item.holderId || item.placeId !== agent.state.locationId) {
       return `aquí no hay ningún "${a.itemId}"`;
     }
@@ -189,9 +180,9 @@ registerAction<z.infer<typeof TakeItemAction>>({
       return `${item.name} es de ${nameOf(ctx, item.ownerId)}`;
     return null;
   },
-  describe: ({ ctx }, a) => `coger ${ctx.items.get(a.itemId)?.name ?? a.itemId}`,
+  describe: ({ ctx }, a) => `coger ${itemsState(ctx).items.get(a.itemId)?.name ?? a.itemId}`,
   execute: ({ ctx, agent }, a) => {
-    const item = ctx.items.get(a.itemId)!;
+    const item = itemsState(ctx).items.get(a.itemId)!;
     item.holderId = agent.id;
     item.placeId = null;
     // Lo que era de nadie pasa a ser suyo.
@@ -212,9 +203,9 @@ registerAction<z.infer<typeof LeaveItemAction>>({
     if (typeof item === "string") return item;
     return item.ownerId === c.agent.id ? null : `${item.name} no es mío: mejor devolverlo`;
   },
-  describe: ({ ctx }, a) => `dejar ${ctx.items.get(a.itemId)?.name ?? a.itemId}`,
+  describe: ({ ctx }, a) => `dejar ${itemsState(ctx).items.get(a.itemId)?.name ?? a.itemId}`,
   execute: ({ ctx, agent }, a) => {
-    const item = ctx.items.get(a.itemId)!;
+    const item = itemsState(ctx).items.get(a.itemId)!;
     item.holderId = null;
     item.placeId = agent.state.locationId;
     saveItem(ctx, item);
