@@ -48,6 +48,8 @@ import { itemsState, saveItem } from "./items";
 import { openMeetingsOf } from "./meetings";
 import { setAction } from "./routines";
 
+/** Importancia (1-10) del recuerdo «Me he propuesto: …». */
+const GOAL_MEMORY_IMPORTANCE = { life: 6, project: 5 };
 /** Proyectos de más (sobre los de la semilla) que pide una meta vital de partida. */
 const EXTRA_PROJECTS = 2;
 /** Historial por meta (lo más antiguo se descarta). */
@@ -326,7 +328,9 @@ export async function createGoal(
         text: `Me he propuesto: ${goal.text}.`,
         type: "semantic",
         source: "vivido",
-        importance: goal.level === "life" ? 8 : 6,
+        // Moderada: con 8 acaparaba las recuperaciones (entrevista antes/después).
+        importance:
+          goal.level === "life" ? GOAL_MEMORY_IMPORTANCE.life : GOAL_MEMORY_IMPORTANCE.project,
         emotionalValence: 0.2,
       },
       now,

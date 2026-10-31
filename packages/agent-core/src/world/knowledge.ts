@@ -36,6 +36,12 @@ const COMMON_WORDS = words(
   "Tienes Tengo Tiene Tenemos Bastante Buenos Buenas Entre Por Para Según Deberíamos Debería Hija Hijo Hombre Mujer Vaya Pero Porque Aunque Cuando Donde Como Cómo Qué Quién Cuál Cuánto Esto Eso Aquello Este Esta Ese Esa Aquí Allí Ahora Luego Después Antes Hoy Ayer Mañana Siempre Nunca Ya Muy Mucho Poco Nada Todo Algo Alguien Nadie Sí No Yo Tú Él Ella Nosotros Vosotros Ellos Mi Tu Su Me Te Se Lo La Le Los Las Les Un Una Unos Unas El En Con Sin Sobre Tras Hasta Desde Hacia Al Del Es Son Era Fue Está Están Estoy Estaba Hay Había Voy Vas Va Vamos Hace Hacía Hago Puedo Puedes Quiero Quieres Creo Sé Sabes Dime Cuéntame Mira Oye Escucha Perdona Disculpa Gracias Vale Venga Anda Ojalá Quizá Quizás Igual Menos Más También Tampoco Entonces Además Bien Mal Claro Pues Bueno Total Encima Otra Otro Cada Ninguno Ninguna Cualquier Demasiado Seguro Verdad Mentira Juntos Solo Sola Casi Justo Hola Adiós Buen Gran Nuevo Nueva Viejo Vieja Primero Último Lo Mejor Peor Ni Ay Uy Oh Ah Eh Jo Bah Ole Ojo",
 );
 
+/**
+ * Letras mínimas de una palabra de un nombre de fuera: los textos recortados («Ern…», «Palm…») no
+ * cuentan; a cambio, se escapan nombres muy cortos («Pep»).
+ */
+const MIN_NAME = 4;
+
 /** Conectores dentro de un nombre ("Diario de Mallorca", "Son Sant Joan"). */
 const CONNECTORS = new Set(["de", "del", "la", "las", "los", "el", "y", "i", "les", "d"]);
 /** Signos tras los que empieza una frase (la mayúscula no indica nombre propio). */
@@ -206,7 +212,7 @@ export class KnowledgeDetector {
       const ws = words(name);
       // Una sola palabra que también se usa en minúscula es una palabra corriente.
       if (ws.length === 1 && this.lower.has(ws[0]!)) return false;
-      return ws.some((w) => w.length >= 3 && !this.isKnown(w));
+      return ws.some((w) => w.length >= MIN_NAME && !this.isKnown(w));
     });
   }
 
@@ -220,7 +226,7 @@ export class KnowledgeDetector {
       this.profiles.set(seed, mine);
     }
     return external.filter((name) =>
-      words(name).some((w) => w.length >= 3 && !this.isKnown(w) && !mine.has(w)),
+      words(name).some((w) => w.length >= MIN_NAME && !this.isKnown(w) && !mine.has(w)),
     );
   }
 }
