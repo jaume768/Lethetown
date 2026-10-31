@@ -12,7 +12,7 @@ import {
 } from "@lethetown/shared";
 import { z } from "zod";
 import { hasStrongRomance, type MinorGuard } from "../agent/minor-safety";
-import { parseWith } from "../agent/parse";
+import { extractJson, parseWith } from "../agent/parse";
 import type { LLMClient } from "../llm/client";
 import type { Rng } from "../util/random";
 import type { MemoryConfig } from "./config";
@@ -38,11 +38,27 @@ export interface ConsolidationResult {
   reinforced: string[];
   weakened: string[];
   questions: string[];
+  /** Lo que devolvió el modelo en el campo de cada parte extra (por `key`; sin validar). */
+  extras: Record<string, unknown>;
+}
+
+/**
+ * Lo que un sistema del servidor añade a la consolidación (sus metas, p. ej.): un texto para el
+ * prompt y el campo de la respuesta donde espera lo suyo. Va en la misma llamada.
+ */
+export interface ConsolidationExtra {
+  key: string;
+  prompt: string;
 }
 
 /** Consolidación nocturna / reflexión (Park et al.) con citas a los recuerdos fuente. */
 export interface Consolidator {
-  consolidate(owner: MemoryOwner, from: number, now: number): Promise<ConsolidationResult>;
+  consolidate(
+    owner: MemoryOwner,
+    from: number,
+    now: number,
+    extras?: ConsolidationExtra[],
+  ): Promise<ConsolidationResult>;
 }
 
 /** Compresión detalle → esencia cuando un recuerdo se debilita. */
@@ -414,12 +430,18 @@ export class LLMConsolidator implements Consolidator {
     return this.memory.config.consolidation;
   }
 
-  async consolidate(owner: MemoryOwner, from: number, now: number): Promise<ConsolidationResult> {
+  async consolidate(
+    owner: MemoryOwner,
+    from: number,
+    now: number,
+    extras: ConsolidationExtra[] = [],
+  ): Promise<ConsolidationResult> {
     const result: ConsolidationResult = {
       created: [],
       reinforced: [],
       weakened: [],
       questions: [],
+      extras: {},
     };
     const day = (await this.memory.store.listActive(owner.agentId)).filter(
       (m) => m.status === "active" && m.createdAt >= from && m.type !== "reflection",
@@ -446,12 +468,17 @@ Personas que conoces: ${people.map((p) => `${p.id}=${p.name}`).join(", ") || "na
 1) Plantea hasta 3 preguntas salientes sobre tu vida a partir de estos recuerdos.
 2) Responde con hasta ${this.cfg.maxInsights} reflexiones (insights), citando los números de los recuerdos en que se basan.
 3) Extrae hechos estables (facts) que merezca la pena saber a largo plazo, con sus citas.
-4) Para las personas que aparezcan, actualiza lo que piensas de ellas.
+4) Para las personas que aparezcan, actualiza lo que piensas de ellas.${extras.map((e, i) => `\n${i + 5}) ${e.prompt}`).join("")}
 Formato:
-{"questions":["..."],"insights":[{"text":"...","cites":[1,3],"importance":7,"valence":0.2}],"facts":[{"text":"...","cites":[2]}],"people":[{"id":"...","summary":"...","affinityDelta":0.05,"trustDelta":0}]}`,
+{"questions":["..."],"insights":[{"text":"...","cites":[1,3],"importance":7,"valence":0.2}],"facts":[{"text":"...","cites":[2]}],"people":[{"id":"...","summary":"...","affinityDelta":0.05,"trustDelta":0}]${extras.map((e) => `,"${e.key}":…`).join("")}}`,
     });
     const r = parseWith(ConsolidateResponse, res.text);
     result.questions = r.questions;
+    if (extras.length) {
+      // Lo de cada sistema, tal cual: lo valida y lo aplica el motor (nunca el modelo).
+      const raw = extractJson(res.text) as Record<string, unknown>;
+      for (const e of extras) result.extras[e.key] = raw[e.key];
+    }
     const cited = new Set<string>();
     const idsOf = (cites: number[]) =>
       cites.map((n) => chosen[n - 1]?.id).filter((id): id is string => Boolean(id));

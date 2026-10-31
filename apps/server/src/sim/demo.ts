@@ -1,3 +1,4 @@
+import { nextWeather } from "@lethetown/agent-core";
 import type { Weather } from "@lethetown/shared";
 import type { SimContext } from "./context";
 import { injectThought, setSpotState, setWeather } from "./intervention";
@@ -55,8 +56,14 @@ export function startDemo(ctx: SimContext, everyMinutes: number): void {
   };
 
   const weather = () => {
-    const next = pick(NEXT_WEATHER[ctx.world.weather]);
-    if (next) setWeather(ctx, next);
+    // Con biblia, el clima de la estación (Mallorca: nieve casi nunca, calor en verano, lluvias
+    // de otoño); sin ella, los cambios genéricos.
+    const bible = ctx.deps.bible;
+    const next = bible
+      ? nextWeather(bible, ctx.clock.now(), ctx.world.weather, rng)
+      : pick(NEXT_WEATHER[ctx.world.weather]);
+    // Con el clima, «sigue igual» no es un cambio (no se anuncia).
+    if (next && !(bible && next === ctx.world.weather)) setWeather(ctx, next);
   };
 
   /** Arregla lo que estropeó antes o, si no hay nada roto, estropea algo de un lugar público. */

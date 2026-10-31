@@ -6,7 +6,7 @@ import { recallText } from "../memory/retrieval";
 import { inferActivityKind } from "./activity";
 import { describeMood } from "./mood";
 import { PlanResponse, parseWith } from "./parse";
-import { parseClock, planPrompt } from "./prompts";
+import { parseClock, planPrompt, type PlanSection } from "./prompts";
 import type { Agent } from "./agent";
 import { formatClock } from "./prompts";
 import { replanAt } from "./replan";
@@ -192,6 +192,8 @@ export async function planDay(
   weather: Weather = "sunny",
   /** Compromisos (citas) de hoy: van al prompt y se respetan en el plan. */
   fixed: PlanItem[] = [],
+  /** Lo que añaden los sistemas (la fecha, sus metas…), ya escrito y en orden. */
+  sections: PlanSection[] = [],
 ): Promise<PlanItem[]> {
   // Lo que recuerda de ayer y sus costumbres orientan el plan de hoy; se empieza otro diario.
   const yesterday = await recallYesterday(a, now);
@@ -219,6 +221,7 @@ export async function planDay(
         mood: describeMood(a.state.mood),
         yesterday: yesterday.text,
         discovered: a.discoveredPlaces(),
+        sections,
         fixed: fixed.map(
           (f) =>
             `- ${formatClock(f.startMinute)} ${f.activity} (${f.placeId}, ${f.durationMin} min)`,

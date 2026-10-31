@@ -9,6 +9,7 @@ import type {
   PromptLanguage,
   Rng,
   SocialProfileStore,
+  WorldBible,
 } from "@lethetown/agent-core";
 import type {
   ActivityKind,
@@ -148,6 +149,8 @@ export interface SimulationDeps {
   replyDelayMinutes?: number;
   /** Sistemas desactivados en este mundo (`{ notes: false }`); los que no aparecen, activos. */
   systems?: Record<string, boolean>;
+  /** Biblia del mundo (config/world.json): época, lugar, glosario, clima. Sin ella, nada de eso. */
+  bible?: WorldBible;
 }
 
 /** Señales que la simulación emite hacia los clientes (además de los eventos del log). */

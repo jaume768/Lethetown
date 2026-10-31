@@ -10,6 +10,7 @@ import "./notes";
 import "./norms";
 import "./places";
 import "./agreements";
+import "./world";
 
 export * from "./registry";
 export * from "./types";

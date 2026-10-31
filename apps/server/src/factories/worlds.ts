@@ -138,6 +138,7 @@ export async function openWorld(services: Services, row: WorldRow): Promise<Worl
     notes,
     discoveryRadius: config.SIM_DISCOVERY_RADIUS,
     systems: row.systems,
+    bible: services.bible,
     track: (w) => services.track(w),
   });
   placeOf = (id) => sim.agents.get(id)?.state.locationId ?? null;

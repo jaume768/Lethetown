@@ -24,6 +24,7 @@ export * from "./memory/prospective";
 export * from "./memory/encoding";
 export * from "./memory/social";
 export * from "./util/random";
+export * from "./world/bible";
 
 export * from "./agent/agent";
 export * from "./agent/prompts";

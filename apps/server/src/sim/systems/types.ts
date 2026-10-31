@@ -5,7 +5,7 @@
 import type { Agent } from "@lethetown/agent-core";
 import type { ActionType, AgentAction, Agreement, PlanItem } from "@lethetown/shared";
 import type { z } from "zod";
-import type { SimContext } from "../context";
+import type { SimContext, SimulationDeps } from "../context";
 import type { WorldMap } from "../world";
 import type { RetentionConfig } from "../../retention";
 
@@ -70,6 +70,16 @@ export interface AgreementKind {
   covers?(intention: { text: string; personId?: string | null }, a: ResolvedAgreement): boolean;
 }
 
+/** Parte de un sistema en la consolidación nocturna (ver `SimSystem.consolidation`). */
+export interface ConsolidationPart {
+  /** Campo de la respuesta JSON ("goals"). */
+  key: string;
+  /** Texto que se añade al prompt (instrucciones y formato de su campo). */
+  prompt: string;
+  /** Lo que devolvió el modelo en ese campo, sin validar (undefined si no vino). */
+  apply(value: unknown, now: number): void | Promise<void>;
+}
+
 /** Qué política de `config/retention.json` cubre su tabla (o por qué no hace falta). */
 export type SystemRetention =
   { table: string; policy: keyof RetentionConfig } | { table: string; keep: string };
@@ -91,9 +101,21 @@ export interface SimSystem<S = unknown> {
   /** Lo variable del prompt de decidir (sus secciones). */
   promptSections?(ctx: SimContext, agent: Agent, now: number): PromptSection[];
   /** Algo fijo y cacheable para el prompt de identidad (reglas del mundo que aporta). */
-  identityLines?(world: WorldMap): string[];
+  identityLines?(world: WorldMap, deps: SimulationDeps): string[];
   /** Compromisos de un día que el plan debe respetar (huecos fijos). */
   fixedPlan?(ctx: SimContext, agent: Agent, day: number): PlanItem[];
+  /** Lo variable del prompt del plan del día (la fecha, sus metas…). */
+  planSections?(ctx: SimContext, agent: Agent, now: number): PromptSection[];
+  /**
+   * Su parte de la consolidación nocturna (la misma llamada): una sección del prompt y un campo
+   * de la respuesta, que recibe tal cual para validarlo y aplicarlo (el motor decide).
+   */
+  consolidation?(ctx: SimContext, agent: Agent, now: number): ConsolidationPart | null;
+  /**
+   * El agente no está en el pueblo (se fue a vivir fuera…): ni vive ni piensa ni se le ve. La
+   * simulación no ejecuta su tick mientras algún sistema lo retenga.
+   */
+  holds?(ctx: SimContext, agentId: string): boolean;
   /** Al pararse a pensar con algo saliente, antes de decidir. */
   beforeDecide?(ctx: SimContext, agent: Agent, now: number): void | Promise<void>;
   /** Antes de ejecutar una acción elegida por el agente (p. ej. dejar de acompañar). */

@@ -44,6 +44,8 @@ import {
   scheduleSystemTicks,
   snapshotSystems,
   systemFixedPlan,
+  systemPlanSections,
+  systemsHold,
   systemIdentityLines,
   systemMetrics,
   systemSections,
@@ -92,7 +94,7 @@ export class Simulation {
       deps.seeds.filter((s) => s.traits.some((t) => /chism|cotill/i.test(t))).map((s) => s.id),
     );
     // Lo fijo que aportan los sistemas activos (va en el prompt de identidad, cacheable).
-    const worldRules = systemIdentityLines(deps.world, (id) => ctx.enabled(id));
+    const worldRules = systemIdentityLines(deps, (id) => ctx.enabled(id));
     for (const raw of deps.seeds) {
       // Sin lista en la semilla: lo de quien vive aquí de siempre.
       const seed = {
@@ -378,7 +380,8 @@ export class Simulation {
   private async step(agent: Agent): Promise<void> {
     const ctx = this.ctx;
     const rt = ctx.rt(agent.id);
-    if (rt.travelling) return;
+    // De viaje, o fuera del pueblo (se fue a vivir a otro sitio): no vive ni piensa aquí.
+    if (rt.travelling || systemsHold(ctx, agent.id)) return;
     const now = this.clock.now();
     // Necesidades y ánimo (solo: un introvertido recarga pilas en algo tranquilo).
     const around = presentWith(ctx, agent).map((p) => p.id);
@@ -417,7 +420,12 @@ export class Simulation {
         );
       }
       setAction(ctx, agent, "pensando en el día", "idle");
-      const plan = await agent.planDay(now, ctx.world.weather, systemFixedPlan(ctx, agent, day));
+      const plan = await agent.planDay(
+        now,
+        ctx.world.weather,
+        systemFixedPlan(ctx, agent, day),
+        systemPlanSections(ctx, agent, now),
+      );
       ctx.emit("plan", agent.id, `Plan: ${plan.map((p) => p.activity).join(" → ")}`, [agent.id]);
     }
 

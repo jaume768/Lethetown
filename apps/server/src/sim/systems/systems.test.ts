@@ -41,6 +41,7 @@ describe("registro de sistemas", () => {
       "norms",
       "places",
       "agreements",
+      "world",
     ]);
   });
 

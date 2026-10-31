@@ -12,6 +12,7 @@ import {
   type LLMProvider,
   type PricingTable,
   type TaskRouting,
+  type WorldBible,
 } from "@lethetown/agent-core";
 import type { AgentSeed } from "@lethetown/shared";
 import { type WorldRunStatus } from "@lethetown/shared";
@@ -57,6 +58,8 @@ export interface Services {
   /** Política de retención de datos (ver retention.ts). */
   retention: RetentionConfig;
   seeds: AgentSeed[];
+  /** Biblia del mundo (config/world.json). */
+  bible: WorldBible;
   db?: DbHandle;
   storeKind: "postgres" | "memory";
   worldRepo: WorldRepo;
