@@ -50,6 +50,7 @@ function mockConsolidate(req: CompletionRequest): string {
     });
   }
   return JSON.stringify({
+    ...(req.prompt.includes("Tus metas (") ? { goals: mockGoals(req.prompt) } : {}),
     questions: ["¿Con quién me siento más a gusto en el pueblo?"],
     insights,
     facts: talks.length
@@ -62,6 +63,65 @@ function mockConsolidate(req: CompletionRequest): string {
       trustDelta: 0.02,
     })),
   });
+}
+
+/**
+ * Metas al consolidar (sistema `goals`): sin meta vital, propone una; a un proyecto que frustra
+ * y no tiene pasos, le añade uno (hablarlo con alguien). Como mucho una cosa por noche.
+ */
+function mockGoals(prompt: string): unknown[] {
+  if (/no tienes meta vital/i.test(prompt)) {
+    return [
+      {
+        op: "add",
+        level: "life",
+        text: "Encontrar mi sitio en el pueblo",
+        criterion: { type: "projects", count: 1 },
+      },
+    ];
+  }
+  // "- g4 [proyecto de g1] texto: criterio — 40 %, motivación 0.6, frustración 0.8" (por
+  // trozos, sin expresiones regulares que retrocedan).
+  const lines = prompt
+    .split("\n")
+    .filter((l) => l.startsWith("- g") && l.includes("] "))
+    .map((l) => {
+      const id = l.slice(2, l.indexOf(" ", 2));
+      const label = l.slice(l.indexOf("[") + 1, l.indexOf("]"));
+      const rest = l.slice(l.indexOf("] ") + 2);
+      const text = rest.slice(0, Math.max(0, rest.indexOf(": ")));
+      const frustration = Number(l.slice(l.lastIndexOf("frustración ") + 12));
+      return { id, label, text, frustration };
+    });
+  // Una meta vital sin proyectos en marcha: uno nuevo (hablarlo con gente distinta).
+  const life = lines.find((m) => m.label === "vital");
+  if (life && !lines.some((m) => m.label.startsWith("proyecto"))) {
+    return [
+      {
+        op: "add",
+        level: "project",
+        parent: life.id,
+        text: `Dar el siguiente paso: ${life.text.slice(0, 60)}`,
+        criterion: { type: "conversations", people: 3, count: 3 },
+      },
+    ];
+  }
+  const withSteps = new Set(
+    lines.filter((m) => m.label.startsWith("paso de ")).map((m) => m.label.slice(8).split(",")[0]),
+  );
+  const stuck = lines.find(
+    (m) => m.label.startsWith("proyecto") && m.frustration >= 0.5 && !withSteps.has(m.id),
+  );
+  if (!stuck) return [];
+  return [
+    {
+      op: "add",
+      level: "step",
+      parent: stuck.id,
+      text: `Pedir consejo a alguien sobre: ${stuck.text.slice(0, 60)}`,
+      criterion: { type: "conversations", people: 2, count: 2 },
+    },
+  ];
 }
 
 function mockGist(req: CompletionRequest): string {

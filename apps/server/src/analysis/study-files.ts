@@ -4,6 +4,7 @@
  */
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { Goal } from "@lethetown/shared";
 import type {
   AgentSeed,
   MemoryAuditAction,
@@ -121,5 +122,29 @@ export function loadStudy(dir: string, seeds: AgentSeed[]): EvolutionInput {
     text: str(r.text),
     source: str(r.source),
   }));
-  return { seeds, events, wallMs, audits, socialHistory, llmCalls, knowledge };
+  const goals: Goal[] = readJsonl(join(db, "goals.jsonl")).flatMap((r) => {
+    const parsed = Goal.safeParse({
+      id: r.id,
+      agentId: r.agent_id,
+      level: r.level,
+      parentId: r.parent_id ?? null,
+      text: r.text,
+      status: r.status,
+      progress: r.progress,
+      motivation: r.motivation,
+      frustration: r.frustration,
+      criterion: r.criterion,
+      measured: r.measured,
+      baseline: r.baseline ?? null,
+      seen: r.seen ?? [],
+      resource: r.resource ?? null,
+      departure: r.departure ?? null,
+      createdAt: r.created_at,
+      updatedAt: r.updated_at,
+      lastProgressAt: r.last_progress_at,
+      history: r.history ?? [],
+    });
+    return parsed.success ? [parsed.data] : [];
+  });
+  return { seeds, events, wallMs, audits, socialHistory, llmCalls, knowledge, goals };
 }

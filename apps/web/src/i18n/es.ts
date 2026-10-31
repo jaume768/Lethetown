@@ -63,6 +63,12 @@ const es = {
   "dramas.kind.loan_unreturned": "Préstamo sin devolver",
   "dramas.kind.intruder": "Intruso",
   "dramas.kind.discovery": "Descubrimiento",
+  "dramas.kind.goal_achieved": "Meta conseguida",
+  "dramas.kind.goal_abandoned": "Meta abandonada",
+  "dramas.kind.life_change": "Cambio de rumbo",
+  "dramas.kind.goal_conflict": "Metas en conflicto",
+  "dramas.kind.departure": "Se marcha",
+  "dramas.kind.visit": "De visita",
 
   "agent.pick": "Toca o haz clic en un agente del mapa para ver qué recuerda.",
   "agent.thinking": "pensando… ({task})",

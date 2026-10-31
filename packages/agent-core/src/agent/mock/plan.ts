@@ -154,6 +154,29 @@ function mockPlan(req: CompletionRequest): string {
       meal("19:00", 180, "cenar y descansar"),
     ];
   }
+  // Sus metas (sistema `goals`): la tarde se la dedica a su primer proyecto si se puede planear
+  // (horas haciendo algo, u horas en un sitio).
+  const line = req.prompt
+    .split("\n")
+    .find((l) => l.startsWith("- Proyecto: ") && l.includes(" — "));
+  const slot = plan.length >= 5 ? plan[plan.length - 2] : undefined;
+  if (line && slot) {
+    const body = line.slice("- Proyecto: ".length);
+    const text = body.slice(0, body.indexOf(" — "));
+    const how = body.slice(body.indexOf(" — ") + 3);
+    const keyword = /en algo de «([^»]+)»/.exec(how)?.[1];
+    const placeName = /^pasar [\d.]+ h en ([^(]+) \(/.exec(how)?.[1];
+    const place = placeName ? places.find((p) => p.name === placeName.trim()) : undefined;
+    const activity = text.charAt(0).toLowerCase() + text.slice(1);
+    if (keyword) {
+      slot.activity = activity.includes(keyword) ? activity : `${activity} (${keyword})`;
+      slot.activityKind = "work";
+    } else if (place && openAt(place, slot.start)) {
+      slot.activity = activity;
+      slot.placeId = place.id;
+      slot.spotId = null;
+    }
+  }
   return JSON.stringify({ plan });
 }
 

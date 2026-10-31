@@ -5,6 +5,8 @@ import type {
   CommitmentsResponse,
   InventoryResponse,
   KnownPlacesResponse,
+  AgentGoalsResponse,
+  DeparturesResponse,
   NotesResponse,
   MemoryView,
   RashomonAccount,
@@ -379,6 +381,30 @@ export function registerWorldRest(server: FastifyInstance, ctx: ApiContext): voi
     return body;
   });
 
+  /** Metas del agente (vital, proyectos y pasos, con su historial). Visible para todos. */
+  server.get<{ Params: { id: string } }>("/agents/:id/goals", async (req, reply) => {
+    const w = worldOf(ctx, req, reply);
+    if (!w) return reply;
+    const live = w.live();
+    if (!live.agents.some((a) => a.id === req.params.id)) {
+      return reply.code(404).send({ error: "Agente no encontrado" });
+    }
+    const body: AgentGoalsResponse = {
+      agentId: req.params.id,
+      now: live.time,
+      goals: await w.goals.listFor(req.params.id),
+    };
+    return body;
+  });
+
+  /** Vecinos que se fueron del pueblo (y si están de visita). */
+  server.get("/departures", async (req, reply) => {
+    const w = worldOf(ctx, req, reply);
+    if (!w) return reply;
+    const body: DeparturesResponse = { now: w.live().time, items: await w.departures.list() };
+    return body;
+  });
+
   /** Red del pueblo ahora: agentes y todas las fichas. */
   server.get("/social/graph", async (req, reply) => {
     const w = worldOf(ctx, req, reply);
@@ -545,6 +571,7 @@ export function registerWorldRest(server: FastifyInstance, ctx: ApiContext): voi
       costByTask: w.costs().byTask,
       taskSystems: taskSystems(),
       knowledge: await w.knowledgeLog.list(EVOLUTION_LIMIT),
+      goals: await w.goals.list(),
       ...(metrics.ok ? { systems: metrics.value as Record<string, Record<string, number>> } : {}),
     });
   });

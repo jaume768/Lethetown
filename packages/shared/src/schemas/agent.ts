@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { TilePoint } from "./world";
 import { SeedItem } from "./items";
+import { SeedGoal } from "./goals";
 
 /** Aspecto del personaje: hoja de sprites del manifest y colores para recolorear el placeholder. */
 export const Appearance = z.object({
@@ -154,6 +155,8 @@ export const AgentSeed = z.object({
   items: z.array(SeedItem).default([]),
   /** Lo que sabe por su vida: estudios, oficio, idiomas, viajes, intereses. */
   knowledge: KnowledgeProfile.optional(),
+  /** Meta vital y proyectos con los que empieza (medibles; ver el sistema `goals`). */
+  goals: SeedGoal.optional(),
   /** Cosas que tiene pensado hacer cuando surja (memoria prospectiva). */
   initialIntentions: z
     .array(

@@ -25,6 +25,7 @@ import { InMemoryKnownPlaceStore, type KnownPlaceStore } from "../db/known-place
 import { InMemoryItemStore, type ItemStore } from "../db/items";
 import { InMemoryNoteStore, type NoteStore } from "../db/notes";
 import type { KnowledgeLogStore } from "../db/knowledge-log";
+import type { DepartureStore, GoalStore } from "../db/goals";
 import type { GameClock } from "./clock";
 import type { WorldMap } from "./world";
 
@@ -154,6 +155,9 @@ export interface SimulationDeps {
   bible?: WorldBible;
   /** Registro de conocimiento externo (si no se pasa, en RAM). */
   knowledgeLog?: KnowledgeLogStore;
+  /** Metas y vecinos que se fueron (si no se pasan, en RAM). */
+  goals?: GoalStore;
+  departures?: DepartureStore;
 }
 
 /** Señales que la simulación emite hacia los clientes (además de los eventos del log). */

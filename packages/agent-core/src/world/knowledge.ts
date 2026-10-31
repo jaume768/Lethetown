@@ -195,7 +195,7 @@ export class KnowledgeDetector {
   /** ¿Es una palabra del pueblo o de la época? (o el principio de una: "Ultramarin…"). */
   private isKnown(w: string): boolean {
     if (this.known.has(w)) return true;
-    if (w.length < 5) return false;
+    if (w.length < 4) return false;
     for (const k of this.known) if (k.startsWith(w)) return true;
     return false;
   }

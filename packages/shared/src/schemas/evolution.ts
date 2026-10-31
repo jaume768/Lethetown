@@ -6,6 +6,16 @@ import { z } from "zod";
 
 const Counts = z.record(z.string(), z.number());
 
+const GoalFigures = z.object({
+  active: z.number(),
+  meanProgress: z.number(),
+  achieved: z.number(),
+  abandoned: z.number(),
+  meanFrustration: z.number(),
+});
+/** Metas de un día: las cifras del pueblo y las de cada agente. */
+const GoalDay = GoalFigures.extend({ byAgent: z.record(z.string(), GoalFigures) });
+
 export const DayMetrics = z.object({
   /** Día de juego (o -1 para el total de la partida). */
   day: z.number().int(),
@@ -51,6 +61,8 @@ export const DayMetrics = z.object({
   usd: z.number(),
   /** Registro de conocimiento externo: anacronismos y referencias externas del día. */
   knowledge: Counts.optional(),
+  /** Metas al final del día (o ahora, en el total) y lo conseguido o abandonado ese día. */
+  goals: GoalDay.optional(),
 });
 export type DayMetrics = z.infer<typeof DayMetrics>;
 

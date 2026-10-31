@@ -51,6 +51,14 @@ import {
   PgKnowledgeLogStore,
   type KnowledgeLogStore,
 } from "../db/knowledge-log";
+import {
+  InMemoryDepartureStore,
+  InMemoryGoalStore,
+  PgDepartureStore,
+  PgGoalStore,
+  type DepartureStore,
+  type GoalStore,
+} from "../db/goals";
 import { describeReport, pruneGlobalPg, pruneWorldPg, pruneWorldRam } from "../retention";
 import { createWorldLlm } from "./llm";
 import { createMaintenance, createWorldMemory } from "./memory";
@@ -107,6 +115,10 @@ export async function openWorld(services: Services, row: WorldRow): Promise<Worl
   const knowledgeLog: KnowledgeLogStore = db
     ? new PgKnowledgeLogStore(db.db, row.id)
     : new InMemoryKnowledgeLogStore();
+  const goals: GoalStore = db ? new PgGoalStore(db.db, row.id) : new InMemoryGoalStore();
+  const departures: DepartureStore = db
+    ? new PgDepartureStore(db.db, row.id)
+    : new InMemoryDepartureStore();
   const chronicles: ChronicleStore = db
     ? new PgChronicleStore(db.db, row.id)
     : new InMemoryChronicleStore();
@@ -148,6 +160,8 @@ export async function openWorld(services: Services, row: WorldRow): Promise<Worl
     systems: row.systems,
     bible: services.bible,
     knowledgeLog,
+    goals,
+    departures,
     track: (w) => services.track(w),
   });
   placeOf = (id) => sim.agents.get(id)?.state.locationId ?? null;
@@ -231,6 +245,8 @@ export async function openWorld(services: Services, row: WorldRow): Promise<Worl
     items,
     notes,
     knowledgeLog,
+    goals,
+    departures,
     costs,
     restoredFrom: snapshot?.time ?? null,
     status: () => status,

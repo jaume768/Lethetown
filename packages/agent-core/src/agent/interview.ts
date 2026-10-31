@@ -15,6 +15,7 @@ export const INTERVIEW_QUESTIONS = [
   { category: "reacciones", question: "Si la cafetera del café se rompiera, ¿qué harías?" },
   { category: "relaciones", question: "¿Qué opinas de tus vecinos?" },
   { category: "reflexiones", question: "¿Qué has aprendido sobre ti en estos días?" },
+  { category: "metas", question: "¿Qué te has propuesto en la vida y cómo lo llevas?" },
 ] as const;
 
 export interface InterviewAnswer {

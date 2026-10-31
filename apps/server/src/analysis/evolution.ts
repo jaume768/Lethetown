@@ -11,6 +11,7 @@ import {
   type CostBucket,
   type DayMetrics,
   type EvolutionReport,
+  type Goal,
   type MemoryAuditEntry,
   type SimEvent,
   type SocialProfileChange,
@@ -46,6 +47,44 @@ export interface EvolutionInput {
   systems?: Record<string, Record<string, number>>;
   /** Registro de conocimiento externo (`knowledge_log`). */
   knowledge?: KnowledgeRow[];
+  /** Metas con su historial (`goals`). */
+  goals?: Goal[];
+}
+
+type GoalFigures = Omit<NonNullable<DayMetrics["goals"]>, "byAgent">;
+
+/**
+ * Metas hasta el final de `until` (minuto de juego): activas, progreso y frustración medios
+ * (de las activas, según su última entrada del historial) y conseguidas o abandonadas en
+ * [`from`, `until`).
+ */
+function goalsAt(goals: Goal[], from: number, until: number): NonNullable<DayMetrics["goals"]> {
+  const figures = (list: Goal[]): GoalFigures => {
+    const active: { progress: number; frustration: number }[] = [];
+    let achieved = 0;
+    let abandoned = 0;
+    for (const g of list) {
+      const upTo = g.history.filter((h) => h.at < until);
+      const last = upTo.at(-1);
+      if (!last) continue;
+      if (last.status === "active") active.push(last);
+      const inRange = upTo.filter((h) => h.at >= from);
+      if (inRange.some((h) => h.status === "achieved")) achieved++;
+      if (inRange.some((h) => h.status === "abandoned")) abandoned++;
+    }
+    return {
+      active: active.length,
+      meanProgress: round(mean(active.map((a) => a.progress))),
+      achieved,
+      abandoned,
+      meanFrustration: round(mean(active.map((a) => a.frustration))),
+    };
+  };
+  const byAgent: Record<string, GoalFigures> = {};
+  for (const id of [...new Set(goals.map((g) => g.agentId))].sort()) {
+    byAgent[id] = figures(goals.filter((g) => g.agentId === id));
+  }
+  return { ...figures(goals), byAgent };
 }
 
 /** Una fila de `knowledge_log`. */
@@ -242,6 +281,10 @@ export function analyzeEvolution(input: EvolutionInput): EvolutionReport {
     new Set(),
   );
   if (input.knowledge) total.knowledge = knowledgeReport(input.knowledge).byKind;
+  if (input.goals) {
+    for (const d of perDay) d.goals = goalsAt(input.goals, d.day * 1440, (d.day + 1) * 1440);
+    total.goals = goalsAt(input.goals, -Infinity, Infinity);
+  }
 
   // Coste por tarea y por sistema.
   const byTask: EvolutionReport["cost"]["byTask"] = {};

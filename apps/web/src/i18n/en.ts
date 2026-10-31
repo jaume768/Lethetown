@@ -65,6 +65,12 @@ const en: Record<MessageKey, string> = {
   "dramas.kind.loan_unreturned": "Unreturned loan",
   "dramas.kind.intruder": "Intruder",
   "dramas.kind.discovery": "Discovery",
+  "dramas.kind.goal_achieved": "Goal achieved",
+  "dramas.kind.goal_abandoned": "Goal abandoned",
+  "dramas.kind.life_change": "Change of course",
+  "dramas.kind.goal_conflict": "Clashing goals",
+  "dramas.kind.departure": "Leaving town",
+  "dramas.kind.visit": "Back for a visit",
 
   "agent.pick": "Tap or click an agent on the map to see what they remember.",
   "agent.thinking": "thinking… ({task})",

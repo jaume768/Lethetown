@@ -39,8 +39,9 @@ describe("relaciones (REST)", () => {
     const r = await get<RelationshipsResponse>("/api/agents/rafael/relationships");
     expect(r.items[0]!.profile.affinity).toBeGreaterThanOrEqual(r.items.at(-1)!.profile.affinity);
     const mateo = r.items.find((i) => i.profile.aboutId === "mateo")!;
-    expect(mateo.profile.affinity).toBe(-0.3);
-    expect(mateo.reciprocal?.affinity).toBe(-0.1); // no es simétrica
+    // −0,3 de la semilla y −0,05 porque sus metas chocan (los clientes de la tarde).
+    expect(mateo.profile.affinity).toBe(-0.35);
+    expect(mateo.reciprocal?.affinity).toBeCloseTo(-0.15); // no es simétrica (−0,1 − 0,05)
     const marta = r.items.find((i) => i.profile.aboutId === "marta")!;
     expect(marta.name).toBe("Marta Gil");
     expect(r.unknown.map((u) => u.id)).toContain("aurora");

@@ -30,6 +30,18 @@ export const DramaKind = z.enum([
   "intruder",
   /** Alguien descubre un lugar del pueblo. */
   "discovery",
+  /** Alguien consigue una meta (vital o un proyecto). */
+  "goal_achieved",
+  /** Alguien abandona una meta. */
+  "goal_abandoned",
+  /** Alguien cambia de meta vital. */
+  "life_change",
+  /** Dos metas compiten por lo mismo (un lugar, una persona, los clientes). */
+  "goal_conflict",
+  /** Alguien se marcha del pueblo. */
+  "departure",
+  /** Alguien que se fue vuelve de visita. */
+  "visit",
 ]);
 export type DramaKind = z.infer<typeof DramaKind>;
 
@@ -74,6 +86,13 @@ export const dramaScore = {
   loanUnreturned: () => 0.6,
   intruder: () => 0.75,
   discovery: () => 0.5,
+  /** Una meta vital pesa más que un proyecto. */
+  goalAchieved: (life: boolean) => (life ? 0.9 : 0.6),
+  goalAbandoned: (life: boolean) => (life ? 0.8 : 0.55),
+  lifeChange: () => 0.85,
+  goalConflict: () => 0.7,
+  departure: () => 0.95,
+  visit: () => 0.7,
 };
 
 /** ¿Parece que alguien cuenta algo que oyó? (rumor que se propaga). */

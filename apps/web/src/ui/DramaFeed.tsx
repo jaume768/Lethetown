@@ -29,6 +29,12 @@ const ICON: Record<Drama["kind"], string> = {
   loan_unreturned: "📕",
   intruder: "🚪",
   discovery: "🧭",
+  goal_achieved: "🏆",
+  goal_abandoned: "🏳",
+  life_change: "🔄",
+  goal_conflict: "⚔",
+  departure: "👋",
+  visit: "🧳",
 };
 
 /** Feed de dramas: lo más interesante que ha pasado, con "Ir a verlo". */

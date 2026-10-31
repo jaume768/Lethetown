@@ -1,5 +1,6 @@
 import type { MemoryMeta } from "@lethetown/shared";
 import {
+  boolean,
   doublePrecision,
   index,
   integer,
@@ -438,4 +439,56 @@ export const knowledgeLog = pgTable(
     source: text("source").notNull(),
   },
   (t) => [index("knowledge_log_world_at_idx").on(t.worldId, t.at)],
+);
+
+/** Metas de cada agente (sistema `goals`): vital, proyectos y pasos, con su historial. */
+export const goals = pgTable(
+  "goals",
+  {
+    worldId: worldId(),
+    /** Id corto dentro del mundo ("g12"). */
+    id: text("id").notNull(),
+    agentId: text("agent_id").notNull(),
+    /** life | project | step. */
+    level: text("level").notNull(),
+    parentId: text("parent_id"),
+    text: text("text").notNull(),
+    /** active | achieved | abandoned | postponed. */
+    status: text("status").notNull(),
+    progress: real("progress").notNull(),
+    motivation: real("motivation").notNull(),
+    frustration: real("frustration").notNull(),
+    /** Criterio medible (GoalCriterion), lo medido y lo ya contado. */
+    criterion: jsonb("criterion").notNull(),
+    measured: doublePrecision("measured").notNull().default(0),
+    baseline: doublePrecision("baseline"),
+    seen: text("seen").array().notNull().default([]),
+    resource: text("resource"),
+    departure: jsonb("departure"),
+    createdAt: doublePrecision("created_at").notNull(),
+    updatedAt: doublePrecision("updated_at").notNull(),
+    lastProgressAt: doublePrecision("last_progress_at").notNull(),
+    /** Cambios con su motivo (GoalHistoryEntry[]). */
+    history: jsonb("history").notNull().default([]),
+  },
+  (t) => [
+    primaryKey({ columns: [t.worldId, t.id] }),
+    index("goals_world_agent_idx").on(t.worldId, t.agentId),
+  ],
+);
+
+/** Vecinos que se fueron del pueblo (y sus visitas). */
+export const departures = pgTable(
+  "departures",
+  {
+    worldId: worldId(),
+    agentId: text("agent_id").notNull(),
+    to: text("to").notNull(),
+    leftAt: doublePrecision("left_at").notNull(),
+    goalId: text("goal_id"),
+    visits: integer("visits").notNull().default(0),
+    nextVisitAt: doublePrecision("next_visit_at"),
+    visiting: boolean("visiting").notNull().default(false),
+  },
+  (t) => [primaryKey({ columns: [t.worldId, t.agentId] })],
 );
