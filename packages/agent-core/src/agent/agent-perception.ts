@@ -10,6 +10,7 @@ import type { Agent } from "./agent";
 import type { Perception } from "./agent-types";
 import { encoding } from "./agent-body";
 import { rateHeard } from "./heard-rating";
+import { MAX_TOKENS } from "../llm/limits";
 
 export function describePerception(p: Perception): string {
   switch (p.kind) {
@@ -150,7 +151,7 @@ export async function rate(
       agentId: a.id,
       system: a.system,
       prompt: importancePrompt(texts),
-      maxTokens: 400,
+      maxTokens: MAX_TOKENS.importance,
     });
     return parseWith(ImportanceResponse, res.text).ratings.map((r) => ({
       importance: clamp(r.importance, 1, 10),

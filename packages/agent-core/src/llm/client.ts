@@ -1,6 +1,7 @@
 import type { CostTracker } from "./cost-tracker";
 import type { ModelRouter } from "./router";
 import type { CacheTtl, CompletionResult, Effort, LLMProvider, TaskKind } from "./types";
+import { MAX_TOKENS } from "./limits";
 
 /** Enrutado de una tarea: qué tipo de modelo usa y cuánto dura la caché de su prefijo. */
 export interface TaskRoute {
@@ -88,7 +89,8 @@ export class LLMClient {
       model,
       system: req.system,
       prompt: req.prompt,
-      maxTokens: req.maxTokens ?? (req.kind === "reflection" ? 4000 : 1000),
+      maxTokens:
+        req.maxTokens ?? (req.kind === "reflection" ? MAX_TOKENS.reflection : MAX_TOKENS.fast),
       effort: req.effort ?? (req.kind === "reflection" ? "medium" : "low"),
       cacheKey: req.agentId ? `agent:${req.agentId}` : undefined,
       cacheTtl: this.routing[req.task]?.cacheTtl,

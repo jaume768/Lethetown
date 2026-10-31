@@ -3,6 +3,7 @@ import type { LLMClient } from "../llm/client";
 import type { MinorGuard } from "./minor-safety";
 import { parseWith } from "./parse";
 import { languageRule, type PromptLanguage } from "./prompts";
+import { MAX_TOKENS } from "../llm/limits";
 
 /** Prefijo fijo del narrador (cacheable). */
 export const NARRATOR_SYSTEM = `Eres el cronista de Lethetown, un pequeño pueblo. Escribes breves crónicas del día,
@@ -27,7 +28,7 @@ export async function writeChronicle(
     kind: "reflection",
     task: "chronicle",
     system: NARRATOR_SYSTEM + languageRule(language),
-    maxTokens: 1500,
+    maxTokens: MAX_TOKENS.chronicle,
     prompt: `TAREA: chronicle
 Día ${day}. Eventos del pueblo (en orden):
 ${lines.map((e) => `- ${e}`).join("\n") || "- (no pasó nada)"}

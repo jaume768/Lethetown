@@ -13,6 +13,7 @@ import {
 import { z } from "zod";
 import { hasStrongRomance, type MinorGuard } from "../agent/minor-safety";
 import { extractJson, parseWith } from "../agent/parse";
+import { MAX_TOKENS } from "../llm/limits";
 import type { LLMClient } from "../llm/client";
 import type { Rng } from "../util/random";
 import type { MemoryConfig } from "./config";
@@ -343,7 +344,7 @@ export async function updateSocialAfterConversation(
     task: "social",
     agentId: opts.owner.agentId,
     system: opts.owner.system,
-    maxTokens: 400,
+    maxTokens: MAX_TOKENS.social,
     prompt: `TAREA: social
 Acabas de hablar con ${opts.other.name} (${opts.other.id}).
 Lo que pensabas antes: ${prev?.summary || "(nada)"} (afinidad ${(prev?.affinity ?? 0).toFixed(2)}, confianza ${(prev?.trust ?? 0.5).toFixed(2)})
@@ -636,7 +637,7 @@ export class LLMGistCompressor implements GistCompressor {
       task: "gist",
       agentId: owner.agentId,
       system: owner.system,
-      maxTokens: 200,
+      maxTokens: MAX_TOKENS.gist,
       prompt: `TAREA: gist
 Este recuerdo se está desvaneciendo. Quédate solo con la esencia, en pocas palabras y sin detalles concretos (nombres exactos, cifras, frases literales).
 Recuerdo: "${memory.text}"
@@ -664,7 +665,7 @@ export class LLMReconsolidator implements Reconsolidator {
       task: "reconsolidate",
       agentId: memory.agentId,
       system: ctx.system,
-      maxTokens: 300,
+      maxTokens: MAX_TOKENS.reconsolidate,
       prompt: `TAREA: reconsolidate
 Estás recordando esto: "${memory.text}"
 Tu ánimo ahora: ${ctx.moodLabel}. Lo que piensas de los implicados: ${ctx.socialSummary || "(nada)"}
@@ -686,7 +687,7 @@ Formato:
       task: "confabulate",
       agentId: memory.agentId,
       system: ctx.system,
-      maxTokens: 300,
+      maxTokens: MAX_TOKENS.confabulate,
       prompt: `TAREA: confabulate
 Intentas recordar algo de lo que apenas te acuerdas: "${vague}"
 Tu ánimo ahora: ${ctx.moodLabel}. Lo que piensas de los implicados: ${ctx.socialSummary || "(nada)"}
@@ -710,7 +711,7 @@ export class LLMEpisodeSummarizer implements EpisodeSummarizer {
       task: "summarize",
       agentId: owner.agentId,
       system: owner.system,
-      maxTokens: 400,
+      maxTokens: MAX_TOKENS.summarize,
       prompt: `TAREA: summarize
 Resume en una o dos frases, en primera persona, lo que tienen en común estos recuerdos (como recordarías esa época en general):
 ${episodes.map((m, i) => `${i + 1}. ${m.text}`).join("\n")}

@@ -4,6 +4,7 @@ import { recallText } from "../memory/retrieval";
 import type { Agent } from "./agent";
 import { parseWith } from "./parse";
 import type { LLMClient } from "../llm/client";
+import { MAX_TOKENS } from "../llm/limits";
 
 /** Batería fija de preguntas (inspirada en las entrevistas de Park et al.). */
 export const INTERVIEW_QUESTIONS = [
@@ -56,7 +57,7 @@ export async function interviewAgent(
       task: "interview",
       agentId: agent.id,
       system: agent.system,
-      maxTokens: 600,
+      maxTokens: MAX_TOKENS.interview,
       prompt: `TAREA: interview
 Te están entrevistando. Contesta en primera persona, con naturalidad y en 1-3 frases, usando solo lo que recuerdas.
 Lo que recuerdas:

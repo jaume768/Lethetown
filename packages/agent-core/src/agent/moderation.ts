@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { LLMClient } from "../llm/client";
 import { parseWith } from "./parse";
+import { MAX_TOKENS } from "../llm/limits";
 
 /**
  * Delimitadores del texto que escribe un usuario (voz interior, estados de objetos...). Todo lo
@@ -64,7 +65,7 @@ export async function moderateUserText(
     kind: "fast",
     task: "moderate",
     system: MODERATION_SYSTEM,
-    maxTokens: 200,
+    maxTokens: MAX_TOKENS.moderation,
     prompt: `TAREA: moderate
 Tipo de texto: ${input.kind}
 Texto del jugador: ${untrusted(input.text)}

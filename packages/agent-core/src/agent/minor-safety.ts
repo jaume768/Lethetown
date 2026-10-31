@@ -14,6 +14,7 @@ import { z } from "zod";
 import type { LLMClient } from "../llm/client";
 import { parseWith } from "./parse";
 import { untrusted } from "./moderation";
+import { MAX_TOKENS } from "../llm/limits";
 
 export interface MinorInfo {
   id: string;
@@ -276,7 +277,7 @@ export class MinorGuard {
         kind: "fast",
         task: "moderate_minor",
         system: MINOR_SAFETY_SYSTEM,
-        maxTokens: 200,
+        maxTokens: MAX_TOKENS.moderation,
         prompt: `TAREA: moderate_minor
 Menores implicados: ${minors.map((m) => `${m.name} (${m.age} años)`).join(", ")}
 Texto: ${untrusted(text)}
