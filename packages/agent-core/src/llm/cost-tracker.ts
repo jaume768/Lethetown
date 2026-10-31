@@ -6,6 +6,8 @@ export interface ModelPrice {
   output: number;
   cacheRead: number;
   cacheWrite: number;
+  /** Escritura en caché con TTL de 1 h (Anthropic: 2× la entrada; por defecto, eso). */
+  cacheWrite1h?: number;
 }
 
 export type PricingTable = Record<string, ModelPrice>;
@@ -53,7 +55,8 @@ export class CostTracker {
 
   constructor(private readonly pricing: PricingTable) {}
 
-  priceOf(model: string, usage: TokenUsage): number {
+  /** `cacheWrite1hTokens`: de los escritos en caché, los de TTL de 1 h (más caros). */
+  priceOf(model: string, usage: TokenUsage, cacheWrite1hTokens = 0): number {
     const price = this.pricing[model];
     if (!price) {
       this.unpricedModels.add(model);
@@ -63,14 +66,15 @@ export class CostTracker {
       (usage.inputTokens * price.input +
         usage.outputTokens * price.output +
         usage.cacheReadTokens * price.cacheRead +
-        usage.cacheWriteTokens * price.cacheWrite) /
+        usage.cacheWriteTokens * price.cacheWrite +
+        cacheWrite1hTokens * ((price.cacheWrite1h ?? price.input * 2) - price.cacheWrite)) /
       1_000_000
     );
   }
 
   /** `priceMultiplier`: descuento del proveedor (Batch API = 0.5). */
-  record(entry: Omit<CostRecord, "usd">, priceMultiplier = 1): CostRecord {
-    const usd = this.priceOf(entry.model, entry.usage) * priceMultiplier;
+  record(entry: Omit<CostRecord, "usd">, priceMultiplier = 1, cacheWrite1hTokens = 0): CostRecord {
+    const usd = this.priceOf(entry.model, entry.usage, cacheWrite1hTokens) * priceMultiplier;
     const record: CostRecord = { ...entry, usd };
     addTo(this.total, entry.usage, usd);
     addTo(bucketFor(this.byTask, entry.task), entry.usage, usd);

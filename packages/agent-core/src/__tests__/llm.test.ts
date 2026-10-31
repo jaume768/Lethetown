@@ -33,6 +33,33 @@ describe("ModelRouter", () => {
     expect(provider.calls[0]?.effort).toBe("low");
     expect(provider.calls[1]?.effort).toBe("medium");
   });
+
+  it("el enrutado por tarea cambia el modelo (y sus valores por defecto) y la caché", async () => {
+    const provider = new MockProvider();
+    const client = new LLMClient(
+      provider,
+      new ModelRouter({ fast: "m-fast", reflection: "m-refl" }),
+      new CostTracker(pricing),
+      { summarize: { kind: "fast" }, plan: { cacheTtl: "1h" } },
+    );
+    await client.run({ kind: "reflection", task: "summarize", system: "s", prompt: "p" });
+    await client.run({ kind: "reflection", task: "plan", system: "s", prompt: "p" });
+    expect(provider.calls.map((c) => c.model)).toEqual(["m-fast", "m-refl"]);
+    expect(provider.calls[0]?.effort).toBe("low");
+    expect(provider.calls.map((c) => c.cacheTtl)).toEqual([undefined, "1h"]);
+    expect(client.kindFor("summarize", "reflection")).toBe("fast");
+  });
+});
+
+describe("caché de 1 h", () => {
+  it("lo escrito con TTL de 1 h se cobra a 2× la entrada (o a su precio, si lo tiene)", () => {
+    const tracker = new CostTracker(pricing);
+    const usage = { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 1e6 };
+    expect(tracker.priceOf("m-fast", usage)).toBeCloseTo(1.25);
+    expect(tracker.priceOf("m-fast", usage, 1e6)).toBeCloseTo(2);
+    const priced = new CostTracker({ x: { ...pricing["m-fast"], cacheWrite1h: 3 } });
+    expect(priced.priceOf("x", usage, 1e6)).toBeCloseTo(3);
+  });
 });
 
 describe("CostTracker", () => {

@@ -14,7 +14,7 @@ import {
 import { createEmbedder } from "../embeddings";
 import { Metrics } from "../observability";
 import { readJson } from "./files";
-import { createLlmStack, loadPricing } from "./llm";
+import { createLlmStack, loadPricing, loadRouting } from "./llm";
 import { loadMemoryConfig } from "./memory";
 import { loadRetentionConfig } from "../retention";
 import { createBudget, devUsers } from "./security";
@@ -44,9 +44,10 @@ export async function createServices(
   log: (msg: string) => void,
   processName = "lethetown",
 ): Promise<Services> {
-  const [seeds, pricing] = await Promise.all([
+  const [seeds, pricing, routing] = await Promise.all([
     readJson(z.array(AgentSeed), "seeds/agents.json"),
     loadPricing(),
+    loadRouting(),
   ]);
   const metrics = new Metrics(processName);
   const { provider, llmQueue, llmResilience, setBatchGate } = createLlmStack(
@@ -68,6 +69,7 @@ export async function createServices(
     setBatchGate,
     models,
     pricing,
+    routing,
     embedder,
     memoryConfig: await loadMemoryConfig(log),
     retention: await loadRetentionConfig(log),

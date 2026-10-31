@@ -1,0 +1,9 @@
+{
+  "$comment": "Enrutado por tarea (lo valida apps/server/src/factories/llm.ts). kind: fast | reflection (qué modelo de .env usa la tarea); cacheTtl: 5m | 1h (caché del prompt fijo; 1h cuesta 2x al escribir y solo compensa si la siguiente llamada con ese prefijo llega antes de una hora). Ver docs/decisiones/llm.md.",
+  "tasks": {
+    "summarize": { "kind": "fast" },
+    "plan": { "kind": "reflection", "cacheTtl": "1h" },
+    "consolidate": { "kind": "reflection", "cacheTtl": "1h" },
+    "chronicle": { "kind": "reflection" }
+  }
+}

@@ -12,8 +12,11 @@ import {
   agentMockResponder,
   type LLMProvider,
   type PricingTable,
+  type TaskRouting,
 } from "@lethetown/agent-core";
+import { existsSync } from "node:fs";
 import { z } from "zod";
+import { fromRoot } from "../paths";
 import { type AppConfig } from "../config";
 import { llmCalls } from "../db/schema";
 import { type WorldRow } from "../db/worlds";
@@ -31,10 +34,33 @@ export async function loadPricing(): Promise<PricingTable> {
         output: z.number(),
         cacheRead: z.number(),
         cacheWrite: z.number(),
+        cacheWrite1h: z.number().optional(),
       }),
     ),
   });
   return (await readJson(Pricing, "config/pricing.json")).models;
+}
+
+/** `config/llm-routing.json`: tipo de modelo y caché por tarea. */
+export const LlmRouting = z.object({
+  tasks: z
+    .record(
+      z.string(),
+      z
+        .object({
+          kind: z.enum(["fast", "reflection"]).optional(),
+          cacheTtl: z.enum(["5m", "1h"]).optional(),
+        })
+        .strict(),
+    )
+    .default({}),
+});
+
+/** Lo de `config/llm-routing.json` si existe; si no, lo de siempre (cada tarea pide su modelo). */
+export async function loadRouting(): Promise<TaskRouting> {
+  const file = "config/llm-routing.json";
+  if (!existsSync(fromRoot(file))) return {};
+  return (await readJson(LlmRouting, file)).tasks;
 }
 
 export function createProvider(config: AppConfig): LLMProvider {
@@ -94,8 +120,8 @@ export function createLlmStack(
         (reason) => log(`⚠ Lote del LLM fallido (${reason}); se repite por la vía normal.`),
       );
       log(`Batch API activa para: ${config.LLM_BATCH_TASKS.join(", ")}`);
-    } else {
-      log(`⚠ LLM_BATCH=on, pero ${base.name} no admite lotes: se ignora.`);
+    } else if (config.LLM_PROVIDER !== "mock") {
+      log(`LLM_BATCH=on, pero ${base.name} no admite lotes: se ignora.`);
     }
   }
   return {
@@ -113,7 +139,7 @@ export function createWorldLlm(services: Services, row: WorldRow, worldLog: (msg
   const { db } = services;
   const costs = new CostTracker(services.pricing);
   const provider = new BudgetedProvider(services.provider, services.budget, row.id);
-  const llm = new LLMClient(provider, new ModelRouter(services.models), costs);
+  const llm = new LLMClient(provider, new ModelRouter(services.models), costs, services.routing);
   costs.onRecord((r) => {
     services.budget.record(row.id, r.usd);
     services.metrics.recordCost(row.id, r);

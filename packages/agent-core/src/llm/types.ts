@@ -5,6 +5,9 @@ export type TaskKind = "fast" | "reflection";
 
 export type Effort = "low" | "medium" | "high";
 
+/** Duración de la caché del prompt fijo (Anthropic: 5 min por defecto, o 1 h). */
+export type CacheTtl = "5m" | "1h";
+
 export interface CompletionRequest {
   model: string;
   /**
@@ -18,6 +21,8 @@ export interface CompletionRequest {
   effort: Effort;
   /** Clave de caché para proveedores que la admiten (OpenAI `prompt_cache_key`). */
   cacheKey?: string;
+  /** Duración de la caché del prefijo (`system`); sin definir, la del proveedor (5 min). */
+  cacheTtl?: CacheTtl;
   /** Metadatos para el registro de costes y para el MockProvider. */
   meta: CompletionMeta;
   /** Cancela la llamada (timeout propio de ResilientProvider). */
@@ -37,6 +42,8 @@ export interface CompletionResult {
   model: string;
   /** Multiplicador de precio (Batch API: 0.5). Por defecto 1. */
   priceMultiplier?: number;
+  /** De `usage.cacheWriteTokens`, los escritos con TTL de 1 h (se cobran a 2× la entrada). */
+  cacheWrite1hTokens?: number;
 }
 
 /** Proveedor que además admite envío por lotes asíncrono (p. ej. Message Batches de Anthropic). */

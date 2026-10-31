@@ -10,6 +10,13 @@ import { ProfileConfig } from "./psychology";
  * sobrescribirlos con config/memory.json (validado con este esquema).
  * Unidades de tiempo: horas de juego salvo que se diga otra cosa.
  */
+/**
+ * Presupuesto de memoria por agente (ver `budget`). Con 4000 y grupos de 3 se resumía casi cada
+ * hora: 512 resúmenes y 4410 archivados en 48 h de mock (ver docs/decisiones/llm.md).
+ */
+const BUDGET_TOKENS = 5000;
+const CLUSTER_MIN_SIZE = 4;
+
 export const MemoryConfig = z.object({
   retrieval: z
     .object({
@@ -112,22 +119,22 @@ export const MemoryConfig = z.object({
   budget: z
     .object({
       /** Presupuesto de tokens de recuerdos activos por agente (≈ texto / 4). */
-      tokensPerAgent: z.number().int().positive().default(4000),
+      tokensPerAgent: z.number().int().positive().default(BUDGET_TOKENS),
       /** Paso 1: se borran triviales de importancia ≤ esto y más viejos que trivialMinAgeHours. */
       trivialImportanceMax: z.number().int().min(1).max(10).default(2),
       trivialMinAgeHours: z.number().nonnegative().default(24),
       /** Paso 2: tamaño mínimo de un grupo de episodios para resumirlo. */
-      clusterMinSize: z.number().int().min(2).default(3),
+      clusterMinSize: z.number().int().min(2).default(CLUSTER_MIN_SIZE),
       /** Similitud (coseno) mínima para agrupar episodios. */
       clusterSimilarity: z.number().min(0).max(1).default(0.5),
       /** Recuerdos de tipo plan creados en las últimas N horas están protegidos. */
       protectPlanHours: z.number().nonnegative().default(24),
     })
     .default({
-      tokensPerAgent: 4000,
+      tokensPerAgent: BUDGET_TOKENS,
       trivialImportanceMax: 2,
       trivialMinAgeHours: 24,
-      clusterMinSize: 3,
+      clusterMinSize: CLUSTER_MIN_SIZE,
       clusterSimilarity: 0.5,
       protectPlanHours: 24,
     }),

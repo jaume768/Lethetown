@@ -11,6 +11,7 @@ import {
   type Embedder,
   type LLMProvider,
   type PricingTable,
+  type TaskRouting,
 } from "@lethetown/agent-core";
 import type { AgentSeed } from "@lethetown/shared";
 import { type WorldRunStatus } from "@lethetown/shared";
@@ -49,6 +50,8 @@ export interface Services {
   setBatchGate(gate: () => boolean): void;
   models: { fast: string; reflection: string };
   pricing: PricingTable;
+  /** Enrutado por tarea (config/llm-routing.json). */
+  routing: TaskRouting;
   embedder: Embedder;
   memoryConfig: MemoryConfig;
   /** Política de retención de datos (ver retention.ts). */
