@@ -8,7 +8,10 @@ adelante, economía, metas u oficios son módulos (`SimSystem`) que se registran
 
 - **Un sistema declara lo suyo** (todo opcional salvo `id`): acciones del catálogo, su parte de
   la instantánea con su propia versión, carga al abrir el mundo, revisión periódica sin LLM,
-  secciones del prompt de decidir, líneas fijas del prompt de identidad, huecos fijos del plan,
+  secciones del prompt de decidir y del plan (`planSections`), líneas fijas del prompt de
+  identidad (`identityLines`, con las dependencias: la biblia), huecos fijos del plan, su parte de
+  la consolidación nocturna (`consolidation`: una sección y un campo de la misma respuesta, que
+  el sistema valida), retener a un agente fuera del pueblo (`holds`: no vive ni piensa),
   ganchos antes de decidir y antes de actuar, tipos de acuerdo hablado que sabe llevar a cabo
   (`agreements`, ver [acciones](acciones.md#puente-de-la-conversación-a-la-acción)), retención de
   su tabla, métricas y datos de admin.
@@ -51,6 +54,9 @@ adelante, economía, metas u oficios son módulos (`SimSystem`) que se registran
 | `norms`      | —                                     | abrir y cerrar, intrusos     | —                                     | —                          |
 | `places`     | explore                               | —                            | (lugares descubiertos, en agent-core) | `known_places`             |
 | `agreements` | — (los tipos los aportan los demás)   | —                            | —                                     | `memory_audit` (descartes) |
+| `world`      | —                                     | —                            | biblia (fijo); fecha (plan)           | —                          |
+| `knowledge`  | —                                     | —                            | (perfil en agent-core)                | `knowledge_log`            |
+| `goals`      | —                                     | medir, visitas; fichas (1 h) | METAS (plan); TU PROYECTO; noche      | `goals`, `departures`      |
 
 ## Cómo añadir un sistema
 

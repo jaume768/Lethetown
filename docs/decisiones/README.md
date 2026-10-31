@@ -6,7 +6,7 @@ márcala como sustituida) en el mismo commit.
 
 | Área                                                          | Archivo                        |
 | ------------------------------------------------------------- | ------------------------------ |
-| Mundo, mapa, gráficos y personajes                            | [mundo.md](mundo.md)           |
+| Mundo (Mallorca, 1996), mapa, conocimiento y personajes       | [mundo.md](mundo.md)           |
 | Simulación (bucle, conversaciones, instantáneas, test dorado) | [simulacion.md](simulacion.md) |
 | Memoria humana                                                | [memoria.md](memoria.md)       |
 | Psicología (perfil, ánimo, sueño, sesgos, intenciones)        | [psicologia.md](psicologia.md) |
@@ -19,3 +19,4 @@ márcala como sustituida) en el mismo commit.
 | Ritmo y habla de las conversaciones                           | [ritmo.md](ritmo.md)           |
 | Sistemas de la simulación (`SimSystem`)                       | [sistemas.md](sistemas.md)     |
 | Métricas de evolución y análisis de partidas                  | [evolucion.md](evolucion.md)   |
+| Metas (ambición), marcharse del pueblo                        | [metas.md](metas.md)           |
