@@ -224,8 +224,23 @@ Detalle y mediciones en [docs/decisiones/ritmo.md](docs/decisiones/ritmo.md).
 
 - La **identidad** del agente (rasgos, lugares, objetos y reglas) es un prefijo fijo del prompt, para el _prompt caching_.
 - **Rutinas sin LLM**: dormir, desplazarse y seguir el plan cuando no pasa nada nuevo.
-- Modelo `fast` para decidir, valorar importancia, esencia, reconsolidación y fichas; modelo `reflection` para el plan, la consolidación, los resúmenes y la crónica.
+- Modelo `fast` para decidir, valorar importancia, esencia, reconsolidación, fichas y resúmenes; modelo `reflection` para el plan, la consolidación y la crónica. Qué modelo usa cada tarea (y la duración de su caché) se cambia en `config/llm-routing.json`.
 - El `CostTracker` registra tokens y coste por agente, tarea y modelo. Los precios están en `config/pricing.json`.
+
+### Sistemas
+
+Citas, inventario, objetos, invitar y acompañar, notas, normas, lugares conocidos y el puente de
+los acuerdos hablados son **sistemas** (`SimSystem`, en `apps/server/src/sim/systems/`): cada uno
+declara sus acciones, su parte de la instantánea (con su versión), su revisión periódica, sus
+secciones del prompt, su retención y sus métricas, y `simulation.ts` solo recorre el registro.
+Se pueden desactivar por mundo (`worlds.systems`, `{ "notes": false }`). Los siguientes
+(economía, metas, oficios, construcción, ciclo vital) entran igual: ver
+[Cómo añadir un sistema](docs/decisiones/sistemas.md#cómo-añadir-un-sistema).
+
+**Lo acordado hablando llega al motor**: la tarea `social` de fin de charla devuelve también los
+acuerdos («quedamos mañana a las cinco en el café», «te dejo el libro»), y cada uno pasa por el
+mismo manejador que la acción formal (normas, menores…). En el log llevan 🗣. Ver
+[acciones](docs/decisiones/acciones.md#puente-de-la-conversación-a-la-acción).
 
 ### Psicología
 
@@ -308,7 +323,8 @@ Producción en un VPS (Caddy con HTTPS, api, workers y Postgres): **[docs/despli
 - **Gasto**: el servidor lo suma (por mundo, día y mes) para verlo, pero no lo limita: eso se
   controla con el saldo de la API key. Kill switch para admin.
 - LLM con timeout propio, reintentos con backoff y jitter en 429/5xx y circuit breaker; Batch API
-  opcional (`LLM_BATCH=on`, Anthropic) para la consolidación nocturna y las crónicas.
+  (activa por defecto, `LLM_BATCH`; solo Anthropic y a ≤ x10) para la consolidación nocturna y las
+  crónicas.
 
 Todas las variables, con su explicación, están en [`.env.example`](.env.example).
 
@@ -328,6 +344,7 @@ Todas las variables, con su explicación, están en [`.env.example`](.env.exampl
 | `pnpm --filter @lethetown/server cost:report 48` | Llamadas y tokens por tarea en 48 h de mock reproducible (tabla Markdown) y espera media de las respuestas.                                      |
 | `pnpm --filter @lethetown/server latency:probe`  | Prueba corta en tiempo real con el proveedor de `.env`: espera entre mensajes (s reales) y espera en la cola del LLM por tarea.                  |
 | `pnpm --filter @lethetown/server record <dir>`   | Con `pnpm dev` en marcha, graba una partida (mensajes del WebSocket y estado de los agentes); `world:export <dir>` vuelca la BD del mundo.       |
+| `pnpm study:analyze <dir> [<otro dir>]`          | Analiza una partida grabada (o compara dos): `analysis.json` y `analysis.md` con coste, espera, frases, intenciones, acciones, red y memoria.    |
 | `pnpm personality:derive [--write]`              | Propone personalidad y perfil de memoria a partir de rasgos, edad y descripción de `seeds/agents.json`.                                          |
 | `pnpm db:generate`                               | Genera una migración de Drizzle tras cambiar el esquema.                                                                                         |
 
@@ -407,6 +424,20 @@ semillas y al menos dos modelos reales, y una evaluación humana ciega de verosi
 diversidad y coherencia. Las cinco familias de métricas propuestas: precisión y degradación de
 los recuerdos frente a lo que pasó, consistencia de decisiones y compromisos, evolución de los
 vínculos, coste y latencia por día de juego, y juicio humano.
+
+### Métricas de evolución
+
+La pestaña de admin **Evolución** (`GET /api/worlds/:id/evolution`) da, por día de juego: parejas
+que han hablado (y % de las posibles), concentración de la red y diversidad de interlocutores,
+conversaciones (grupo o pareja, turnos, cómo acaban), intenciones, acciones formales frente a
+acordadas hablando, cambios de tipo de relación, memoria (reconsolidaciones, olvidos,
+archivados), errores del LLM y coste por tarea y por sistema, más las cifras de cada sistema.
+`pnpm study:analyze` calcula lo mismo con una partida grabada. Ver
+[evolución](docs/decisiones/evolucion.md).
+
+Fase de cimientos (`cost:report 48`, mock; coste estimado con los tokens del mock a precios de
+Haiku 5.5 y Sonnet 5.5): de 4.420 llamadas y ≈ 0,94 $ a 3.791 y ≈ 0,65 $, con el puente de los
+acuerdos ya puesto. Detalle por paso en [PROGRESS-CIMIENTOS.md](PROGRESS-CIMIENTOS.md).
 
 ### Limitaciones
 

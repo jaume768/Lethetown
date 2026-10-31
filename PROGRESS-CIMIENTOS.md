@@ -14,7 +14,7 @@ salida) y `pnpm dev` en mock. En esta máquina pnpm va por `corepack pnpm` (no e
 - [x] 3. Coste: enrutado por tarea, resumir menos, Batch API, caché larga
 - [x] 4. Habla: tope de turnos por interés, muletillas, reintento de la moderación
 - [x] 5. Métricas de evolución (pestaña) y `study:analyze`
-- [ ] Final: README, CLAUDE.md, docs/decisiones, tabla de coste, PR
+- [x] Final: README, CLAUDE.md, docs/decisiones, tabla de coste, PR
 
 ## Coste (`cost:report 48`, mock, SIM_SEED=7)
 
@@ -25,6 +25,48 @@ salida) y `pnpm dev` en mock. En esta máquina pnpm va por `corepack pnpm` (no e
 | Paso 2 (puente)           |    5.756 |  1.885 |    887 |       512 |           2.398.819 |   1,6 min (p90 1,0) |
 | Paso 3 (coste)            |    4.739 |  1.594 |    753 |       147 |           1.883.708 |   1,4 min (p90 1,0) |
 | Paso 4 (habla)            |    3.791 |  1.362 |    625 |        48 |           1.434.434 |   1,4 min (p90 1,0) |
+
+Coste estimado (los mismos tokens del mock a precios de Haiku 5.5 / Sonnet 5.5, columna nueva de
+`cost:report`): `main` ≈ 0,944 $ → paso 2 ≈ 1,409 $ → paso 3 ≈ 0,762 $ → paso 4 ≈ 0,654 $. Los
+pasos 1 y 5 no cambian la simulación.
+
+## Validar con una partida real corta
+
+El mock no mide el ahorro real ni cuánto se usa el puente. Una partida de 6 h de juego a x10 (unos
+36 min reales; por la partida de estudio, menos de 0,5 $) basta para ver ambas cosas. En PowerShell:
+
+```powershell
+# 1) .env: LLM_PROVIDER=anthropic, SIM_SPEED=10 y LLM_BATCH=on (en esta máquina está en off a mano).
+#    Para no mezclarla con la partida de estudio, una base de datos nueva: cambia solo el nombre
+#    de la base en DATABASE_URL (p. ej. …:5433/lethetown_cimientos) y migra.
+pnpm db:up
+pnpm db:migrate
+pnpm dev
+
+# 2) En otra terminal: grabar 6 h de juego (con un usuario director para pausar al acabar).
+$env:RECORD_USER = "…"; $env:RECORD_PASSWORD = "…"
+pnpm --filter @lethetown/server record ../../estudio/corta-cimientos --hours 6
+
+# 3) Volcar la BD del mundo y analizar.
+pnpm --filter @lethetown/server world:export ../../estudio/corta-cimientos/bd
+pnpm study:analyze estudio/corta-cimientos
+```
+
+`record` y `world:export` resuelven la carpeta desde `apps/server` (de ahí el `../../`);
+`study:analyze`, desde donde se lanza. Qué mirar en `estudio/corta-cimientos/analysis.md`:
+
+- **Ahorro**: `summarize` debe salir con modelo Haiku y pocas llamadas; consolidación y crónica a
+  mitad de precio si fueron por lote (`llm_calls.usd`); lectura de caché de `plan` > 0 % si a la
+  mañana siguiente encuentra lo que escribió la consolidación (con 6 h no da tiempo: para eso hace
+  falta pasar una noche, unas 16 h de juego).
+- **Puente**: «… acordadas hablando» en Acciones y los eventos 🗣; los descartes, en la auditoría
+  (`agreement_discarded` en `bd/memory_audit.jsonl`) con su motivo.
+- **Habla**: «Cómo acaban las conversaciones» (cuántas por «ya no aportaba nada» o «se estaban
+  repitiendo» frente a «máximo absoluto») y si bajan las muletillas repetidas.
+- **Menores**: `moderation_log` con «error de moderación» solo si fallaron también las repeticiones.
+
+Para comparar con la partida de estudio de 48 h hacen falta sus JSONL (no están en esta máquina):
+`pnpm study:analyze estudio/partida-2dias estudio/corta-cimientos`.
 
 ## Decisiones (para revisar en la PR)
 
