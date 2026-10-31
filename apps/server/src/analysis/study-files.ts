@@ -12,7 +12,7 @@ import type {
   SimEventKind,
   SocialProfileChange,
 } from "@lethetown/shared";
-import type { EvolutionInput, LlmCallRow } from "./evolution";
+import type { EvolutionInput, KnowledgeRow, LlmCallRow } from "./evolution";
 
 type Row = Record<string, unknown>;
 
@@ -112,5 +112,14 @@ export function loadStudy(dir: string, seeds: AgentSeed[]): EvolutionInput {
     cacheWriteTokens: num(r.cache_write_tokens),
     time: r.at ? toGame(new Date(str(r.at)).getTime()) : null,
   }));
-  return { seeds, events, wallMs, audits, socialHistory, llmCalls };
+  const knowledge: KnowledgeRow[] = readJsonl(join(db, "knowledge_log.jsonl")).map((r) => ({
+    at: num(r.at),
+    agentId: (r.agent_id ?? null) as string | null,
+    kind: str(r.kind),
+    term: str(r.term),
+    label: str(r.label),
+    text: str(r.text),
+    source: str(r.source),
+  }));
+  return { seeds, events, wallMs, audits, socialHistory, llmCalls, knowledge };
 }

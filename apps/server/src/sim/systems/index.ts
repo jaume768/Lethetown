@@ -11,6 +11,7 @@ import "./norms";
 import "./places";
 import "./agreements";
 import "./world";
+import "./knowledge";
 
 export * from "./registry";
 export * from "./types";

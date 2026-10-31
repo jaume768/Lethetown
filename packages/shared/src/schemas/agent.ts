@@ -68,6 +68,26 @@ export const MemoryProfileSeed = z.object({
 });
 export type MemoryProfileSeed = z.infer<typeof MemoryProfileSeed>;
 
+/**
+ * Lo que sabe por su vida (en la época de la biblia del mundo): va al prompt fijo y lo usa el
+ * registro de referencias externas (lo que encaja con su perfil no es incoherente).
+ */
+export const KnowledgeProfile = z.object({
+  /** "Magisterio en Palma", "cuarto de EGB"… */
+  studies: z.string(),
+  /** Oficio y experiencia. */
+  occupation: z.string(),
+  /** Idiomas que habla (castellano por defecto). */
+  languages: z.array(z.string()).min(1).default(["castellano"]),
+  /** Lugares de fuera del pueblo que conoce (viajes, donde vivió). */
+  places: z.array(z.string()).default([]),
+  /** Intereses y aficiones (lo que sabe de verdad). */
+  interests: z.array(z.string()).default([]),
+  /** Nivel cultural general. */
+  culture: z.enum(["básico", "medio", "alto"]).default("medio"),
+});
+export type KnowledgeProfile = z.infer<typeof KnowledgeProfile>;
+
 export const AgentSeed = z.object({
   id: z.string(),
   name: z.string(),
@@ -132,6 +152,8 @@ export const AgentSeed = z.object({
     .default([]),
   /** Objetos suyos al empezar (quizá prestados a alguien). */
   items: z.array(SeedItem).default([]),
+  /** Lo que sabe por su vida: estudios, oficio, idiomas, viajes, intereses. */
+  knowledge: KnowledgeProfile.optional(),
   /** Cosas que tiene pensado hacer cuando surja (memoria prospectiva). */
   initialIntentions: z
     .array(

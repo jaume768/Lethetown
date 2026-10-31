@@ -51,6 +51,14 @@
       "catchphrases": ["no sé, igual…", "¿tú crees?"],
       "topics": ["los dibujos del cuento", "los colores y la luz", "la fecha de entrega"]
     },
+    "knowledge": {
+      "studies": "Bellas Artes en Barcelona",
+      "occupation": "ilustradora de cuentos por encargo desde hace seis años",
+      "languages": ["castellano", "catalán", "algo de inglés"],
+      "places": ["Barcelona, donde vivía", "Palma"],
+      "interests": ["ilustración y acuarela", "cuentos infantiles", "pintores (Miró, Sorolla)"],
+      "culture": "alto"
+    },
     "relationships": [
       {
         "with": "mateo",
@@ -118,6 +126,18 @@
       "sentenceLength": "corta",
       "catchphrases": ["¡hombre!", "ya verás", "eso lo arreglamos con un café"],
       "topics": ["el café", "el negocio", "el fútbol del domingo"]
+    },
+    "knowledge": {
+      "studies": "EGB y FP de hostelería en Palma",
+      "occupation": "lleva el Café La Ola desde que murió su padre; antes, temporadas de camarero en hoteles de Alcúdia",
+      "languages": ["castellano", "mallorquín", "algo de inglés y alemán de la temporada"],
+      "places": ["Palma", "Inca", "Alcúdia"],
+      "interests": [
+        "el café y el negocio",
+        "el fútbol (el Mallorca, el Barça)",
+        "la gente del pueblo"
+      ],
+      "culture": "medio"
     },
     "relationships": [
       {
@@ -202,6 +222,14 @@
       "catchphrases": ["hija mía", "ya te digo yo", "en mis tiempos"],
       "topics": ["la vida de los vecinos", "el huerto", "sus antiguos alumnos"]
     },
+    "knowledge": {
+      "studies": "Magisterio en la Escuela Normal de Palma",
+      "occupation": "maestra de la escuela del pueblo durante treinta años, jubilada",
+      "languages": ["castellano", "mallorquín", "algo de francés"],
+      "places": ["Palma", "Lluc", "Barcelona (un viaje)"],
+      "interests": ["poesía", "el huerto", "la vida de sus antiguos alumnos"],
+      "culture": "alto"
+    },
     "relationships": [
       {
         "with": "mateo",
@@ -273,6 +301,14 @@
       "catchphrases": ["bueno…", "si no es molestia"],
       "topics": ["el pan y el horno", "su difunta mujer", "Inés"]
     },
+    "knowledge": {
+      "studies": "EGB",
+      "occupation": "panadero desde los catorce años, en el horno que era de su padre",
+      "languages": ["castellano", "mallorquín"],
+      "places": ["Palma", "Inca"],
+      "interests": ["el pan, las ensaimadas y la repostería", "la radio por las mañanas"],
+      "culture": "medio"
+    },
     "relationships": [
       {
         "with": "ines",
@@ -334,6 +370,18 @@
       "sentenceLength": "corta",
       "catchphrases": ["en plan…", "qué pereza", "me flipa"],
       "topics": ["la fotografía", "irse a Palma", "la música"]
+    },
+    "knowledge": {
+      "studies": "tercero de BUP en la escuela del pueblo",
+      "occupation": "estudiante; a veces ayuda en la panadería",
+      "languages": ["castellano", "mallorquín", "inglés del instituto"],
+      "places": ["Palma (pocas veces)"],
+      "interests": [
+        "fotografía de carrete",
+        "música (Héroes del Silencio, Nirvana, Oasis)",
+        "revistas de música"
+      ],
+      "culture": "medio"
     },
     "relationships": [
       {
@@ -420,6 +468,14 @@
       "catchphrases": ["por el bien del pueblo", "lo estudiaremos"],
       "topics": ["el futuro del pueblo", "las elecciones", "la casa vacía"]
     },
+    "knowledge": {
+      "studies": "Derecho en Barcelona",
+      "occupation": "alcaldesa; antes, abogada en un despacho de Palma",
+      "languages": ["castellano", "catalán", "inglés"],
+      "places": ["Palma", "Barcelona", "Madrid"],
+      "interests": ["política municipal", "urbanismo y turismo", "las noticias"],
+      "culture": "alto"
+    },
     "relationships": [
       {
         "with": "nuria",
@@ -490,6 +546,14 @@
       "catchphrases": ["cuando yo era joven…", "¡bah!", "eso no es nada"],
       "topics": ["la pesca", "el lago Leteo", "el pez gigante"]
     },
+    "knowledge": {
+      "studies": "escuela hasta los doce",
+      "occupation": "pescador toda la vida, jubilado; hizo la mili en Cartagena",
+      "languages": ["mallorquín", "castellano"],
+      "places": ["Palma", "el puerto de Sóller", "Cartagena (la mili)"],
+      "interests": ["la pesca", "el lago Leteo", "las historias del pueblo"],
+      "culture": "básico"
+    },
     "relationships": [
       {
         "with": "pilar",
@@ -553,6 +617,18 @@
       "sentenceLength": "media",
       "catchphrases": ["ya te lo dije", "toca madera", "a lo que hay que estar"],
       "topics": ["el huerto", "las supersticiones", "lo despistado que es Tomás"]
+    },
+    "knowledge": {
+      "studies": "escuela hasta los doce",
+      "occupation": "ha trabajado el campo y la casa; ahora el huerto comunitario",
+      "languages": ["mallorquín", "castellano"],
+      "places": ["Palma", "Lluc (en peregrinación)", "Inca"],
+      "interests": [
+        "el huerto y la luna",
+        "remedios y supersticiones de su abuela",
+        "la cocina mallorquina"
+      ],
+      "culture": "básico"
     },
     "relationships": [
       {
@@ -625,6 +701,14 @@
       "catchphrases": ["en rigor…", "según consta en los archivos"],
       "topics": ["los libros", "la historia del pueblo", "la página arrancada"]
     },
+    "knowledge": {
+      "studies": "Filosofía y Letras en Barcelona; diplomado en Biblioteconomía",
+      "occupation": "bibliotecario de la Biblioteca Mnemósine desde hace doce años",
+      "languages": ["castellano", "catalán", "francés", "latín leído"],
+      "places": ["Barcelona", "Palma", "París (un viaje de estudios)"],
+      "interests": ["libros y poesía", "la historia del pueblo", "archivos y documentos antiguos"],
+      "culture": "alto"
+    },
     "relationships": [
       {
         "with": "sofia",
@@ -684,6 +768,18 @@
       "sentenceLength": "media",
       "catchphrases": ["¡qué buena idea!", "a ver, pensemos"],
       "topics": ["sus alumnos", "aprender fuera del aula", "la naturaleza"]
+    },
+    "knowledge": {
+      "studies": "Magisterio en la UIB, en Palma",
+      "occupation": "maestra de la escuela del pueblo desde hace tres años",
+      "languages": ["castellano", "catalán", "inglés"],
+      "places": ["Palma", "Barcelona", "Londres (un verano de au pair)"],
+      "interests": [
+        "pedagogía y aprender fuera del aula",
+        "la naturaleza",
+        "cuentos y libros infantiles"
+      ],
+      "culture": "alto"
     },
     "relationships": [
       {
@@ -769,6 +865,14 @@
       "sentenceLength": "media",
       "catchphrases": ["entre tú y yo…", "¿a que no sabes qué?", "invita la casa"],
       "topics": ["los rumores del pueblo", "la taberna", "la noche"]
+    },
+    "knowledge": {
+      "studies": "EGB",
+      "occupation": "lleva la Taberna El Faro; antes, temporadas de camarero en la costa",
+      "languages": ["castellano", "mallorquín", "algo de alemán y de inglés"],
+      "places": ["Palma", "Cala Millor", "Ibiza"],
+      "interests": ["los rumores del pueblo", "el fútbol", "la noche y la música de los ochenta"],
+      "culture": "medio"
     },
     "relationships": [
       {
@@ -861,6 +965,14 @@
       "catchphrases": ["a ver", "no tengo todo el día", "qué remedio"],
       "topics": ["la tienda", "Leo", "el cansancio"]
     },
+    "knowledge": {
+      "studies": "BUP",
+      "occupation": "lleva el Ultramarinos Lete desde hace diez años",
+      "languages": ["castellano", "mallorquín"],
+      "places": ["Palma", "Inca"],
+      "interests": ["la tienda y las cuentas", "Leo", "las telenovelas de la tarde"],
+      "culture": "medio"
+    },
     "relationships": [
       {
         "with": "leo",
@@ -938,6 +1050,19 @@
       "catchphrases": ["¡jo!", "¿y por qué?", "¡es verdad, te lo juro!"],
       "topics": ["el pez gigante", "los perros", "el tobogán del parque"]
     },
+    "knowledge": {
+      "studies": "cuarto de EGB en la escuela del pueblo",
+      "occupation": "estudiante",
+      "languages": ["castellano", "mallorquín"],
+      "places": ["Palma (en la cabalgata de Reyes)"],
+      "interests": [
+        "el pez gigante del lago",
+        "los perros",
+        "los dibujos animados (Los Simpson, Dragon Ball)",
+        "los cromos de fútbol"
+      ],
+      "culture": "básico"
+    },
     "relationships": [
       {
         "with": "marta",
@@ -1013,6 +1138,14 @@
       "sentenceLength": "corta",
       "catchphrases": ["mira", "la tierra no miente"],
       "topics": ["las plantas", "la casa vacía", "la ecología"]
+    },
+    "knowledge": {
+      "studies": "FP de jardinería en Palma",
+      "occupation": "jardinera del huerto comunitario",
+      "languages": ["castellano", "mallorquín", "algo de inglés"],
+      "places": ["Palma", "la Serra de Tramuntana", "Cabrera (una salida del GOB)"],
+      "interests": ["plantas y huertos", "ecología y el GOB", "los pájaros"],
+      "culture": "medio"
     },
     "relationships": [
       {
@@ -1099,6 +1232,18 @@
       "catchphrases": ["¡qué arte!", "ya te lo pago, de verdad"],
       "topics": ["la música", "su canción del lago", "las deudas pendientes"]
     },
+    "knowledge": {
+      "studies": "dejó el bachillerato a medias",
+      "occupation": "músico callejero; ha tocado en bares de Palma",
+      "languages": ["castellano", "mallorquín", "inglés de las canciones"],
+      "places": ["Palma", "Barcelona", "Benicàssim", "Ibiza"],
+      "interests": [
+        "la guitarra",
+        "rock y cantautores (Serrat, Dylan, los Beatles)",
+        "componer canciones"
+      ],
+      "culture": "medio"
+    },
     "relationships": [
       {
         "with": "lucia",
@@ -1174,6 +1319,14 @@
       "catchphrases": ["¿y eso desde cuándo?", "es una larga historia"],
       "topics": ["la fotografía", "la historia de Lethetown", "su abuela"]
     },
+    "knowledge": {
+      "studies": "fotografía en una escuela de Madrid",
+      "occupation": "fotógrafa; bodas y algún reportaje para revistas",
+      "languages": ["castellano", "inglés", "algo de francés"],
+      "places": ["Madrid", "Barcelona", "Lisboa", "Palma"],
+      "interests": ["fotografía y revelado", "la historia de su abuela", "el pasado del pueblo"],
+      "culture": "alto"
+    },
     "relationships": [
       {
         "with": "ines",
@@ -1241,6 +1394,18 @@
       "sentenceLength": "larga",
       "catchphrases": ["no me encuentro muy allá", "¿te has enterado?"],
       "topics": ["sus síntomas", "el correo", "quién recibe cartas"]
+    },
+    "knowledge": {
+      "studies": "bachillerato elemental",
+      "occupation": "cartero de Correos desde hace treinta años",
+      "languages": ["castellano", "mallorquín"],
+      "places": ["Palma", "Inca", "Son Dureta (de visitas al médico)"],
+      "interests": [
+        "el correo y los sellos",
+        "enfermedades (lee la enciclopedia médica)",
+        "quién se cartea con quién"
+      ],
+      "culture": "medio"
     },
     "relationships": [
       {
@@ -1314,6 +1479,19 @@
       "catchphrases": ["ay, criatura", "¿dónde estaba yo?"],
       "topics": ["su juventud", "Alma", "el jardín"]
     },
+    "knowledge": {
+      "studies": "escuela de las monjas hasta los diez años",
+      "occupation": "trabajó en el campo y cosiendo; ama de casa",
+      "languages": ["mallorquín", "castellano"],
+      "places": ["Palma (de joven)"],
+      "interests": [
+        "su juventud, la guerra y la posguerra en el pueblo",
+        "Alma",
+        "el jardín",
+        "canciones antiguas"
+      ],
+      "culture": "básico"
+    },
     "relationships": [
       {
         "with": "clara",
@@ -1384,6 +1562,18 @@
       "sentenceLength": "media",
       "catchphrases": ["¡claro que sí!", "uy, no sé"],
       "topics": ["la fruta del mercado", "su abuela", "estudiar enfermería"]
+    },
+    "knowledge": {
+      "studies": "COU; quiere estudiar Enfermería en la UIB",
+      "occupation": "atiende el puesto de fruta del mercadillo",
+      "languages": ["castellano", "mallorquín", "inglés del instituto"],
+      "places": ["Palma", "Inca"],
+      "interests": [
+        "enfermería y primeros auxilios",
+        "la fruta del mercado",
+        "cuidar de su abuela"
+      ],
+      "culture": "medio"
     },
     "relationships": [
       {
@@ -1459,6 +1649,14 @@
       "sentenceLength": "media",
       "catchphrases": ["tranquilo, vamos a ver", "en Lagos decimos…"],
       "topics": ["la salud de los vecinos", "su familia en Lagos", "el trabajo"]
+    },
+    "knowledge": {
+      "studies": "Medicina en la Universidad de Lagos; título convalidado en Madrid",
+      "occupation": "médico del consultorio desde hace tres años; antes, en un hospital de Lagos",
+      "languages": ["inglés", "igbo", "yoruba", "castellano"],
+      "places": ["Lagos (Nigeria)", "Londres", "Madrid", "Palma"],
+      "interests": ["medicina", "su familia", "el fútbol nigeriano", "la música highlife"],
+      "culture": "alto"
     },
     "relationships": [
       {

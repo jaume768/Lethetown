@@ -416,3 +416,26 @@ export const notes = pgTable(
     index("notes_world_expires_idx").on(t.worldId, t.expiresAt),
   ],
 );
+
+/**
+ * Registro de conocimiento externo (ExternalKnowledgeGuard, solo registra): anacronismos y
+ * referencias de fuera que no encajan con quien escribe. Ver docs/decisiones/mundo.md.
+ */
+export const knowledgeLog = pgTable(
+  "knowledge_log",
+  {
+    id: serial("id").primaryKey(),
+    worldId: worldId(),
+    /** Minuto de juego. */
+    at: doublePrecision("at").notNull(),
+    agentId: text("agent_id"),
+    /** anachronism | external. */
+    kind: text("kind").notNull(),
+    term: text("term").notNull(),
+    label: text("label").notNull(),
+    text: text("text").notNull(),
+    /** speech | memory | plan | chronicle… */
+    source: text("source").notNull(),
+  },
+  (t) => [index("knowledge_log_world_at_idx").on(t.worldId, t.at)],
+);

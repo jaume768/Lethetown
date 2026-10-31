@@ -144,6 +144,39 @@ export function evolutionMarkdown(a: EvolutionReport, b?: EvolutionReport): stri
       compare,
     ),
   ];
+  if (a.knowledge || b?.knowledge) {
+    out.push(
+      table(
+        "Conocimiento externo (anacronismos y referencias)",
+        [
+          ...byKey(a.knowledge?.byKind ?? {}, b?.knowledge?.byKind, [["{k}", (n) => n ?? 0]]),
+          ...byKey(
+            Object.fromEntries(
+              Object.entries(a.knowledge?.byAgent ?? {}).map(([k, v]) => [
+                k,
+                Object.values(v).reduce((s, n) => s + n, 0),
+              ]),
+            ),
+            b?.knowledge &&
+              Object.fromEntries(
+                Object.entries(b.knowledge.byAgent).map(([k, v]) => [
+                  k,
+                  Object.values(v).reduce((s, n) => s + n, 0),
+                ]),
+              ),
+            [["{k}", (n) => n ?? 0]],
+          ),
+        ],
+        compare,
+      ),
+    );
+    const examples = (a.knowledge?.examples ?? []).slice(0, 10);
+    if (examples.length) {
+      out.push(
+        `Ejemplos:\n\n${examples.map((x) => `- ${x.kind} «${x.term}» (${x.agentId ?? "-"}, ${x.source}): ${x.text}`).join("\n")}\n`,
+      );
+    }
+  }
   const errors = byKey(a.total.llmErrors, b?.total.llmErrors, [["{k}", (n) => n ?? 0]]);
   if (errors.length) out.push(table("Errores del LLM por tarea", errors, compare));
 

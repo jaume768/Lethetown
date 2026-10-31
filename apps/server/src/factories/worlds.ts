@@ -46,6 +46,11 @@ import {
 } from "../db/known-places";
 import { InMemoryItemStore, PgItemStore, type ItemStore } from "../db/items";
 import { InMemoryNoteStore, PgNoteStore, type NoteStore } from "../db/notes";
+import {
+  InMemoryKnowledgeLogStore,
+  PgKnowledgeLogStore,
+  type KnowledgeLogStore,
+} from "../db/knowledge-log";
 import { describeReport, pruneGlobalPg, pruneWorldPg, pruneWorldRam } from "../retention";
 import { createWorldLlm } from "./llm";
 import { createMaintenance, createWorldMemory } from "./memory";
@@ -99,6 +104,9 @@ export async function openWorld(services: Services, row: WorldRow): Promise<Worl
   const knownPlaces: KnownPlaceStore = db
     ? new PgKnownPlaceStore(db.db, row.id)
     : new InMemoryKnownPlaceStore();
+  const knowledgeLog: KnowledgeLogStore = db
+    ? new PgKnowledgeLogStore(db.db, row.id)
+    : new InMemoryKnowledgeLogStore();
   const chronicles: ChronicleStore = db
     ? new PgChronicleStore(db.db, row.id)
     : new InMemoryChronicleStore();
@@ -139,6 +147,7 @@ export async function openWorld(services: Services, row: WorldRow): Promise<Worl
     discoveryRadius: config.SIM_DISCOVERY_RADIUS,
     systems: row.systems,
     bible: services.bible,
+    knowledgeLog,
     track: (w) => services.track(w),
   });
   placeOf = (id) => sim.agents.get(id)?.state.locationId ?? null;
@@ -221,6 +230,7 @@ export async function openWorld(services: Services, row: WorldRow): Promise<Worl
     knownPlaces,
     items,
     notes,
+    knowledgeLog,
     costs,
     restoredFrom: snapshot?.time ?? null,
     status: () => status,
@@ -251,7 +261,7 @@ export async function openWorld(services: Services, row: WorldRow): Promise<Worl
       return db
         ? pruneWorldPg(db.db, row.id, clock.now(), services.retention)
         : pruneWorldRam(
-            { memory: store, social: rawSocial, events },
+            { memory: store, social: rawSocial, events, knowledgeLog },
             clock.now(),
             services.retention,
           );

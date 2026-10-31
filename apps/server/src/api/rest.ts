@@ -544,6 +544,7 @@ export function registerWorldRest(server: FastifyInstance, ctx: ApiContext): voi
       llmCalls: [],
       costByTask: w.costs().byTask,
       taskSystems: taskSystems(),
+      knowledge: await w.knowledgeLog.list(EVOLUTION_LIMIT),
       ...(metrics.ok ? { systems: metrics.value as Record<string, Record<string, number>> } : {}),
     });
   });

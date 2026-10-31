@@ -42,6 +42,7 @@ describe("registro de sistemas", () => {
       "places",
       "agreements",
       "world",
+      "knowledge",
     ]);
   });
 
@@ -105,6 +106,7 @@ describe("instantánea por sistema", () => {
       "company",
       "notes",
       "norms",
+      "knowledge",
     ]);
     expect(snap.items!.version).toBe(1);
   });

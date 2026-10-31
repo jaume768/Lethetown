@@ -44,6 +44,33 @@ export interface EvolutionInput {
   taskSystems?: Record<string, string>;
   /** Cifras vivas de cada sistema y del guardián de menores (solo en la pestaña de admin). */
   systems?: Record<string, Record<string, number>>;
+  /** Registro de conocimiento externo (`knowledge_log`). */
+  knowledge?: KnowledgeRow[];
+}
+
+/** Una fila de `knowledge_log`. */
+export interface KnowledgeRow {
+  at: number;
+  agentId: string | null;
+  kind: string;
+  term: string;
+  label: string;
+  text: string;
+  source: string;
+}
+
+/** Ejemplos de conocimiento externo en el informe. */
+const KNOWLEDGE_EXAMPLES = 20;
+
+function knowledgeReport(rows: KnowledgeRow[]): NonNullable<EvolutionReport["knowledge"]> {
+  const byKind: Record<string, number> = {};
+  const byAgent: Record<string, Record<string, number>> = {};
+  for (const r of rows) {
+    inc(byKind, r.kind);
+    inc((byAgent[r.agentId ?? "-"] ??= {}), r.kind);
+  }
+  const examples = [...rows].sort((a, b) => b.at - a.at).slice(0, KNOWLEDGE_EXAMPLES);
+  return { byKind, byAgent, examples };
 }
 
 const ACTIONS = new Set(Object.keys(ACTION_SPECS));
@@ -200,6 +227,11 @@ export function analyzeEvolution(input: EvolutionInput): EvolutionReport {
       ever,
     ),
   );
+  // Conocimiento externo por día (anacronismos y referencias).
+  for (const d of perDay) {
+    const rows = input.knowledge?.filter((r) => dayOf(r.at) === d.day);
+    if (rows) d.knowledge = knowledgeReport(rows).byKind;
+  }
   const total = metricsOf(
     -1,
     input,
@@ -209,6 +241,7 @@ export function analyzeEvolution(input: EvolutionInput): EvolutionReport {
     input.llmCalls,
     new Set(),
   );
+  if (input.knowledge) total.knowledge = knowledgeReport(input.knowledge).byKind;
 
   // Coste por tarea y por sistema.
   const byTask: EvolutionReport["cost"]["byTask"] = {};
@@ -306,6 +339,7 @@ export function analyzeEvolution(input: EvolutionInput): EvolutionReport {
       .map(([pair, utterances]) => ({ pair, utterances })),
     utterancesByAgent: byAgent,
     relationshipTransitions: transitions,
+    ...(input.knowledge ? { knowledge: knowledgeReport(input.knowledge) } : {}),
     ...(input.systems ? { systems: input.systems } : {}),
   };
 }

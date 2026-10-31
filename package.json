@@ -27,6 +27,7 @@
     "assets:check": "tsx tools/check-assets.ts",
     "portraits:compose": "tsx tools/compose-portraits.ts",
     "personality:derive": "tsx tools/derive-personality.ts",
+    "knowledge:derive": "tsx tools/derive-knowledge.ts",
     "user:create": "pnpm --filter @lethetown/server user:create --",
     "test:e2e": "playwright test"
   },

@@ -24,6 +24,7 @@ import { InMemoryCommitmentStore, type CommitmentStore } from "../db/commitments
 import { InMemoryKnownPlaceStore, type KnownPlaceStore } from "../db/known-places";
 import { InMemoryItemStore, type ItemStore } from "../db/items";
 import { InMemoryNoteStore, type NoteStore } from "../db/notes";
+import type { KnowledgeLogStore } from "../db/knowledge-log";
 import type { GameClock } from "./clock";
 import type { WorldMap } from "./world";
 
@@ -151,6 +152,8 @@ export interface SimulationDeps {
   systems?: Record<string, boolean>;
   /** Biblia del mundo (config/world.json): época, lugar, glosario, clima. Sin ella, nada de eso. */
   bible?: WorldBible;
+  /** Registro de conocimiento externo (si no se pasa, en RAM). */
+  knowledgeLog?: KnowledgeLogStore;
 }
 
 /** Señales que la simulación emite hacia los clientes (además de los eventos del log). */

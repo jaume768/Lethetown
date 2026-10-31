@@ -34,6 +34,10 @@ const ROWS: [MessageKey, (d: DayMetrics) => number | string][] = [
     (d) => `${d.memory.reconsolidated} / ${d.memory.forgotten} / ${d.memory.archived}`,
   ],
   ["evolution.errors", (d) => sum(Object.values(d.llmErrors))],
+  [
+    "evolution.knowledgeRow",
+    (d) => `${d.knowledge?.anachronism ?? 0} / ${d.knowledge?.external ?? 0}`,
+  ],
 ];
 
 /** Pestaña de admin «Evolución»: cómo cambia el pueblo día a día (red, charlas, memoria, coste). */
@@ -81,6 +85,41 @@ export function EvolutionPanel() {
           <li key={`s:${system}`}>{t("evolution.system", { system, usd: formatUsd(usd) })}</li>
         ))}
       </ul>
+
+      {report.knowledge && (
+        <>
+          <h4>{t("evolution.knowledge")}</h4>
+          {report.knowledge.examples.length === 0 ? (
+            <p className="small muted">{t("evolution.knowledgeNone")}</p>
+          ) : (
+            <>
+              <ul className="small">
+                {Object.entries(report.knowledge.byAgent)
+                  .sort((a, b) => sum(Object.values(b[1])) - sum(Object.values(a[1])))
+                  .map(([id, k]) => (
+                    <li key={id}>
+                      {t("evolution.knowledgeAgent", {
+                        name: id,
+                        anachronism: k.anachronism ?? 0,
+                        external: k.external ?? 0,
+                      })}
+                    </li>
+                  ))}
+              </ul>
+              <ul className="small">
+                {report.knowledge.examples.map((x, i) => (
+                  <li key={i}>
+                    <span className="tag">
+                      {t(`evolution.knowledgeKind.${x.kind}` as MessageKey)}
+                    </span>{" "}
+                    <strong>{x.term}</strong> · {x.agentId ?? "—"} ({x.source}): «{x.text}»
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </>
+      )}
 
       {report.systems && (
         <>

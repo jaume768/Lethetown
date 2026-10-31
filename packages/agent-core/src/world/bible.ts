@@ -54,6 +54,14 @@ export const WorldBible = z.object({
    */
   commonReferences: z.array(z.string()).default([]),
   anachronisms: z.array(AnachronismTerm).default([]),
+  /**
+   * Registro de conocimiento externo (ExternalKnowledgeGuard). log: solo registra (por defecto);
+   * soften: registra y lo marca para suavizarlo (aún sin reescritura); enforce: además descarta
+   * los textos con anacronismos (las referencias externas solo se registran).
+   */
+  knowledgeGuard: z
+    .object({ mode: z.enum(["log", "soften", "enforce"]).default("log") })
+    .prefault({}),
   /** Fiestas y días señalados ("MM-DD" → qué se celebra). */
   holidays: z.array(z.object({ date: MonthDay, name: z.string() })).default([]),
   climate: z

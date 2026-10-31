@@ -14,6 +14,7 @@ import type { Db } from "./db/client";
 import {
   busMessages,
   commitments,
+  knowledgeLog,
   llmCalls,
   memories,
   memoryAudit,
@@ -24,6 +25,7 @@ import {
   socialProfileHistory,
   worldSnapshots,
 } from "./db/schema";
+import { InMemoryKnowledgeLogStore } from "./db/knowledge-log";
 import { InMemoryEventStore } from "./db/stores";
 import { readJson } from "./factories/files";
 import { fromRoot } from "./paths";
@@ -64,6 +66,8 @@ export const RetentionConfig = z.object({
   notes: policy(7, "game", ["delete"], "delete"),
   /** Citas cerradas (cumplidas, fallidas o anuladas), por su hora. */
   commitments: policy(30, "game", ["delete"], "delete"),
+  /** Registro de conocimiento externo (anacronismos y referencias), por su minuto de juego. */
+  knowledgeLog: policy(30, "game", ["delete"], "delete"),
   /** Tipos de evento que no se borran nunca (las crónicas, p. ej.). */
   keepEventKinds: z.array(z.string()).default(["chronicle"]),
   /**
@@ -197,6 +201,14 @@ export async function pruneWorldPg(
       .returning({ id: commitments.id });
     report.commitments = rows.length;
   }
+  const kl = gameCut(cfg.knowledgeLog, gameNow);
+  if (kl !== null) {
+    const rows = await db
+      .delete(knowledgeLog)
+      .where(and(inWorld(knowledgeLog), lt(knowledgeLog.at, kl)))
+      .returning({ id: knowledgeLog.id });
+    report.knowledgeLog = rows.length;
+  }
   const snap = cutoff(cfg.worldSnapshots, gameNow, realNow).real;
   if (snap) {
     const latest = db
@@ -266,6 +278,7 @@ export interface RamStores {
   memory: unknown;
   social: unknown;
   events: unknown;
+  knowledgeLog?: unknown;
 }
 
 /** Poda de un mundo en RAM (los mismos criterios, sobre los almacenes en memoria). */
@@ -298,6 +311,10 @@ export function pruneWorldRam(
   const ev = gameCut(cfg.simEvents, gameNow);
   if (stores.events instanceof InMemoryEventStore && ev !== null) {
     report.simEvents = stores.events.prune(ev, cfg.keepEventKinds);
+  }
+  const kl = gameCut(cfg.knowledgeLog, gameNow);
+  if (stores.knowledgeLog instanceof InMemoryKnowledgeLogStore && kl !== null) {
+    report.knowledgeLog = stores.knowledgeLog.prune(kl);
   }
   return report;
 }

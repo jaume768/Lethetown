@@ -135,6 +135,20 @@ export function speechLine(style: AgentSeed["speechStyle"]): string {
   return `\nCómo hablas: ${style.register}; ${length}${catches}.${topics}`;
 }
 
+/** "Lo que sabes: …" (estudios, oficio, idiomas, viajes, intereses), o vacío sin perfil. */
+export function knowledgeLine(k: AgentSeed["knowledge"]): string {
+  if (!k) return "";
+  const parts = [
+    `estudios: ${k.studies}`,
+    `oficio: ${k.occupation}`,
+    `idiomas: ${k.languages.join(", ")}`,
+    ...(k.places.length ? [`fuera del pueblo conoces: ${k.places.join(", ")}`] : []),
+    ...(k.interests.length ? [`sabes de: ${k.interests.join(", ")}`] : []),
+    `cultura general: ${k.culture}`,
+  ];
+  return `\nLo que sabes: ${parts.join("; ")}.`;
+}
+
 export function identityPrompt(
   seed: AgentSeed,
   places: Place[],
@@ -147,7 +161,7 @@ export function identityPrompt(
   return `Eres ${seed.name}, ${seed.age} años, habitante de un pequeño pueblo.
 Rasgos: ${seed.traits.join(", ")}.
 Personalidad: ${personalityLine(seed.personality)}.
-${seed.description}${speechLine(seed.speechStyle)}${
+${seed.description}${knowledgeLine(seed.knowledge)}${speechLine(seed.speechStyle)}${
     seed.age < 18
       ? `\nTienes ${seed.age} años: hablas como alguien de tu edad, con frases más cortas y sencillas.`
       : ""
