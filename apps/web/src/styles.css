@@ -1235,3 +1235,21 @@ html.ui-skin .warn-text {
   text-align: left;
   white-space: normal;
 }
+
+/* Metas (pestaña «Metas» del inspector) y vecinos que se fueron. */
+.card.goal-life {
+  box-shadow: inset 3px 0 0 0 var(--accent);
+}
+.card.goal-step {
+  box-shadow: inset 3px 0 0 0 var(--muted);
+}
+.goals details summary {
+  cursor: pointer;
+}
+.goals ol {
+  padding-inline-start: 18px;
+  overflow-wrap: anywhere;
+}
+.departures {
+  margin-top: 12px;
+}

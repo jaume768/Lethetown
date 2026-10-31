@@ -35,6 +35,15 @@ const ROWS: [MessageKey, (d: DayMetrics) => number | string][] = [
   ],
   ["evolution.errors", (d) => sum(Object.values(d.llmErrors))],
   [
+    "evolution.goalsRow",
+    (d) => (d.goals ? `${d.goals.active} / ${d.goals.achieved} / ${d.goals.abandoned}` : "—"),
+  ],
+  [
+    "evolution.goalsMeans",
+    (d) =>
+      d.goals ? `${d.goals.meanProgress.toFixed(2)} / ${d.goals.meanFrustration.toFixed(2)}` : "—",
+  ],
+  [
     "evolution.knowledgeRow",
     (d) => `${d.knowledge?.anachronism ?? 0} / ${d.knowledge?.external ?? 0}`,
   ],
@@ -85,6 +94,26 @@ export function EvolutionPanel() {
           <li key={`s:${system}`}>{t("evolution.system", { system, usd: formatUsd(usd) })}</li>
         ))}
       </ul>
+
+      {report.total.goals && Object.keys(report.total.goals.byAgent).length > 0 && (
+        <>
+          <h4>{t("evolution.goals")}</h4>
+          <ul className="small">
+            {Object.entries(report.total.goals.byAgent).map(([id, g]) => (
+              <li key={id}>
+                {t("evolution.goalsAgent", {
+                  name: id,
+                  active: g.active,
+                  achieved: g.achieved,
+                  abandoned: g.abandoned,
+                  progress: g.meanProgress.toFixed(2),
+                  frustration: g.meanFrustration.toFixed(2),
+                })}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
 
       {report.knowledge && (
         <>

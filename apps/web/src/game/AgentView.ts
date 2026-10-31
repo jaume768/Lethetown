@@ -160,7 +160,7 @@ export class AgentView {
   }
 
   get labelVisible(): boolean {
-    return this.label.visible;
+    return this.container.visible && this.label.visible;
   }
 
   /** Caja de la etiqueta en coordenadas del mundo (con su desplazamiento actual). */

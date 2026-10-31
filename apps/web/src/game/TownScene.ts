@@ -1,4 +1,5 @@
 import {
+  AWAY_LOCATION,
   AssetManifest,
   activePack,
   characterFor,
@@ -233,6 +234,8 @@ export class TownScene extends Phaser.Scene {
     for (const agent of agents) {
       const view = this.views.get(agent.id) ?? this.createView(agent);
       view.setState(agent);
+      // Quien se fue a vivir fuera no está en el mapa (vuelve a verse si viene de visita).
+      view.container.setVisible(agent.locationId !== AWAY_LOCATION);
     }
     if (this.followId && !this.following) this.setFollow(this.followId);
   }

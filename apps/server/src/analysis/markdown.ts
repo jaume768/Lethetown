@@ -56,6 +56,13 @@ const SUMMARY: [string, (d: DayMetrics) => number][] = [
   ["… acordadas hablando", (d) => sum(Object.values(d.actions).map((v) => v.agreed))],
   ["… que no salieron", (d) => sum(Object.values(d.actions).map((v) => v.failed))],
   ["Cambios de tipo de relación", (d) => d.relationshipChanges],
+  ["Metas activas (al final del día)", (d) => d.goals?.active ?? 0],
+  ["… conseguidas ese día", (d) => d.goals?.achieved ?? 0],
+  ["… abandonadas ese día", (d) => d.goals?.abandoned ?? 0],
+  ["… progreso medio", (d) => d.goals?.meanProgress ?? 0],
+  ["… frustración media", (d) => d.goals?.meanFrustration ?? 0],
+  ["Anacronismos registrados", (d) => d.knowledge?.anachronism ?? 0],
+  ["Referencias externas registradas", (d) => d.knowledge?.external ?? 0],
   ["Reconsolidaciones", (d) => d.memory.reconsolidated],
   ["Olvidos", (d) => d.memory.forgotten],
   ["Recuerdos archivados (resumidos)", (d) => d.memory.archived],
@@ -144,6 +151,27 @@ export function evolutionMarkdown(a: EvolutionReport, b?: EvolutionReport): stri
       compare,
     ),
   ];
+  if (a.total.goals || b?.total.goals) {
+    const g = (r: EvolutionReport) => r.total.goals;
+    out.push(
+      table(
+        "Metas",
+        [
+          { name: "Activas", ...both((r) => g(r)?.active ?? null) },
+          { name: "Conseguidas", ...both((r) => g(r)?.achieved ?? null) },
+          { name: "Abandonadas", ...both((r) => g(r)?.abandoned ?? null) },
+          { name: "Progreso medio (activas)", ...both((r) => g(r)?.meanProgress ?? null) },
+          { name: "Frustración media (activas)", ...both((r) => g(r)?.meanFrustration ?? null) },
+          ...byKey(a.total.goals?.byAgent ?? {}, b?.total.goals?.byAgent, [
+            ["{k}: conseguidas", (x) => x?.achieved ?? 0],
+            ["{k}: abandonadas", (x) => x?.abandoned ?? 0],
+            ["{k}: frustración", (x) => x?.meanFrustration ?? 0],
+          ]),
+        ],
+        compare,
+      ),
+    );
+  }
   if (a.knowledge || b?.knowledge) {
     out.push(
       table(
