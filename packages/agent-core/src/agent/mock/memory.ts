@@ -1,6 +1,6 @@
 /** Mock de las tareas de memoria: importancia, consolidación, esencia, reconsolidación… */
 import type { CompletionRequest } from "../../llm/types";
-import { hash, numbered } from "./context";
+import { hash, numbered, parsePlaces } from "./context";
 import { registerMockHandler } from "./registry";
 
 function mockImportance(req: CompletionRequest): string {
@@ -123,7 +123,8 @@ function mockSocial(req: CompletionRequest): string {
   // Promesas y quedadas de la charla (memoria prospectiva).
   const talk = req.prompt.split("Conversación:")[1] ?? "";
   const first = name.split(" ")[0];
-  const intentions = /Deberíamos venir juntos/.test(talk)
+  const together = /Deberíamos venir juntos/.test(talk);
+  const intentions = together
     ? [{ text: `volver a quedar con ${first}`, personId: match?.[2] ?? null }]
     : [];
   return JSON.stringify({
@@ -131,7 +132,52 @@ function mockSocial(req: CompletionRequest): string {
     affinityDelta: negative ? -0.02 : 0.06,
     trustDelta: 0.02,
     intentions,
+    agreements: mockAgreements(req, talk, together, match?.[2] ?? null),
   });
+}
+
+/**
+ * Acuerdos de la charla (puente a las acciones): «Deberíamos venir juntos» es quedar mañana en
+ * un café (la hora sale de la charla, así los dos dicen la misma); y quien lleva algo prestado
+ * de la otra persona a veces queda en devolvérselo.
+ */
+function mockAgreements(
+  req: CompletionRequest,
+  talk: string,
+  together: boolean,
+  otherId: string | null,
+): Record<string, unknown>[] {
+  const me = req.meta.agentId;
+  if (!me || !otherId) return [];
+  const out: Record<string, unknown>[] = [];
+  const cafe = parsePlaces(req.system).find((p) => p.kind === "cafe" && !p.outdoor);
+  // No siempre se cierra (una de cada cuatro charlas): «deberíamos» no es quedar.
+  if (together && cafe && hash(talk) % 4 === 0) {
+    out.push({
+      type: "meeting",
+      from: me,
+      to: [otherId],
+      placeId: cafe.id,
+      at: hash(talk) % 8 === 0 ? "11:00" : "18:00",
+      day: "mañana",
+      what: "volver juntos",
+      quote: "Deberíamos venir juntos.",
+    });
+  }
+  // "- i3 libro de poemas: lo lleva X (te lo prestó Y)": en OBJETOS, lo que tengo prestado.
+  const lent = new RegExp(`^- (\\S+) .*\\(prestado por ${otherId} a ${me}\\)$`, "m").exec(
+    req.prompt,
+  );
+  if (lent && hash(talk) % 3 === 0) {
+    out.push({
+      type: "return",
+      from: me,
+      to: [otherId],
+      itemId: lent[1],
+      quote: "Te lo devuelvo.",
+    });
+  }
+  return out;
 }
 
 registerMockHandler("importance", mockImportance);

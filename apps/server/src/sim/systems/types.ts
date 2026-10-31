@@ -3,7 +3,7 @@
  * tocar `simulation.ts`. Cada parte es opcional salvo `id`. Ver docs/decisiones/sistemas.md.
  */
 import type { Agent } from "@lethetown/agent-core";
-import type { ActionType, AgentAction, PlanItem } from "@lethetown/shared";
+import type { ActionType, AgentAction, Agreement, PlanItem } from "@lethetown/shared";
 import type { z } from "zod";
 import type { SimContext } from "../context";
 import type { WorldMap } from "../world";
@@ -39,6 +39,37 @@ export interface SystemTick {
   run(ctx: SimContext, now: number): void | Promise<void>;
 }
 
+/** Un acuerdo de una conversación con los participantes ya resueltos (ids de la charla). */
+export interface ResolvedAgreement extends Agreement {
+  from: string;
+  to: string[];
+  /** `from` y `to` juntos. */
+  people: string[];
+  conversationId: string;
+}
+
+/** Un paso de un acuerdo: quién hace qué acción del catálogo (se construye al llegar a él). */
+export interface AgreementStep {
+  actorId: string;
+  action: () => AgentAction | string;
+}
+
+/**
+ * Cómo lleva a cabo un sistema un tipo de acuerdo (sim/agreements.ts): con las mismas acciones
+ * formales que elegiría el LLM, que pasan por sus manejadores (validación, normas, menores).
+ */
+export interface AgreementKind {
+  type: string;
+  /** Los pasos, en orden, o el motivo para descartarlo. */
+  steps(ctx: SimContext, a: ResolvedAgreement): AgreementStep[] | string;
+  /** Si ya hay algo igual (la misma gente, sitio y franja), el motivo para no repetirlo. */
+  duplicate?(ctx: SimContext, a: ResolvedAgreement): string | null;
+  /** Tras llevarlo a cabo (p. ej. marcar la cita como acordada hablando). */
+  applied?(ctx: SimContext, a: ResolvedAgreement): void;
+  /** ¿Se refiere esta intención (de la misma charla) a este acuerdo? Entonces no se duplica. */
+  covers?(intention: { text: string; personId?: string | null }, a: ResolvedAgreement): boolean;
+}
+
 /** Qué política de `config/retention.json` cubre su tabla (o por qué no hace falta). */
 export type SystemRetention =
   { table: string; policy: keyof RetentionConfig } | { table: string; keep: string };
@@ -49,6 +80,8 @@ export interface SimSystem<S = unknown> {
   description?: string;
   /** Acciones del catálogo que son suyas (registradas con `registerAction` en `sim/actions/`). */
   actions?: readonly ActionType[];
+  /** Tipos de acuerdo hablado que sabe llevar a cabo (puente de la conversación a la acción). */
+  agreements?: readonly AgreementKind[];
   snapshot?: SystemSnapshot<S>;
   /** Al abrir el mundo, tras restaurar la instantánea (o sin ella): cargar de su almacén. */
   load?(ctx: SimContext, opts: { restored: boolean; now: number }): void | Promise<void>;

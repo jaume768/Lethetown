@@ -7,10 +7,11 @@ import type { Agent } from "@lethetown/agent-core";
 import type { ActionType, AgentAction, PlanItem } from "@lethetown/shared";
 import type { SimContext } from "../context";
 import type { WorldMap } from "../world";
-import type { PromptSection, SimSystem } from "./types";
+import type { AgreementKind, PromptSection, SimSystem } from "./types";
 
 const SYSTEMS: SimSystem[] = [];
 const ACTION_OWNER = new Map<ActionType, string>();
+const AGREEMENTS = new Map<string, { kind: AgreementKind; system: string }>();
 
 export function registerSystem<S>(system: SimSystem<S>): void {
   if (SYSTEMS.some((s) => s.id === system.id)) {
@@ -20,6 +21,11 @@ export function registerSystem<S>(system: SimSystem<S>): void {
     const owner = ACTION_OWNER.get(type);
     if (owner) throw new Error(`La acción ${type} ya es del sistema ${owner}`);
     ACTION_OWNER.set(type, system.id);
+  }
+  for (const kind of system.agreements ?? []) {
+    const owner = AGREEMENTS.get(kind.type);
+    if (owner) throw new Error(`El acuerdo ${kind.type} ya es del sistema ${owner.system}`);
+    AGREEMENTS.set(kind.type, { kind, system: system.id });
   }
   SYSTEMS.push(system as SimSystem);
   system.mock?.();
@@ -38,6 +44,16 @@ export function activeSystems(ctx: SimContext): SimSystem[] {
 /** De qué sistema es una acción (las del núcleo, como `say`, no son de ninguno). */
 export function systemOfAction(type: ActionType): string | undefined {
   return ACTION_OWNER.get(type);
+}
+
+/** Quién lleva a cabo un tipo de acuerdo hablado (y de qué sistema es), si alguien sabe. */
+export function agreementKind(type: string): { kind: AgreementKind; system: string } | undefined {
+  return AGREEMENTS.get(type);
+}
+
+/** Tipos de acuerdo que saben llevar a cabo los sistemas registrados. */
+export function agreementTypes(): string[] {
+  return [...AGREEMENTS.keys()];
 }
 
 /** ¿Se puede usar la acción en este mundo? (su sistema, si lo tiene, está activo). */

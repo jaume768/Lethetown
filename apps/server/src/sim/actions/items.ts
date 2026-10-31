@@ -16,22 +16,13 @@ import type { z } from "zod";
 import type { SimContext } from "../context";
 import { itemsState, saveItem } from "../items";
 import { minorMeetingRule } from "./meetings";
-import { registerAction, type ActionContext } from "./registry";
+import { isHere, registerAction, type ActionContext } from "./registry";
 
 const nameOf = (ctx: SimContext, id: string) => ctx.agents.get(id)?.seed.name ?? id;
 const firstOf = (ctx: SimContext, id: string) => nameOf(ctx, id).split(" ")[0]!;
 
-/** ¿Está aquí, despierto y quieto? */
-function here(c: ActionContext, id: string): boolean {
-  const other = c.ctx.agents.get(id);
-  return Boolean(
-    other &&
-    id !== c.agent.id &&
-    other.state.locationId === c.agent.state.locationId &&
-    other.state.activityKind !== "sleep" &&
-    !c.ctx.rt(id).travelling,
-  );
-}
+/** Aquí (o en la charla del acuerdo): ver `isHere`. */
+const here = isHere;
 
 const someoneHere = (c: ActionContext) => [...c.ctx.agents.keys()].some((id) => here(c, id));
 const carried = (c: ActionContext) =>

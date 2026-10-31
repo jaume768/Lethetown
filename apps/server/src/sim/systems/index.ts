@@ -9,6 +9,7 @@ import "./company";
 import "./notes";
 import "./norms";
 import "./places";
+import "./agreements";
 
 export * from "./registry";
 export * from "./types";

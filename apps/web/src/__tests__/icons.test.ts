@@ -15,6 +15,13 @@ describe("iconos de acciones", () => {
     });
     expect(actionBadge({ meta: { action: "say", ok: false } })?.ok).toBe(false);
     expect(actionBadge({})).toBeNull();
+    // Lo acordado hablando lleva su propio icono.
+    expect(actionBadge({ meta: { action: "propose_meeting", ok: true, agreed: true } })).toEqual({
+      action: "propose_meeting",
+      icon: "🗣",
+      ok: true,
+      agreed: true,
+    });
   });
 
   it("no repite el icono si el texto ya empieza por él", () => {

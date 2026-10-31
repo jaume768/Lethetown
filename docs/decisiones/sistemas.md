@@ -9,7 +9,9 @@ adelante, economía, metas u oficios son módulos (`SimSystem`) que se registran
 - **Un sistema declara lo suyo** (todo opcional salvo `id`): acciones del catálogo, su parte de
   la instantánea con su propia versión, carga al abrir el mundo, revisión periódica sin LLM,
   secciones del prompt de decidir, líneas fijas del prompt de identidad, huecos fijos del plan,
-  ganchos antes de decidir y antes de actuar, retención de su tabla, métricas y datos de admin.
+  ganchos antes de decidir y antes de actuar, tipos de acuerdo hablado que sabe llevar a cabo
+  (`agreements`, ver [acciones](acciones.md#puente-de-la-conversación-a-la-acción)), retención de
+  su tabla, métricas y datos de admin.
   Ver `sim/systems/types.ts`.
 - **Orden de registro = orden de ejecución.** `sim/systems/index.ts` importa los sistemas en el
   orden en que corren sus revisiones (el del test dorado). Las revisiones del mismo intervalo
@@ -39,15 +41,16 @@ adelante, economía, metas u oficios son módulos (`SimSystem`) que se registran
 
 ## Sistemas actuales
 
-| id         | Acciones                              | Revisión (5 min)             | Prompt                                | Tabla             |
-| ---------- | ------------------------------------- | ---------------------------- | ------------------------------------- | ----------------- |
-| `meetings` | propose/accept/decline/cancel_meeting | salidas, llegadas, plantones | AGENDA; huecos del plan               | `commitments`     |
-| `items`    | give/lend/return/take/leave_item      | préstamos vencidos           | LLEVAS, HAS PRESTADO, AQUÍ HAY…       | `inventory_items` |
-| `objects`  | use_object                            | lo que dura vuelve solo      | —                                     | —                 |
-| `company`  | invite, accept/decline_invite, follow | seguir a quien acompaña      | INVITACIONES                          | —                 |
-| `notes`    | post_note, leave_note                 | caducar                      | (se leen como percepción)             | `notes`           |
-| `norms`    | —                                     | abrir y cerrar, intrusos     | —                                     | —                 |
-| `places`   | explore                               | —                            | (lugares descubiertos, en agent-core) | `known_places`    |
+| id           | Acciones                              | Revisión (5 min)             | Prompt                                | Tabla                      |
+| ------------ | ------------------------------------- | ---------------------------- | ------------------------------------- | -------------------------- |
+| `meetings`   | propose/accept/decline/cancel_meeting | salidas, llegadas, plantones | AGENDA; huecos del plan               | `commitments`              |
+| `items`      | give/lend/return/take/leave_item      | préstamos vencidos           | LLEVAS, HAS PRESTADO, AQUÍ HAY…       | `inventory_items`          |
+| `objects`    | use_object                            | lo que dura vuelve solo      | —                                     | —                          |
+| `company`    | invite, accept/decline_invite, follow | seguir a quien acompaña      | INVITACIONES                          | —                          |
+| `notes`      | post_note, leave_note                 | caducar                      | (se leen como percepción)             | `notes`                    |
+| `norms`      | —                                     | abrir y cerrar, intrusos     | —                                     | —                          |
+| `places`     | explore                               | —                            | (lugares descubiertos, en agent-core) | `known_places`             |
+| `agreements` | — (los tipos los aportan los demás)   | —                            | —                                     | `memory_audit` (descartes) |
 
 ## Cómo añadir un sistema
 
@@ -100,11 +103,13 @@ Checklist:
    algo del prompt, actualizar el respondedor del mock.
 7. **Acciones**: manejadores con `registerAction` en `sim/actions/<id>.ts`, listados en
    `actions`; `minorMeetingRule` si hay alguien o un lugar de por medio; `mayEnter` para ir.
-8. **Mock**: regla con `registerDecideRule` (en `mock()` o en `agent-core/src/agent/mock/`).
-9. **Métricas** (`metrics`) para la pestaña «Evolución» y, si hace falta, `admin` (datos de su
-   pestaña o endpoint).
-10. **UI**: iconos (`ACTION_ICONS`) y textos en `i18n/es.ts` y `en.ts`.
-11. **Retención**: política en `retention.ts` (y `config/retention.json`) o `keep` con el motivo.
-12. **Tests** junto al sistema; el dorado no cambia si el sistema no está en el mundo por
+8. **Acuerdos hablados**: si alguna acción se puede acordar hablando, su `AgreementKind` en
+   `agreements` (pasos con la acción formal, duplicados y qué intenciones cubre).
+9. **Mock**: regla con `registerDecideRule` (en `mock()` o en `agent-core/src/agent/mock/`).
+10. **Métricas** (`metrics`) para la pestaña «Evolución» y, si hace falta, `admin` (datos de su
+    pestaña o endpoint).
+11. **UI**: iconos (`ACTION_ICONS`) y textos en `i18n/es.ts` y `en.ts`.
+12. **Retención**: política en `retention.ts` (y `config/retention.json`) o `keep` con el motivo.
+13. **Tests** junto al sistema; el dorado no cambia si el sistema no está en el mundo por
     defecto o no altera nada; si lo altera, regenerarlo explicándolo en el commit; medir con
     `cost:report 48` si toca el prompt.

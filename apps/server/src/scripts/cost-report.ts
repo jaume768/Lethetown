@@ -23,6 +23,16 @@ w.sim.onEvent((e) => replies.add(e));
 w.start();
 await w.clock.runUntil(w.clock.now() + hours * 60);
 const { byTask, total } = w.costs.summary();
+const systems = w.sim.systemMetrics();
+// Acuerdos hablados descartados, por motivo (de la auditoría).
+const discarded = new Map<string, number>();
+for (const id of w.sim.agents.keys()) {
+  for (const e of await w.memory.store.audit(id, 10_000)) {
+    if (e.action !== "agreement_discarded") continue;
+    const reason = e.reason.replace(/\(cita c\d+\)|"[^"]*"/g, "…");
+    discarded.set(reason, (discarded.get(reason) ?? 0) + 1);
+  }
+}
 await app.close();
 
 const row = (name: string, b: typeof total) =>
@@ -38,3 +48,17 @@ const r = replies.summary();
 console.log(
   `\nRespuestas en conversación: ${r.replies}; espera media ${r.meanMinutes.toFixed(1)} min de juego (p90 ${r.p90Minutes.toFixed(1)}).`,
 );
+console.log("\nSistemas al final:");
+for (const [id, m] of Object.entries(systems)) {
+  console.log(
+    `- ${id}: ${Object.entries(m)
+      .map(([k, v]) => `${k} ${v}`)
+      .join(", ")}`,
+  );
+}
+if (discarded.size) {
+  console.log("\nAcuerdos descartados:");
+  for (const [reason, n] of [...discarded].sort((a, b) => b[1] - a[1])) {
+    console.log(`- ${n} × ${reason}`);
+  }
+}

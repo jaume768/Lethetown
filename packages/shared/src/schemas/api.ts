@@ -62,6 +62,8 @@ export const SimEvent = z.object({
       ok: z.boolean().optional(),
       /** Frase en un grupo: los demás del grupo (están en la conversación, no escuchan a escondidas). */
       group: z.array(z.string()).optional(),
+      /** Lo acordaron hablando (puente de la conversación a la acción), no con la acción formal. */
+      agreed: z.boolean().optional(),
     })
     .optional(),
 });

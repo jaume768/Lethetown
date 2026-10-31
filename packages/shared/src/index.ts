@@ -21,3 +21,4 @@ export * from "./assets/ambient";
 export * from "./assets/recolor";
 export * from "./social/network";
 export * from "./actions/catalog";
+export * from "./actions/agreements";

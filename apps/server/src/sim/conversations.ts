@@ -4,6 +4,9 @@ import { facingOf } from "@lethetown/shared";
 import { errorMessage, type Conversation, type SimContext } from "./context";
 import { setAction } from "./routines";
 import { learnFromSpeech } from "./places";
+import { applyAgreements, coveredBy, noteLinkedIntention } from "./agreements";
+import { itemsState } from "./items";
+import type { ResolvedAgreement } from "./systems/types";
 
 /**
  * Conversaciones de dos o más (grupos): turnos, unirse y marcharse, rumores oídos a escondidas
@@ -285,10 +288,35 @@ export async function endConversation(ctx: SimContext, id: string, reason: strin
   await updateSocial(ctx, conv, conv.members);
 }
 
+/**
+ * Contexto de los acuerdos para la tarea social: quién estaba (con su id) y los objetos que
+ * llevan, para que un préstamo o una devolución puedan nombrar el objeto por su id.
+ */
+function agreementContext(ctx: SimContext, people: string[]): string[] {
+  const lines = [
+    `PERSONAS EN LA CHARLA: ${people.map((id) => `${id}=${ctx.agents.get(id)?.seed.name ?? id}`).join(", ")}`,
+  ];
+  const items = [...itemsState(ctx).items.values()].filter(
+    (i) => i.holderId && people.includes(i.holderId),
+  );
+  if (items.length) {
+    lines.push("OBJETOS QUE LLEVÁIS:");
+    for (const i of items) {
+      const loan = i.loan ? ` (prestado por ${i.loan.from} a ${i.loan.to})` : "";
+      lines.push(`- ${i.id} ${i.name}: de ${i.ownerId ?? "nadie"}, lo lleva ${i.holderId}${loan}`);
+    }
+  }
+  return lines;
+}
+
 /** Cada uno revisa lo que piensa de con quienes más habló (como mucho `socialPartners`). */
 async function updateSocial(ctx: SimContext, conv: Conversation, owners: string[]): Promise<void> {
   const now = ctx.clock.now();
   const n = ctx.deps.memory.config.conversation.socialPartners;
+  // Quienes han estado en la charla (también quien ya se fue): con ellos valen los acuerdos.
+  const people = [
+    ...new Set([...conv.members, ...Object.keys(conv.pairs).flatMap((p) => p.split(">"))]),
+  ];
   for (const ownerId of owners) {
     const owner = ctx.agents.get(ownerId);
     if (!owner) continue;
@@ -300,6 +328,8 @@ async function updateSocial(ctx: SimContext, conv: Conversation, owners: string[
     for (const otherId of others) {
       const other = ctx.agents.get(otherId);
       if (!other) continue;
+      // Acuerdos en pie de esta respuesta (para no duplicar sus intenciones).
+      let standing: ResolvedAgreement[] = [];
       try {
         await updateSocialAfterConversation(ctx.deps.llm, ctx.deps.social, {
           owner: owner.owner,
@@ -309,8 +339,17 @@ async function updateSocial(ctx: SimContext, conv: Conversation, owners: string[
           guard: ctx.deps.memory.guard,
           eventId: conv.id,
           config: ctx.deps.memory.config.social,
+          context: agreementContext(ctx, people),
+          onAgreements: async (list) => {
+            standing = await applyAgreements(ctx, { id: conv.id, people }, owner.id, list);
+          },
           onIntentions: async (list) => {
             for (const i of list) {
+              // Lo que ya es un compromiso (la cita creada) no se apunta otra vez.
+              if (coveredBy(i, standing)) {
+                noteLinkedIntention(ctx);
+                continue;
+              }
               if (await owner.intend(now, i)) {
                 ctx.emit("memory", owner.id, `📝 ${owner.seed.name} se propone ${i.text}`, [
                   owner.id,

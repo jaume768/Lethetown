@@ -2,16 +2,48 @@
 import { Invitation } from "@lethetown/shared";
 import { z } from "zod";
 import { companySections, companyState, companyTick, stopFollowing } from "../company";
+import { formalAction } from "../agreements";
 import { registerSystem } from "./registry";
-import { REVIEW_MINUTES } from "./types";
+import { REVIEW_MINUTES, type AgreementKind } from "./types";
 
 /** Acciones con las que uno se va por su cuenta (y deja de acompañar a quien acompañaba). */
 const ON_ITS_OWN = new Set(["do_activity", "explore", "invite"]);
+
+/**
+ * «¿Te vienes a casa?» «Vale»: invitar y aceptar ahora. Aquí no vale quien ya se fue de la
+ * charla (es para ir juntos ahora): el manejador pide que estén presentes.
+ */
+const inviteAgreement: AgreementKind = {
+  type: "invite",
+  steps: (ctx, a) => [
+    {
+      actorId: a.from,
+      action: () =>
+        formalAction({
+          type: "invite",
+          with: a.to,
+          placeId: a.placeId,
+          activity: a.what || "pasar un rato",
+        }),
+    },
+    ...a.to.map((id) => ({
+      actorId: id,
+      action: () => {
+        const v = [...companyState(ctx).invitations.values()]
+          .filter((x) => x.fromId === a.from && x.placeId === a.placeId)
+          .at(-1);
+        return v ? formalAction({ type: "accept_invite", inviteId: v.id }) : "no hubo invitación";
+      },
+    })),
+  ],
+  covers: (i) => /ir |veni|acompa|invit|casa/i.test(i.text),
+};
 
 registerSystem({
   id: "company",
   description: "Invitaciones a ir juntos ahora y acompañar a alguien un rato.",
   actions: ["invite", "accept_invite", "decline_invite", "follow"],
+  agreements: [inviteAgreement],
   snapshot: {
     version: 1,
     schema: z.object({ invitations: z.array(Invitation), seq: z.number().int().nonnegative() }),

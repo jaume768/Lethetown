@@ -95,6 +95,8 @@ export const MemoryVersion = z.object({
 export type MemoryVersion = z.infer<typeof MemoryVersion>;
 
 export const MemoryAuditAction = z.enum([
+  /** Un acuerdo de una conversación que el motor no pudo llevar a cabo (con el motivo). */
+  "agreement_discarded",
   "forgotten",
   "deleted",
   "archived",

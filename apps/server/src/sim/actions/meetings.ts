@@ -24,7 +24,7 @@ import {
 } from "../meetings";
 import { learn } from "../places";
 import { grantGuest } from "../norms";
-import { registerAction, type ActionContext } from "./registry";
+import { isHere, registerAction, type ActionContext } from "./registry";
 
 /** Citas abiertas que puede tener alguien a la vez (para que no llene la agenda). */
 const MAX_OPEN = 3;
@@ -38,20 +38,11 @@ const nameOf = (ctx: SimContext, id: string) => ctx.agents.get(id)?.seed.name ??
 const firstOf = (ctx: SimContext, id: string) => nameOf(ctx, id).split(" ")[0]!;
 const placeOf = (ctx: SimContext, id: string) => ctx.world.places.find((p) => p.id === id);
 
-/** ¿Está aquí, despierto y quieto? */
-function here(c: ActionContext, id: string): boolean {
-  const other = c.ctx.agents.get(id);
-  return Boolean(
-    other &&
-    id !== c.agent.id &&
-    other.state.locationId === c.agent.state.locationId &&
-    other.state.activityKind !== "sleep" &&
-    !c.ctx.rt(id).travelling,
-  );
-}
+/** Aquí (o en la charla del acuerdo): ver `isHere`. */
+const here = isHere;
 
 /** Minuto absoluto de "HH:MM" hoy o mañana. */
-function absoluteTime(now: number, at: string, day: "hoy" | "mañana"): number | null {
+export function absoluteTime(now: number, at: string, day: "hoy" | "mañana"): number | null {
   const minute = parseClock(at);
   if (minute === null) return null;
   return (Math.floor(now / 1440) + (day === "mañana" ? 1 : 0)) * 1440 + minute;

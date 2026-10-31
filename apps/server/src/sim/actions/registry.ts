@@ -12,6 +12,24 @@ export interface ActionContext {
   ctx: SimContext;
   agent: Agent;
   now: number;
+  /**
+   * Acordado hablando (sim/agreements.ts): quienes estaban en la conversación cuentan como
+   * presentes aunque acaben de irse (se despidieron con el acuerdo cerrado).
+   */
+  agreedWith?: readonly string[];
+}
+
+/** ¿Está aquí, despierto y quieto? (o, si es un acuerdo, estaba en la charla). */
+export function isHere(c: ActionContext, id: string): boolean {
+  if (id === c.agent.id) return false;
+  if (c.agreedWith?.includes(id)) return c.ctx.agents.has(id);
+  const other = c.ctx.agents.get(id);
+  return Boolean(
+    other &&
+    other.state.locationId === c.agent.state.locationId &&
+    other.state.activityKind !== "sleep" &&
+    !c.ctx.rt(id).travelling,
+  );
 }
 
 export interface ActionHandler<T extends AgentAction = AgentAction> {

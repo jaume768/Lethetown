@@ -40,6 +40,7 @@ describe("registro de sistemas", () => {
       "notes",
       "norms",
       "places",
+      "agreements",
     ]);
   });
 
