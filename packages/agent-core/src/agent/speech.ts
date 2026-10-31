@@ -26,8 +26,17 @@ const fold = (s: string) =>
     .replace(/\p{Diacritic}/gu, "")
     .toLowerCase();
 
-/** La muletilla sin signos de los extremos («¡claro que sí!» → «claro que sí»). */
-const core = (phrase: string) => phrase.replace(/^[\s¡¿"«]+|[\s.!?…,"»]+$/gu, "");
+/**
+ * La muletilla sin signos de los extremos («¡claro que sí!» → «claro que sí»). Con bucles y no
+ * con `[…]+$`: esa expresión es cuadrática con muchos espacios seguidos (CodeQL, ReDoS).
+ */
+function core(phrase: string): string {
+  let start = 0;
+  let end = phrase.length;
+  while (start < end && /[\s¡¿"«]/u.test(phrase[start]!)) start++;
+  while (end > start && /[\s.!?…,"»]/u.test(phrase[end - 1]!)) end--;
+  return phrase.slice(start, end);
+}
 
 /** Muletillas de la semilla que aparecen en algo de lo que ha dicho (en esta charla). */
 export function usedCatchphrases(said: string[], catchphrases: string[]): string[] {
@@ -55,10 +64,12 @@ export function stripCatchphrases(text: string, used: string[]): string {
       out = `${out.slice(0, start)} ${out.slice(end)}`;
     }
   }
+  // Primero un solo espacio entre palabras; luego, sin espacio antes de la puntuación (con `\s+`
+  // delante de un signo la expresión sería cuadrática).
   const tidy = out
-    .replace(/\s+([,.!?…])/gu, "$1")
-    .replace(/^[\s,.;:…]+/u, "")
     .replace(/\s{2,}/g, " ")
+    .replace(/ ([,.!?…])/gu, "$1")
+    .replace(/^[\s,.;:…]+/u, "")
     .trim()
     .replace(/[,;:]$/u, ".");
   if (tidy.replace(/[\p{P}\s]/gu, "").length < 2) return text;
