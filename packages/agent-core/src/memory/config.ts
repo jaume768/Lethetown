@@ -4,6 +4,7 @@ import { EncodingConfig, SleepConfig } from "./encoding";
 import { ProspectiveConfig } from "./prospective";
 import { SocialConfig } from "./social";
 import { ProfileConfig } from "./psychology";
+import { GoalsConfig } from "../goals/psychology";
 
 /**
  * Parámetros de la memoria humana. Todos tienen valor por defecto; el servidor puede
@@ -296,6 +297,8 @@ export const MemoryConfig = z.object({
     .prefault({}),
   /** Edad y personalidad → perfil de memoria de cada agente (ver psychology.ts). */
   profile: ProfileConfig.prefault({}),
+  /** Metas: motivación, frustración, abandono y cambio de rumbo (ver goals/psychology.ts). */
+  goals: GoalsConfig.prefault({}),
   /** Rutinas repetidas → recuerdos semánticos de hábito ("suelo desayunar en el café…"). */
   habits: z
     .object({

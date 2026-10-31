@@ -31,9 +31,18 @@ TypeScript estricto. El porqué de cada decisión está en [docs/decisiones/](do
 - **Psicología y memoria**: lógica pura en agent-core; todo parámetro en `MemoryConfig` con valor
   por defecto y unidades; nada de lógica psicológica en prompts si se puede calcular. Cada olvido o
   transformación, con `memory.audit(...)` y motivo legible. Fichas sociales con `applySocialUpdate`.
-- **Sistemas** (`SimSystem`, `sim/systems/`): todo lo nuevo del mundo (economía, metas, oficios…)
+- **Mundo de 1996** (`config/world.json`, `WorldBible`): Mallorca, pesetas, tecnología de la época;
+  nada posterior en semillas, mock ni prompts. Lo fijo del mundo va al prompt de identidad
+  (`identityLines`); la fecha, al plan. Cada semilla tiene `knowledge` (lo que sabe). Todo texto
+  del LLM pasa también por el `ExternalKnowledgeGuard` (inspector de `MinorGuard`, solo registra);
+  amplía la lista de anacronismos en la biblia. Ver [mundo](docs/decisiones/mundo.md).
+- **Metas** (sistema `goals`): el LLM propone y redacta, el motor mide con el catálogo de
+  criterios (`GoalCriterion`); nunca progreso puesto por el modelo. Una meta que no se puede medir
+  no se crea. Psicología en agent-core (`GoalsConfig`), auditada. Ver [metas](docs/decisiones/metas.md).
+- **Sistemas** (`SimSystem`, `sim/systems/`): todo lo nuevo del mundo (economía, oficios…)
   es un sistema registrado, con su estado (`ctx.state`), su parte de la instantánea con su
-  versión, su revisión, sus secciones del prompt, sus métricas y su retención; nada nuevo en
+  versión, su revisión, sus secciones del prompt (decidir y plan), su parte de la consolidación
+  nocturna (misma llamada), sus métricas y su retención; nada nuevo en
   `simulation.ts` ni en `SimContext`. Plantilla en [sistemas](docs/decisiones/sistemas.md).
 - **Acciones**: el LLM elige del catálogo (`ACTION_SPECS`, en el prompt fijo); el motor valida y
   ejecuta (`sim/actions/`, `registerAction`) y, si no puede, el agente lo percibe con el motivo.
@@ -67,12 +76,14 @@ TypeScript estricto. El porqué de cada decisión está en [docs/decisiones/](do
 ## Comandos
 
 - `pnpm dev` (funciona sin Postgres ni API keys) · `pnpm test:e2e` · `TEST_DATABASE_URL=… pnpm test`.
+  Si `.env` apunta a Anthropic o a Postgres, para probar en mock: `LLM_PROVIDER=mock DATABASE_URL=`.
 - Antes de cada commit: `pnpm typecheck && pnpm lint && pnpm format:check && pnpm test` (lo que
   ejecuta la CI). `pnpm -s typecheck` puede esconder errores de tsc: mira el código de salida.
 - `pnpm --filter @lethetown/server cost:report 48` (coste reproducible y espera de respuesta) ·
   `latency:probe [min] [x]` (prueba real corta) · `record <dir>` / `world:export <dir>` (grabar
   una partida) · `pnpm study:analyze <dir> [<otro>]` (analizarla) · `sim:text <horas>` ·
-  `pnpm interview [--advance h]` · `pnpm personality:derive` · `pnpm map:generate` ·
+  `pnpm interview [--advance h]` · `pnpm personality:derive` · `pnpm knowledge:derive` ·
+  `pnpm goals:derive` · `pnpm map:generate` ·
   `pnpm assets:check` · `pnpm portraits:compose` · `pnpm user:create <usuario> [rol]`.
 - Postgres de docker-compose en el puerto **5433**. Retención de datos: `config/retention.json`.
 

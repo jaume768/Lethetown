@@ -4,7 +4,7 @@
     "name": "Lucía Ferrer",
     "age": 28,
     "traits": ["creativa", "despistada", "cálida", "insegura con su trabajo"],
-    "description": "Lucía es ilustradora freelance. Se mudó al pueblo hace un año buscando calma. Trabaja desde casa pero le gusta dibujar en el café o en el parque.",
+    "description": "Lucía es ilustradora y trabaja por encargo para una editorial de Barcelona, a la que manda los dibujos por correo. Se mudó al pueblo hace un año buscando calma. Trabaja desde casa pero le gusta dibujar en el café o en el parque.",
     "homeId": "casa_azul",
     "appearance": {
       "sheet": "default",
@@ -26,7 +26,7 @@
       "Soy ilustradora y estoy terminando los dibujos de un cuento infantil.",
       "Mateo prepara el mejor café con leche del pueblo y siempre me pregunta por mis dibujos.",
       "Carmen me prestó un libro de poemas hace dos semanas y todavía no se lo he devuelto.",
-      "Me agobia que se acerque la fecha de entrega del cuento.",
+      "Me agobia que se acerque la fecha de entrega del cuento: tengo que mandar los originales por correo certificado a Barcelona.",
       "Hugo, el músico de la plaza, me dedicó una canción y no supe qué decirle."
     ],
     "personality": {
@@ -50,6 +50,35 @@
       "sentenceLength": "media",
       "catchphrases": ["no sé, igual…", "¿tú crees?"],
       "topics": ["los dibujos del cuento", "los colores y la luz", "la fecha de entrega"]
+    },
+    "knowledge": {
+      "studies": "Bellas Artes en Barcelona",
+      "occupation": "ilustradora de cuentos por encargo desde hace seis años",
+      "languages": ["castellano", "catalán", "algo de inglés"],
+      "places": ["Barcelona, donde vivía", "Palma"],
+      "interests": ["ilustración y acuarela", "cuentos infantiles", "pintores (Miró, Sorolla)"],
+      "culture": "alto"
+    },
+    "goals": {
+      "text": "Terminar el cuento y vivir de la ilustración",
+      "projects": [
+        {
+          "text": "Acabar los dibujos del cuento antes de la entrega",
+          "criterion": {
+            "type": "activity_hours",
+            "keywords": ["dibuj", "ilustr", "pint", "boceto"],
+            "hours": 12
+          }
+        },
+        {
+          "text": "Devolverle a Carmen su libro de poemas",
+          "criterion": {
+            "type": "items",
+            "action": "return_item",
+            "count": 1
+          }
+        }
+      ]
     },
     "relationships": [
       {
@@ -118,6 +147,41 @@
       "sentenceLength": "corta",
       "catchphrases": ["¡hombre!", "ya verás", "eso lo arreglamos con un café"],
       "topics": ["el café", "el negocio", "el fútbol del domingo"]
+    },
+    "knowledge": {
+      "studies": "EGB y FP de hostelería en Palma",
+      "occupation": "lleva el Café La Ola desde que murió su padre; antes, temporadas de camarero en hoteles de Alcúdia",
+      "languages": ["castellano", "mallorquín", "algo de inglés y alemán de la temporada"],
+      "places": ["Palma", "Inca", "Alcúdia"],
+      "interests": [
+        "el café y el negocio",
+        "el fútbol (el Mallorca, el Barça)",
+        "la gente del pueblo"
+      ],
+      "culture": "medio"
+    },
+    "goals": {
+      "text": "Sacar adelante el Café La Ola",
+      "projects": [
+        {
+          "text": "Que el café se llene por las tardes de vecinos distintos",
+          "criterion": {
+            "type": "conversations",
+            "people": 10,
+            "placeId": "cafe_ola",
+            "count": 10
+          },
+          "resource": "clientes_tarde"
+        },
+        {
+          "text": "Acercarme a Lucía",
+          "criterion": {
+            "type": "relationship",
+            "personId": "lucia",
+            "affinity": 0.8
+          }
+        }
+      ]
     },
     "relationships": [
       {
@@ -202,6 +266,35 @@
       "catchphrases": ["hija mía", "ya te digo yo", "en mis tiempos"],
       "topics": ["la vida de los vecinos", "el huerto", "sus antiguos alumnos"]
     },
+    "knowledge": {
+      "studies": "Magisterio en la Escuela Normal de Palma",
+      "occupation": "maestra de la escuela del pueblo durante treinta años, jubilada",
+      "languages": ["castellano", "mallorquín", "algo de francés"],
+      "places": ["Palma", "Lluc", "Barcelona (un viaje)"],
+      "interests": ["poesía", "el huerto", "la vida de sus antiguos alumnos"],
+      "culture": "alto"
+    },
+    "goals": {
+      "text": "Seguir siendo útil al pueblo",
+      "projects": [
+        {
+          "text": "Cuidar mi rincón del huerto",
+          "criterion": {
+            "type": "place_time",
+            "placeId": "huerto",
+            "hours": 12
+          }
+        },
+        {
+          "text": "Ver más a Sofía, mi antigua alumna",
+          "criterion": {
+            "type": "conversations",
+            "personId": "sofia",
+            "count": 5
+          }
+        }
+      ]
+    },
     "relationships": [
       {
         "with": "mateo",
@@ -253,7 +346,7 @@
     },
     "initialMemories": [
       "Me levanto a las cinco para hornear el pan de todo el pueblo.",
-      "Inés quiere irse a estudiar a la ciudad y no sé cómo decirle que me da miedo quedarme solo.",
+      "Inés quiere irse a estudiar a Palma y no sé cómo decirle que me da miedo quedarme solo.",
       "Aurora siempre me pide una barra y luego olvida pagarla; no me importa.",
       "La receta de las magdalenas era de mi mujer."
     ],
@@ -272,6 +365,35 @@
       "sentenceLength": "corta",
       "catchphrases": ["bueno…", "si no es molestia"],
       "topics": ["el pan y el horno", "su difunta mujer", "Inés"]
+    },
+    "knowledge": {
+      "studies": "EGB",
+      "occupation": "panadero desde los catorce años, en el horno que era de su padre",
+      "languages": ["castellano", "mallorquín"],
+      "places": ["Palma", "Inca"],
+      "interests": ["el pan, las ensaimadas y la repostería", "la radio por las mañanas"],
+      "culture": "medio"
+    },
+    "goals": {
+      "text": "Que Inés y yo volvamos a entendernos",
+      "projects": [
+        {
+          "text": "Hablar de verdad con Inés",
+          "criterion": {
+            "type": "conversations",
+            "personId": "ines",
+            "count": 8
+          }
+        },
+        {
+          "text": "Volver a hacer las magdalenas de mi mujer",
+          "criterion": {
+            "type": "activity_hours",
+            "keywords": ["magdalen", "horne", "masa"],
+            "hours": 30
+          }
+        }
+      ]
     },
     "relationships": [
       {
@@ -296,7 +418,7 @@
     "name": "Inés Ortega",
     "age": 16,
     "traits": ["rebelde", "curiosa", "sarcástica", "soñadora"],
-    "description": "Inés estudia en la escuela del pueblo y sueña con marcharse a la ciudad. Vive con su padre, Julián, en la casa amarilla.",
+    "description": "Inés estudia en la escuela del pueblo y sueña con marcharse a estudiar a Palma. Vive con su padre, Julián, en la casa amarilla.",
     "homeId": "casa_amarilla",
     "workId": "escuela",
     "appearance": {
@@ -316,10 +438,11 @@
       "accessories": []
     },
     "initialMemories": [
-      "Este pueblo es demasiado pequeño para mí; quiero estudiar fotografía en la ciudad.",
+      "Este pueblo es demasiado pequeño para mí; quiero estudiar fotografía en Palma.",
       "Mi padre no entiende nada de lo que me importa.",
       "Valentina, la fotógrafa que acaba de llegar, me parece la persona más interesante del pueblo.",
-      "Leo me sigue a todas partes como si fuera su hermana mayor."
+      "Leo me sigue a todas partes como si fuera su hermana mayor.",
+      "Valentina me está enseñando a hacer fotos con carrete en blanco y negro; los carretes hay que llevarlos a revelar."
     ],
     "personality": {
       "openness": 0.85,
@@ -331,8 +454,44 @@
     "speechStyle": {
       "register": "sarcástico y adolescente",
       "sentenceLength": "corta",
-      "catchphrases": ["en plan…", "qué pereza", "literal"],
-      "topics": ["la fotografía", "irse a la ciudad", "la música"]
+      "catchphrases": ["en plan…", "qué pereza", "me flipa"],
+      "topics": ["la fotografía", "irse a Palma", "la música"]
+    },
+    "knowledge": {
+      "studies": "tercero de BUP en la escuela del pueblo",
+      "occupation": "estudiante; a veces ayuda en la panadería",
+      "languages": ["castellano", "mallorquín", "inglés del instituto"],
+      "places": ["Palma (pocas veces)"],
+      "interests": [
+        "fotografía de carrete",
+        "música (Héroes del Silencio, Nirvana, Oasis)",
+        "revistas de música"
+      ],
+      "culture": "medio"
+    },
+    "goals": {
+      "text": "Prepararme para estudiar fotografía en Palma cuando sea mayor de edad",
+      "departure": {
+        "to": "Palma"
+      },
+      "projects": [
+        {
+          "text": "Aprender a fotografiar con Valentina",
+          "criterion": {
+            "type": "conversations",
+            "personId": "valentina",
+            "count": 5
+          }
+        },
+        {
+          "text": "Hacer fotos del pueblo con carrete",
+          "criterion": {
+            "type": "activity_hours",
+            "keywords": ["foto", "carrete", "revel"],
+            "hours": 8
+          }
+        }
+      ]
     },
     "relationships": [
       {
@@ -392,9 +551,9 @@
       "accessories": ["Accessory 15 Glasses 3"]
     },
     "initialMemories": [
-      "Soy la alcaldesa y quiero vender la casa vacía del pueblo a una empresa de apartamentos.",
+      "Soy la alcaldesa y quiero vender la casa vacía del pueblo a Promociones Llevant, una empresa de apartamentos de Palma.",
       "Nuria se opone a mis planes y quiere convertir la casa vacía en un huerto comunitario.",
-      "Las elecciones son dentro de un año y necesito que el pueblo me apoye.",
+      "Las municipales aún quedan lejos, pero el pueblo tiene buena memoria y necesito que me apoye.",
       "Rafael sabe todos los rumores del pueblo; conviene llevarse bien con él."
     ],
     "personality": {
@@ -418,6 +577,36 @@
       "sentenceLength": "media",
       "catchphrases": ["por el bien del pueblo", "lo estudiaremos"],
       "topics": ["el futuro del pueblo", "las elecciones", "la casa vacía"]
+    },
+    "knowledge": {
+      "studies": "Derecho en Barcelona",
+      "occupation": "alcaldesa; antes, abogada en un despacho de Palma",
+      "languages": ["castellano", "catalán", "inglés"],
+      "places": ["Palma", "Barcelona", "Madrid"],
+      "interests": ["política municipal", "urbanismo y turismo", "las noticias"],
+      "culture": "alto"
+    },
+    "goals": {
+      "text": "Ganar las próximas municipales",
+      "projects": [
+        {
+          "text": "Convencer a los vecinos de vender la casa en venta a Promociones Llevant",
+          "criterion": {
+            "type": "conversations",
+            "people": 8,
+            "count": 8
+          },
+          "resource": "casa_en_venta"
+        },
+        {
+          "text": "Tener a Rafael de mi parte",
+          "criterion": {
+            "type": "relationship",
+            "personId": "rafael",
+            "trust": 0.6
+          }
+        }
+      ]
     },
     "relationships": [
       {
@@ -489,6 +678,35 @@
       "catchphrases": ["cuando yo era joven…", "¡bah!", "eso no es nada"],
       "topics": ["la pesca", "el lago Leteo", "el pez gigante"]
     },
+    "knowledge": {
+      "studies": "escuela hasta los doce",
+      "occupation": "pescador toda la vida, jubilado; hizo la mili en Cartagena",
+      "languages": ["mallorquín", "castellano"],
+      "places": ["Palma", "el puerto de Sóller", "Cartagena (la mili)"],
+      "interests": ["la pesca", "el lago Leteo", "las historias del pueblo"],
+      "culture": "básico"
+    },
+    "goals": {
+      "text": "Que no se pierdan las historias del lago",
+      "projects": [
+        {
+          "text": "Pescar en el lago, como siempre",
+          "criterion": {
+            "type": "place_time",
+            "placeId": "lago",
+            "hours": 30
+          }
+        },
+        {
+          "text": "Contarle a Leo todo lo del pez gigante",
+          "criterion": {
+            "type": "conversations",
+            "personId": "leo",
+            "count": 5
+          }
+        }
+      ]
+    },
     "relationships": [
       {
         "with": "pilar",
@@ -552,6 +770,39 @@
       "sentenceLength": "media",
       "catchphrases": ["ya te lo dije", "toca madera", "a lo que hay que estar"],
       "topics": ["el huerto", "las supersticiones", "lo despistado que es Tomás"]
+    },
+    "knowledge": {
+      "studies": "escuela hasta los doce",
+      "occupation": "ha trabajado el campo y la casa; ahora el huerto comunitario",
+      "languages": ["mallorquín", "castellano"],
+      "places": ["Palma", "Lluc (en peregrinación)", "Inca"],
+      "interests": [
+        "el huerto y la luna",
+        "remedios y supersticiones de su abuela",
+        "la cocina mallorquina"
+      ],
+      "culture": "básico"
+    },
+    "goals": {
+      "text": "Que el huerto dé para todo el pueblo",
+      "projects": [
+        {
+          "text": "Cuidar los bancales del huerto",
+          "criterion": {
+            "type": "place_time",
+            "placeId": "huerto",
+            "hours": 30
+          }
+        },
+        {
+          "text": "Repartir verduras entre los vecinos",
+          "criterion": {
+            "type": "conversations",
+            "people": 8,
+            "count": 8
+          }
+        }
+      ]
     },
     "relationships": [
       {
@@ -624,6 +875,35 @@
       "catchphrases": ["en rigor…", "según consta en los archivos"],
       "topics": ["los libros", "la historia del pueblo", "la página arrancada"]
     },
+    "knowledge": {
+      "studies": "Filosofía y Letras en Barcelona; diplomado en Biblioteconomía",
+      "occupation": "bibliotecario de la Biblioteca Mnemósine desde hace doce años",
+      "languages": ["castellano", "catalán", "francés", "latín leído"],
+      "places": ["Barcelona", "Palma", "París (un viaje de estudios)"],
+      "interests": ["libros y poesía", "la historia del pueblo", "archivos y documentos antiguos"],
+      "culture": "alto"
+    },
+    "goals": {
+      "text": "Atreverme a vivir y no solo a leer",
+      "projects": [
+        {
+          "text": "Acercarme a Sofía",
+          "criterion": {
+            "type": "relationship",
+            "personId": "sofia",
+            "affinity": 0.8
+          }
+        },
+        {
+          "text": "Averiguar quién arrancó la página del libro de historia",
+          "criterion": {
+            "type": "conversations",
+            "people": 6,
+            "count": 6
+          }
+        }
+      ]
+    },
     "relationships": [
       {
         "with": "sofia",
@@ -683,6 +963,39 @@
       "sentenceLength": "media",
       "catchphrases": ["¡qué buena idea!", "a ver, pensemos"],
       "topics": ["sus alumnos", "aprender fuera del aula", "la naturaleza"]
+    },
+    "knowledge": {
+      "studies": "Magisterio en la UIB, en Palma",
+      "occupation": "maestra de la escuela del pueblo desde hace tres años",
+      "languages": ["castellano", "catalán", "inglés"],
+      "places": ["Palma", "Barcelona", "Londres (un verano de au pair)"],
+      "interests": [
+        "pedagogía y aprender fuera del aula",
+        "la naturaleza",
+        "cuentos y libros infantiles"
+      ],
+      "culture": "alto"
+    },
+    "goals": {
+      "text": "Que los niños aprendan fuera del aula",
+      "projects": [
+        {
+          "text": "Llevar la clase al huerto",
+          "criterion": {
+            "type": "visits",
+            "placeId": "huerto",
+            "count": 3
+          }
+        },
+        {
+          "text": "Que Inés vuelva a clase con ganas",
+          "criterion": {
+            "type": "conversations",
+            "personId": "ines",
+            "count": 5
+          }
+        }
+      ]
     },
     "relationships": [
       {
@@ -769,6 +1082,37 @@
       "catchphrases": ["entre tú y yo…", "¿a que no sabes qué?", "invita la casa"],
       "topics": ["los rumores del pueblo", "la taberna", "la noche"]
     },
+    "knowledge": {
+      "studies": "EGB",
+      "occupation": "lleva la Taberna El Faro; antes, temporadas de camarero en la costa",
+      "languages": ["castellano", "mallorquín", "algo de alemán y de inglés"],
+      "places": ["Palma", "Cala Millor", "Ibiza"],
+      "interests": ["los rumores del pueblo", "el fútbol", "la noche y la música de los ochenta"],
+      "culture": "medio"
+    },
+    "goals": {
+      "text": "Que la taberna sea el corazón del pueblo",
+      "projects": [
+        {
+          "text": "Que la gente venga a la taberna por las tardes",
+          "criterion": {
+            "type": "conversations",
+            "people": 10,
+            "placeId": "taberna",
+            "count": 10
+          },
+          "resource": "clientes_tarde"
+        },
+        {
+          "text": "Aclarar con Hugo lo que me debe",
+          "criterion": {
+            "type": "conversations",
+            "personId": "hugo",
+            "count": 4
+          }
+        }
+      ]
+    },
     "relationships": [
       {
         "with": "marta",
@@ -849,7 +1193,7 @@
     },
     "initialIntentions": [
       {
-        "text": "hacer el pedido de la tienda antes de las doce",
+        "text": "llamar al almacén para hacer el pedido de la tienda antes de las doce",
         "placeId": "tienda",
         "at": "11:00"
       }
@@ -859,6 +1203,35 @@
       "sentenceLength": "corta",
       "catchphrases": ["a ver", "no tengo todo el día", "qué remedio"],
       "topics": ["la tienda", "Leo", "el cansancio"]
+    },
+    "knowledge": {
+      "studies": "BUP",
+      "occupation": "lleva el Ultramarinos Lete desde hace diez años",
+      "languages": ["castellano", "mallorquín"],
+      "places": ["Palma", "Inca"],
+      "interests": ["la tienda y las cuentas", "Leo", "las telenovelas de la tarde"],
+      "culture": "medio"
+    },
+    "goals": {
+      "text": "Sacar adelante a Leo y la tienda",
+      "projects": [
+        {
+          "text": "Tener la tienda bien atendida",
+          "criterion": {
+            "type": "place_time",
+            "placeId": "tienda",
+            "hours": 50
+          }
+        },
+        {
+          "text": "Pasar más rato con Leo",
+          "criterion": {
+            "type": "conversations",
+            "personId": "leo",
+            "count": 10
+          }
+        }
+      ]
     },
     "relationships": [
       {
@@ -937,6 +1310,40 @@
       "catchphrases": ["¡jo!", "¿y por qué?", "¡es verdad, te lo juro!"],
       "topics": ["el pez gigante", "los perros", "el tobogán del parque"]
     },
+    "knowledge": {
+      "studies": "cuarto de EGB en la escuela del pueblo",
+      "occupation": "estudiante",
+      "languages": ["castellano", "mallorquín"],
+      "places": ["Palma (en la cabalgata de Reyes)"],
+      "interests": [
+        "el pez gigante del lago",
+        "los perros",
+        "los dibujos animados (Los Simpson, Dragon Ball)",
+        "los cromos de fútbol"
+      ],
+      "culture": "básico"
+    },
+    "goals": {
+      "text": "Encontrar el pez gigante del lago",
+      "projects": [
+        {
+          "text": "Ir mucho al lago a buscarlo",
+          "criterion": {
+            "type": "visits",
+            "placeId": "lago",
+            "count": 4
+          }
+        },
+        {
+          "text": "Que Tomás me cuente todo del pez",
+          "criterion": {
+            "type": "conversations",
+            "personId": "tomas",
+            "count": 5
+          }
+        }
+      ]
+    },
     "relationships": [
       {
         "with": "marta",
@@ -975,7 +1382,7 @@
     "name": "Nuria Campos",
     "age": 27,
     "traits": ["tranquila", "ecologista", "terca", "observadora"],
-    "description": "Nuria es la jardinera del huerto comunitario. Quiere convertir la casa vacía del pueblo en un jardín para todos y se enfrenta a la alcaldesa por ello.",
+    "description": "Nuria es la jardinera del huerto comunitario y socia del GOB, el grupo ecologista de Mallorca. Quiere convertir la casa vacía del pueblo en un jardín para todos y se enfrenta a la alcaldesa por ello.",
     "homeId": "casa_pino",
     "workId": "huerto",
     "appearance": {
@@ -1013,6 +1420,35 @@
       "catchphrases": ["mira", "la tierra no miente"],
       "topics": ["las plantas", "la casa vacía", "la ecología"]
     },
+    "knowledge": {
+      "studies": "FP de jardinería en Palma",
+      "occupation": "jardinera del huerto comunitario",
+      "languages": ["castellano", "mallorquín", "algo de inglés"],
+      "places": ["Palma", "la Serra de Tramuntana", "Cabrera (una salida del GOB)"],
+      "interests": ["plantas y huertos", "ecología y el GOB", "los pájaros"],
+      "culture": "medio"
+    },
+    "goals": {
+      "text": "Convertir la casa en venta en un jardín para todos",
+      "projects": [
+        {
+          "text": "Juntar vecinos para el jardín de la casa en venta",
+          "criterion": {
+            "type": "conversations",
+            "people": 8,
+            "count": 8
+          },
+          "resource": "casa_en_venta"
+        },
+        {
+          "text": "Dejar avisos en el tablón de la plaza",
+          "criterion": {
+            "type": "notes",
+            "count": 2
+          }
+        }
+      ]
+    },
     "relationships": [
       {
         "with": "elena",
@@ -1048,7 +1484,7 @@
       {
         "kind": "guitarra",
         "name": "la guitarra",
-        "description": "Una guitarra gastada con una pegatina de un festival."
+        "description": "Una guitarra gastada con una pegatina del festival de Benicàssim."
       }
     ],
     "workId": "plaza",
@@ -1072,7 +1508,8 @@
       "Toco la guitarra en la plaza y la gente me deja monedas en la funda.",
       "Le dediqué una canción a Lucía; creo que se sonrojó.",
       "Le debo dinero a Rafael desde el verano.",
-      "Estoy componiendo una canción sobre el lago que hace olvidar."
+      "Estoy componiendo una canción sobre el lago que hace olvidar.",
+      "Grabé una maqueta de mi canción del lago en una cinta de casete."
     ],
     "personality": {
       "openness": 0.85,
@@ -1096,6 +1533,39 @@
       "sentenceLength": "media",
       "catchphrases": ["¡qué arte!", "ya te lo pago, de verdad"],
       "topics": ["la música", "su canción del lago", "las deudas pendientes"]
+    },
+    "knowledge": {
+      "studies": "dejó el bachillerato a medias",
+      "occupation": "músico callejero; ha tocado en bares de Palma",
+      "languages": ["castellano", "mallorquín", "inglés de las canciones"],
+      "places": ["Palma", "Barcelona", "Benicàssim", "Ibiza"],
+      "interests": [
+        "la guitarra",
+        "rock y cantautores (Serrat, Dylan, los Beatles)",
+        "componer canciones"
+      ],
+      "culture": "medio"
+    },
+    "goals": {
+      "text": "Vivir de la música",
+      "projects": [
+        {
+          "text": "Tocar en la plaza cada día",
+          "criterion": {
+            "type": "place_time",
+            "placeId": "plaza",
+            "hours": 30
+          }
+        },
+        {
+          "text": "Terminar la canción del lago",
+          "criterion": {
+            "type": "activity_hours",
+            "keywords": ["guitarr", "cancion", "compon", "toca"],
+            "hours": 15
+          }
+        }
+      ]
     },
     "relationships": [
       {
@@ -1132,7 +1602,7 @@
       {
         "kind": "camara",
         "name": "la cámara de fotos",
-        "description": "Una cámara analógica vieja que no suelta nunca."
+        "description": "Una réflex vieja de carrete que no suelta nunca."
       }
     ],
     "knownPlaces": ["casa_colina", "plaza", "cafe_ola", "tienda"],
@@ -1156,7 +1626,8 @@
       "Llegué a Lethetown hace una semana buscando algo que perdí hace años.",
       "Mi abuela vivió en este pueblo, pero nadie parece recordarla.",
       "Inés tiene talento con la cámara; le estoy enseñando.",
-      "Aurora me miró como si me conociera."
+      "Aurora me miró como si me conociera.",
+      "Aquí no hay dónde revelar: llevo los carretes a Palma cuando bajo en el autobús."
     ],
     "personality": {
       "openness": 0.85,
@@ -1170,6 +1641,35 @@
       "sentenceLength": "media",
       "catchphrases": ["¿y eso desde cuándo?", "es una larga historia"],
       "topics": ["la fotografía", "la historia de Lethetown", "su abuela"]
+    },
+    "knowledge": {
+      "studies": "fotografía en una escuela de Madrid",
+      "occupation": "fotógrafa; bodas y algún reportaje para revistas",
+      "languages": ["castellano", "inglés", "algo de francés"],
+      "places": ["Madrid", "Barcelona", "Lisboa", "Palma"],
+      "interests": ["fotografía y revelado", "la historia de su abuela", "el pasado del pueblo"],
+      "culture": "alto"
+    },
+    "goals": {
+      "text": "Descubrir qué pasó con mi abuela",
+      "projects": [
+        {
+          "text": "Preguntar a los mayores del pueblo",
+          "criterion": {
+            "type": "conversations",
+            "people": 5,
+            "count": 5
+          }
+        },
+        {
+          "text": "Ganarme la confianza de Aurora",
+          "criterion": {
+            "type": "relationship",
+            "personId": "aurora",
+            "trust": 0.65
+          }
+        }
+      ]
     },
     "relationships": [
       {
@@ -1213,7 +1713,7 @@
     },
     "initialMemories": [
       "Reparto el correo cada mañana; sé quién recibe cartas y quién no.",
-      "Valentina recibe cartas sin remitente desde que llegó.",
+      "Valentina recibe cartas sin remitente desde que llegó, con matasellos de Madrid.",
       "El doctor Samuel dice que no tengo nada, pero yo noto algo raro en el pecho.",
       "Rafael y yo compartimos los rumores del día en la taberna."
     ],
@@ -1239,6 +1739,40 @@
       "catchphrases": ["no me encuentro muy allá", "¿te has enterado?"],
       "topics": ["sus síntomas", "el correo", "quién recibe cartas"]
     },
+    "knowledge": {
+      "studies": "bachillerato elemental",
+      "occupation": "cartero de Correos desde hace treinta años",
+      "languages": ["castellano", "mallorquín"],
+      "places": ["Palma", "Inca", "Son Dureta (de visitas al médico)"],
+      "interests": [
+        "el correo y los sellos",
+        "enfermedades (lee la enciclopedia médica)",
+        "quién se cartea con quién"
+      ],
+      "culture": "medio"
+    },
+    "goals": {
+      "text": "Que me tomen en serio",
+      "projects": [
+        {
+          "text": "Que el doctor Samuel me haga una revisión en el consultorio",
+          "criterion": {
+            "type": "conversations",
+            "personId": "samuel",
+            "placeId": "consultorio",
+            "count": 3
+          }
+        },
+        {
+          "text": "Repartir el correo cada mañana sin falta",
+          "criterion": {
+            "type": "activity_hours",
+            "keywords": ["correo", "carta", "reparti"],
+            "hours": 10
+          }
+        }
+      ]
+    },
     "relationships": [
       {
         "with": "rafael",
@@ -1257,7 +1791,7 @@
       },
       {
         "with": "valentina",
-        "affinity": 0.0,
+        "affinity": 0,
         "trust": 0.3,
         "familiarity": 0.3,
         "summary": "Recibe cartas sin remitente desde que llegó."
@@ -1311,6 +1845,40 @@
       "catchphrases": ["ay, criatura", "¿dónde estaba yo?"],
       "topics": ["su juventud", "Alma", "el jardín"]
     },
+    "knowledge": {
+      "studies": "escuela de las monjas hasta los diez años",
+      "occupation": "trabajó en el campo y cosiendo; ama de casa",
+      "languages": ["mallorquín", "castellano"],
+      "places": ["Palma (de joven)"],
+      "interests": [
+        "su juventud, la guerra y la posguerra en el pueblo",
+        "Alma",
+        "el jardín",
+        "canciones antiguas"
+      ],
+      "culture": "básico"
+    },
+    "goals": {
+      "text": "No olvidar a los míos",
+      "projects": [
+        {
+          "text": "Contarle a Clara mi juventud",
+          "criterion": {
+            "type": "conversations",
+            "personId": "clara",
+            "count": 10
+          }
+        },
+        {
+          "text": "Ir al Jardín del Recuerdo, junto al ángel",
+          "criterion": {
+            "type": "visits",
+            "placeId": "jardin_recuerdo",
+            "count": 4
+          }
+        }
+      ]
+    },
     "relationships": [
       {
         "with": "clara",
@@ -1334,7 +1902,7 @@
     "name": "Clara Méndez",
     "age": 19,
     "traits": ["responsable", "ingenua", "alegre", "ahorradora"],
-    "description": "Clara atiende el puesto de fruta del mercadillo y cuida de su abuela Aurora. Ahorra para estudiar enfermería, como le aconsejó el doctor Samuel.",
+    "description": "Clara atiende el puesto de fruta del mercadillo y cuida de su abuela Aurora. Ahorra para estudiar enfermería en Palma, como le aconsejó el doctor Samuel.",
     "homeId": "casa_jardin",
     "workId": "mercado",
     "appearance": {
@@ -1357,7 +1925,8 @@
       "Atiendo el puesto de fruta del mercadillo por las mañanas.",
       "Mi abuela Aurora cada vez olvida más cosas y me da miedo.",
       "El doctor Samuel dice que sería una buena enfermera.",
-      "Hugo siempre me pide una manzana gratis y nunca sé decirle que no."
+      "Hugo siempre me pide una manzana gratis y nunca sé decirle que no.",
+      "Enfermería se estudia en la universidad, en Palma: tendría que coger el autobús cada día o irme a vivir allí."
     ],
     "personality": {
       "openness": 0.5,
@@ -1380,6 +1949,42 @@
       "sentenceLength": "media",
       "catchphrases": ["¡claro que sí!", "uy, no sé"],
       "topics": ["la fruta del mercado", "su abuela", "estudiar enfermería"]
+    },
+    "knowledge": {
+      "studies": "COU; quiere estudiar Enfermería en la UIB",
+      "occupation": "atiende el puesto de fruta del mercadillo",
+      "languages": ["castellano", "mallorquín", "inglés del instituto"],
+      "places": ["Palma", "Inca"],
+      "interests": [
+        "enfermería y primeros auxilios",
+        "la fruta del mercado",
+        "cuidar de su abuela"
+      ],
+      "culture": "medio"
+    },
+    "goals": {
+      "text": "Estudiar enfermería en Palma",
+      "departure": {
+        "to": "Palma"
+      },
+      "projects": [
+        {
+          "text": "Trabajar en el puesto de fruta para ahorrar",
+          "criterion": {
+            "type": "place_time",
+            "placeId": "mercado",
+            "hours": 60
+          }
+        },
+        {
+          "text": "Que el doctor Samuel me oriente",
+          "criterion": {
+            "type": "conversations",
+            "personId": "samuel",
+            "count": 5
+          }
+        }
+      ]
     },
     "relationships": [
       {
@@ -1441,7 +2046,7 @@
       "Soy el médico del pueblo; el consultorio abre de nueve a dos.",
       "Me preocupa la memoria de Aurora; cada semana recuerda menos.",
       "Ernesto viene casi todos los días con un síntoma nuevo.",
-      "Echo de menos a mi familia de Lagos, sobre todo por las noches."
+      "Echo de menos a mi familia de Lagos; los domingos los llamo desde la cabina de la plaza, aunque sale carísimo."
     ],
     "personality": {
       "openness": 0.65,
@@ -1455,6 +2060,35 @@
       "sentenceLength": "media",
       "catchphrases": ["tranquilo, vamos a ver", "en Lagos decimos…"],
       "topics": ["la salud de los vecinos", "su familia en Lagos", "el trabajo"]
+    },
+    "knowledge": {
+      "studies": "Medicina en la Universidad de Lagos; título convalidado en Madrid",
+      "occupation": "médico del consultorio desde hace tres años; antes, en un hospital de Lagos",
+      "languages": ["inglés", "igbo", "yoruba", "castellano"],
+      "places": ["Lagos (Nigeria)", "Londres", "Madrid", "Palma"],
+      "interests": ["medicina", "su familia", "el fútbol nigeriano", "la música highlife"],
+      "culture": "alto"
+    },
+    "goals": {
+      "text": "Sentirme en casa en Lethetown",
+      "projects": [
+        {
+          "text": "Cuidar de la memoria de Aurora",
+          "criterion": {
+            "type": "conversations",
+            "personId": "aurora",
+            "count": 6
+          }
+        },
+        {
+          "text": "Hacer amigos en el pueblo",
+          "criterion": {
+            "type": "conversations",
+            "people": 8,
+            "count": 8
+          }
+        }
+      ]
     },
     "relationships": [
       {

@@ -5,9 +5,8 @@
  */
 import type { Agent } from "@lethetown/agent-core";
 import type { ActionType, AgentAction, PlanItem } from "@lethetown/shared";
-import type { SimContext } from "../context";
-import type { WorldMap } from "../world";
-import type { AgreementKind, PromptSection, SimSystem } from "./types";
+import type { SimContext, SimulationDeps } from "../context";
+import type { AgreementKind, ConsolidationPart, PromptSection, SimSystem } from "./types";
 
 const SYSTEMS: SimSystem[] = [];
 const ACTION_OWNER = new Map<ActionType, string>();
@@ -151,15 +150,41 @@ export function systemSections(ctx: SimContext, agent: Agent, now: number): Prom
 
 /** Líneas fijas (cacheables) que los sistemas activos añaden al prompt de identidad. */
 export function systemIdentityLines(
-  world: WorldMap,
+  deps: SimulationDeps,
   enabled: (id: string) => boolean = () => true,
 ): string[] {
-  return SYSTEMS.filter((s) => enabled(s.id)).flatMap((s) => s.identityLines?.(world) ?? []);
+  return SYSTEMS.filter((s) => enabled(s.id)).flatMap(
+    (s) => s.identityLines?.(deps.world, deps) ?? [],
+  );
 }
 
 /** Huecos fijos del plan de un día (citas aceptadas…). */
 export function systemFixedPlan(ctx: SimContext, agent: Agent, day: number): PlanItem[] {
   return activeSystems(ctx).flatMap((s) => s.fixedPlan?.(ctx, agent, day) ?? []);
+}
+
+/** Secciones del prompt del plan (por su `order`, estable). */
+export function systemPlanSections(ctx: SimContext, agent: Agent, now: number): PromptSection[] {
+  return activeSystems(ctx)
+    .flatMap((s) => s.planSections?.(ctx, agent, now) ?? [])
+    .map((section, i) => ({ section, i }))
+    .sort((a, b) => (a.section.order ?? 50) - (b.section.order ?? 50) || a.i - b.i)
+    .map(({ section }) => section);
+}
+
+/** Lo que los sistemas añaden a la consolidación nocturna de un agente. */
+export function systemConsolidation(
+  ctx: SimContext,
+  agent: Agent,
+  now: number,
+): ConsolidationPart[] {
+  return activeSystems(ctx).flatMap((s) => s.consolidation?.(ctx, agent, now) ?? []);
+}
+
+/** ¿Lo retiene algún sistema fuera del pueblo? (no vive ni piensa). */
+export function systemsHold(ctx: SimContext, agentId: string): boolean {
+  for (const s of SYSTEMS) if (s.holds && ctx.enabled(s.id) && s.holds(ctx, agentId)) return true;
+  return false;
 }
 
 /**

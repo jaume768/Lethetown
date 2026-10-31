@@ -16,6 +16,7 @@ import { Metrics } from "../observability";
 import { readJson } from "./files";
 import { createLlmStack, loadPricing, loadRouting } from "./llm";
 import { loadMemoryConfig } from "./memory";
+import { loadWorldBible } from "./world-bible";
 import { loadRetentionConfig } from "../retention";
 import { createBudget, devUsers } from "./security";
 import type { Services } from "./types";
@@ -74,6 +75,7 @@ export async function createServices(
     memoryConfig: await loadMemoryConfig(log),
     retention: await loadRetentionConfig(log),
     seeds,
+    bible: await loadWorldBible(log),
     db,
     storeKind: db ? "postgres" : "memory",
     worldRepo: db ? new PgWorldRepo(db.db) : new InMemoryWorldRepo(),

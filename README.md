@@ -15,6 +15,13 @@ Parte de [_Generative Agents: Interactive Simulacra of Human Behavior_](https://
 - **Psicología**: personalidad (Big Five) y memoria propia por agente, ánimo bidimensional, hábitos, sueño, sesgos, falsos recuerdos, memoria prospectiva y relaciones que evolucionan (ver [Psicología](#psicología)).
 - **Acciones con consecuencias**: quedar (y dar plantón), explorar y descubrir el pueblo, conversar en grupo, usar objetos, prestar y devolver cosas, invitar a casa, acompañar a alguien y dejar notas. La IA decide qué hacer; el motor comprueba si es posible y lo ejecuta (ver [Qué pueden hacer](#qué-pueden-hacer-los-habitantes)).
 - **Normas del mundo**: casas privadas con sus invitados (y quien se cuela), horarios de apertura.
+- **Mallorca, 1996**: un pueblo inventado del interior de la isla, con teléfonos fijos, cartas,
+  carretes y pesetas. Cada vecino sabe lo que sabría alguien con su vida en esa época, aprende lo
+  que le cuentan los demás y un registro apunta los anacronismos (ver [El mundo](#el-mundo)).
+- **Metas**: cada vecino tiene una meta vital, proyectos y pasos que el motor mide (la IA propone,
+  el motor decide); avanzar motiva, estancarse frustra, se abandona o se cambia de rumbo según la
+  personalidad, hay metas que chocan y quien lo consigue puede irse a vivir a Palma (y volver de
+  visita).
 - **Protección de menores**: ningún menor tiene ni recibe contenido romántico o sexual, ni en los prompts ni en lo que escribe el LLM, y ningún adulto puede quedar a solas con un menor fuera de un sitio público.
 
 Todo funciona **sin API keys** gracias a un proveedor LLM simulado (mock).
@@ -169,6 +176,12 @@ flowchart LR
 - El servidor calcula la ruta A* (que prefiere los caminos) y su duración, y envía los waypoints. El cliente interpola la posición con el reloj de juego y elige el frame según la distancia recorrida, así a x360 se saltan frames en vez de ir a trompicones.
 - **Normas**: las casas son privadas (entran quienes viven allí y sus invitados) y los locales tienen horario (`private` y `hours` en el `.tmj`, desde `tools/generate-map.ts`); el tablón de anuncios es un spot de la plaza.
 - Los agentes van a **spots** concretos (dormir en su cama, sentarse en la barra) y su `activityKind` decide la animación y el emote.
+- **Época y lugar**: `config/world.json` es la biblia del mundo (Mallorca, 1996: tecnología, lo de
+  fuera, cultura, glosario, fiestas y clima por estación). Va compacta en el prompt fijo; la fecha
+  del calendario y la fiesta del día, en el plan. Cada semilla lleva su **perfil de conocimiento**
+  (estudios, oficio, idiomas, viajes, intereses). El **registro de conocimiento externo** apunta
+  anacronismos y referencias que no encajan con quien habla, sin bloquear nada (modo `log`). Ver
+  [mundo](docs/decisiones/mundo.md#mallorca-1996-la-biblia-del-mundo-y-lo-que-sabe-cada-uno).
 
 ### Memoria
 
@@ -233,8 +246,11 @@ Citas, inventario, objetos, invitar y acompañar, notas, normas, lugares conocid
 los acuerdos hablados son **sistemas** (`SimSystem`, en `apps/server/src/sim/systems/`): cada uno
 declara sus acciones, su parte de la instantánea (con su versión), su revisión periódica, sus
 secciones del prompt, su retención y sus métricas, y `simulation.ts` solo recorre el registro.
-Se pueden desactivar por mundo (`worlds.systems`, `{ "notes": false }`). Los siguientes
-(economía, metas, oficios, construcción, ciclo vital) entran igual: ver
+Se pueden desactivar por mundo (`worlds.systems`, `{ "notes": false }`). El mundo de 1996
+(`world`), lo que sabe cada uno (`knowledge`) y las **metas** (`goals`: vital, proyectos y pasos
+medibles, motivación y frustración, conflictos, marcharse del pueblo; ver
+[metas](docs/decisiones/metas.md)) ya son sistemas. Los siguientes (economía, oficios,
+construcción, ciclo vital) entran igual: ver
 [Cómo añadir un sistema](docs/decisiones/sistemas.md#cómo-añadir-un-sistema).
 
 **Lo acordado hablando llega al motor**: la tarea `social` de fin de charla devuelve también los
@@ -346,6 +362,8 @@ Todas las variables, con su explicación, están en [`.env.example`](.env.exampl
 | `pnpm --filter @lethetown/server record <dir>`   | Con `pnpm dev` en marcha, graba una partida (mensajes del WebSocket y estado de los agentes); `world:export <dir>` vuelca la BD del mundo.       |
 | `pnpm study:analyze <dir> [<otro dir>]`          | Analiza una partida grabada (o compara dos): `analysis.json` y `analysis.md` con coste, espera, frases, intenciones, acciones, red y memoria.    |
 | `pnpm personality:derive [--write]`              | Propone personalidad y perfil de memoria a partir de rasgos, edad y descripción de `seeds/agents.json`.                                          |
+| `pnpm knowledge:derive [--write]`                | Propone el perfil de conocimiento (estudios, oficio, idiomas, viajes, intereses) de cada semilla.                                                |
+| `pnpm goals:derive [--write]`                    | Propone una meta vital y proyectos medibles por semilla (las del repo están revisadas a mano).                                                   |
 | `pnpm db:generate`                               | Genera una migración de Drizzle tras cambiar el esquema.                                                                                         |
 
 `SIM_SEED` en `.env` fija el azar de la memoria (rumores, reconsolidación…) para tener simulaciones reproducibles. El test dorado (`apps/server/src/sim/golden.test.ts`) compara 3 días de simulación en mock con una línea de tiempo guardada.
@@ -379,6 +397,7 @@ Todas las rutas de un mundo cuelgan de `/api/worlds/:worldId/…`; `/api/…` es
 | 👁 GET   | `/agents/:id/commitments?limit=`                    | Agenda: citas del agente y cómo acabaron.                          |
 | 👁 GET   | `/agents/:id/inventory` · `/agents/:id/places`      | Inventario (con préstamos) y lugares que conoce.                   |
 | 👁 GET   | `/notes`                                            | Notas vivas (tablón y privadas).                                   |
+| 👁 GET   | `/agents/:id/goals` · `/departures`                 | Metas del agente (con su historial) y vecinos que se fueron.       |
 | 🎬 POST | `/agents/:id/thought`                               | Voz interior `{ text }` (moderada).                                |
 | 🎬 POST | `/world/spots/:id` · `/world/weather`               | Estado de un objeto `{ state }` (moderado) y clima.                |
 | 🎬 POST | `/speed` · `/pause` · `/resume`                     | Velocidad (0, 1, 10, 60, 360) y pausa.                             |
@@ -431,13 +450,20 @@ La pestaña de admin **Evolución** (`GET /api/worlds/:id/evolution`) da, por d�
 que han hablado (y % de las posibles), concentración de la red y diversidad de interlocutores,
 conversaciones (grupo o pareja, turnos, cómo acaban), intenciones, acciones formales frente a
 acordadas hablando, cambios de tipo de relación, memoria (reconsolidaciones, olvidos,
-archivados), errores del LLM y coste por tarea y por sistema, más las cifras de cada sistema.
+archivados), errores del LLM, coste por tarea y por sistema, metas (activas, conseguidas,
+abandonadas, progreso y frustración, también por agente) y conocimiento externo (anacronismos y
+referencias, con ejemplos), más las cifras de cada sistema.
 `pnpm study:analyze` calcula lo mismo con una partida grabada. Ver
 [evolución](docs/decisiones/evolucion.md).
 
 Fase de cimientos (`cost:report 48`, mock; coste estimado con los tokens del mock a precios de
 Haiku 5.5 y Sonnet 5.5): de 4.420 llamadas y ≈ 0,94 $ a 3.791 y ≈ 0,65 $, con el puente de los
 acuerdos ya puesto. Detalle por paso en [PROGRESS-CIMIENTOS.md](PROGRESS-CIMIENTOS.md).
+
+Mundo de 1996 y metas (mismo método): de 3.791 llamadas y ≈ 0,65 $ a 4.131 y ≈ 0,79 $. No hay
+tareas nuevas: el prompt fijo crece con la biblia y el perfil (casi todo leído de caché), el plan
+y la consolidación llevan las metas, y el mock cambia de trayectoria con las semillas nuevas.
+Detalle en [PROGRESS-MUNDO-METAS.md](PROGRESS-MUNDO-METAS.md).
 
 ### Limitaciones
 
@@ -541,4 +567,5 @@ El cliente elige automáticamente el pack con el que se generó el mapa (propied
 5. **Producción** ✅ multi-mundo con instantáneas, seguridad, api + workers, observabilidad, Docker con Caddy e interfaz para espectadores, directores y streaming.
 6. **Psicología** ✅ protección de menores, hábitos, perfiles, ánimo, sueño, sesgos, memoria prospectiva y relaciones visibles.
 7. **Acciones** ✅ catálogo validado por el motor: citas, explorar, grupos, objetos e inventario, invitar y acompañar, notas, normas del mundo; agenda, inventario y lugares en el inspector.
-8. **Siguiente**: economía (`buy_item` / `sell_item`, ya preparada con `Item.value`), mensajes a distancia (teléfonos), la evaluación comparativa con modelos reales, OAuth, editor de mundos y agentes desde la web, traducción de los prompts (hoy se pide al modelo que responda en el idioma del mundo).
+8. **Mundo y metas** ✅ Mallorca en 1996 (biblia, calendario, clima, perfil de conocimiento, registro de anacronismos) y metas medibles con psicología, conflictos y marcharse del pueblo.
+9. **Siguiente**: economía (`buy_item` / `sell_item`, ya preparada con `Item.value`; en pesetas), mensajes a distancia (teléfonos fijos y cabinas, cartas), ciclo vital (las metas aplazadas de los menores), la evaluación comparativa con modelos reales, OAuth, editor de mundos y agentes desde la web, traducción de los prompts (hoy se pide al modelo que responda en el idioma del mundo).

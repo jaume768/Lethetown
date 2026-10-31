@@ -1,6 +1,7 @@
 import { writeChronicle as composeChronicle, type Agent } from "@lethetown/agent-core";
 import type { Chronicle } from "@lethetown/shared";
 import { errorMessage, type SimContext } from "./context";
+import { systemConsolidation } from "./systems/registry";
 
 /** Memoria humana en la simulación: mantenimiento, consolidación nocturna y crónica diaria. */
 
@@ -60,9 +61,20 @@ export async function consolidate(ctx: SimContext, agent: Agent, now: number): P
         agent.id,
       ]);
     }
-    const r = await ctx.deps.consolidator.consolidate(agent.owner, rt.lastConsolidation, now);
+    // Lo que añaden los sistemas (repasar sus metas…) va en la misma llamada.
+    const parts = systemConsolidation(ctx, agent, now);
+    const r = await ctx.deps.consolidator.consolidate(
+      agent.owner,
+      rt.lastConsolidation,
+      now,
+      parts.map((p) => ({ key: p.key, prompt: p.prompt })),
+    );
     // +1: lo creado ahora (diario, hechos) no vuelve a entrar en la consolidación de mañana.
     rt.lastConsolidation = now + 1;
+    for (const p of parts) {
+      const applied = p.apply(r.extras[p.key], now);
+      if (applied) await applied;
+    }
     // Nada que consolidar (p. ej. al arrancar de madrugada): no ensuciar el log.
     if (!r.created.length && !r.reinforced.length && !r.weakened.length) return;
     ctx.emit(

@@ -24,6 +24,11 @@ export * from "./memory/prospective";
 export * from "./memory/encoding";
 export * from "./memory/social";
 export * from "./util/random";
+export * from "./world/bible";
+export * from "./world/knowledge";
+export * from "./world/knowledge-guard";
+export * from "./goals/psychology";
+export * from "./goals/criteria";
 
 export * from "./agent/agent";
 export * from "./agent/prompts";

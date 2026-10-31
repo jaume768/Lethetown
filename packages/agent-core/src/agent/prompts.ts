@@ -135,6 +135,20 @@ export function speechLine(style: AgentSeed["speechStyle"]): string {
   return `\nCómo hablas: ${style.register}; ${length}${catches}.${topics}`;
 }
 
+/** "Lo que sabes: …" (estudios, oficio, idiomas, viajes, intereses), o vacío sin perfil. */
+export function knowledgeLine(k: AgentSeed["knowledge"]): string {
+  if (!k) return "";
+  const parts = [
+    `estudios: ${k.studies}`,
+    `oficio: ${k.occupation}`,
+    `idiomas: ${k.languages.join(", ")}`,
+    ...(k.places.length ? [`fuera del pueblo conoces: ${k.places.join(", ")}`] : []),
+    ...(k.interests.length ? [`sabes de: ${k.interests.join(", ")}`] : []),
+    `cultura general: ${k.culture}`,
+  ];
+  return `\nLo que sabes: ${parts.join("; ")}.`;
+}
+
 export function identityPrompt(
   seed: AgentSeed,
   places: Place[],
@@ -147,7 +161,7 @@ export function identityPrompt(
   return `Eres ${seed.name}, ${seed.age} años, habitante de un pequeño pueblo.
 Rasgos: ${seed.traits.join(", ")}.
 Personalidad: ${personalityLine(seed.personality)}.
-${seed.description}${speechLine(seed.speechStyle)}${
+${seed.description}${knowledgeLine(seed.knowledge)}${speechLine(seed.speechStyle)}${
     seed.age < 18
       ? `\nTienes ${seed.age} años: hablas como alguien de tu edad, con frases más cortas y sencillas.`
       : ""
@@ -190,10 +204,12 @@ export function planPrompt(opts: {
   fixed?: string[];
   /** Lugares que ha descubierto (líneas `placeLine`). */
   discovered?: string[];
+  /** Lo que añaden los sistemas (la fecha, sus metas…), ya escrito y en orden. */
+  sections?: PlanSection[];
 }): string {
   return `TAREA: plan
 Es ${formatGameTime(opts.now)}. Planifica tu día desde las 07:00 hasta las 22:00 (de 22:00 a 07:00 duermes en casa).
-Tiempo esta mañana: ${WEATHER_LABEL[opts.weather ?? "sunny"]}.${
+Tiempo esta mañana: ${WEATHER_LABEL[opts.weather ?? "sunny"]}.${planSectionsText(opts.sections)}${
     opts.yesterday
       ? `
 Lo que recuerdas de ayer y tus costumbres (puede ser vago o incompleto; no hace falta repetirlo):
@@ -207,6 +223,24 @@ ${opts.recalled}
 Formato:
 {"plan":[{"start":"HH:MM","durationMin":60,"activity":"descripción breve","activityKind":"...","placeId":"id","spotId":"id de objeto o null"}]}
 Entre 4 y 8 bloques, en orden, sin solaparse. spotId es opcional: úsalo cuando la actividad sea en un objeto concreto.`;
+}
+
+/** Sección que un sistema añade al plan: "TÍTULO:\n- línea" (o las líneas sueltas sin título). */
+export interface PlanSection {
+  title: string;
+  lines: string[];
+  order?: number;
+}
+
+/** Secciones del plan tras la línea del tiempo (vacío si no hay ninguna con líneas). */
+function planSectionsText(sections: PlanSection[] | undefined): string {
+  const text = (sections ?? [])
+    .filter((x) => x.lines.length)
+    .map((x) =>
+      x.title ? `${x.title}:\n${x.lines.map((l) => `- ${l}`).join("\n")}` : x.lines.join("\n"),
+    )
+    .join("\n");
+  return text ? `\n${text}` : "";
 }
 
 export function importancePrompt(observations: string[]): string {

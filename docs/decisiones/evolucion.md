@@ -9,7 +9,8 @@ pestaña de admin y en el estudio de una partida grabada, sin llamadas nuevas al
   auditoría de la memoria, historial de las fichas y llamadas al LLM → métricas por día de juego
   y del total. Lo usan `GET /api/worlds/:id/evolution` (pestaña «Evolución», solo admin) y
   `pnpm study:analyze`. El tipo del informe es un esquema zod en shared (`EvolutionReport`).
-- **Sin estado nuevo**: todo sale de lo que ya se guarda (`sim_events` con `meta`, `memory_audit`,
+- **Sin estado nuevo** (salvo las tablas de los sistemas nuevos, `goals` y `knowledge_log`, que
+  se leen igual): todo sale de lo que ya se guarda (`sim_events` con `meta`, `memory_audit`,
   `social_profile_history`, `llm_calls`). Lo que no se guardaba se deduce del texto de los
   eventos («📝 se propone», «terminan de hablar (N turnos; motivo)», «⚠ Error en "tarea"»).
 - **Cifras vivas de los sistemas**: cada `SimSystem` aporta `metrics(ctx)`; se piden con la
@@ -28,20 +29,22 @@ pestaña de admin y en el estudio de una partida grabada, sin llamadas nuevas al
 
 ## Métricas (por día y total)
 
-| Métrica                                                                             | De dónde sale                              |
-| ----------------------------------------------------------------------------------- | ------------------------------------------ |
-| Frases, parejas que han hablado (y % de las posibles), parejas acumuladas           | eventos `speech` (hablante y destinatario) |
-| Concentración: parte de las 4 parejas que más hablan; Gini de las frases por agente | eventos `speech`                           |
-| Interlocutores distintos por agente (media y mínimo)                                | eventos `speech`                           |
-| Conversaciones (de grupo / de dos), turnos de media, motivo de fin                  | «terminan de hablar (N turnos; motivo)»    |
-| Intenciones: propuestas, cumplidas, se le pasan, tarde                              | eventos de memoria 📝 ✅ 🫥 😳             |
-| Acciones por tipo: formales, acordadas hablando, que no salieron                    | `meta.action`, `meta.agreed`, `meta.ok`    |
-| Cambios de tipo de relación (y cuáles: vecino → amistad…)                           | `social_profile_history`                   |
-| Memoria: reconsolidaciones, olvidos, archivados, borrados                           | `memory_audit`                             |
-| Errores del LLM por tarea                                                           | eventos de sistema «⚠ Error en "tarea"»    |
-| Coste por tarea (llamadas, $, % de caché) y por sistema                             | `llm_calls` o el `CostTracker`             |
-| Espera de respuesta (min de juego; s reales si se grabó)                            | `ReplyLatencyMeter` con `wallMs`           |
-| Longitud de las frases por estilo (corta, media, larga, menores)                    | eventos `speech` y las semillas            |
+| Métrica                                                                                | De dónde sale                              |
+| -------------------------------------------------------------------------------------- | ------------------------------------------ |
+| Frases, parejas que han hablado (y % de las posibles), parejas acumuladas              | eventos `speech` (hablante y destinatario) |
+| Concentración: parte de las 4 parejas que más hablan; Gini de las frases por agente    | eventos `speech`                           |
+| Interlocutores distintos por agente (media y mínimo)                                   | eventos `speech`                           |
+| Conversaciones (de grupo / de dos), turnos de media, motivo de fin                     | «terminan de hablar (N turnos; motivo)»    |
+| Intenciones: propuestas, cumplidas, se le pasan, tarde                                 | eventos de memoria 📝 ✅ 🫥 😳             |
+| Acciones por tipo: formales, acordadas hablando, que no salieron                       | `meta.action`, `meta.agreed`, `meta.ok`    |
+| Cambios de tipo de relación (y cuáles: vecino → amistad…)                              | `social_profile_history`                   |
+| Memoria: reconsolidaciones, olvidos, archivados, borrados                              | `memory_audit`                             |
+| Errores del LLM por tarea                                                              | eventos de sistema «⚠ Error en "tarea"»    |
+| Coste por tarea (llamadas, $, % de caché) y por sistema                                | `llm_calls` o el `CostTracker`             |
+| Espera de respuesta (min de juego; s reales si se grabó)                               | `ReplyLatencyMeter` con `wallMs`           |
+| Longitud de las frases por estilo (corta, media, larga, menores)                       | eventos `speech` y las semillas            |
+| Metas: activas, conseguidas, abandonadas, progreso y frustración medios (y por agente) | `goals` (historial de cada meta)           |
+| Conocimiento externo: anacronismos y referencias por tipo, agente y día, con ejemplos  | `knowledge_log`                            |
 
 ## `pnpm study:analyze <carpeta> [<otra>]`
 

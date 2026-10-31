@@ -13,7 +13,7 @@ import { newMind, type AgentMind } from "./mind";
 import { type IntentionInput, type IntentionState } from "../memory/prospective";
 import { baselineMood, describeMood, makeMood } from "./mood";
 import { replanAt } from "./replan";
-import { formatClock, identityPrompt, weatherLine } from "./prompts";
+import { formatClock, identityPrompt, weatherLine, type PlanSection } from "./prompts";
 import * as _social from "./agent-social";
 import * as _intentions from "./agent-intentions";
 import * as _planning from "./agent-planning";
@@ -213,8 +213,13 @@ export class Agent {
 
   /** Planifica el día con el modelo de reflexión. */
   /** Planifica el día; `fixed` son compromisos (citas) que el plan debe respetar. */
-  planDay(now: number, weather: Weather = "sunny", fixed: PlanItem[] = []): Promise<PlanItem[]> {
-    return _planning.planDay(this, now, weather, fixed);
+  planDay(
+    now: number,
+    weather: Weather = "sunny",
+    fixed: PlanItem[] = [],
+    sections: PlanSection[] = [],
+  ): Promise<PlanItem[]> {
+    return _planning.planDay(this, now, weather, fixed, sections);
   }
 
   /** Percibir → guardar: convierte percepciones en recuerdos con importancia y valencia. */

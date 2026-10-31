@@ -1,4 +1,9 @@
-import type { AffinityIcon, Drama, NotesResponse } from "@lethetown/shared";
+import {
+  AWAY_LOCATION,
+  type AffinityIcon,
+  type Drama,
+  type NotesResponse,
+} from "@lethetown/shared";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { TownMap, type MapController } from "../game/TownMap";
 import { useI18n } from "../i18n";
@@ -8,6 +13,7 @@ import { api, useGame } from "../net/store";
 import { ChroniclePanel } from "./ChroniclePanel";
 import { ClipRecorder } from "./ClipRecorder";
 import { CreditsModal } from "./Credits";
+import { DeparturesList } from "./DeparturesList";
 import { DirectorPanel } from "./DirectorPanel";
 import { EvolutionPanel } from "./EvolutionPanel";
 import { DramaFeed } from "./DramaFeed";
@@ -202,7 +208,12 @@ export function App() {
       case "events":
         return <EventLog events={game.events} today={today} onOpenEvent={setRashomonId} />;
       case "chronicles":
-        return <ChroniclePanel chronicles={game.chronicles} />;
+        return (
+          <>
+            <ChroniclePanel chronicles={game.chronicles} />
+            <DeparturesList agents={game.agents} onSelect={onSelect} />
+          </>
+        );
       case "director":
         return user ? <DirectorPanel game={game} user={user} /> : null;
       case "evolution":
@@ -259,6 +270,7 @@ export function App() {
               {game.agents.map((a) => (
                 <option key={a.id} value={a.id}>
                   {a.name}
+                  {a.locationId === AWAY_LOCATION ? ` (${t("agent.away")})` : ""}
                 </option>
               ))}
             </select>

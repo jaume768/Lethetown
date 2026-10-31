@@ -14,6 +14,22 @@ import {
 /** Dos dramas del mismo tipo con los mismos agentes en menos de esto (min de juego) son uno. */
 const DEDUPE_MINUTES = 30;
 
+/** Eventos del sistema de metas (`meta.action`) → tipo de drama y puntuación (según `ok`). */
+const GOAL_DRAMAS: Record<string, (ok: boolean) => [DramaKind, number]> = {
+  goal: (ok) =>
+    ok
+      ? ["goal_achieved", dramaScore.goalAchieved(false)]
+      : ["goal_abandoned", dramaScore.goalAbandoned(false)],
+  goal_life: (ok) =>
+    ok
+      ? ["goal_achieved", dramaScore.goalAchieved(true)]
+      : ["goal_abandoned", dramaScore.goalAbandoned(true)],
+  goal_life_change: () => ["life_change", dramaScore.lifeChange()],
+  goal_conflict: () => ["goal_conflict", dramaScore.goalConflict()],
+  departure: () => ["departure", dramaScore.departure()],
+  visit: () => ["visit", dramaScore.visit()],
+};
+
 export interface DramaContext {
   now(): number;
   name(agentId: string): string;
@@ -82,6 +98,22 @@ export class DramaDetector {
         e.participants,
         e.agentId ? this.ctx.placeOf(e.agentId) : null,
         e.id,
+      );
+      return;
+    }
+    // Metas: conseguidas, abandonadas, cambio de rumbo, conflictos, marcharse y volver.
+    const goal = GOAL_DRAMAS[e.meta?.action ?? ""];
+    if (goal) {
+      const [kind, score] = goal(e.meta?.ok !== false);
+      this.publish(
+        kind,
+        score,
+        e.text.replace(/^\S+ /u, ""),
+        e.participants,
+        e.agentId ? this.ctx.placeOf(e.agentId) : null,
+        e.id,
+        // Un proyecto y la meta vital que completa, en el mismo minuto, son dos dramas.
+        e.meta?.action,
       );
       return;
     }
@@ -211,10 +243,12 @@ export class DramaDetector {
     agents: string[],
     placeId: string | null,
     eventId: string | null,
+    /** Distingue dramas del mismo tipo y gente que no son el mismo. */
+    variant = "",
   ): void {
     if (score < DRAMA_MIN_SCORE) return;
     const time = this.ctx.now();
-    const key = `${kind}:${[...agents].sort().join(",")}`;
+    const key = `${kind}:${variant}:${[...agents].sort().join(",")}`;
     while (this.recent.length && time - this.recent[0]!.time > DEDUPE_MINUTES) this.recent.shift();
     if (this.recent.some((r) => r.key === key)) return;
     this.recent.push({ key, time });

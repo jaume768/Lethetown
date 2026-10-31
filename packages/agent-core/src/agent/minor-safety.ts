@@ -105,6 +105,9 @@ export interface SafetyBlock {
   cause: "content" | "error";
 }
 
+/** Otro registro sobre los mismos textos: el motivo para descartarlo, o null si puede entrar. */
+export type TextInspector = (text: string, ctx: SafetyContext) => string | null;
+
 /** Recuento de lo que hace el guardián (para «Evolución» y las métricas). */
 export interface GuardStats {
   blockedContent: number;
@@ -140,6 +143,7 @@ export class MinorGuard {
   private readonly patterns: { minor: MinorInfo; re: RegExp }[];
   private readonly verdicts = new Map<string, boolean>();
   private readonly listeners: ((b: SafetyBlock) => void)[] = [];
+  private readonly inspectors: TextInspector[] = [];
   private readonly counts: GuardStats = { blockedContent: 0, blockedError: 0, retries: 0 };
 
   constructor(private readonly opts: MinorGuardOptions) {
@@ -168,6 +172,18 @@ export class MinorGuard {
     this.listeners.push(listener);
   }
 
+  /**
+   * Añade un inspector: ve cada texto del LLM antes de que entre en el mundo (aunque no haya
+   * menores) y devuelve el motivo para descartarlo, o null. Devuelve cómo quitarlo.
+   */
+  addInspector(inspect: TextInspector): () => void {
+    this.inspectors.push(inspect);
+    return () => {
+      const i = this.inspectors.indexOf(inspect);
+      if (i >= 0) this.inspectors.splice(i, 1);
+    };
+  }
+
   /** Menores implicados: entre los actores o nombrados en el texto. */
   involvedMinors(text: string, actors: string[] = []): MinorInfo[] {
     const out = new Map<string, MinorInfo>();
@@ -184,6 +200,12 @@ export class MinorGuard {
    * Sin menores implicados, siempre sí (y sin coste).
    */
   async allows(text: string, ctx: SafetyContext): Promise<boolean> {
+    // Otros registros sobre lo mismo (conocimiento externo): ven todo texto y, si devuelven un
+    // motivo, el texto no entra. Síncronos: no añaden pasos de microtareas.
+    for (const inspect of this.inspectors) {
+      const reason = inspect(text, ctx);
+      if (reason) return this.block(text, ctx, reason, "content");
+    }
     const minors = this.involvedMinors(text, ctx.actors);
     if (!minors.length) return true;
     const who = minors.map((m) => m.name).join(", ");

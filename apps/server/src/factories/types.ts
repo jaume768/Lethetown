@@ -12,6 +12,7 @@ import {
   type LLMProvider,
   type PricingTable,
   type TaskRouting,
+  type WorldBible,
 } from "@lethetown/agent-core";
 import type { AgentSeed } from "@lethetown/shared";
 import { type WorldRunStatus } from "@lethetown/shared";
@@ -30,6 +31,8 @@ import type { CommitmentStore } from "../db/commitments";
 import type { KnownPlaceStore } from "../db/known-places";
 import type { ItemStore } from "../db/items";
 import type { NoteStore } from "../db/notes";
+import type { KnowledgeLogStore } from "../db/knowledge-log";
+import type { DepartureStore, GoalStore } from "../db/goals";
 import type { RetentionConfig, RetentionReport } from "../retention";
 import type { GameClock } from "../sim/clock";
 import type { LimitedProvider } from "../sim/llm-queue";
@@ -57,6 +60,8 @@ export interface Services {
   /** Política de retención de datos (ver retention.ts). */
   retention: RetentionConfig;
   seeds: AgentSeed[];
+  /** Biblia del mundo (config/world.json). */
+  bible: WorldBible;
   db?: DbHandle;
   storeKind: "postgres" | "memory";
   worldRepo: WorldRepo;
@@ -113,6 +118,11 @@ export interface WorldRuntime {
   knownPlaces: KnownPlaceStore;
   items: ItemStore;
   notes: NoteStore;
+  /** Registro de conocimiento externo (anacronismos y referencias). */
+  knowledgeLog: KnowledgeLogStore;
+  /** Metas de cada agente y vecinos que se fueron (sistema `goals`). */
+  goals: GoalStore;
+  departures: DepartureStore;
   /** Retención: poda lo más antiguo de este mundo (ver retention.ts). */
   prune(): Promise<RetentionReport>;
   /** Guarda una instantánea de apagado y para el reloj. */

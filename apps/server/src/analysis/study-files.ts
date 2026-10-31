@@ -4,6 +4,7 @@
  */
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import { Goal } from "@lethetown/shared";
 import type {
   AgentSeed,
   MemoryAuditAction,
@@ -12,7 +13,7 @@ import type {
   SimEventKind,
   SocialProfileChange,
 } from "@lethetown/shared";
-import type { EvolutionInput, LlmCallRow } from "./evolution";
+import type { EvolutionInput, KnowledgeRow, LlmCallRow } from "./evolution";
 
 type Row = Record<string, unknown>;
 
@@ -112,5 +113,38 @@ export function loadStudy(dir: string, seeds: AgentSeed[]): EvolutionInput {
     cacheWriteTokens: num(r.cache_write_tokens),
     time: r.at ? toGame(new Date(str(r.at)).getTime()) : null,
   }));
-  return { seeds, events, wallMs, audits, socialHistory, llmCalls };
+  const knowledge: KnowledgeRow[] = readJsonl(join(db, "knowledge_log.jsonl")).map((r) => ({
+    at: num(r.at),
+    agentId: (r.agent_id ?? null) as string | null,
+    kind: str(r.kind),
+    term: str(r.term),
+    label: str(r.label),
+    text: str(r.text),
+    source: str(r.source),
+  }));
+  const goals: Goal[] = readJsonl(join(db, "goals.jsonl")).flatMap((r) => {
+    const parsed = Goal.safeParse({
+      id: r.id,
+      agentId: r.agent_id,
+      level: r.level,
+      parentId: r.parent_id ?? null,
+      text: r.text,
+      status: r.status,
+      progress: r.progress,
+      motivation: r.motivation,
+      frustration: r.frustration,
+      criterion: r.criterion,
+      measured: r.measured,
+      baseline: r.baseline ?? null,
+      seen: r.seen ?? [],
+      resource: r.resource ?? null,
+      departure: r.departure ?? null,
+      createdAt: r.created_at,
+      updatedAt: r.updated_at,
+      lastProgressAt: r.last_progress_at,
+      history: r.history ?? [],
+    });
+    return parsed.success ? [parsed.data] : [];
+  });
+  return { seeds, events, wallMs, audits, socialHistory, llmCalls, knowledge, goals };
 }

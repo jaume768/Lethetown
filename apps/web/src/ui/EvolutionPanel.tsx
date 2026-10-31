@@ -34,6 +34,19 @@ const ROWS: [MessageKey, (d: DayMetrics) => number | string][] = [
     (d) => `${d.memory.reconsolidated} / ${d.memory.forgotten} / ${d.memory.archived}`,
   ],
   ["evolution.errors", (d) => sum(Object.values(d.llmErrors))],
+  [
+    "evolution.goalsRow",
+    (d) => (d.goals ? `${d.goals.active} / ${d.goals.achieved} / ${d.goals.abandoned}` : "—"),
+  ],
+  [
+    "evolution.goalsMeans",
+    (d) =>
+      d.goals ? `${d.goals.meanProgress.toFixed(2)} / ${d.goals.meanFrustration.toFixed(2)}` : "—",
+  ],
+  [
+    "evolution.knowledgeRow",
+    (d) => `${d.knowledge?.anachronism ?? 0} / ${d.knowledge?.external ?? 0}`,
+  ],
 ];
 
 /** Pestaña de admin «Evolución»: cómo cambia el pueblo día a día (red, charlas, memoria, coste). */
@@ -81,6 +94,61 @@ export function EvolutionPanel() {
           <li key={`s:${system}`}>{t("evolution.system", { system, usd: formatUsd(usd) })}</li>
         ))}
       </ul>
+
+      {report.total.goals && Object.keys(report.total.goals.byAgent).length > 0 && (
+        <>
+          <h4>{t("evolution.goals")}</h4>
+          <ul className="small">
+            {Object.entries(report.total.goals.byAgent).map(([id, g]) => (
+              <li key={id}>
+                {t("evolution.goalsAgent", {
+                  name: id,
+                  active: g.active,
+                  achieved: g.achieved,
+                  abandoned: g.abandoned,
+                  progress: g.meanProgress.toFixed(2),
+                  frustration: g.meanFrustration.toFixed(2),
+                })}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+
+      {report.knowledge && (
+        <>
+          <h4>{t("evolution.knowledge")}</h4>
+          {report.knowledge.examples.length === 0 ? (
+            <p className="small muted">{t("evolution.knowledgeNone")}</p>
+          ) : (
+            <>
+              <ul className="small">
+                {Object.entries(report.knowledge.byAgent)
+                  .sort((a, b) => sum(Object.values(b[1])) - sum(Object.values(a[1])))
+                  .map(([id, k]) => (
+                    <li key={id}>
+                      {t("evolution.knowledgeAgent", {
+                        name: id,
+                        anachronism: k.anachronism ?? 0,
+                        external: k.external ?? 0,
+                      })}
+                    </li>
+                  ))}
+              </ul>
+              <ul className="small">
+                {report.knowledge.examples.map((x, i) => (
+                  <li key={i}>
+                    <span className="tag">
+                      {t(`evolution.knowledgeKind.${x.kind}` as MessageKey)}
+                    </span>{" "}
+                    <strong>{x.term}</strong> · {x.agentId ?? "—"} ({x.source}): «{x.text}»
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </>
+      )}
 
       {report.systems && (
         <>

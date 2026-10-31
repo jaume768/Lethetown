@@ -11,6 +11,7 @@ import {
   type CostBucket,
   type DayMetrics,
   type EvolutionReport,
+  type Goal,
   type MemoryAuditEntry,
   type SimEvent,
   type SocialProfileChange,
@@ -44,6 +45,71 @@ export interface EvolutionInput {
   taskSystems?: Record<string, string>;
   /** Cifras vivas de cada sistema y del guardián de menores (solo en la pestaña de admin). */
   systems?: Record<string, Record<string, number>>;
+  /** Registro de conocimiento externo (`knowledge_log`). */
+  knowledge?: KnowledgeRow[];
+  /** Metas con su historial (`goals`). */
+  goals?: Goal[];
+}
+
+type GoalFigures = Omit<NonNullable<DayMetrics["goals"]>, "byAgent">;
+
+/**
+ * Metas hasta el final de `until` (minuto de juego): activas, progreso y frustración medios
+ * (de las activas, según su última entrada del historial) y conseguidas o abandonadas en
+ * [`from`, `until`).
+ */
+function goalsAt(goals: Goal[], from: number, until: number): NonNullable<DayMetrics["goals"]> {
+  const figures = (list: Goal[]): GoalFigures => {
+    const active: { progress: number; frustration: number }[] = [];
+    let achieved = 0;
+    let abandoned = 0;
+    for (const g of list) {
+      const upTo = g.history.filter((h) => h.at < until);
+      const last = upTo.at(-1);
+      if (!last) continue;
+      if (last.status === "active") active.push(last);
+      const inRange = upTo.filter((h) => h.at >= from);
+      if (inRange.some((h) => h.status === "achieved")) achieved++;
+      if (inRange.some((h) => h.status === "abandoned")) abandoned++;
+    }
+    return {
+      active: active.length,
+      meanProgress: round(mean(active.map((a) => a.progress))),
+      achieved,
+      abandoned,
+      meanFrustration: round(mean(active.map((a) => a.frustration))),
+    };
+  };
+  const byAgent: Record<string, GoalFigures> = {};
+  for (const id of [...new Set(goals.map((g) => g.agentId))].sort()) {
+    byAgent[id] = figures(goals.filter((g) => g.agentId === id));
+  }
+  return { ...figures(goals), byAgent };
+}
+
+/** Una fila de `knowledge_log`. */
+export interface KnowledgeRow {
+  at: number;
+  agentId: string | null;
+  kind: string;
+  term: string;
+  label: string;
+  text: string;
+  source: string;
+}
+
+/** Ejemplos de conocimiento externo en el informe. */
+const KNOWLEDGE_EXAMPLES = 20;
+
+function knowledgeReport(rows: KnowledgeRow[]): NonNullable<EvolutionReport["knowledge"]> {
+  const byKind: Record<string, number> = {};
+  const byAgent: Record<string, Record<string, number>> = {};
+  for (const r of rows) {
+    inc(byKind, r.kind);
+    inc((byAgent[r.agentId ?? "-"] ??= {}), r.kind);
+  }
+  const examples = [...rows].sort((a, b) => b.at - a.at).slice(0, KNOWLEDGE_EXAMPLES);
+  return { byKind, byAgent, examples };
 }
 
 const ACTIONS = new Set(Object.keys(ACTION_SPECS));
@@ -200,6 +266,11 @@ export function analyzeEvolution(input: EvolutionInput): EvolutionReport {
       ever,
     ),
   );
+  // Conocimiento externo por día (anacronismos y referencias).
+  for (const d of perDay) {
+    const rows = input.knowledge?.filter((r) => dayOf(r.at) === d.day);
+    if (rows) d.knowledge = knowledgeReport(rows).byKind;
+  }
   const total = metricsOf(
     -1,
     input,
@@ -209,6 +280,11 @@ export function analyzeEvolution(input: EvolutionInput): EvolutionReport {
     input.llmCalls,
     new Set(),
   );
+  if (input.knowledge) total.knowledge = knowledgeReport(input.knowledge).byKind;
+  if (input.goals) {
+    for (const d of perDay) d.goals = goalsAt(input.goals, d.day * 1440, (d.day + 1) * 1440);
+    total.goals = goalsAt(input.goals, -Infinity, Infinity);
+  }
 
   // Coste por tarea y por sistema.
   const byTask: EvolutionReport["cost"]["byTask"] = {};
@@ -306,6 +382,7 @@ export function analyzeEvolution(input: EvolutionInput): EvolutionReport {
       .map(([pair, utterances]) => ({ pair, utterances })),
     utterancesByAgent: byAgent,
     relationshipTransitions: transitions,
+    ...(input.knowledge ? { knowledge: knowledgeReport(input.knowledge) } : {}),
     ...(input.systems ? { systems: input.systems } : {}),
   };
 }

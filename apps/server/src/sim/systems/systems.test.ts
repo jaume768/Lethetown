@@ -41,6 +41,9 @@ describe("registro de sistemas", () => {
       "norms",
       "places",
       "agreements",
+      "world",
+      "knowledge",
+      "goals",
     ]);
   });
 
@@ -68,6 +71,7 @@ describe("registro de sistemas", () => {
       "HAS PRESTADO",
       "AQUÍ HAY",
       "PUEDES USAR",
+      "TU PROYECTO",
     ]);
   });
 });
@@ -104,6 +108,8 @@ describe("instantánea por sistema", () => {
       "company",
       "notes",
       "norms",
+      "knowledge",
+      "goals",
     ]);
     expect(snap.items!.version).toBe(1);
   });

@@ -3,6 +3,8 @@ import { PgCommitmentStore } from "../db/commitments";
 import { PgKnownPlaceStore } from "../db/known-places";
 import { PgItemStore } from "../db/items";
 import { PgNoteStore } from "../db/notes";
+import { PgKnowledgeLogStore } from "../db/knowledge-log";
+import { PgDepartureStore, PgGoalStore } from "../db/goals";
 import {
   AgentState,
   RUNNING,
@@ -64,6 +66,9 @@ export class RemoteWorldGateway implements WorldGateway {
   readonly knownPlaces: PgKnownPlaceStore;
   readonly items: PgItemStore;
   readonly notes: PgNoteStore;
+  readonly knowledgeLog: PgKnowledgeLogStore;
+  readonly goals: PgGoalStore;
+  readonly departures: PgDepartureStore;
   private readonly map: WorldMap;
   private state: LiveState;
   /** Date.now() al recibir el último estado vivo. */
@@ -97,6 +102,9 @@ export class RemoteWorldGateway implements WorldGateway {
     this.knownPlaces = new PgKnownPlaceStore(db, row.id);
     this.items = new PgItemStore(db, row.id);
     this.notes = new PgNoteStore(db, row.id);
+    this.knowledgeLog = new PgKnowledgeLogStore(db, row.id);
+    this.goals = new PgGoalStore(db, row.id);
+    this.departures = new PgDepartureStore(db, row.id);
     this.state = initial;
     this.applySpots(initial.spots);
   }

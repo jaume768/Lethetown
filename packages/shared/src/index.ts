@@ -10,6 +10,7 @@ export * from "./schemas/items";
 export * from "./schemas/invitation";
 export * from "./schemas/note";
 export * from "./schemas/evolution";
+export * from "./schemas/goals";
 export * from "./objects/machines";
 export * from "./map/tiled";
 export * from "./map/pathfinding";

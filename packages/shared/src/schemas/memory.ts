@@ -97,6 +97,8 @@ export type MemoryVersion = z.infer<typeof MemoryVersion>;
 export const MemoryAuditAction = z.enum([
   /** Un acuerdo de una conversación que el motor no pudo llevar a cabo (con el motivo). */
   "agreement_discarded",
+  /** Una meta cambia (motivación, frustración, estado) o se descarta una propuesta (sistema `goals`). */
+  "goal",
   "forgotten",
   "deleted",
   "archived",

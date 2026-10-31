@@ -113,6 +113,20 @@
       "when": 1793403538755,
       "tag": "0015_world_systems",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1793439190236,
+      "tag": "0016_knowledge_log",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1793440351335,
+      "tag": "0017_goals",
+      "breakpoints": true
     }
   ]
 }
