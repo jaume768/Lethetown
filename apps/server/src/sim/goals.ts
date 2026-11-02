@@ -18,6 +18,7 @@ import {
   lifeChangeProbability,
   makeMood,
   measuredProgress,
+  measureOf,
   normalizeText,
   relationshipBaseline,
   relationshipProgress,
@@ -59,6 +60,10 @@ const MAX_HISTORY = 60;
 const MAX_SEEN = 80;
 /** Tras sacar el proyecto en una decisión, no vuelve a salir en este rato (min de juego). */
 const DECIDE_COOLDOWN = 120;
+/** Progreso de una meta `confirmed` con lo medido cumplido, mientras no se comprueba. */
+const CANDIDATE_PROGRESS = 0.95;
+/** Frases que se guardan por meta `confirmed` para comprobarla de noche. */
+const MAX_EVIDENCE = 12;
 
 export interface GoalsState {
   goals: Map<string, Goal>;
@@ -72,6 +77,12 @@ export interface GoalsState {
   conflicts: Set<string>;
   /** Cuándo se le mostró su proyecto en una decisión. */
   shownAt: Map<string, number>;
+  /** Metas `confirmed` con lo medido cumplido: desde cuándo esperan la comprobación nocturna. */
+  candidates: Map<string, number>;
+  /** Frases de las charlas que cuentan para cada meta `confirmed` (para comprobarla). */
+  evidence: Map<string, string[]>;
+  /** Las que se presentaron en la consolidación en curso (solo esas se pueden confirmar). */
+  presented: Set<string>;
   listening: boolean;
 }
 
@@ -85,6 +96,9 @@ export const goalsState = (ctx: SimContext) =>
     lastPlace: new Map(),
     conflicts: new Set(),
     shownAt: new Map(),
+    candidates: new Map(),
+    evidence: new Map(),
+    presented: new Set(),
     listening: false,
   }));
 
@@ -193,7 +207,13 @@ export interface GoalInput {
  * tener como meta estar en casas ajenas ni irse ahora). Devuelve el motivo si no.
  */
 export function goalProblem(ctx: SimContext, agent: Agent, input: GoalInput): string | null {
-  const c = input.criterion;
+  const c = measureOf(input.criterion);
+  if (
+    input.criterion.type === "confirmed" &&
+    (c.type === "projects" || c.type === "relationship")
+  ) {
+    return "lo que se comprueba de noche tiene que medirse con algo que se cuenta";
+  }
   const cfg = cfgOf(ctx);
   const minor = seedIsMinor(agent.seed);
   const text = input.text.trim();
@@ -266,8 +286,8 @@ export async function createGoal(
   }
   // Lo que escribe el LLM entra en el mundo: protección de menores (y registro de conocimiento).
   const guard = ctx.deps.memory.guard;
-  const people =
-    "personId" in input.criterion && input.criterion.personId ? [input.criterion.personId] : [];
+  const measure = measureOf(input.criterion);
+  const people = "personId" in measure && measure.personId ? [measure.personId] : [];
   if (
     guard &&
     !(await guard.allows(input.text, {
@@ -411,7 +431,7 @@ function count(
   amount = 1,
 ): void {
   for (const g of goalsOf(ctx, agentId, "active")) {
-    const hit = matches(g.criterion, g);
+    const hit = matches(measureOf(g.criterion), g);
     if (!hit) continue;
     // Una clave: se cuenta una vez (la misma conversación, la misma persona).
     if (typeof hit === "string") {
@@ -420,6 +440,26 @@ function count(
     }
     g.measured += amount;
     refresh(ctx, g, now);
+  }
+}
+
+/** Lo dicho en un evento de habla (`Ana → Luis: "…"`). */
+function utteranceOf(text: string): string {
+  const at = text.indexOf(': "');
+  return at >= 0 ? text.slice(at + 3).replace(/"$/, "") : text;
+}
+
+/** Guarda la frase para las metas `confirmed` de alguien cuyo criterio la cuenta. */
+function collectEvidence(
+  ctx: SimContext,
+  agentId: string,
+  matches: (c: GoalCriterion) => boolean,
+  line: string,
+): void {
+  const s = goalsState(ctx);
+  for (const g of goalsOf(ctx, agentId, "active")) {
+    if (g.criterion.type !== "confirmed" || !matches(g.criterion.measure)) continue;
+    s.evidence.set(g.id, [...(s.evidence.get(g.id) ?? []), line].slice(-MAX_EVIDENCE));
   }
 }
 
@@ -433,16 +473,23 @@ export function goalsOnEvent(ctx: SimContext, e: SimEvent): void {
     const a = e.agentId;
     const b = e.participants[1];
     const place = ctx.agents.get(a)?.state.locationId;
+    const said = utteranceOf(e.text);
+    const norm = normalizeText(said);
     for (const [me, other] of [
       [a, b],
       [b, a],
     ] as const) {
+      const talks = (c: GoalCriterion) =>
+        c.type === "conversations" &&
+        (!c.personId || c.personId === other) &&
+        (!c.placeId || c.placeId === place);
+      collectEvidence(ctx, me, talks, `${firstName(ctx, a)}: «${said}»`);
       count(ctx, me, now, (c) => {
         // Las de relación cuentan sus conversaciones (la ficha se mira cada hora).
         if (c.type === "relationship") return c.personId === other ? `c:${conv}` : false;
-        if (c.type !== "conversations") return false;
-        if (c.personId && c.personId !== other) return false;
-        if (c.placeId && c.placeId !== place) return false;
+        if (c.type !== "conversations" || !talks(c)) return false;
+        // Con tema: solo la conversación en la que se habla de eso (en lo que se dice).
+        if (c.topics && !c.topics.some((t) => norm.includes(normalizeText(t)))) return false;
         // Con N personas distintas: cuenta cada persona una vez; si no, cada conversación.
         return c.people ? `p:${other}` : `c:${conv}`;
       });
@@ -513,21 +560,34 @@ export async function relationshipTick(ctx: SimContext, now: number): Promise<vo
 
 /** Recalcula el progreso de una meta medida por cuenta u horas. */
 function refresh(ctx: SimContext, g: Goal, now: number): void {
-  if (g.criterion.type === "relationship" || g.criterion.type === "projects") return;
+  const c = measureOf(g.criterion);
+  if (c.type === "relationship" || c.type === "projects") return;
   setProgress(ctx, g, measuredProgress(g.criterion, g.measured), now);
 }
 
 function setProgress(ctx: SimContext, g: Goal, progress: number, now: number): void {
-  const p = clamp01(progress);
+  // Lo cualitativo no se da por hecho al contar: se queda a las puertas hasta comprobarlo.
+  const confirm = g.criterion.type === "confirmed";
+  const p = confirm ? Math.min(CANDIDATE_PROGRESS, clamp01(progress)) : clamp01(progress);
   if (p > g.progress) g.lastProgressAt = now;
   g.progress = p;
   g.updatedAt = now;
+  if (confirm && progress >= 1 && g.status === "active") markCandidate(ctx, g, now);
   if (p >= 1 && g.status === "active") {
     achieve(ctx, g, now);
     return;
   }
   persist(ctx, g);
   if (g.parentId) refreshParent(ctx, g.parentId, now);
+}
+
+/** Lo medido de una meta `confirmed` ya se cumple: la consolidación de esta noche lo comprueba. */
+function markCandidate(ctx: SimContext, g: Goal, now: number): void {
+  const s = goalsState(ctx);
+  if (s.candidates.has(g.id)) return;
+  s.candidates.set(g.id, now);
+  historyEntry(g, now, "lo medido ya se cumple: queda para comprobarlo esta noche");
+  audit(ctx, g, "candidata: lo medido se cumple, falta comprobar si de verdad se logró");
 }
 
 /** Una meta vital avanza con sus proyectos (los conseguidos cuentan entero). */
@@ -710,6 +770,14 @@ export const GoalProposal = z.discriminatedUnion("op", [
     id: z.string(),
     reason: z.string().default(""),
   }),
+  /** Solo para lo que el motor presenta para comprobar (metas `confirmed` candidatas). */
+  z.object({
+    op: z.literal("confirm"),
+    id: z.string(),
+    // "false" en texto no es true (z.coerce.boolean lo daría por bueno).
+    achieved: z.union([z.boolean(), z.enum(["true", "false"]).transform((v) => v === "true")]),
+    reason: z.string().default(""),
+  }),
 ]);
 export type GoalProposal = z.infer<typeof GoalProposal>;
 
@@ -829,6 +897,71 @@ export function placeProposal(
   };
 }
 
+/**
+ * Lo que dice la consolidación de una meta candidata: solo vale para las que el motor presentó
+ * (lo medido se cumple y hay de qué juzgar). Sí → conseguida; no → sigue activa y hará falta
+ * algo nuevo que se diga para volver a comprobarla.
+ */
+function confirmGoal(
+  ctx: SimContext,
+  agent: Agent,
+  prop: Extract<GoalProposal, { op: "confirm" }>,
+  now: number,
+): void {
+  const s = goalsState(ctx);
+  const g = s.goals.get(prop.id);
+  if (!g || g.agentId !== agent.id || g.status !== "active" || !s.presented.has(g.id)) {
+    audit(
+      ctx,
+      { agentId: agent.id, id: prop.id, text: prop.id },
+      "confirmación descartada: el motor no presentó esa meta para comprobar",
+    );
+    return;
+  }
+  s.presented.delete(g.id);
+  const why = prop.reason ? `: ${prop.reason}` : "";
+  if (prop.achieved) {
+    s.candidates.delete(g.id);
+    s.evidence.delete(g.id);
+    g.progress = 1;
+    historyEntry(g, now, `comprobado al repasar el día: se ha logrado${why}`);
+    achieve(ctx, g, now);
+    return;
+  }
+  s.evidence.delete(g.id);
+  historyEntry(g, now, `comprobado al repasar el día: aún no${why}`);
+  persist(ctx, g);
+  audit(ctx, g, `sin confirmar: lo medido se cumple, pero aún no se ha logrado${why}`);
+}
+
+/** Candidatas que se pueden comprobar esta noche: con frases nuevas (o sin charlas que mirar). */
+function checkable(ctx: SimContext, agentId: string): { goal: Goal; lines: string[] }[] {
+  const s = goalsState(ctx);
+  return goalsOf(ctx, agentId, "active")
+    .filter((g) => s.candidates.has(g.id) && g.criterion.type === "confirmed")
+    .map((goal) => ({ goal, lines: s.evidence.get(goal.id) ?? [] }))
+    .filter(({ goal, lines }) => {
+      const m = measureOf(goal.criterion);
+      return lines.length > 0 || (m.type !== "conversations" && m.type !== "meetings");
+    });
+}
+
+/** La sección «Para comprobar» de la consolidación (y las que se presentan). */
+function checkSection(ctx: SimContext, agent: Agent): string {
+  const s = goalsState(ctx);
+  const items = checkable(ctx, agent.id);
+  if (!items.length) return "";
+  const lines = items.map(({ goal, lines }) => {
+    s.presented.add(goal.id);
+    const q = goal.criterion.type === "confirmed" ? goal.criterion.question : "";
+    const said = lines.length ? lines.join(" | ") : "(sin frases: júzgalo por tu día)";
+    return `- ${goal.id} «${goal.text}»: ¿${q.replace(/^¿|\?$/g, "")}? Lo que se dijo: ${said}`;
+  });
+  return `\nPara comprobar (solo esto, con lo que se dijo; no marques ningún otro progreso):
+${lines.join("\n")}
+Para cada una, en "goals": {"op":"confirm","id":"g…","achieved":true|false,"reason":"…"} (true solo si de verdad se ha logrado).`;
+}
+
 /** Aplica lo que propuso el modelo al consolidar (el motor valida cada cosa). */
 export async function applyProposals(
   ctx: SimContext,
@@ -879,6 +1012,10 @@ export async function applyProposals(
       continue;
     }
     const g = goalsState(ctx).goals.get(prop.id);
+    if (prop.op === "confirm") {
+      confirmGoal(ctx, agent, prop, now);
+      continue;
+    }
     if (!g || g.agentId !== agent.id) {
       audit(
         ctx,
@@ -936,7 +1073,7 @@ export function consolidationPrompt(ctx: SimContext, agent: Agent): string {
   const noLife = !mine.some((g) => g.level === "life");
   const next = nextProjectNudge(ctx, agent);
   return `Tus metas (el progreso lo mide la vida, no tú):
-${lines.join("\n") || "- (ninguna)"}${noLife ? "\nAhora mismo no tienes meta vital: si te sale una, propónla (level life, criterio projects con el número de proyectos)." : ""}${next ? `\n${next}` : ""}
+${lines.join("\n") || "- (ninguna)"}${noLife ? "\nAhora mismo no tienes meta vital: si te sale una, propónla (level life, criterio projects con el número de proyectos)." : ""}${next ? `\n${next}` : ""}${checkSection(ctx, agent)}
 Si hoy ha cambiado algo, propón (pocos, medibles y propios de tu vida en ${ctx.deps.bible?.year ?? "tu época"}): un proyecto nuevo o un paso de un proyecto, aplazar, abandonar o retomar. Criterios: ${CRITERIA}.
 En "goals": [{"op":"add","level":"project|step","parent":"g…","text":"…","criterion":{"type":"…",…}},{"op":"abandon|postpone|resume","id":"g…","reason":"…"}] ([] si nada cambia).`;
 }

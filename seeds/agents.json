@@ -380,9 +380,14 @@
         {
           "text": "Hablar de verdad con Inés",
           "criterion": {
-            "type": "conversations",
-            "personId": "ines",
-            "count": 8
+            "type": "confirmed",
+            "question": "¿Le ha dicho Julián a Inés lo que siente (que le da miedo quedarse solo) y han hablado en serio de lo de Palma?",
+            "measure": {
+              "type": "conversations",
+              "personId": "ines",
+              "count": 8,
+              "topics": ["palma", "estudi", "solo", "miedo"]
+            }
           }
         },
         {
@@ -594,7 +599,8 @@
           "criterion": {
             "type": "conversations",
             "people": 8,
-            "count": 8
+            "count": 8,
+            "topics": ["casa", "vend", "llevant"]
           },
           "resource": "casa_en_venta"
         },
@@ -702,7 +708,8 @@
           "criterion": {
             "type": "conversations",
             "personId": "leo",
-            "count": 5
+            "count": 5,
+            "topics": ["pez"]
           }
         }
       ]
@@ -899,7 +906,8 @@
           "criterion": {
             "type": "conversations",
             "people": 6,
-            "count": 6
+            "count": 6,
+            "topics": ["pagina", "libro", "historia"]
           }
         }
       ]
@@ -992,7 +1000,8 @@
           "criterion": {
             "type": "conversations",
             "personId": "ines",
-            "count": 5
+            "count": 5,
+            "topics": ["clase", "escuela", "estudi"]
           }
         }
       ]
@@ -1108,7 +1117,8 @@
           "criterion": {
             "type": "conversations",
             "personId": "hugo",
-            "count": 4
+            "count": 4,
+            "topics": ["debe", "deuda", "pag", "dinero", "peseta"]
           }
         }
       ]
@@ -1339,7 +1349,8 @@
           "criterion": {
             "type": "conversations",
             "personId": "tomas",
-            "count": 5
+            "count": 5,
+            "topics": ["pez"]
           }
         }
       ]
@@ -1436,7 +1447,8 @@
           "criterion": {
             "type": "conversations",
             "people": 8,
-            "count": 8
+            "count": 8,
+            "topics": ["jardin", "casa"]
           },
           "resource": "casa_en_venta"
         },
@@ -1658,7 +1670,8 @@
           "criterion": {
             "type": "conversations",
             "people": 5,
-            "count": 5
+            "count": 5,
+            "topics": ["abuela"]
           }
         },
         {
@@ -1760,7 +1773,8 @@
             "type": "conversations",
             "personId": "samuel",
             "placeId": "consultorio",
-            "count": 3
+            "count": 3,
+            "topics": ["revis", "salud", "dolor", "tension"]
           }
         },
         {
@@ -1866,7 +1880,8 @@
           "criterion": {
             "type": "conversations",
             "personId": "clara",
-            "count": 10
+            "count": 10,
+            "topics": ["joven", "juventud", "cuando era", "antes", "alma"]
           }
         },
         {
@@ -1981,7 +1996,8 @@
           "criterion": {
             "type": "conversations",
             "personId": "samuel",
-            "count": 5
+            "count": 5,
+            "topics": ["enfermer", "estudi", "palma"]
           }
         }
       ]
@@ -2077,7 +2093,8 @@
           "criterion": {
             "type": "conversations",
             "personId": "aurora",
-            "count": 6
+            "count": 6,
+            "topics": ["memoria", "recuerd", "olvid"]
           }
         },
         {

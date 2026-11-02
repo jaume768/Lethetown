@@ -66,10 +66,38 @@ function mockConsolidate(req: CompletionRequest): string {
 }
 
 /**
- * Metas al consolidar (sistema `goals`): sin meta vital, propone una; a un proyecto que frustra
- * y no tiene pasos, le añade uno (hablarlo con alguien). Como mucho una cosa por noche.
+ * Metas al consolidar (sistema `goals`): confirma lo que el motor le presenta para comprobar;
+ * sin meta vital, propone una; a un proyecto que frustra y no tiene pasos, le añade uno
+ * (hablarlo con alguien). Como mucho una propuesta por noche.
  */
 function mockGoals(prompt: string): unknown[] {
+  return [...mockConfirms(prompt), ...mockProposals(prompt)];
+}
+
+/**
+ * Lo que el motor presenta para comprobar («- g12 «…»: ¿…? Lo que se dijo: A: «…» | B: «…»»):
+ * el mock lo da por logrado con tres frases o más (una charla de verdad), y si no, aún no.
+ */
+function mockConfirms(prompt: string): unknown[] {
+  const at = prompt.indexOf("Para comprobar (");
+  if (at < 0) return [];
+  return prompt
+    .slice(at)
+    .split("\n")
+    .filter((l) => l.startsWith("- g") && l.includes("Lo que se dijo: "))
+    .map((l) => {
+      const said = l.slice(l.indexOf("Lo que se dijo: ") + 16);
+      const lines = said.startsWith("(") ? 0 : said.split(" | ").length;
+      return {
+        op: "confirm",
+        id: l.slice(2, l.indexOf(" ", 2)),
+        achieved: lines >= 3,
+        reason: lines >= 3 ? "hablamos de ello con calma" : "todavía no lo hemos hablado",
+      };
+    });
+}
+
+function mockProposals(prompt: string): unknown[] {
   if (/no tienes meta vital/i.test(prompt)) {
     return [
       {

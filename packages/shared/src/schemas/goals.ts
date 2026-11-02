@@ -19,7 +19,7 @@ const id = z.string().min(1).max(40);
  * Catálogo de criterios medibles (todo lo cuenta el motor desde que se crea la meta). Una meta
  * que no encaja en ninguno no se crea.
  */
-export const GoalCriterion = z.discriminatedUnion("type", [
+const MEASURABLE = [
   /** Horas haciendo algo cuya actividad contiene alguna palabra clave ("foto", "revelar"). */
   z.object({
     type: z.literal("activity_hours"),
@@ -47,12 +47,16 @@ export const GoalCriterion = z.discriminatedUnion("type", [
     people: count(20).optional(),
     count: count(50),
   }),
-  /** Conversaciones: con alguien, con N personas distintas o en un lugar. */
+  /**
+   * Conversaciones: con alguien, con N personas distintas o en un lugar. Con `topics`, solo
+   * cuenta una conversación en la que se ha dicho alguna de esas palabras (sin tildes).
+   */
   z.object({
     type: z.literal("conversations"),
     personId: id.optional(),
     people: count(20).optional(),
     placeId: id.optional(),
+    topics: z.array(z.string().min(3).max(30)).min(1).max(6).optional(),
     count: count(200),
   }),
   /** Lugares del pueblo descubiertos. */
@@ -69,6 +73,25 @@ export const GoalCriterion = z.discriminatedUnion("type", [
   z.object({ type: z.literal("intentions_kept"), count: count(50) }),
   /** Para una meta vital: proyectos suyos conseguidos (los que avanzan cuentan su parte). */
   z.object({ type: z.literal("projects"), count: count(10) }),
+] as const;
+
+/** Un criterio que el motor cuenta (todos menos `confirmed`). */
+export const MeasurableCriterion = z.discriminatedUnion("type", [...MEASURABLE]);
+export type MeasurableCriterion = z.infer<typeof MeasurableCriterion>;
+
+export const GoalCriterion = z.discriminatedUnion("type", [
+  ...MEASURABLE,
+  /**
+   * Comprobado en la consolidación: para lo cualitativo (una conversación de verdad,
+   * reconciliarse, convencer a alguien). El motor mide `measure`; cuando se cumple, la meta queda
+   * como candidata y esa noche la consolidación ve las frases relevantes y confirma o no la
+   * `question`. Si no, sigue activa. El LLM solo confirma lo que el motor le presenta.
+   */
+  z.object({
+    type: z.literal("confirmed"),
+    question: z.string().min(8).max(200),
+    measure: MeasurableCriterion,
+  }),
 ]);
 export type GoalCriterion = z.infer<typeof GoalCriterion>;
 export type GoalCriterionType = GoalCriterion["type"];

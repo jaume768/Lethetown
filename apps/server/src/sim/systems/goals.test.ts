@@ -33,13 +33,13 @@ beforeAll(async () => {
 });
 afterAll(() => app.close());
 
-const speech = (from: string, to: string, conv: string, time = ctx.clock.now()) =>
+const speech = (from: string, to: string, conv: string, said = "hola", time = ctx.clock.now()) =>
   goalsOnEvent(ctx, {
     id: `${conv}:1`,
     time,
     agentId: from,
     kind: "speech",
-    text: `${from} → ${to}: "hola"`,
+    text: `${from} → ${to}: "${said}"`,
     participants: [from, to],
   });
 
@@ -79,11 +79,11 @@ describe("metas de partida", () => {
 
 describe("el motor mide (nunca el LLM)", () => {
   it("conversaciones con alguien: cada conversación una vez", () => {
-    const g = goalsOf(ctx, "julian", "active").find((x) => x.criterion.type === "conversations")!;
+    const g = goalsOf(ctx, "carmen", "active").find((x) => x.criterion.type === "conversations")!;
     const before = g.measured;
-    speech("julian", "ines", "c900");
-    speech("ines", "julian", "c900");
-    speech("julian", "ines", "c901");
+    speech("carmen", "sofia", "c900");
+    speech("sofia", "carmen", "c900");
+    speech("carmen", "sofia", "c901");
     expect(g.measured).toBe(before + 2);
     expect(g.progress).toBeCloseTo(g.measured / (g.criterion as { count: number }).count);
   });
@@ -258,7 +258,9 @@ describe("marcharse del pueblo", () => {
     clara.state.locationId = "mercado";
     clara.state.activityKind = "idle";
     measureTick(ctx, now, 60 * 60);
-    for (let i = 0; i < 5; i++) speech("clara", "samuel", `c96${i}`);
+    // Su proyecto con Samuel tiene tema: hablar de enfermería.
+    for (let i = 0; i < 5; i++)
+      speech("clara", "samuel", `c96${i}`, "¿Y enfermería es muy difícil?");
     expect(projects.every((p) => p.status === "achieved")).toBe(true);
     expect(life.status).toBe("achieved");
     expect(isAway(ctx, "clara")).toBe(true);
@@ -280,7 +282,7 @@ describe("marcharse del pueblo", () => {
 
   it("la instantánea guarda metas y ausentes", () => {
     const snap = structuredClone(snapshotSystems(ctx));
-    expect(snap.goals!.version).toBe(1);
+    expect(snap.goals!.version).toBe(2);
     const count = goalsState(ctx).goals.size;
     goalsState(ctx).goals.clear();
     goalsState(ctx).departures.clear();

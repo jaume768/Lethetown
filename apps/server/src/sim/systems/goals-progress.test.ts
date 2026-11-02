@@ -192,3 +192,89 @@ describe("metas de relación exigentes", () => {
     expect(goalsState(ctx).goals.get(g!.id)).toBe(g);
   });
 });
+
+const say = (from: string, to: string, conv: string, text: string) =>
+  goalsOnEvent(ctx, {
+    id: `${conv}:1`,
+    time: ctx.clock.now(),
+    agentId: from,
+    kind: "speech",
+    text: `${agent(from).seed.name} → ${agent(to).seed.name}: "${text}"`,
+    participants: [from, to],
+  });
+
+describe("conseguir no es contar: Julián e Inés", () => {
+  const talk = () => goalsOf(ctx, "julian").find((g) => g.text === "Hablar de verdad con Inés")!;
+
+  it("con tema, solo cuenta la conversación en la que se habla de eso", () => {
+    const g = talk();
+    expect(g.criterion.type).toBe("confirmed");
+    const before = g.measured;
+    say("julian", "ines", "jt1", "Buenos días, hija.");
+    say("ines", "julian", "jt1", "Hola, papá.");
+    expect(g.measured).toBe(before);
+    say("julian", "ines", "jt2", "Si quieres, mañana hablamos de Palma.");
+    expect(g.measured).toBe(before + 1);
+  });
+
+  it("«Mañana hablamos de Palma» cumple lo medido, pero la noche no lo confirma", async () => {
+    const g = talk();
+    for (let i = 3; g.measured < 8; i++) {
+      say("julian", "ines", `jt${i}`, "Mañana hablamos de Palma. Con calma… si no es molestia.");
+    }
+    say("ines", "julian", "jt20", "Y lo de Palma, ¿qué? Me dijiste mañana ayer.");
+    expect(g.status).toBe("active");
+    expect(g.progress).toBeLessThan(1);
+    expect(goalsState(ctx).candidates.has(g.id)).toBe(true);
+
+    const prompt = consolidationPrompt(ctx, agent("julian"));
+    expect(prompt).toMatch(/Para comprobar \(solo esto/);
+    expect(prompt).toContain("Julián: «Mañana hablamos de Palma.");
+    expect(prompt).toContain("Inés: «Y lo de Palma, ¿qué? Me dijiste mañana ayer.»");
+    await applyProposals(
+      ctx,
+      agent("julian"),
+      [{ op: "confirm", id: g.id, achieved: false, reason: "siempre lo deja para mañana" }],
+      ctx.clock.now(),
+    );
+    expect(g.status).toBe("active");
+    expect(g.history.at(-1)!.reason).toMatch(/aún no: siempre lo deja para mañana/);
+    // Sin nada nuevo que se diga, no se vuelve a presentar (ni a confirmar).
+    expect(consolidationPrompt(ctx, agent("julian"))).not.toMatch(/Para comprobar/);
+    await applyProposals(
+      ctx,
+      agent("julian"),
+      [{ op: "confirm", id: g.id, achieved: true }],
+      ctx.clock.now(),
+    );
+    expect(g.status).toBe("active");
+    const audit = await ctx.deps.memory.store.audit("julian", 80);
+    expect(audit.some((a) => a.reason.includes("no presentó esa meta"))).toBe(true);
+  });
+
+  it("cuando por fin se lo dice, la noche lo confirma y se consigue", async () => {
+    const g = talk();
+    say("julian", "ines", "jt30", "Inés, me da miedo quedarme solo cuando te vayas a Palma.");
+    say("ines", "julian", "jt30", "Papá… no me voy a ir para siempre. Vendré cada fin de semana.");
+    expect(consolidationPrompt(ctx, agent("julian"))).toContain("me da miedo quedarme solo");
+    await applyProposals(
+      ctx,
+      agent("julian"),
+      [{ op: "confirm", id: g.id, achieved: "true", reason: "se lo dijo" }],
+      ctx.clock.now(),
+    );
+    expect(g.status).toBe("achieved");
+    expect(g.progress).toBe(1);
+  });
+
+  it("el LLM no puede confirmar lo que no es candidato ni de otro", async () => {
+    const other = goalsOf(ctx, "ines", "active").find((g) => g.level === "project")!;
+    await applyProposals(
+      ctx,
+      agent("julian"),
+      [{ op: "confirm", id: other.id, achieved: true }],
+      ctx.clock.now(),
+    );
+    expect(other.status).toBe("active");
+  });
+});

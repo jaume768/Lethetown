@@ -2,12 +2,18 @@
  * Criterios de las metas: cuánto falta según lo medido (lógica pura) y cómo se dice en el
  * prompt. Lo medido lo cuenta el servidor (sistema `goals`); el LLM nunca marca el progreso.
  */
-import type { GoalCriterion } from "@lethetown/shared";
+import type { GoalCriterion, MeasurableCriterion } from "@lethetown/shared";
 
 const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
 
+/** Lo que cuenta el motor (en una meta `confirmed`, su `measure`). */
+export function measureOf(c: GoalCriterion): MeasurableCriterion {
+  return c.type === "confirmed" ? c.measure : c;
+}
+
 /** Progreso (0..1) de lo medido: minutos para las de horas, veces para el resto. */
-export function measuredProgress(c: GoalCriterion, measured: number): number {
+export function measuredProgress(criterion: GoalCriterion, measured: number): number {
+  const c = measureOf(criterion);
   switch (c.type) {
     case "activity_hours":
     case "place_time":
@@ -93,7 +99,8 @@ export function demandingRelationship(
 }
 
 /** Personas o lugares de un criterio (para saber si viene a cuento en una decisión). */
-export function criterionCues(c: GoalCriterion): { personId?: string; placeId?: string } {
+export function criterionCues(criterion: GoalCriterion): { personId?: string; placeId?: string } {
+  const c = measureOf(criterion);
   return {
     ...("personId" in c && c.personId ? { personId: c.personId } : {}),
     ...("placeId" in c && c.placeId ? { placeId: c.placeId } : {}),
@@ -122,6 +129,17 @@ const hoursText = (min: number) => {
 /** Cómo se dice el criterio en el prompt, con lo que lleva: «pasar 6 h … (llevas 1,5 h)». */
 export function criterionText(
   c: GoalCriterion,
+  measured: number,
+  names: { person(id: string): string; place(id: string): string },
+): string {
+  if (c.type === "confirmed") {
+    return `${measurableText(c.measure, measured, names)}, y que de verdad: ${c.question}`;
+  }
+  return measurableText(c, measured, names);
+}
+
+function measurableText(
+  c: MeasurableCriterion,
   measured: number,
   names: { person(id: string): string; place(id: string): string },
 ): string {
@@ -158,7 +176,8 @@ export function criterionText(
           ? ` con ${c.people} personas distintas`
           : "";
       const where = c.placeId ? ` en ${names.place(c.placeId)}` : "";
-      return `${c.count} conversaciones${who}${where} (llevas ${measured})`;
+      const about = c.topics ? ` hablando de ${c.topics.map((t) => `«${t}»`).join(" o ")}` : "";
+      return `${c.count} conversaciones${who}${where}${about} (llevas ${measured})`;
     }
     case "places_discovered":
       return `descubrir ${c.count} sitios del pueblo (llevas ${measured})`;
@@ -180,9 +199,10 @@ export const CRITERIA_CATALOG = [
   'visits {"placeId":"…","count":3}',
   'relationship {"personId":"…","affinity":0.5|"trust":0.6|"relationship":"friendship"}',
   'meetings {"personId":"…"|"people":3,"count":2}',
-  'conversations {"personId":"…"|"people":4|"placeId":"…","count":5}',
+  'conversations {"personId":"…"|"people":4|"placeId":"…","topics":["palma"],"count":5} (topics: solo cuentan las charlas en que se dice)',
   'places_discovered {"count":2}',
   'items {"action":"use_object|return_item|give_item|lend_item","count":2}',
   'notes {"count":2}',
   'intentions_kept {"count":3}',
+  'confirmed {"question":"¿Le ha dicho lo que siente?","measure":{…uno de los anteriores…}} (para lo que no basta contar: hablar de verdad, reconciliarse, convencer; cuando se cumpla lo medido, lo comprobarás tú con lo que se dijo)',
 ].join("; ");

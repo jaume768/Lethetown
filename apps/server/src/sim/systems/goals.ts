@@ -34,13 +34,16 @@ registerSystem({
   description:
     "Metas vitales, proyectos y pasos medibles; motivación y frustración; irse del pueblo.",
   snapshot: {
-    version: 1,
+    // 2: candidatas de las metas `confirmed` y sus frases.
+    version: 2,
     schema: z.object({
       goals: z.array(Goal),
       seq: z.number().int().nonnegative(),
       departures: z.array(Departure),
       lastPlace: z.record(z.string(), z.string()),
       conflicts: z.array(z.string()),
+      candidates: z.record(z.string(), z.number()),
+      evidence: z.record(z.string(), z.array(z.string())),
     }),
     save: (ctx) => {
       const s = goalsState(ctx);
@@ -50,6 +53,8 @@ registerSystem({
         departures: structuredClone([...s.departures.values()]),
         lastPlace: Object.fromEntries(s.lastPlace),
         conflicts: [...s.conflicts],
+        candidates: Object.fromEntries(s.candidates),
+        evidence: Object.fromEntries(s.evidence),
       };
     },
     restore: (ctx, d) => {
@@ -59,6 +64,8 @@ registerSystem({
       s.departures = new Map(d.departures.map((x) => [x.agentId, x]));
       s.lastPlace = new Map(Object.entries(d.lastPlace));
       s.conflicts = new Set(d.conflicts);
+      s.candidates = new Map(Object.entries(d.candidates));
+      s.evidence = new Map(Object.entries(d.evidence));
     },
   },
   load: async (ctx, { restored, now }) => {
@@ -139,6 +146,7 @@ registerSystem({
       meanProgress: mean(active.map((g) => g.progress)),
       meanFrustration: mean(active.map((g) => g.frustration)),
       conflicts: goalsState(ctx).conflicts.size,
+      candidates: goalsState(ctx).candidates.size,
       away: [...goalsState(ctx).departures.values()].filter((d) => !d.visiting).length,
     };
   },
