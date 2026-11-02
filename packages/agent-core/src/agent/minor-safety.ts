@@ -43,14 +43,18 @@ export function minorsRule(minors: MinorInfo[], selfId: string): string {
 
 /**
  * Léxico romántico o sexual claro: con un menor implicado, se descarta sin preguntar.
- * Sin \b (en JS no trata "í" como letra): límites con clases Unicode.
+ * Sin \b (en JS no trata "í" como letra): límites con clases Unicode. Solo lo que no tiene un
+ * uso corriente en una familia con niños: «acostarse» (irse a dormir), «la atracción» de la
+ * feria, «desnudo» (el baño, un árbol) o «amante de los libros» van a la moderación (SOFT). En
+ * la partida 2, «ya es hora de acostarse» se bloqueó sin moderar. «Me atrae» sigue aquí: con un
+ * menor de por medio casi siempre es romántico (prudencia).
  */
 const STRONG =
-  /(^|[^\p{L}])(enamora\p{L}*|novi[oa]s?|noviazgo|ligar|ligue\p{L}*|lig[oó]|flirte\p{L}*|coquete\p{L}*|seduc\p{L}*|romántic\p{L}*|romance\p{L}*|amantes?|atracción|me atraes?|le atrae|desnud\p{L}*|sexo|sexual\p{L}*|erótic\p{L}*|acostarse|hacer el amor|cita romántica|crush|girlfriend|boyfriend|dating|flirt\p{L}*|sexy|seduce\p{L}*|romantic\p{L}*|make out|in love)(?=$|[^\p{L}])/iu;
+  /(^|[^\p{L}])(enamora\p{L}*|novi[oa]s?|noviazgo|ligar|ligue\p{L}*|lig[oó]|flirte\p{L}*|coquete\p{L}*|seduc\p{L}*|romántic\p{L}*|romance\p{L}*|me atraes?|le atrae|sexo|sexual\p{L}*|erótic\p{L}*|hacer el amor|acostarse con|cita romántica|crush|girlfriend|boyfriend|dating|flirt\p{L}*|sexy|seduce\p{L}*|romantic\p{L}*|make out|in love)(?=$|[^\p{L}])/iu;
 
-/** Léxico ambiguo: puede ser cariño de familia o algo más; lo decide la moderación. */
+/** Léxico ambiguo: puede ser cariño de familia (o algo corriente) o algo más; lo decide la moderación. */
 const SOFT =
-  /(^|[^\p{L}])(bes[aeoéó]\p{L}*|cariño|amor|te quiero|me gustas|guap[oa]s?|precios[oa]s?|corazón|mi vida|querid[oa]|abraz\p{L}*|kiss\p{L}*|love|cute|pretty|handsome|darling|sweetheart|hugs?|hugg\p{L}*)(?=$|[^\p{L}])/iu;
+  /(^|[^\p{L}])(bes[aeoéó]\p{L}*|cariño|amor|te quiero|me gustas|guap[oa]s?|precios[oa]s?|corazón|mi vida|querid[oa]|abraz\p{L}*|acost\p{L}*|amantes?|atracci[oó]n|desnud\p{L}*|kiss\p{L}*|love|cute|pretty|handsome|darling|sweetheart|hugs?|hugg\p{L}*)(?=$|[^\p{L}])/iu;
 
 /** ¿Contiene léxico romántico o sexual claro? */
 export function hasStrongRomance(text: string): boolean {

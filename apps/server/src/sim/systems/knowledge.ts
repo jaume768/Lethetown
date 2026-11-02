@@ -198,6 +198,7 @@ registerSystem({
         bible.city.name,
         ...bible.glossary.map((g) => g.term),
         ...bible.commonReferences,
+        ...bible.culturalReferences.map((r) => r.term),
         ...ctx.world.places.map((p) => p.name),
       ],
       isCommonWord: (w) => s.detector!.isCommonWord(w),

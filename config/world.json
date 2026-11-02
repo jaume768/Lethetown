@@ -138,6 +138,258 @@
     "Sant Antoni",
     "Carnaval"
   ],
+  "culturalReferences": [
+    {
+      "term": "Oasis",
+      "kind": "music",
+      "year": 1994,
+      "source": "álbum Definitely Maybe (1994); (What's the Story) Morning Glory? en 1995"
+    },
+    {
+      "term": "Wonderwall",
+      "kind": "music",
+      "year": 1995,
+      "source": "sencillo de Oasis, octubre de 1995"
+    },
+    {
+      "term": "Blur",
+      "kind": "music",
+      "year": 1994,
+      "source": "álbum Parklife (1994); The Great Escape en 1995"
+    },
+    {
+      "term": "Nirvana",
+      "kind": "music",
+      "year": 1991,
+      "source": "álbum Nevermind (1991); Kurt Cobain murió en 1994"
+    },
+    { "term": "Pearl Jam", "kind": "music", "year": 1991, "source": "álbum Ten (1991)" },
+    {
+      "term": "Radiohead",
+      "kind": "music",
+      "year": 1993,
+      "source": "sencillo Creep (1993); The Bends en 1995"
+    },
+    {
+      "term": "Alanis Morissette",
+      "kind": "music",
+      "year": 1995,
+      "source": "álbum Jagged Little Pill (1995)"
+    },
+    {
+      "term": "The Cranberries",
+      "kind": "music",
+      "year": 1994,
+      "source": "sencillo Zombie (1994)"
+    },
+    {
+      "term": "Bon Jovi",
+      "kind": "music",
+      "year": 1984,
+      "source": "en activo desde 1984; These Days en 1995"
+    },
+    {
+      "term": "U2",
+      "kind": "music",
+      "year": 1980,
+      "source": "en activo desde 1980; Zooropa en 1993"
+    },
+    {
+      "term": "Queen",
+      "kind": "music",
+      "year": 1973,
+      "source": "Made in Heaven (noviembre de 1995), tras la muerte de Freddie Mercury (1991)"
+    },
+    {
+      "term": "Take That",
+      "kind": "music",
+      "year": 1991,
+      "source": "anuncian su separación en febrero de 1996"
+    },
+    { "term": "Ace of Base", "kind": "music", "year": 1993, "source": "álbum Happy Nation (1993)" },
+    {
+      "term": "Spice Girls",
+      "kind": "music",
+      "year": 1996,
+      "source": "sencillo Wannabe, julio de 1996 (antes de eso, casi nadie las conoce)"
+    },
+    {
+      "term": "Backstreet Boys",
+      "kind": "music",
+      "year": 1996,
+      "source": "primer álbum en Europa, 1996"
+    },
+    {
+      "term": "Los Rodríguez",
+      "kind": "music",
+      "year": 1990,
+      "source": "Calamaro y Ariel Rot; Palabras más, palabras menos (1995)"
+    },
+    {
+      "term": "Celtas Cortos",
+      "kind": "music",
+      "year": 1986,
+      "source": "en activo desde 1986; 20 de abril (1991)"
+    },
+    { "term": "Revólver", "kind": "music", "year": 1990, "source": "Calle Mayor (1995)" },
+    {
+      "term": "Presuntos Implicados",
+      "kind": "music",
+      "year": 1983,
+      "source": "Alma de blues (1987), El pan y la sal (1994)"
+    },
+    { "term": "Duncan Dhu", "kind": "music", "year": 1984, "source": "en activo desde 1984" },
+    { "term": "Los Planetas", "kind": "music", "year": 1993, "source": "Super 8 (1994)" },
+    { "term": "Dover", "kind": "music", "year": 1992, "source": "Sister (1995)" },
+    { "term": "Ella Baila Sola", "kind": "music", "year": 1996, "source": "primer álbum, 1996" },
+    {
+      "term": "Tomeu Penya",
+      "kind": "music",
+      "year": 1979,
+      "source": "cantautor mallorquín en activo desde los setenta"
+    },
+    { "term": "Farmacia de guardia", "kind": "tv", "year": 1991, "source": "Antena 3, 1991–1995" },
+    { "term": "Expediente X", "kind": "tv", "year": 1994, "source": "en España desde 1994" },
+    { "term": "Urgencias", "kind": "tv", "year": 1995, "source": "ER, en España desde 1995" },
+    {
+      "term": "El príncipe de Bel-Air",
+      "kind": "tv",
+      "year": 1990,
+      "source": "en España, TVE, desde 1993"
+    },
+    {
+      "term": "Sensación de vivir",
+      "kind": "tv",
+      "year": 1990,
+      "source": "Beverly Hills 90210; en España, Telecinco, desde 1992"
+    },
+    {
+      "term": "Friends",
+      "kind": "tv",
+      "year": 1994,
+      "source": "en EE. UU. desde 1994; en España, por Canal Plus, desde 1996"
+    },
+    {
+      "term": "Verano azul",
+      "kind": "tv",
+      "year": 1981,
+      "source": "TVE, 1981; se repone a menudo"
+    },
+    {
+      "term": "Caiga quien caiga",
+      "kind": "tv",
+      "year": 1996,
+      "source": "Telecinco, desde enero de 1996"
+    },
+    {
+      "term": "Esta noche cruzamos el Mississippi",
+      "kind": "tv",
+      "year": 1995,
+      "source": "Telecinco, 1995–1997"
+    },
+    {
+      "term": "Un, dos, tres",
+      "kind": "tv",
+      "year": 1972,
+      "source": "TVE, Chicho Ibáñez Serrador"
+    },
+    { "term": "El precio justo", "kind": "tv", "year": 1988, "source": "TVE, desde 1988" },
+    { "term": "Qué apostamos", "kind": "tv", "year": 1993, "source": "TVE, desde 1993" },
+    { "term": "Informe semanal", "kind": "tv", "year": 1973, "source": "TVE, desde 1973" },
+    { "term": "Estudio estadio", "kind": "tv", "year": 1972, "source": "TVE, desde 1972" },
+    { "term": "Club Super 3", "kind": "tv", "year": 1991, "source": "TV3, desde 1991" },
+    {
+      "term": "Bola de Dragón",
+      "kind": "tv",
+      "year": 1990,
+      "source": "Dragon Ball en las autonómicas desde 1990"
+    },
+    { "term": "Oliver y Benji", "kind": "tv", "year": 1990, "source": "en España desde 1990" },
+    {
+      "term": "Los Caballeros del Zodiaco",
+      "kind": "tv",
+      "year": 1990,
+      "source": "en España desde 1990"
+    },
+    { "term": "Toy Story", "kind": "film", "year": 1995, "source": "estreno en España, 1996" },
+    { "term": "El rey león", "kind": "film", "year": 1994, "source": "Disney, 1994" },
+    { "term": "Forrest Gump", "kind": "film", "year": 1994, "source": "1994" },
+    { "term": "Pulp Fiction", "kind": "film", "year": 1994, "source": "1994" },
+    { "term": "Braveheart", "kind": "film", "year": 1995, "source": "1995" },
+    { "term": "Parque Jurásico", "kind": "film", "year": 1993, "source": "1993" },
+    {
+      "term": "El día de la bestia",
+      "kind": "film",
+      "year": 1995,
+      "source": "Álex de la Iglesia, 1995"
+    },
+    {
+      "term": "Tesis",
+      "kind": "film",
+      "year": 1996,
+      "source": "Alejandro Amenábar, abril de 1996"
+    },
+    {
+      "term": "Eurocopa",
+      "kind": "sport",
+      "year": 1996,
+      "source": "Eurocopa de Inglaterra, junio de 1996"
+    },
+    {
+      "term": "Juegos de Atlanta",
+      "kind": "sport",
+      "year": 1996,
+      "source": "Juegos Olímpicos de Atlanta, julio de 1996"
+    },
+    {
+      "term": "Mundial de Estados Unidos",
+      "kind": "sport",
+      "year": 1994,
+      "source": "Mundial de 1994"
+    },
+    {
+      "term": "Tour de Francia",
+      "kind": "sport",
+      "year": 1903,
+      "source": "Induráin lo gana de 1991 a 1995"
+    },
+    {
+      "term": "Fórmula 1",
+      "kind": "sport",
+      "year": 1950,
+      "source": "Michael Schumacher, campeón en 1994 y 1995"
+    },
+    {
+      "term": "Michael Schumacher",
+      "kind": "sport",
+      "year": 1994,
+      "source": "campeón de Fórmula 1 en 1994 y 1995"
+    },
+    {
+      "term": "Michael Jordan",
+      "kind": "sport",
+      "year": 1984,
+      "source": "Chicago Bulls; vuelve a la NBA en 1995"
+    },
+    {
+      "term": "Chicago Bulls",
+      "kind": "sport",
+      "year": 1966,
+      "source": "campeones de la NBA en 1996"
+    },
+    { "term": "Dream Team", "kind": "sport", "year": 1992, "source": "Barcelona 92" },
+    { "term": "Super Nintendo", "kind": "other", "year": 1992, "source": "en España desde 1992" },
+    {
+      "term": "PlayStation",
+      "kind": "other",
+      "year": 1995,
+      "source": "en España desde septiembre de 1995"
+    },
+    { "term": "Mega Drive", "kind": "other", "year": 1990, "source": "Sega, en España desde 1990" },
+    { "term": "Seat Ibiza", "kind": "other", "year": 1984, "source": "Seat, desde 1984" },
+    { "term": "Opel Corsa", "kind": "other", "year": 1982, "source": "desde 1982" },
+    { "term": "Mercedes", "kind": "other", "year": 1926, "source": "la marca de coches" }
+  ],
   "anachronisms": [
     { "term": "teléfono móvil", "label": "móvil como algo corriente" },
     { "term": "el móvil", "label": "móvil como algo corriente" },

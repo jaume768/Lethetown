@@ -56,6 +56,8 @@ const RETOLD = new Set<SafetyKind>([
   "summary",
   "chronicle",
 ]);
+/** Textos que suelen ser listas (plan, diario): la coma abre elemento. */
+const LISTS = new Set<SafetyKind>([...RETOLD, "plan"]);
 const MAX_TEXT = 300;
 const RECENT = 300;
 
@@ -140,14 +142,15 @@ export class ExternalKnowledgeGuard {
     ];
     // En un recuerdo, lo que va entre comillas lo dijo otro (quizá alguien sin nombre): ya se
     // registró, si tocaba, cuando lo dijo.
+    const scan = { listCommas: LISTS.has(ctx.kind) };
     let names = this.opts.detector
-      .externalNames(retold ? withoutQuotes(text) : text)
+      .externalNames(retold ? withoutQuotes(text) : text, scan)
       .filter((n) => !isAnachronism(n));
     for (const id of actors) {
       if (!names.length) break;
       const seed = this.opts.seedOf(id);
       if (!seed) continue;
-      const outside = new Set(this.opts.detector.outsideProfile(text, seed));
+      const outside = new Set(this.opts.detector.outsideProfile(text, seed, scan));
       names = names.filter((n) => outside.has(n));
     }
     for (const name of names) {

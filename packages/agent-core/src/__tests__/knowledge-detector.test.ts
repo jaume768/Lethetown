@@ -105,3 +105,67 @@ describe("ExternalKnowledgeGuard", () => {
     );
   });
 });
+
+describe("ruido del registro (corrección 2.5, ejemplos de la partida 2)", () => {
+  const make = () => {
+    const records: KnowledgeRecord[] = [];
+    const guard = new ExternalKnowledgeGuard({
+      detector: new KnowledgeDetector(bible, {
+        neighbors: seeds,
+        places: ["Café La Ola", "Taberna El Faro"],
+        vocabulary: seeds.flatMap((s) => [s.description, ...s.initialMemories]),
+      }),
+      mode: "log",
+      seedOf: (id) => seed(id),
+      now: () => 0,
+      onRecord: (r) => records.push(r),
+    });
+    return { guard, records };
+  };
+
+  it("listas del diario y del plan: tras una coma empieza un elemento", () => {
+    const { guard } = make();
+    const diary =
+      "El día 2: Desayunar en casa, Pintar en el parque, Jugar con Leo, Pasear por el lago, Cenar pronto.";
+    expect(guard.detect(diary, { kind: "summary", agentId: "lucia" })).toEqual([]);
+    expect(guard.detect(diary, { kind: "plan", agentId: "lucia" })).toEqual([]);
+    expect(
+      guard.detect("Tomar un café, Volver a casa, Pasear", { kind: "reflection", agentId: "hugo" }),
+    ).toEqual([]);
+  });
+
+  it("la primera palabra tras el id del destinatario (o los ids de la acción) abre la frase", () => {
+    const { guard } = make();
+    expect(
+      guard.detect("hugo Marchando, que se enfría", { kind: "speech", agentId: "rafael" }),
+    ).toEqual([]);
+    expect(guard.detect("ernesto Acábate el café", { kind: "speech", agentId: "mateo" })).toEqual(
+      [],
+    );
+    expect(
+      guard.detect("ines cafe_ola Tomar algo y charlar", { kind: "action", agentId: "aurora" }),
+    ).toEqual([]);
+  });
+
+  it("referencias de 1996 (Oasis, Blur, Nirvana, series y deportes) no son de fuera", () => {
+    const { guard } = make();
+    for (const t of [
+      "Es de Oasis, en plan, flipante.",
+      "¿Tú eres más de Blur o de Nirvana?",
+      "Anoche vi Expediente X y luego Caiga quien caiga.",
+      "Este verano son los Juegos de Atlanta y la Eurocopa.",
+    ]) {
+      expect(guard.detect(t, { kind: "speech", agentId: "clara" }), t).toEqual([]);
+    }
+    expect(bible.culturalReferences.every((r) => r.year <= bible.year && r.source)).toBe(true);
+  });
+
+  it("lo de verdad de fuera se sigue registrando (Lagos en boca de Leo)", () => {
+    const { guard } = make();
+    expect(
+      guard
+        .detect("Dicen que en Lagos hace calor", { kind: "speech", agentId: "leo" })
+        .map((r) => r.term),
+    ).toEqual(["Lagos"]);
+  });
+});
