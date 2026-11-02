@@ -6,17 +6,17 @@ Catálogo de acciones cerrado (opción A), ampliado; todo nuevo como `SimSystem`
 
 ## Checklist
 
-- [ ] A. Habilidades en agent-core: catálogo (14), práctica con rendimientos decrecientes, maestro,
+- [x] A. Habilidades en agent-core: catálogo (14), práctica con rendimientos decrecientes, maestro,
       olvido con su curva, éxito y calidad (lógica pura, `SkillsConfig`)
-- [ ] B. Sistema `skills`: tabla, almacén, semillas (`tools/derive-skills.ts`, revisadas), práctica
+- [x] B. Sistema `skills`: tabla, almacén, semillas (`tools/derive-skills.ts`, revisadas), práctica
       por actividad/objeto/lugar, olvido nocturno, auditoría, prompt compacto, métricas
-- [ ] C. Que importe: `use_object` según habilidad, calidad de resultados (lo percibe quien lo
+- [x] C. Que importe: `use_object` según habilidad, calidad de resultados (lo percibe quien lo
       recibe), criterio de metas `skill_level`
-- [ ] D. Acciones: `practice`, `ask_to_learn`/`teach`/`accept_teaching`/`decline_teaching`
+- [x] D. Acciones: `practice`, `ask_to_learn`/`teach`/`accept_teaching`/`decline_teaching`
       (sesiones), `help`, `show_result`; acuerdos `teach` y `help`
-- [ ] E. Sistema `lore`: tablas, semillas, transmisión con deformación sin LLM, uso y olvido,
+- [x] E. Sistema `lore`: tablas, semillas, transmisión con deformación sin LLM, uso y olvido,
       saberes perdidos, `share_lore` (y acuerdo), vista Rashomon
-- [ ] F. Deriva lenta de la personalidad (sistema `personality`)
+- [x] F. Deriva lenta de la personalidad (sistema `personality`)
 - [ ] G. Interfaz y métricas: pestaña del inspector, panel de saberes, Evolución, dramas, i18n
 - [ ] H. README, CLAUDE.md, decisiones (skills.md, lore.md, acciones.md), coste, entrevistas, PR
 
