@@ -76,9 +76,9 @@ registerSystem({
     }
   },
   tick: { every: REVIEW_MINUTES, run: loreTick },
-  promptSections: (ctx, agent) => {
+  promptSections: (ctx, agent, now) => {
     if (!loreCfg(ctx).enabled || !presentWith(ctx, agent).length) return [];
-    const lines = loreLines(ctx, agent);
+    const lines = loreLines(ctx, agent, now);
     return lines.length ? [{ title: "SABERES QUE PUEDES CONTAR", lines, order: 66 }] : [];
   },
   retention: {

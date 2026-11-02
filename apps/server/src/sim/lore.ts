@@ -13,6 +13,8 @@ import { levelOf, skillsState, type PracticeTick } from "./skills";
 
 /** Usar un saber cuenta, como mucho, una vez cada este rato (min de juego). */
 const USE_COOLDOWN = 60;
+/** Tras ofrecerle sus saberes en una decisión, no vuelven a salir en este rato (cuestan tokens). */
+const DECIDE_COOLDOWN = 180;
 
 export interface LoreState {
   lore: Map<string, Lore>;
@@ -22,6 +24,8 @@ export interface LoreState {
   lastDecayDay: number;
   counts: { transmissions: number; forgotten: number; lost: number; altered: number };
   listening: boolean;
+  /** Cuándo se le ofrecieron sus saberes en una decisión. */
+  shownAt: Map<string, number>;
 }
 
 const hkey = (loreId: string, agentId: string) => `${loreId}:${agentId}`;
@@ -35,6 +39,7 @@ export const loreState = (ctx: SimContext) =>
     lastDecayDay: -1,
     counts: { transmissions: 0, forgotten: 0, lost: 0, altered: 0 },
     listening: false,
+    shownAt: new Map(),
   }));
 
 export const loreCfg = (ctx: SimContext): LoreConfig => ctx.deps.memory.config.lore;
@@ -313,8 +318,15 @@ export function loreTick(ctx: SimContext, now: number): void {
   }
 }
 
-/** En la decisión, con alguien delante: los saberes que podría contar (ids para share_lore). */
-export function loreLines(ctx: SimContext, agent: Agent): string[] {
+/**
+ * En la decisión, con alguien delante: los saberes que podría contar (ids para share_lore), como
+ * mucho cada 3 h.
+ */
+export function loreLines(ctx: SimContext, agent: Agent, now: number): string[] {
+  const s = loreState(ctx);
+  const last = s.shownAt.get(agent.id);
+  if (last !== undefined && now - last < DECIDE_COOLDOWN) return [];
+  s.shownAt.set(agent.id, now);
   return heldBy(ctx, agent.id)
     .sort((a, b) => b.holder.fidelity - a.holder.fidelity)
     .slice(0, 3)
