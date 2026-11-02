@@ -30,6 +30,16 @@ psicológica en los prompts si se puede calcular en código.
   pista _aparece_ (nace activa); probabilidad 0.7 × claridad ÷ olvido de intenciones; tras 2
   fallos se olvida y puede caer en la cuenta después. Se detectan en la ficha social de fin de
   charla y en la decisión (sin llamadas nuevas).
+- **Deriva lenta de la personalidad** (sistema `personality`, `DriftConfig` en
+  `MemoryConfig.drift`): lo vivido en una semana de juego (metas conseguidas → constancia y calma;
+  abandonadas → lo contrario; aprender → apertura; enseñar → amabilidad y sociabilidad;
+  conflictos → aspereza e inquietud; apoyo → calma) y la edad (principio de madurez: de joven,
+  más constancia y amabilidad y menos neuroticismo; de mayor, algo menos de apertura). Cada
+  experiencia cuenta como mucho 4 veces por semana; cada rasgo cambia como mucho 0,02 por semana,
+  no se aleja más de 0,15 de la semilla y queda en [0,05, 0,95]. Auditado con su motivo, sin
+  género («con más constancia»). Si cambia cómo se describe en el prompt fijo
+  (`personalityLine`), `Agent.refreshIdentity()` lo rehace: rompe la caché de ese agente una vez.
+  El perfil de memoria se calcula al arrancar (no sigue a la deriva todavía).
 - **Sin inflación de intenciones** (partida 2: 199 al día, 46 % cumplidas): cada una lleva
   importancia (la que da quien la crea: citas 8, préstamos 7; si no, con hora 7, con persona o
   lugar 6, sin pista 4). Con `prospective.maxOpen` (8) abiertas, sale la menos importante (o no

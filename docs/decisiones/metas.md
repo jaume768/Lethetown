@@ -13,20 +13,21 @@ llegar y pasos concretos) sin que el LLM se invente el progreso. Sistema `goals`
   no se crea y queda en la auditoría de memoria (`action: "goal"`) con el motivo.
 - **Catálogo** (todo desde que se crea la meta):
 
-  | Criterio            | Se mide con                                                     |
-  | ------------------- | --------------------------------------------------------------- |
-  | `activity_hours`    | revisión cada 5 min: su actividad contiene una palabra clave    |
-  | `place_time`        | revisión cada 5 min: está en el lugar (despierto, sin viajar)   |
-  | `visits`            | revisión: llega a un lugar distinto del de la revisión previa   |
-  | `relationship`      | cada hora, su ficha social (afinidad, confianza o tipo)         |
-  | `meetings`          | eventos «🤝 … se ven en …» (citas cumplidas)                    |
-  | `conversations`     | eventos de habla (cada conversación o cada persona, una vez)    |
-  | `places_discovered` | eventos `discover`                                              |
-  | `items`             | eventos `use_object`, `return_item`, `give_item`, `lend_item`   |
-  | `notes`             | eventos `post_note` y `leave_note`                              |
-  | `intentions_kept`   | eventos «✅ … se acuerda de …»                                  |
-  | `projects`          | (la vital) proyectos suyos conseguidos; los activos, su parte   |
-  | `confirmed`         | su `measure` (uno de los anteriores) y la comprobación nocturna |
+  | Criterio            | Se mide con                                                      |
+  | ------------------- | ---------------------------------------------------------------- |
+  | `activity_hours`    | revisión cada 5 min: su actividad contiene una palabra clave     |
+  | `place_time`        | revisión cada 5 min: está en el lugar (despierto, sin viajar)    |
+  | `visits`            | revisión: llega a un lugar distinto del de la revisión previa    |
+  | `relationship`      | cada hora, su ficha social (afinidad, confianza o tipo)          |
+  | `meetings`          | eventos «🤝 … se ven en …» (citas cumplidas)                     |
+  | `conversations`     | eventos de habla (cada conversación o cada persona, una vez)     |
+  | `places_discovered` | eventos `discover`                                               |
+  | `items`             | eventos `use_object`, `return_item`, `give_item`, `lend_item`    |
+  | `notes`             | eventos `post_note` y `leave_note`                               |
+  | `intentions_kept`   | eventos «✅ … se acuerda de …»                                   |
+  | `projects`          | (la vital) proyectos suyos conseguidos; los activos, su parte    |
+  | `skill_level`       | el nivel de la habilidad (sistema `skills`), desde el de crearla |
+  | `confirmed`         | su `measure` (uno de los anteriores) y la comprobación nocturna  |
 
   Lo romántico no está en el catálogo (`relationship` no admite `romantic`).
 

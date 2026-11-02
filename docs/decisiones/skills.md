@@ -1,0 +1,77 @@
+# Habilidades (desarrollo)
+
+Objetivo: que los vecinos mejoren con la práctica, se oxiden sin ella y se enseñen unos a otros,
+y que eso se note en el mundo, sin que el LLM se invente el nivel de nadie. Sistema `skills`
+(`apps/server/src/sim/systems/skills.ts`, lógica en `sim/skills.ts`; cuánto sube y baja, en
+`packages/agent-core/src/skills/skills.ts`).
+
+## Decisiones
+
+- **Catálogo cerrado y configurable** (`SkillsConfig.catalog`, zod; 14 habilidades de un pueblo
+  de Mallorca en 1996): cocina, panadería, café y barra, huerto, pesca, arreglar cosas,
+  fotografía, dibujo, música, enseñar, cuidados y primeros auxilios, vender y negociar, contar
+  historias e idiomas. Cada una dice con qué se practica: objetos del mapa (la cafetera, el
+  horno, los bancales, el botiquín), palabras de la actividad y sitios. Las ids van al prompt
+  fijo (cacheable) para `practice`, `teach` y `ask_to_learn`.
+- **Lo mide el motor, nunca el LLM.** Cada 5 minutos, quien está despierto y quieto haciendo algo
+  que practica una habilidad suma práctica: por el objeto que usa (`spotId`), si no por las
+  palabras de su actividad, o por lo que se propuso (`practice`), una sesión de enseñanza o una
+  ayuda. Las palabras son de **hacer, no de consumir**: «tomar un café» no practica la barra ni
+  «ir al médico» los cuidados (en el primer dorado, Clara y Marta subían en «café y barra»).
+- **Rendimientos decrecientes**: por hora, el nivel sube `practiceRate` (0,02) × lo que le falta;
+  la curva es exacta (1 − e^(−r·h)), así que no depende de cada cuánto se mida. De 0 a 0,5, unas
+  35 h; de 0,5 a 0,75, otras tantas. × 2 con un maestro delante que le saque 0,2 (en una sesión o,
+  sin querer, alguien que hace lo mismo y lo hace mejor), × 1,3 de joven (< 18), × 0,7 de mayor
+  (> 65), y algo más con apertura. Quien le hizo de maestro queda en `learnedFrom`.
+- **Olvido propio**, mucho más lento que el de los recuerdos: tras 3 días sin practicar, cada día
+  pierde un 1 % de lo que tiene por encima de un suelo que crece con lo aprendido a fondo
+  (pico × (0,3 + 0,5·pico)). En un mes sin practicar se pierde un cuarto de lo que había sobre
+  el suelo; lo que se llegó a dominar se queda en buena parte.
+- **Niveles sin género**: «principiante» (< 0,2), «se defiende» (< 0,45), «bien» (< 0,7) y «con
+  maestría». Los hitos (cambiar de etiqueta, arriba o abajo) van a la auditoría (`skill`), como
+  evento (🎓 / 🕸) y como drama («aprende algo»).
+- **Semillas** (`skills` en `seeds/agents.json`): `pnpm skills:derive` propone por oficio,
+  intereses, idiomas y edad; están revisadas a mano (el script daba «café y barra» a Lucía porque
+  dibuja en el café). Un test comprueba que cada oficio es su mejor habilidad, que los menores no
+  pasan de 0,4 y que los mayores saben cocinar.
+- **Tabla `skills`** (`world_id`, agente, habilidad, nivel, pico, minutos de práctica, último uso,
+  de quién aprendió, historial acotado a 40). Se escribe cuando el nivel cambia 0,01 o en un hito,
+  no cada 5 minutos.
+
+## Que importe
+
+- **Arreglar** sale con probabilidad 0,35 + 0,6·nivel en «arreglar cosas» (antes, un 70 % fijo:
+  ahora, con nivel 0,6). Intentarlo es practicar.
+- **Calidad** de lo que se sirve con la cafetera, la cocina, el horno o el botiquín: nivel ×
+  (1 − 0,3) + 0,3 × azar. Quien está delante lo percibe («El café de Mateo: muy bueno») con un poco
+  de ánimo y de afinidad hacia quien lo hizo (algo en contra si sale mal).
+- **Resultados**: 45 minutos seguidos practicando algo que deja resultado (fotos, dibujos, pan,
+  verduras) dan un objeto del inventario con su calidad, como mucho 3 a la vez por persona; se
+  regalan con `show_result` (quien lo recibe nota la calidad). No hay economía todavía: el pan se
+  acumula hasta 3.
+- **Metas** `skill_level` {skill, level}: aprender o mejorar en algo, desde el nivel al crearla
+  (lo que ya se sabe no es una meta). Inés empieza con «Aprender a hacer buenas fotos con
+  Valentina» (0,5).
+- **Prompt**: plan, «LO QUE SABES HACER» (lo que se le da bien, con ids, y lo que está aprendiendo,
+  en una línea); decisión, lo mismo como mucho cada 3 h, y «ENSEÑAR Y APRENDER» solo si hay algo
+  (sesiones pendientes, quién de los presentes sabe claramente más, sus resultados).
+
+## Enseñar, aprender y ayudar
+
+Ver las acciones en [acciones](acciones.md#aprender-y-enseñar).
+
+- **Sesiones**: se piden (`ask_to_learn`) o se ofrecen (`teach`); la otra parte acepta o rechaza
+  en 30 minutos. Juntas 60 minutos (`sessionMinutes`): el alumno practica con maestro y el maestro
+  practica «enseñar». Si se separan, acaba antes. Al acabar, afinidad y familiaridad para los dos
+  (0,05), un recuerdo para cada uno y el drama «maestro y alumno».
+- **Solo se ofrecen cuando tienen sentido** (cada acción ofrecida cuesta tokens): pedir si alguien
+  de aquí sabe claramente más; enseñar si se le saca ventaja a alguien de aquí; ayudar si alguien
+  practica algo; practicar con tiempo libre.
+- **Menores** (`teachingRule`): sobre `minorMeetingRule` (sitio público, la escuela incluida, o su
+  casa), en su casa solo si el adulto es de la familia o hay un adulto de la casa delante.
+
+## Medidas
+
+En 48 h de mock (`SIM_SEED=7`): unas 170 horas de práctica, 7 sesiones, algún resultado regalado; en
+3 días casi nadie cambia de etiqueta (se aprende despacio a propósito). Con el LLM real hay que
+medir si se piden y ofrecen sesiones con naturalidad o en exceso (ver PROGRESS-APRENDIZAJE.md).

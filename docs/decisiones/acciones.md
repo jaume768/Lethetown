@@ -45,6 +45,11 @@ el motivo como percepción ("No pude …: motivo"), lo recuerda y puede reconsid
 | `invite` · `accept_invite` · `decline_invite`                               | Ir juntos ahora                                 | Solo a la casa propia; caduca en 30 min                                                                  |
 | `follow`                                                                    | Acompañar a alguien un rato                     | Está aquí; en cada paso, normas y menores                                                                |
 | `post_note` · `leave_note`                                                  | Tablón de la plaza y notas privadas             | En la plaza (≤ 2 vivas) / en una casa                                                                    |
+| `practice`                                                                  | Ponerse a practicar algo un rato                | Habilidad del catálogo; lugar conocido y abierto; solo con tiempo libre                                  |
+| `ask_to_learn` · `teach` · `accept_teaching` · `decline_teaching`           | Sesiones de enseñanza                           | Presentes; quien enseña sabe (≥ 0,35) y saca 0,2; `teachingRule` con menores                             |
+| `help`                                                                      | Ayudar en lo que hace otro                      | Está aquí haciendo algo que practica una habilidad; `teachingRule`                                       |
+| `show_result`                                                               | Enseñar y regalar algo hecho (foto, pan…)       | Es un resultado suyo que lleva; `teachingRule`                                                           |
+| `share_lore`                                                                | Contar un saber (receta, sitio, historia…)      | Lo sabe y no lo ha olvidado; `teachingRule`                                                              |
 
 ## Por área
 
@@ -66,7 +71,9 @@ el motivo como percepción ("No pude …: motivo"), lo recuerda y puede reconsid
   revisa su ficha de las 2 personas con quienes más habló: el coste crece con las personas, no con
   las parejas.
 - **Objetos** (`shared/objects/machines.ts`): máquinas de estados por tipo (cafetera, cocinas,
-  horno, bancales, botiquín); lo que dura vuelve solo; lo roto se puede intentar arreglar (70 %).
+  horno, bancales, botiquín); lo que dura vuelve solo; lo roto se puede intentar arreglar (según
+  «arreglar cosas»: 0,35 + 0,6·nivel; antes, un 70 % fijo). Lo que se sirve tiene calidad
+  ([habilidades](skills.md#que-importe)).
 - **Inventario** (`sim/items.ts`): dueño, portador, lugar, préstamo y `value`. Prestar crea la
   intención de devolver (que se puede olvidar); devolver la cumple. Préstamo vencido: el dueño lo
   nota una vez (−0.05, evento 📕, drama `loan_unreturned`). El libro de poemas de Carmen lo tiene
@@ -80,6 +87,27 @@ el motivo como percepción ("No pude …: motivo"), lo recuerda y puede reconsid
   la casa) y horarios en el `.tmj` (`private`, `hours`, desde `tools/generate-map.ts`). `mayEnter`
   lo usan las acciones y el plan; `normsTick` abre y cierra, saca a quien se queda al cerrar,
   caduca permisos y detecta intrusos (afinidad y confianza, evento 🚪, drama `intruder`).
+
+## Aprender y enseñar
+
+Fase 3 (desarrollo y aprendizaje): ver [habilidades](skills.md) y [saberes](lore.md).
+
+- **Sesiones** (sistema `skills`): `ask_to_learn` (pido que me enseñen) o `teach` (me ofrezco)
+  dejan una propuesta («Sesión s3: …») que la otra parte acepta o rechaza en 30 minutos. Aceptada,
+  60 minutos juntos con las acciones «enseñándole…» y «aprendiendo… con…»: el alumno practica con
+  maestro y el maestro practica «enseñar». Al acabar (o si se separan), afinidad y familiaridad,
+  recuerdo para los dos y evento 🧑‍🏫.
+- **`help`**: 30 minutos ayudando en lo que hace el otro; practica esa habilidad (con el otro de
+  maestro si sabe más) y los dos ganan algo de afinidad.
+- **`show_result`**: regala un resultado (lo que sale de practicar: una foto, un dibujo, pan,
+  verduras); quien lo recibe nota su calidad.
+- **`share_lore`**: cuenta un saber; quien escucha se queda con una versión deformada (sin LLM).
+- **Se ofrecen solo cuando tienen sentido** (cada acción ofrecida cuesta tokens en cada
+  decisión): ver [habilidades](skills.md#enseñar-aprender-y-ayudar).
+- **Menores** (`teachingRule`): un sitio público (la escuela incluida) o su casa, y en su casa solo
+  con alguien de la familia.
+- **Acordado hablando**: `teach` (from enseña, to aprende, `skill`), `help` y `share_lore`
+  (`loreId`), con las mismas acciones formales.
 
 ## Puente de la conversación a la acción
 
@@ -106,8 +134,9 @@ se acordaba hablando («quedamos el viernes en la fuente») y se quedaba en inte
   compromiso ya creó la suya (la cita, «ir a la cita con…»).
 - **Marcado**: evento 🗣 con `meta.agreed` (y la acción formal en `meta.action`); la cita lleva
   el flag `agreed`. En el log, icono propio (🗣) y etiqueta «acordado hablando».
-- **Tipos abiertos**: cada sistema declara los suyos (`SimSystem.agreements`); `pay` y `teach`
-  vendrán con la economía y los oficios. Un tipo sin sistema se descarta con motivo.
+- **Tipos abiertos**: cada sistema declara los suyos (`SimSystem.agreements`): `teach` y `help`
+  (skills), `share_lore` (lore); `pay` vendrá con la economía. Un tipo sin sistema se descarta con
+  motivo.
 - **Mock**: «Deberíamos venir juntos» cierra una cita mañana en el café en una de cada cuatro
   charlas (la hora sale de la charla, así los dos lados dicen lo mismo); quien lleva algo
   prestado a veces queda en devolverlo.

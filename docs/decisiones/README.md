@@ -21,3 +21,5 @@ márcala como sustituida) en el mismo commit.
 | Métricas de evolución y análisis de partidas                  | [evolucion.md](evolucion.md)   |
 | Metas (ambición), marcharse del pueblo                        | [metas.md](metas.md)           |
 | Personas: ni vecinos ni conocidos inventados                  | [personas.md](personas.md)     |
+| Habilidades: práctica, maestros, olvido y lo que cambian      | [skills.md](skills.md)         |
+| Saberes del pueblo: transmisión, deformación y pérdida        | [lore.md](lore.md)             |
