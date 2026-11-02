@@ -339,8 +339,18 @@ Producción en un VPS (Caddy con HTTPS, api, workers y Postgres): **[docs/despli
 - **Gasto**: el servidor lo suma (por mundo, día y mes) para verlo, pero no lo limita: eso se
   controla con el saldo de la API key. Kill switch para admin.
 - LLM con timeout propio, reintentos con backoff y jitter en 429/5xx y circuit breaker; Batch API
-  (activa por defecto, `LLM_BATCH`; solo Anthropic y a ≤ x10) para la consolidación nocturna y las
-  crónicas.
+  (activa por defecto, `LLM_BATCH=on`; solo Anthropic) para la consolidación nocturna y las
+  crónicas: la mitad de precio en casi la mitad del gasto. **Solo se usa mientras ningún mundo va
+  más rápido que `LLM_BATCH_MAX_SPEED` (x10)**: para aprovecharla, las noches tienen que ir a x10
+  o menos (a más velocidad, esas llamadas van por la vía normal, a precio completo). Si un lote
+  tarda más de `LLM_BATCH_MAX_WAIT_MINUTES`, se repite por la vía normal.
+
+### Partidas de estudio largas
+
+[`.env.study.example`](.env.study.example) es una capa sobre `.env` (sin secretos) para grabar
+partidas de 7 días con el LLM real: x10, Batch activa, sin pausar cuando nadie mira y una
+semilla por base de datos. Lleva los comandos para dos semillas (7 y 13): crear la base, migrar,
+`pnpm dev`, `record --hours 168`, `world:export` y `pnpm study:analyze` para compararlas.
 
 Todas las variables, con su explicación, están en [`.env.example`](.env.example).
 
