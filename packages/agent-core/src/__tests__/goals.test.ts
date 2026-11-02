@@ -1,4 +1,5 @@
 /** Metas en agent-core: psicología (motivación, frustración, abandono, cambio de rumbo) y criterios. */
+import { readFileSync } from "node:fs";
 import type { BigFive } from "@lethetown/shared";
 import { describe, expect, it } from "vitest";
 import {
@@ -65,6 +66,44 @@ describe("psicología de las metas", () => {
     expect(lifeChangeProbability(0.95, mid, 20, cfg)).toBeGreaterThan(at40);
     expect(lifeChangeProbability(0.95, mid, 80, cfg)).toBeLessThan(at40);
     expect(lifeChangeProbability(0.5, mid, 20, cfg)).toBe(0);
+  });
+});
+
+describe("una semana de juego (frustración 0,2 al día)", () => {
+  const seeds = (
+    JSON.parse(readFileSync(new URL("../../../../seeds/agents.json", import.meta.url), "utf8")) as {
+      id: string;
+      personality: BigFive;
+    }[]
+  ).map((s) => ({ id: s.id, p: s.personality }));
+
+  /** Probabilidad de abandonar un proyecto en `days` días; avanza cada `every` días (0 = nunca). */
+  const weekly = (p: BigFive, every = 0, days = 7) => {
+    let g = { motivation: cfg.initialMotivation, frustration: 0 };
+    let stagnant = 0;
+    let stay = 1;
+    for (let d = 1; d <= days; d++) {
+      const gained = every && d % every === 0 ? 0.1 : 0;
+      stagnant = gained ? 0 : stagnant + 1;
+      const r = goalDay(g, gained, stagnant, p, cfg);
+      g = { motivation: r.motivation, frustration: r.frustration };
+      stay *= 1 - abandonProbability(g.frustration, p, cfg);
+    }
+    return 1 - stay;
+  };
+
+  it("un proyecto parado toda la semana: abandonos plausibles, según cómo es cada uno", () => {
+    const all = seeds.map((s) => weekly(s.p));
+    const mean = all.reduce((a, b) => a + b, 0) / all.length;
+    expect(mean).toBeGreaterThan(0.35);
+    expect(mean).toBeLessThan(0.7);
+    // Nadie lo deja seguro ni nadie aguanta siempre: depende de la personalidad.
+    expect(Math.max(...all)).toBeLessThan(0.95);
+    expect(Math.min(...all)).toBeGreaterThan(0.15);
+  });
+
+  it("si avanza aunque sea un poco cada dos días, casi nunca se abandona (no son masivos)", () => {
+    for (const s of seeds) expect(weekly(s.p, 2), s.id).toBeLessThan(0.05);
   });
 });
 

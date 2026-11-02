@@ -19,8 +19,12 @@ export const GoalsConfig = z.object({
   frustrationRelief: unit(0.15),
   /** Días de juego sin avanzar a partir de los cuales una meta está estancada. */
   stagnantAfterDays: z.number().positive().default(1),
-  /** Frustración por día estancado: k · (0,5 + neuroticismo). */
-  frustrationPerStagnantDay: unit(0.12),
+  /**
+   * Frustración por día estancado: k · (0,5 + neuroticismo). Con 0,12, en la partida 2 (3 días)
+   * nadie llegaba a 0,7; con 0,2, un proyecto parado toda una semana se abandona con un 53 % de
+   * media (32–81 % según la personalidad; ver docs/decisiones/metas.md).
+   */
+  frustrationPerStagnantDay: unit(0.2),
   /** Motivación que se pierde por día estancado. */
   motivationDecayPerStagnantDay: unit(0.05),
   /** Ánimo (valencia) por progreso del día: + k·progreso, como mucho `moodMaxPerDay`. */
