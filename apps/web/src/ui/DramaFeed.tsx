@@ -35,6 +35,10 @@ const ICON: Record<Drama["kind"], string> = {
   goal_conflict: "⚔",
   departure: "👋",
   visit: "🧳",
+  skill_learned: "🎓",
+  teaching: "🧑‍🏫",
+  lore_lost: "🕯",
+  lore_forgotten: "🕸",
 };
 
 /** Feed de dramas: lo más interesante que ha pasado, con "Ir a verlo". */

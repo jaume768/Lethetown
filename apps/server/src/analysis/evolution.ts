@@ -250,6 +250,27 @@ function relationshipChanges(history: SocialProfileChange[]) {
   return changes;
 }
 
+/** Lo que se aprende, se enseña, se cuenta y se pierde (de los eventos y la auditoría). */
+function learningOf(
+  events: EvolutionInput["events"],
+  audits: EvolutionInput["audits"],
+): NonNullable<DayMetrics["learning"]> {
+  const n = (action: string, ok?: boolean) =>
+    events.filter(
+      (e) => e.meta?.action === action && (ok === undefined || (e.meta?.ok === true) === ok),
+    ).length;
+  return {
+    skillUps: n("skill", true),
+    skillRust: n("skill", false),
+    sessions: n("teach"),
+    helps: n("help"),
+    transmissions: n("share_lore"),
+    loreForgotten: n("lore", false),
+    loreLost: n("lore_lost"),
+    personality: audits.filter((a) => a.action === "personality").length,
+  };
+}
+
 export function analyzeEvolution(input: EvolutionInput): EvolutionReport {
   const events = [...input.events].sort((a, b) => a.time - b.time);
   const changes = relationshipChanges(input.socialHistory);
@@ -266,6 +287,13 @@ export function analyzeEvolution(input: EvolutionInput): EvolutionReport {
       ever,
     ),
   );
+  // Aprender (habilidades, enseñanza, saberes y personalidad) por día.
+  for (const d of perDay) {
+    d.learning = learningOf(
+      events.filter((e) => dayOf(e.time) === d.day),
+      input.audits.filter((a) => dayOf(a.at) === d.day),
+    );
+  }
   // Conocimiento externo por día (anacronismos y referencias).
   for (const d of perDay) {
     const rows = input.knowledge?.filter((r) => dayOf(r.at) === d.day);
@@ -281,6 +309,7 @@ export function analyzeEvolution(input: EvolutionInput): EvolutionReport {
     new Set(),
   );
   if (input.knowledge) total.knowledge = knowledgeReport(input.knowledge).byKind;
+  total.learning = learningOf(events, input.audits);
   if (input.goals) {
     for (const d of perDay) d.goals = goalsAt(input.goals, d.day * 1440, (d.day + 1) * 1440);
     total.goals = goalsAt(input.goals, -Infinity, Infinity);

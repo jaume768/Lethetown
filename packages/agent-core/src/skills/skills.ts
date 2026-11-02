@@ -316,7 +316,7 @@ export function qualityEffect(q: number, cfg: SkillsConfig): { mood: number; aff
   return { mood: cfg.qualityMood / 4, affinity: cfg.qualityAffinity / 3 };
 }
 
-/** «principiante», «se defiende», «bien», «experto». */
+/** «principiante», «se defiende», «bien», «con maestría» (sin género: describen el nivel). */
 export function levelLabel(level: number): string {
   return level < 0.2
     ? "principiante"
@@ -324,7 +324,7 @@ export function levelLabel(level: number): string {
       ? "se defiende"
       : level < 0.7
         ? "bien"
-        : "experto";
+        : "con maestría";
 }
 
 /** La habilidad del catálogo por su id. */

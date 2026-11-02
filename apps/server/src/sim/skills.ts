@@ -258,7 +258,7 @@ export function addPractice(
     ctx.emit(
       "action",
       agent.id,
-      `🎓 ${agent.seed.name} ya es «${levelLabel(s.level)}» en ${skillLabel(ctx, skill)}${who}`,
+      `🎓 ${agent.seed.name}, en ${skillLabel(ctx, skill)}: ahora «${levelLabel(s.level)}»${who}`,
       [agent.id, ...(helped && masterId ? [masterId] : [])],
       undefined,
       { action: "skill", ok: true },

@@ -14,6 +14,7 @@ import { ChroniclePanel } from "./ChroniclePanel";
 import { ClipRecorder } from "./ClipRecorder";
 import { CreditsModal } from "./Credits";
 import { DeparturesList } from "./DeparturesList";
+import { LoreList } from "./LoreList";
 import { DirectorPanel } from "./DirectorPanel";
 import { EvolutionPanel } from "./EvolutionPanel";
 import { DramaFeed } from "./DramaFeed";
@@ -212,6 +213,7 @@ export function App() {
           <>
             <ChroniclePanel chronicles={game.chronicles} />
             <DeparturesList agents={game.agents} onSelect={onSelect} />
+            <LoreList agents={game.agents} onSelect={onSelect} />
           </>
         );
       case "director":

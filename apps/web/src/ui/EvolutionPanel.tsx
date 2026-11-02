@@ -44,6 +44,13 @@ const ROWS: [MessageKey, (d: DayMetrics) => number | string][] = [
       d.goals ? `${d.goals.meanProgress.toFixed(2)} / ${d.goals.meanFrustration.toFixed(2)}` : "—",
   ],
   [
+    "evolution.learningRow",
+    (d) =>
+      d.learning
+        ? `${d.learning.skillUps} / ${d.learning.sessions} / ${d.learning.transmissions} / ${d.learning.loreLost} / ${d.learning.personality}`
+        : "—",
+  ],
+  [
     "evolution.knowledgeRow",
     (d) =>
       `${d.knowledge?.anachronism ?? 0} / ${d.knowledge?.external ?? 0} / ${d.knowledge?.person ?? 0}`,

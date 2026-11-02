@@ -14,8 +14,11 @@ import {
 /** Dos dramas del mismo tipo con los mismos agentes en menos de esto (min de juego) son uno. */
 const DEDUPE_MINUTES = 30;
 
-/** Eventos del sistema de metas (`meta.action`) → tipo de drama y puntuación (según `ok`). */
-const GOAL_DRAMAS: Record<string, (ok: boolean) => [DramaKind, number]> = {
+/**
+ * Eventos de los sistemas de metas y de aprender (`meta.action`) → tipo de drama y puntuación
+ * (según `ok`; null, si ese resultado no es un drama).
+ */
+const GOAL_DRAMAS: Record<string, (ok: boolean) => [DramaKind, number] | null> = {
   goal: (ok) =>
     ok
       ? ["goal_achieved", dramaScore.goalAchieved(false)]
@@ -28,6 +31,11 @@ const GOAL_DRAMAS: Record<string, (ok: boolean) => [DramaKind, number]> = {
   goal_conflict: () => ["goal_conflict", dramaScore.goalConflict()],
   departure: () => ["departure", dramaScore.departure()],
   visit: () => ["visit", dramaScore.visit()],
+  // Aprender (sistemas skills y lore): un hito hacia arriba, maestro y alumno, saberes perdidos.
+  skill: (ok) => (ok ? ["skill_learned", dramaScore.skillLearned()] : null),
+  teach: () => ["teaching", dramaScore.teaching()],
+  lore: (ok) => (ok ? null : ["lore_forgotten", dramaScore.loreForgotten()]),
+  lore_lost: () => ["lore_lost", dramaScore.loreLost()],
 };
 
 export interface DramaContext {
@@ -102,9 +110,9 @@ export class DramaDetector {
       return;
     }
     // Metas: conseguidas, abandonadas, cambio de rumbo, conflictos, marcharse y volver.
-    const goal = GOAL_DRAMAS[e.meta?.action ?? ""];
+    const goal = GOAL_DRAMAS[e.meta?.action ?? ""]?.(e.meta?.ok !== false);
     if (goal) {
-      const [kind, score] = goal(e.meta?.ok !== false);
+      const [kind, score] = goal;
       this.publish(
         kind,
         score,
