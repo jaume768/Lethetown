@@ -45,6 +45,9 @@ describe("registro de sistemas", () => {
       "knowledge",
       "goals",
       "intentions",
+      "skills",
+      "lore",
+      "personality",
     ]);
   });
 
@@ -73,6 +76,7 @@ describe("registro de sistemas", () => {
       "AQUÍ HAY",
       "PUEDES USAR",
       "TU PROYECTO",
+      "LO QUE SABES HACER",
     ]);
   });
 });
@@ -112,6 +116,9 @@ describe("instantánea por sistema", () => {
       "knowledge",
       "goals",
       "intentions",
+      "skills",
+      "lore",
+      "personality",
     ]);
     expect(snap.items!.version).toBe(1);
   });

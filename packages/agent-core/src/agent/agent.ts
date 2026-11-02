@@ -41,8 +41,27 @@ export { describePerception } from "./agent-perception";
  * planificación y diario, percepción, decisión, intenciones y lo social) que reciben el agente.
  */
 export class Agent {
+  /**
+   * Rehace el prompt fijo (la personalidad cambió de forma visible, con la deriva lenta). Rompe
+   * la caché de ese agente una vez; por eso solo se llama cuando cambia el texto. Devuelve si cambió.
+   */
+  refreshIdentity(): boolean {
+    const next = identityPrompt(
+      this.seed,
+      this.seedPlaces,
+      this.deps.language,
+      this.deps.minors,
+      this.deps.worldRules,
+    );
+    if (next === this.system) return false;
+    this.system = next;
+    return true;
+  }
+
   readonly id: string;
-  readonly system: string;
+  /** Prompt fijo de identidad (cacheable): solo cambia si cambia cómo es (`refreshIdentity`). */
+  system: string;
+  private readonly seedPlaces: ReturnType<typeof seedKnownPlaces>;
   readonly workingMemory = new WorkingMemory();
   state: AgentState;
   /** Estado interno persistente que no viaja al cliente (hábitos, diario). */
@@ -55,6 +74,7 @@ export class Agent {
   ) {
     this.id = seed.id;
     const known = seedKnownPlaces(seed, deps.places);
+    this.seedPlaces = known;
     this.system = identityPrompt(seed, known, deps.language, deps.minors, deps.worldRules);
     for (const p of known) this.mind.knownPlaces[p.id] = { source: "seed", at: 0, toldBy: null };
     this.spots = new Map(deps.places.flatMap((p) => p.objects.map((o) => [o.id, o] as const)));

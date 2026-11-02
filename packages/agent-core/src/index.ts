@@ -31,6 +31,8 @@ export * from "./world/person-guard";
 export * from "./world/given-names";
 export * from "./goals/psychology";
 export * from "./goals/criteria";
+export * from "./skills/skills";
+export * from "./lore/lore";
 
 export * from "./agent/agent";
 export * from "./agent/prompts";
@@ -44,6 +46,7 @@ export * from "./agent/moderation";
 export * from "./agent/minor-safety";
 export * from "./agent/mind";
 export * from "./agent/mood";
+export * from "./agent/personality-drift";
 export * from "./agent/speech";
 export * from "./agent/conversation-interest";
 export { defaultKnownPlaces, seedKnownPlaces } from "./agent/places";

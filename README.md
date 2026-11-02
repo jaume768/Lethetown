@@ -57,7 +57,7 @@ flowchart LR
 | Capacidad                   | Qué tiene cada habitante                                                                                                                                                                                                                                                                                                                                                                                                      |
 | --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Identidad**               | Nombre, edad, rasgos, historia, forma de hablar (registro, muletillas, temas), casa y trabajo. Prompt fijo y cacheable.                                                                                                                                                                                                                                                                                                       |
-| **Personalidad**            | Big Five (apertura, responsabilidad, extraversión, amabilidad, neuroticismo) y un perfil de memoria propio: cuánto olvida, cuánto confunde la fuente, lo sugestionable que es, la edad.                                                                                                                                                                                                                                       |
+| **Personalidad**            | Big Five (apertura, responsabilidad, extraversión, amabilidad, neuroticismo) y un perfil de memoria propio: cuánto olvida, cuánto confunde la fuente, lo sugestionable que es, la edad. Cambia muy despacio con lo vivido (unas centésimas por semana como mucho).                                                                                                                                                            |
 | **Emociones**               | Ánimo en dos dimensiones, valencia (agradable–desagradable) y activación (calma–tensión), con etiqueta («contento», «irritable», «preocupado»…). Cada uno tiene su nivel base y vuelve a él con el tiempo; el hambre irrita, el cansancio apaga, la soledad entristece. Lo mueven las conversaciones, los plantones, los préstamos sin devolver, los regalos, los intrusos, el tiempo y los recuerdos que vuelven sin querer. |
 | **Necesidades**             | Energía, hambre y necesidad social (que depende de la extraversión: un introvertido recarga a solas). Dormir recupera según la calidad del sueño.                                                                                                                                                                                                                                                                             |
 | **Memoria**                 | Recuerdos con fuerza que decae, esencia cuando se vuelven vagos, reconsolidación al evocarlos, confusión de fuente, consolidación al dormir, olvido por presupuesto, hábitos, diario del día, recuerdos intrusivos y falsos recuerdos marcados.                                                                                                                                                                               |
@@ -65,6 +65,8 @@ flowchart LR
 | **Relaciones**              | Ficha por persona (afinidad, confianza, familiaridad, tipo de vínculo) con historial, no necesariamente recíproca. Rumores con credibilidad según quién los cuenta, mera exposición, perdón y rencor.                                                                                                                                                                                                                         |
 | **Conocimiento del pueblo** | No todos conocen todo: sitios de siempre, vistos al pasar, explorados o que alguien les contó.                                                                                                                                                                                                                                                                                                                                |
 | **Pertenencias**            | Inventario con dueño y préstamos (y la intención de devolverlos).                                                                                                                                                                                                                                                                                                                                                             |
+| **Habilidades**             | 14 del pueblo (cocina, panadería, café y barra, huerto, pesca, fotografía, música, cuidados…): suben con la práctica (más con un maestro delante), se oxidan sin ella y cambian lo que sale (arreglar, la calidad del café o del pan). Se enseñan unos a otros.                                                                                                                                                               |
+| **Saberes**                 | Recetas, técnicas, sitios, historias y canciones del pueblo, cada uno con su versión: se deforman al contarse, se refuerzan con el uso y pueden perderse.                                                                                                                                                                                                                                                                     |
 | **Acciones**                | Un catálogo cerrado que el motor valida (siguiente sección).                                                                                                                                                                                                                                                                                                                                                                  |
 
 ## Qué pueden hacer los habitantes
@@ -87,6 +89,11 @@ motivo («No pude…»), lo recuerda y puede reconsiderarlo. El estado nuevo se 
 | `invite`, `accept_invite`, `decline_invite`                              | Ir juntos ahora (a tomar algo, a casa)                              | Solo a la casa propia; comparten la ruta                                           |
 | `follow`                                                                 | Acompañar a alguien un rato                                         | En cada paso, normas y protección de menores                                       |
 | `post_note`, `leave_note`                                                | Colgar una nota en el tablón de la plaza o dejar una nota a alguien | En la plaza / en una casa; nada privado entre adulto y menor                       |
+| `practice`                                                               | Ponerse a practicar algo un rato                                    | Que la habilidad exista; el sitio, conocido y abierto; con tiempo libre            |
+| `ask_to_learn`, `teach`, `accept_teaching`, `decline_teaching`           | Pedir que te enseñen u ofrecerte a enseñar, y la sesión             | Quien enseña sabe más; con un menor, en público o en su casa con su familia        |
+| `help`                                                                   | Ayudar a alguien en lo que está haciendo                            | Que esté haciendo algo que se pueda aprender                                       |
+| `show_result`                                                            | Enseñar y regalar algo hecho por uno (una foto, pan)                | Que sea suyo y lo lleve                                                            |
+| `share_lore`                                                             | Contar una receta, un sitio, una historia o una canción             | Que lo sepa y no lo haya olvidado                                                  |
 
 Y lo que pasa sin que nadie lo pida: los **plantones** (quien esperaba pierde afinidad y confianza y
 se le nota en el ánimo), los **préstamos vencidos** (el dueño lo nota), los **intrusos** (quien
@@ -185,6 +192,9 @@ flowchart LR
   externo** apunta anacronismos y referencias que no encajan con quien habla, sin bloquear nada
   (modo `log`). Ver
   [mundo](docs/decisiones/mundo.md#mallorca-1996-la-biblia-del-mundo-y-lo-que-sabe-cada-uno).
+- **Habilidades y saberes** (fase 3): 14 habilidades que suben con la práctica y se oxidan sin
+  ella, y 24 saberes del pueblo que cada uno sabe a su manera. Ver [habilidades](docs/decisiones/skills.md)
+  y [saberes](docs/decisiones/lore.md).
 - **Nadie inventa vecinos** («la Pepa» de la segunda partida de estudio): el `PersonGuard` cambia
   por «alguien» el nombre de una persona que no existe (en la decisión, antes repite una vez con
   el aviso; una intención así se descarta) y lo registra. Ver [personas](docs/decisiones/personas.md).
@@ -380,6 +390,7 @@ Todas las variables, con su explicación, están en [`.env.example`](.env.exampl
 | `pnpm personality:derive [--write]`              | Propone personalidad y perfil de memoria a partir de rasgos, edad y descripción de `seeds/agents.json`.                                          |
 | `pnpm knowledge:derive [--write]`                | Propone el perfil de conocimiento (estudios, oficio, idiomas, viajes, intereses) de cada semilla.                                                |
 | `pnpm goals:derive [--write]`                    | Propone una meta vital y proyectos medibles por semilla (las del repo están revisadas a mano).                                                   |
+| `pnpm skills:derive [--write]`                   | Propone los niveles de partida de las habilidades por oficio, intereses, idiomas y edad (los del repo están revisados a mano).                   |
 | `pnpm db:generate`                               | Genera una migración de Drizzle tras cambiar el esquema.                                                                                         |
 
 `SIM_SEED` en `.env` fija el azar de la memoria (rumores, reconsolidación…) para tener simulaciones reproducibles. El test dorado (`apps/server/src/sim/golden.test.ts`) compara 3 días de simulación en mock con una línea de tiempo guardada.
@@ -480,6 +491,12 @@ Mundo de 1996 y metas (mismo método): de 3.791 llamadas y ≈ 0,65 $ a 4.131 y 
 tareas nuevas: el prompt fijo crece con la biblia y el perfil (casi todo leído de caché), el plan
 y la consolidación llevan las metas, y el mock cambia de trayectoria con las semillas nuevas.
 Detalle en [PROGRESS-MUNDO-METAS.md](PROGRESS-MUNDO-METAS.md).
+
+Desarrollo y aprendizaje (mismo método): de 3.525 llamadas y ≈ 0,74 $ a 3.442 y ≈ 0,79 $. Más
+contexto por decisión (lo que sabe hacer, con quién aprender, los saberes que puede contar, y las
+acciones nuevas en el prompt fijo): 623 → 684 tokens no cacheados por decisión. Los saberes en
+cada decisión con alguien delante lo subían a ≈ 0,92 $: van como mucho cada 3 h. Detalle en
+[PROGRESS-APRENDIZAJE.md](PROGRESS-APRENDIZAJE.md).
 
 Corrección 2.5 (de la segunda partida de estudio; mismo método): de 4.131 llamadas y ≈ 0,79 $ a
 3.525 y ≈ 0,74 $. Las fichas suben menos por charla (rendimientos decrecientes) y en el mock eso
@@ -591,5 +608,6 @@ El cliente elige automáticamente el pack con el que se generó el mapa (propied
 6. **Psicología** ✅ protección de menores, hábitos, perfiles, ánimo, sueño, sesgos, memoria prospectiva y relaciones visibles.
 7. **Acciones** ✅ catálogo validado por el motor: citas, explorar, grupos, objetos e inventario, invitar y acompañar, notas, normas del mundo; agenda, inventario y lugares en el inspector.
 8. **Mundo y metas** ✅ Mallorca en 1996 (biblia, calendario, clima, perfil de conocimiento, registro de anacronismos) y metas medibles con psicología, conflictos y marcharse del pueblo.
+   - **Desarrollo y aprendizaje** ✅ habilidades que se practican, se enseñan y se oxidan; saberes del pueblo que se cuentan, se deforman y se pierden; deriva lenta de la personalidad; pestaña «Habilidades y saberes» y «Saberes del pueblo».
    - **Corrección 2.5** ✅ (de la segunda partida de estudio): pasos que no se pierden y siguiente proyecto, metas cualitativas comprobadas de noche, frustración que lleva a abandonos en una semana, intenciones sin inflación, nadie inventa vecinos (`PersonGuard`) y menos ruido en los registros.
 9. **Siguiente**: economía (`buy_item` / `sell_item`, ya preparada con `Item.value`; en pesetas), mensajes a distancia (teléfonos fijos y cabinas, cartas), ciclo vital (las metas aplazadas de los menores), la evaluación comparativa con modelos reales, OAuth, editor de mundos y agentes desde la web, traducción de los prompts (hoy se pide al modelo que responda en el idioma del mundo).

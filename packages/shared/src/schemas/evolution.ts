@@ -63,6 +63,23 @@ export const DayMetrics = z.object({
   knowledge: Counts.optional(),
   /** Metas al final del día (o ahora, en el total) y lo conseguido o abandonado ese día. */
   goals: GoalDay.optional(),
+  /**
+   * Aprender (sistemas skills, lore y personality): hitos de habilidad hacia arriba y hacia
+   * abajo, sesiones de enseñanza, ayudas, saberes contados, olvidados y perdidos, y cambios de
+   * personalidad.
+   */
+  learning: z
+    .object({
+      skillUps: z.number(),
+      skillRust: z.number(),
+      sessions: z.number(),
+      helps: z.number(),
+      transmissions: z.number(),
+      loreForgotten: z.number(),
+      loreLost: z.number(),
+      personality: z.number(),
+    })
+    .optional(),
 });
 export type DayMetrics = z.infer<typeof DayMetrics>;
 

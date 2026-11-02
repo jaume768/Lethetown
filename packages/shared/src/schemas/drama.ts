@@ -42,6 +42,14 @@ export const DramaKind = z.enum([
   "departure",
   /** Alguien que se fue vuelve de visita. */
   "visit",
+  /** Alguien aprende algo (cambia de nivel en una habilidad). */
+  "skill_learned",
+  /** Maestro y alumno: una sesión de enseñanza que acaba. */
+  "teaching",
+  /** Un saber se pierde para el pueblo (ya nadie lo recuerda bien). */
+  "lore_lost",
+  /** Alguien ya no recuerda cómo se hacía algo que sabía. */
+  "lore_forgotten",
 ]);
 export type DramaKind = z.infer<typeof DramaKind>;
 
@@ -93,6 +101,10 @@ export const dramaScore = {
   goalConflict: () => 0.7,
   departure: () => 0.95,
   visit: () => 0.7,
+  skillLearned: () => 0.5,
+  teaching: () => 0.55,
+  loreLost: () => 0.9,
+  loreForgotten: () => 0.6,
 };
 
 /** ¿Parece que alguien cuenta algo que oyó? (rumor que se propaga). */

@@ -22,6 +22,8 @@ import {
   normalizeText,
   relationshipBaseline,
   relationshipProgress,
+  skillDef,
+  skillProgress,
   type Agent,
   type GoalsConfig,
 } from "@lethetown/agent-core";
@@ -49,6 +51,7 @@ import { activeConversationOf, leaveConversation } from "./conversations";
 import { itemsState, saveItem } from "./items";
 import { openMeetingsOf } from "./meetings";
 import { setAction } from "./routines";
+import { levelOf, skillLabel } from "./skills";
 
 /** Importancia (1-10) del recuerdo «Me he propuesto: …». */
 const GOAL_MEMORY_IMPORTANCE = { life: 6, project: 5 };
@@ -111,6 +114,7 @@ const placeName = (ctx: SimContext, id: string) =>
 const names = (ctx: SimContext) => ({
   person: (id: string) => nameOf(ctx, id),
   place: (id: string) => placeName(ctx, id),
+  skill: (id: string) => skillLabel(ctx, id),
 });
 
 export function goalsOf(ctx: SimContext, agentId: string, status?: Goal["status"]): Goal[] {
@@ -232,6 +236,9 @@ export function goalProblem(ctx: SimContext, agent: Agent, input: GoalInput): st
       return "un menor no puede tener como meta estar en una casa ajena";
     }
   }
+  if (c.type === "skill_level" && !skillDef(ctx.deps.memory.config.skills, c.skill)) {
+    return `no hay ninguna habilidad «${c.skill}»`;
+  }
   if (c.type === "relationship" && !c.affinity && !c.trust && !c.relationship) {
     return "una meta de relación necesita afinidad, confianza o tipo de relación";
   }
@@ -337,7 +344,12 @@ export async function createGoal(
     frustration: 0,
     criterion: c,
     measured: 0,
-    baseline: c.type === "relationship" ? relationshipBaseline(c, profile) : null,
+    baseline:
+      c.type === "relationship"
+        ? relationshipBaseline(c, profile)
+        : c.type === "skill_level"
+          ? levelOf(ctx, agent.id, c.skill)
+          : null,
     seen: [],
     resource: input.resource ?? null,
     departure: input.departure ?? null,
@@ -354,6 +366,12 @@ export async function createGoal(
       audit(ctx, goal, "meta descartada: ya se cumple (la ficha social ya llega a eso)");
       return null;
     }
+  }
+  // Aprender algo que ya se sabe (o casi) no es una meta.
+  if (c.type === "skill_level" && c.level < (goal.baseline ?? 0) + 0.05) {
+    s.seq--;
+    audit(ctx, goal, "meta descartada: ya sabe eso (su nivel ya llega)");
+    return null;
   }
   if (demanding.length) audit(ctx, goal, `objetivo de relación ajustado: ${demanding.join(", ")}`);
   historyEntry(goal, now, reason);
@@ -549,6 +567,13 @@ export function measureTick(ctx: SimContext, now: number, minutes: number): void
         count(ctx, agent.id, now, (c) => c.type === "visits" && c.placeId === here);
       }
     }
+    // Aprender o mejorar en algo: según su nivel ahora (lo cuenta el sistema skills).
+    for (const g of goalsOf(ctx, agent.id, "active")) {
+      const c = measureOf(g.criterion);
+      if (c.type !== "skill_level") continue;
+      const p = skillProgress(c.level, levelOf(ctx, agent.id, c.skill), g.baseline);
+      if (Math.abs(p - g.progress) >= 0.005 || p >= 1) setProgress(ctx, g, p, now);
+    }
   }
 }
 
@@ -566,7 +591,7 @@ export async function relationshipTick(ctx: SimContext, now: number): Promise<vo
 /** Recalcula el progreso de una meta medida por cuenta u horas. */
 function refresh(ctx: SimContext, g: Goal, now: number): void {
   const c = measureOf(g.criterion);
-  if (c.type === "relationship" || c.type === "projects") return;
+  if (c.type === "relationship" || c.type === "projects" || c.type === "skill_level") return;
   setProgress(ctx, g, measuredProgress(g.criterion, g.measured), now);
 }
 

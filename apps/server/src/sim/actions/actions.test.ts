@@ -36,14 +36,21 @@ describe("catálogo de acciones", () => {
     const lucia = at("lucia", "biblioteca");
     for (const a of ctx.agents.values()) if (a.id !== "lucia") at(a.id, "casa_roja");
     const now = app.defaultWorld.clock.now();
-    expect(availableActions({ ctx, agent: lucia, now })).toEqual(["do_activity"]);
+    // Sin plan todavía: tiempo libre, así que también puede ponerse a practicar algo.
+    expect(availableActions({ ctx, agent: lucia, now })).toEqual(["do_activity", "practice"]);
     at("mateo", "biblioteca");
+    // Mateo sabe de barra y Lucía de dibujo: pedirle que le enseñe u ofrecerse a enseñarle; y
+    // con alguien delante, contarle un saber suyo (la acuarela).
     expect(availableActions({ ctx, agent: lucia, now })).toEqual([
       "do_activity",
       "say",
       "propose_meeting",
       "invite",
       "follow",
+      "practice",
+      "ask_to_learn",
+      "teach",
+      "share_lore",
     ]);
   });
 

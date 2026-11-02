@@ -16,6 +16,7 @@ import type { ItemStore } from "../db/items";
 import type { NoteStore } from "../db/notes";
 import type { KnowledgeLogStore } from "../db/knowledge-log";
 import type { DepartureStore, GoalStore } from "../db/goals";
+import type { LoreStore, SkillStore } from "../db/skills";
 import type { ChronicleStore, DramaStore, EventStore } from "../db/stores";
 import type { SimSignal } from "../sim/simulation";
 
@@ -80,6 +81,8 @@ export interface WorldGateway {
   knowledgeLog: KnowledgeLogStore;
   goals: GoalStore;
   departures: DepartureStore;
+  skills: SkillStore;
+  lore: LoreStore;
   costs(): CostSummary & { unpricedModels: string[] };
   command(cmd: WorldCommand): Promise<CommandResult>;
   onSignal(listener: (s: SimSignal | { type: "cost"; summary: CostSummary }) => void): () => void;
@@ -206,6 +209,14 @@ export class LocalWorldGateway implements WorldGateway {
 
   get goals() {
     return this.w.goals;
+  }
+
+  get skills() {
+    return this.w.skills;
+  }
+
+  get lore() {
+    return this.w.lore;
   }
 
   get departures() {

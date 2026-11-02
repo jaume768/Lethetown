@@ -3,6 +3,7 @@
  * prompt. Lo medido lo cuenta el servidor (sistema `goals`); el LLM nunca marca el progreso.
  */
 import type { GoalCriterion, MeasurableCriterion } from "@lethetown/shared";
+import { levelLabel } from "../skills/skills";
 
 const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
 
@@ -20,7 +21,8 @@ export function measuredProgress(criterion: GoalCriterion, measured: number): nu
       return clamp01(measured / 60 / c.hours);
     case "relationship":
     case "projects":
-      // Se calculan aparte (ficha social; proyectos hijos).
+    case "skill_level":
+      // Se calculan aparte (ficha social; proyectos hijos; nivel de la habilidad).
       return 0;
     default:
       return clamp01(measured / c.count);
@@ -50,6 +52,14 @@ export function relationshipProgress(
   if (c.trust !== undefined) parts.push(toward(now.trust, c.trust));
   if (c.relationship) parts.push(now.relationshipType === c.relationship ? 1 : 0);
   return parts.length ? Math.min(...parts) : 0;
+}
+
+/** Progreso de una meta de habilidad: del nivel que tenía al crearla (`baseline`) al objetivo. */
+export function skillProgress(target: number, level: number, baseline: number | null): number {
+  const from = baseline ?? 0;
+  if (level >= target) return 1;
+  if (target <= from) return 0;
+  return clamp01((level - from) / (target - from));
 }
 
 /** El valor de partida que importa para una meta de relación (afinidad o confianza). */
@@ -127,22 +137,21 @@ const hoursText = (min: number) => {
 };
 
 /** Cómo se dice el criterio en el prompt, con lo que lleva: «pasar 6 h … (llevas 1,5 h)». */
-export function criterionText(
-  c: GoalCriterion,
-  measured: number,
-  names: { person(id: string): string; place(id: string): string },
-): string {
+export function criterionText(c: GoalCriterion, measured: number, names: CriterionNames): string {
   if (c.type === "confirmed") {
     return `${measurableText(c.measure, measured, names)}, y que de verdad: ${c.question}`;
   }
   return measurableText(c, measured, names);
 }
 
-function measurableText(
-  c: MeasurableCriterion,
-  measured: number,
-  names: { person(id: string): string; place(id: string): string },
-): string {
+/** Cómo se llaman las personas, los lugares y las habilidades (para el texto del criterio). */
+export interface CriterionNames {
+  person(id: string): string;
+  place(id: string): string;
+  skill?(id: string): string;
+}
+
+function measurableText(c: MeasurableCriterion, measured: number, names: CriterionNames): string {
   switch (c.type) {
     case "activity_hours":
       return `pasar ${c.hours} h en algo de ${c.keywords.map((k) => `«${k}»`).join(" o ")} (llevas ${hoursText(measured)})`;
@@ -189,6 +198,8 @@ function measurableText(
       return `cumplir ${c.count} cosas que te propongas (llevas ${measured})`;
     case "projects":
       return `conseguir ${c.count} de sus proyectos`;
+    case "skill_level":
+      return `llegar a «${levelLabel(c.level)}» en ${names.skill?.(c.skill) ?? c.skill} (nivel ${c.level.toFixed(2)})`;
   }
 }
 
@@ -204,5 +215,6 @@ export const CRITERIA_CATALOG = [
   'items {"action":"use_object|return_item|give_item|lend_item","count":2}',
   'notes {"count":2}',
   'intentions_kept {"count":3}',
+  'skill_level {"skill":"photography","level":0.5} (aprender o mejorar en algo; id de LO QUE SABES HACER o del catálogo de habilidades)',
   'confirmed {"question":"¿Le ha dicho lo que siente?","measure":{…uno de los anteriores…}} (para lo que no basta contar: hablar de verdad, reconciliarse, convencer; cuando se cumpla lo medido, lo comprobarás tú con lo que se dijo)',
 ].join("; ");

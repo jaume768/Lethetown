@@ -26,6 +26,7 @@ import { InMemoryItemStore, type ItemStore } from "../db/items";
 import { InMemoryNoteStore, type NoteStore } from "../db/notes";
 import type { KnowledgeLogStore } from "../db/knowledge-log";
 import type { DepartureStore, GoalStore } from "../db/goals";
+import type { LoreStore, SkillStore } from "../db/skills";
 import type { GameClock } from "./clock";
 import type { WorldMap } from "./world";
 
@@ -158,6 +159,9 @@ export interface SimulationDeps {
   /** Metas y vecinos que se fueron (si no se pasan, en RAM). */
   goals?: GoalStore;
   departures?: DepartureStore;
+  /** Habilidades y saberes del pueblo (si no se pasan, en RAM). */
+  skills?: SkillStore;
+  lore?: LoreStore;
 }
 
 /** Señales que la simulación emite hacia los clientes (además de los eventos del log). */

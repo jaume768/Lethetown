@@ -17,6 +17,10 @@ export const INTERVIEW_QUESTIONS = [
   { category: "relaciones", question: "¿Qué opinas de tus vecinos?" },
   { category: "reflexiones", question: "¿Qué has aprendido sobre ti en estos días?" },
   { category: "metas", question: "¿Qué te has propuesto en la vida y cómo lo llevas?" },
+  {
+    category: "aprender",
+    question: "¿Qué sabes hacer bien y quién te enseñó? ¿Qué te han contado o enseñado estos días?",
+  },
 ] as const;
 
 export interface InterviewAnswer {

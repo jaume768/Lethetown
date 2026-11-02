@@ -161,6 +161,60 @@ export const LeaveNoteAction = z.object({
   text: z.string().trim().min(1).max(280),
 });
 
+/** Ponerse a practicar algo un rato (aquí o en un sitio donde se practica; con objeto si hace falta). */
+export const PracticeAction = z.object({
+  type: z.literal("practice"),
+  skill: z.string().min(2).max(30),
+  placeId: NullableId,
+  spotId: NullableId,
+});
+
+/** Pedir a alguien presente que te enseñe algo que sabe hacer mejor que tú. */
+export const AskToLearnAction = z.object({
+  type: z.literal("ask_to_learn"),
+  who: z.string().min(1),
+  skill: z.string().min(2).max(30),
+});
+
+/** Ofrecerte a enseñar algo que sabes hacer a alguien presente. */
+export const TeachAction = z.object({
+  type: z.literal("teach"),
+  who: z.string().min(1),
+  skill: z.string().min(2).max(30),
+});
+
+/** Aceptar una sesión de enseñanza (que te enseñen o enseñar tú). */
+export const AcceptTeachingAction = z.object({
+  type: z.literal("accept_teaching"),
+  sessionId: z.string().min(1),
+});
+
+export const DeclineTeachingAction = z.object({
+  type: z.literal("decline_teaching"),
+  sessionId: z.string().min(1),
+  reason: z.string().trim().max(160).optional(),
+});
+
+/** Ayudar a alguien presente en lo que está haciendo (aprendes de lo suyo). */
+export const HelpAction = z.object({
+  type: z.literal("help"),
+  who: z.string().min(1),
+});
+
+/** Enseñar y regalar algo que has hecho (una foto, un dibujo, pan) a alguien presente. */
+export const ShowResultAction = z.object({
+  type: z.literal("show_result"),
+  who: z.string().min(1),
+  itemId: NullableId,
+});
+
+/** Contar un saber que tienes (una receta, un sitio, una historia) a alguien presente. */
+export const ShareLoreAction = z.object({
+  type: z.literal("share_lore"),
+  who: z.string().min(1),
+  loreId: z.string().min(1),
+});
+
 export const AgentAction = z.discriminatedUnion("type", [
   DoActivityAction,
   SayAction,
@@ -181,6 +235,14 @@ export const AgentAction = z.discriminatedUnion("type", [
   FollowAction,
   PostNoteAction,
   LeaveNoteAction,
+  PracticeAction,
+  AskToLearnAction,
+  TeachAction,
+  AcceptTeachingAction,
+  DeclineTeachingAction,
+  HelpAction,
+  ShowResultAction,
+  ShareLoreAction,
 ]);
 export type AgentAction = z.infer<typeof AgentAction>;
 export type ActionType = AgentAction["type"];
@@ -292,6 +354,47 @@ export const ACTION_SPECS: Record<ActionType, ActionSpec> = {
     params: '{"to":"id de alguien","text":"…"}',
     description: "dejas aquí una nota para alguien (la leerá cuando pase por aquí)",
   },
+  practice: {
+    type: "practice",
+    params: '{"skill":"id de habilidad","placeId":"… o null","spotId":"… o null"}',
+    description: "te pones a practicar algo un rato (mejor donde se hace)",
+  },
+  ask_to_learn: {
+    type: "ask_to_learn",
+    params: '{"who":"id de alguien presente","skill":"id de habilidad"}',
+    description: "le pides a quien sabe más que tú que te enseñe",
+  },
+  teach: {
+    type: "teach",
+    params: '{"who":"id de alguien presente","skill":"id de habilidad"}',
+    description: "te ofreces a enseñarle algo que sabes hacer",
+  },
+  accept_teaching: {
+    type: "accept_teaching",
+    params: '{"sessionId":"…"}',
+    description: "aceptas una sesión de enseñanza (ver ENSEÑAR Y APRENDER)",
+  },
+  decline_teaching: {
+    type: "decline_teaching",
+    params: '{"sessionId":"…","reason":"…"}',
+    description: "rechazas una sesión de enseñanza",
+  },
+  help: {
+    type: "help",
+    params: '{"who":"id de alguien presente"}',
+    description: "ayudas a alguien de aquí en lo que está haciendo (y aprendes de ello)",
+  },
+  show_result: {
+    type: "show_result",
+    params: '{"who":"id de alguien presente","itemId":"… o null"}',
+    description: "le enseñas y regalas algo que has hecho tú (ver TUS RESULTADOS)",
+  },
+  share_lore: {
+    type: "share_lore",
+    params: '{"who":"id de alguien presente","loreId":"…"}',
+    description:
+      "le cuentas a alguien de aquí un saber tuyo: una receta, una técnica, un sitio, una historia o una canción (ver SABERES QUE PUEDES CONTAR)",
+  },
 };
 
 /** "- say {…}: dices algo…": una línea del prompt por acción disponible. */
@@ -307,7 +410,9 @@ export function actionLine(type: ActionType): string {
 export function actionPeople(action: AgentAction): string[] {
   const out: string[] = [];
   for (const [k, v] of Object.entries(action)) {
-    if (["to", "with", "personId", "agentId"].includes(k) && typeof v === "string") out.push(v);
+    if (["to", "with", "personId", "agentId", "who"].includes(k) && typeof v === "string") {
+      out.push(v);
+    }
     if (["people", "with"].includes(k) && Array.isArray(v))
       out.push(...v.filter((x) => typeof x === "string"));
   }

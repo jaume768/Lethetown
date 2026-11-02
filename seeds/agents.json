@@ -59,6 +59,40 @@
       "interests": ["ilustración y acuarela", "cuentos infantiles", "pintores (Miró, Sorolla)"],
       "culture": "alto"
     },
+    "skills": {
+      "drawing": 0.8,
+      "storytelling": 0.35,
+      "cooking": 0.3,
+      "repair": 0.15,
+      "languages": 0.1
+    },
+    "lore": [
+      {
+        "kind": "technique",
+        "title": "Acuarela sobre papel mojado",
+        "skill": "drawing",
+        "placeId": null,
+        "from": null,
+        "elements": [
+          {
+            "text": "mojar el papel antes de poner el color",
+            "variants": []
+          },
+          {
+            "text": "de claro a oscuro, nunca al revés",
+            "variants": []
+          },
+          {
+            "text": "dejar sin pintar los blancos de la luz",
+            "variants": []
+          },
+          {
+            "text": "esperar a que seque antes de cada capa",
+            "variants": ["no esperar a que seque"]
+          }
+        ]
+      }
+    ],
     "offstagePeople": [
       {
         "name": "Montse",
@@ -168,6 +202,40 @@
       ],
       "culture": "medio"
     },
+    "skills": {
+      "hospitality": 0.75,
+      "trade": 0.35,
+      "cooking": 0.4,
+      "repair": 0.2,
+      "languages": 0.15
+    },
+    "lore": [
+      {
+        "kind": "recipe",
+        "title": "La mezcla de café de La Ola",
+        "skill": "hospitality",
+        "placeId": "cafe_ola",
+        "from": "Bartomeu",
+        "elements": [
+          {
+            "text": "dos partes de arábica por una de robusta",
+            "variants": ["tres partes de arábica por una de robusta"]
+          },
+          {
+            "text": "un poco de torrefacto para que tenga crema",
+            "variants": []
+          },
+          {
+            "text": "molerlo cada mañana, nunca la víspera",
+            "variants": []
+          },
+          {
+            "text": "la cafetera bien caliente antes del primer café",
+            "variants": []
+          }
+        ]
+      }
+    ],
     "offstagePeople": [
       {
         "name": "Bartomeu",
@@ -290,6 +358,41 @@
       "interests": ["poesía", "el huerto", "la vida de sus antiguos alumnos"],
       "culture": "alto"
     },
+    "skills": {
+      "teaching": 0.8,
+      "cooking": 0.55,
+      "gardening": 0.45,
+      "storytelling": 0.4,
+      "repair": 0.15,
+      "languages": 0.1
+    },
+    "lore": [
+      {
+        "kind": "technique",
+        "title": "Enseñar a leer a un niño",
+        "skill": "teaching",
+        "placeId": "escuela",
+        "from": null,
+        "elements": [
+          {
+            "text": "primero las vocales, cantadas",
+            "variants": []
+          },
+          {
+            "text": "una letra nueva al día, no más",
+            "variants": ["dos letras nuevas al día"]
+          },
+          {
+            "text": "leer en voz alta cada tarde un rato",
+            "variants": []
+          },
+          {
+            "text": "premiar con un cuento, no con caramelos",
+            "variants": []
+          }
+        ]
+      }
+    ],
     "offstagePeople": [
       {
         "name": "Bartomeu",
@@ -398,6 +501,67 @@
       "interests": ["el pan, las ensaimadas y la repostería", "la radio por las mañanas"],
       "culture": "medio"
     },
+    "skills": {
+      "baking": 0.85,
+      "cooking": 0.5,
+      "repair": 0.25
+    },
+    "lore": [
+      {
+        "kind": "recipe",
+        "title": "Las magdalenas de Francisca",
+        "skill": "baking",
+        "placeId": "panaderia",
+        "from": "Francisca",
+        "elements": [
+          {
+            "text": "harina de fuerza, cuatro huevos y un vaso de aceite de oliva",
+            "variants": ["harina normal, cuatro huevos y un vaso de aceite de girasol"]
+          },
+          {
+            "text": "la ralladura de un limón del huerto",
+            "variants": ["la ralladura de una naranja"]
+          },
+          {
+            "text": "batir los huevos con el azúcar hasta que blanqueen",
+            "variants": []
+          },
+          {
+            "text": "dejar reposar la masa una hora en la nevera",
+            "variants": ["dejar reposar la masa media hora"]
+          },
+          {
+            "text": "horno fuerte, 220 grados, doce minutos",
+            "variants": []
+          }
+        ]
+      },
+      {
+        "kind": "technique",
+        "title": "El pan payés del horno",
+        "skill": "baking",
+        "placeId": "panaderia",
+        "from": null,
+        "elements": [
+          {
+            "text": "la masa madre del día anterior, alimentada por la noche",
+            "variants": []
+          },
+          {
+            "text": "sin sal, como el de antes",
+            "variants": ["con una pizca de sal"]
+          },
+          {
+            "text": "amasar veinte minutos hasta que la masa no se pegue",
+            "variants": []
+          },
+          {
+            "text": "leña de almendro para el horno",
+            "variants": ["leña de pino para el horno"]
+          }
+        ]
+      }
+    ],
     "offstagePeople": [
       {
         "name": "Francisca",
@@ -506,6 +670,36 @@
       ],
       "culture": "medio"
     },
+    "skills": {
+      "photography": 0.35,
+      "music": 0.2,
+      "baking": 0.15,
+      "cooking": 0.1,
+      "languages": 0.1
+    },
+    "lore": [
+      {
+        "kind": "place",
+        "title": "La mejor luz del pueblo",
+        "skill": "photography",
+        "placeId": "plaza",
+        "from": "valentina",
+        "elements": [
+          {
+            "text": "la plaza a las siete de la tarde, cuando el sol da en la fuente",
+            "variants": ["la plaza a mediodía"]
+          },
+          {
+            "text": "el lago al amanecer, con la niebla",
+            "variants": []
+          },
+          {
+            "text": "de espaldas al sol, siempre",
+            "variants": []
+          }
+        ]
+      }
+    ],
     "offstagePeople": [
       {
         "name": "Francisca",
@@ -534,6 +728,14 @@
             "type": "activity_hours",
             "keywords": ["foto", "carrete", "revel"],
             "hours": 8
+          }
+        },
+        {
+          "text": "Aprender a hacer buenas fotos con Valentina",
+          "criterion": {
+            "type": "skill_level",
+            "skill": "photography",
+            "level": 0.5
           }
         }
       ]
@@ -631,6 +833,35 @@
       "interests": ["política municipal", "urbanismo y turismo", "las noticias"],
       "culture": "alto"
     },
+    "skills": {
+      "trade": 0.6,
+      "cooking": 0.3,
+      "repair": 0.15,
+      "languages": 0.2
+    },
+    "lore": [
+      {
+        "kind": "technique",
+        "title": "Cómo se gana el pueblo",
+        "skill": "trade",
+        "placeId": null,
+        "from": null,
+        "elements": [
+          {
+            "text": "hablar primero con Rafael, que lo cuenta todo",
+            "variants": ["hablar primero con Ernesto, que lo cuenta todo"]
+          },
+          {
+            "text": "prometer poco y cumplirlo",
+            "variants": []
+          },
+          {
+            "text": "dejarse ver en el mercadillo los sábados",
+            "variants": ["dejarse ver en misa los domingos"]
+          }
+        ]
+      }
+    ],
     "goals": {
       "text": "Ganar las próximas municipales",
       "projects": [
@@ -732,6 +963,64 @@
       "interests": ["la pesca", "el lago Leteo", "las historias del pueblo"],
       "culture": "básico"
     },
+    "skills": {
+      "fishing": 0.9,
+      "storytelling": 0.7,
+      "repair": 0.4,
+      "cooking": 0.4
+    },
+    "lore": [
+      {
+        "kind": "place",
+        "title": "El sitio de pesca de Tomás",
+        "skill": "fishing",
+        "placeId": "lago",
+        "from": null,
+        "elements": [
+          {
+            "text": "la piedra plana al norte del lago, junto al sauce",
+            "variants": ["la piedra plana al sur del lago, junto al sauce"]
+          },
+          {
+            "text": "al amanecer, antes de que salga el sol",
+            "variants": ["al atardecer, cuando baja el sol"]
+          },
+          {
+            "text": "cebo de pan duro mojado con queso",
+            "variants": ["cebo de lombriz del huerto"]
+          },
+          {
+            "text": "en silencio: los peces del Leteo oyen",
+            "variants": []
+          }
+        ]
+      },
+      {
+        "kind": "story",
+        "title": "El pez gigante del Leteo",
+        "skill": "storytelling",
+        "placeId": "lago",
+        "from": null,
+        "elements": [
+          {
+            "text": "lo vi en el verano del 52",
+            "variants": ["lo vi en el verano del 55"]
+          },
+          {
+            "text": "era tan largo como una barca",
+            "variants": ["era tan largo como dos barcas"]
+          },
+          {
+            "text": "tenía una cicatriz blanca en el lomo",
+            "variants": []
+          },
+          {
+            "text": "nadie más lo vio, pero yo sí",
+            "variants": []
+          }
+        ]
+      }
+    ],
     "goals": {
       "text": "Que no se pierdan las historias del lago",
       "projects": [
@@ -830,6 +1119,60 @@
       ],
       "culture": "básico"
     },
+    "skills": {
+      "gardening": 0.85,
+      "cooking": 0.75,
+      "care": 0.35,
+      "repair": 0.2
+    },
+    "lore": [
+      {
+        "kind": "technique",
+        "title": "Plantar según la luna",
+        "skill": "gardening",
+        "placeId": "huerto",
+        "from": "Catalina",
+        "elements": [
+          {
+            "text": "en luna creciente, lo que da fruto arriba (tomates, judías)",
+            "variants": []
+          },
+          {
+            "text": "en menguante, lo que crece bajo tierra (patatas, cebollas)",
+            "variants": ["en menguante, las lechugas"]
+          },
+          {
+            "text": "regar al atardecer, nunca a mediodía",
+            "variants": []
+          },
+          {
+            "text": "una ristra de ajos en la puerta para proteger la casa",
+            "variants": []
+          }
+        ]
+      },
+      {
+        "kind": "recipe",
+        "title": "La tisana para la tos",
+        "skill": "care",
+        "placeId": null,
+        "from": "Catalina",
+        "elements": [
+          {
+            "text": "manzanilla y un poco de tomillo",
+            "variants": ["manzanilla y menta"]
+          },
+          {
+            "text": "una cucharada de miel cuando ya está tibia",
+            "variants": []
+          },
+          {
+            "text": "tres veces al día, la última antes de dormir",
+            "variants": ["dos veces al día"]
+          }
+        ]
+      }
+    ],
     "offstagePeople": [
       {
         "name": "Catalina",
@@ -938,6 +1281,36 @@
       "interests": ["libros y poesía", "la historia del pueblo", "archivos y documentos antiguos"],
       "culture": "alto"
     },
+    "skills": {
+      "storytelling": 0.4,
+      "languages": 0.45,
+      "teaching": 0.25,
+      "cooking": 0.3,
+      "repair": 0.15
+    },
+    "lore": [
+      {
+        "kind": "story",
+        "title": "La página arrancada",
+        "skill": "storytelling",
+        "placeId": "biblioteca",
+        "from": null,
+        "elements": [
+          {
+            "text": "la página 112 del libro de historia del pueblo",
+            "variants": ["la página 121 del libro de historia del pueblo"]
+          },
+          {
+            "text": "hablaba de un incendio en la colina",
+            "variants": []
+          },
+          {
+            "text": "falta desde antes de que yo llegara",
+            "variants": []
+          }
+        ]
+      }
+    ],
     "goals": {
       "text": "Atreverme a vivir y no solo a leer",
       "projects": [
@@ -1032,6 +1405,37 @@
       ],
       "culture": "alto"
     },
+    "skills": {
+      "teaching": 0.75,
+      "storytelling": 0.45,
+      "gardening": 0.35,
+      "cooking": 0.3,
+      "repair": 0.15,
+      "languages": 0.2
+    },
+    "lore": [
+      {
+        "kind": "technique",
+        "title": "Contar semillas en el huerto",
+        "skill": "teaching",
+        "placeId": "huerto",
+        "from": "carmen",
+        "elements": [
+          {
+            "text": "cada niño con su puñado de semillas",
+            "variants": []
+          },
+          {
+            "text": "contarlas de diez en diez",
+            "variants": []
+          },
+          {
+            "text": "plantar las que sobran y apuntar cuántas salen",
+            "variants": []
+          }
+        ]
+      }
+    ],
     "goals": {
       "text": "Que los niños aprendan fuera del aula",
       "projects": [
@@ -1147,6 +1551,41 @@
       "interests": ["los rumores del pueblo", "el fútbol", "la noche y la música de los ochenta"],
       "culture": "medio"
     },
+    "skills": {
+      "hospitality": 0.75,
+      "storytelling": 0.5,
+      "cooking": 0.45,
+      "music": 0.2,
+      "repair": 0.25,
+      "languages": 0.1
+    },
+    "lore": [
+      {
+        "kind": "recipe",
+        "title": "El frit de la taberna",
+        "skill": "cooking",
+        "placeId": "taberna",
+        "from": null,
+        "elements": [
+          {
+            "text": "hígado y asadura de cordero en dados",
+            "variants": ["hígado de cerdo en dados"]
+          },
+          {
+            "text": "patata frita en dados pequeños",
+            "variants": []
+          },
+          {
+            "text": "pimiento rojo y cebolla, bien pochados",
+            "variants": []
+          },
+          {
+            "text": "hinojo silvestre al final, y no mucho",
+            "variants": []
+          }
+        ]
+      }
+    ],
     "goals": {
       "text": "Que la taberna sea el corazón del pueblo",
       "projects": [
@@ -1270,6 +1709,34 @@
       "interests": ["la tienda y las cuentas", "Leo", "las telenovelas de la tarde"],
       "culture": "medio"
     },
+    "skills": {
+      "trade": 0.7,
+      "cooking": 0.4,
+      "repair": 0.2
+    },
+    "lore": [
+      {
+        "kind": "technique",
+        "title": "La libreta del fiado",
+        "skill": "trade",
+        "placeId": "tienda",
+        "from": null,
+        "elements": [
+          {
+            "text": "apuntar a lápiz, con la fecha",
+            "variants": []
+          },
+          {
+            "text": "nunca más de dos mil pesetas por casa",
+            "variants": ["nunca más de cinco mil pesetas por casa"]
+          },
+          {
+            "text": "lo que se paga se tacha delante del cliente",
+            "variants": []
+          }
+        ]
+      }
+    ],
     "offstagePeople": [
       {
         "name": "Toni",
@@ -1389,6 +1856,34 @@
       ],
       "culture": "básico"
     },
+    "skills": {
+      "drawing": 0.2,
+      "fishing": 0.1,
+      "cooking": 0.05
+    },
+    "lore": [
+      {
+        "kind": "place",
+        "title": "Dónde se esconde el pez gigante",
+        "skill": "fishing",
+        "placeId": "lago",
+        "from": "tomas",
+        "elements": [
+          {
+            "text": "debajo del sauce grande",
+            "variants": ["debajo del puente"]
+          },
+          {
+            "text": "sale cuando llueve",
+            "variants": []
+          },
+          {
+            "text": "le gusta el pan duro",
+            "variants": []
+          }
+        ]
+      }
+    ],
     "offstagePeople": [
       {
         "name": "Toni",
@@ -1503,6 +1998,39 @@
       "interests": ["plantas y huertos", "ecología y el GOB", "los pájaros"],
       "culture": "medio"
     },
+    "skills": {
+      "gardening": 0.8,
+      "cooking": 0.3,
+      "repair": 0.2,
+      "languages": 0.1
+    },
+    "lore": [
+      {
+        "kind": "technique",
+        "title": "El compost del huerto",
+        "skill": "gardening",
+        "placeId": "huerto",
+        "from": "pilar",
+        "elements": [
+          {
+            "text": "verde y marrón a partes iguales",
+            "variants": ["dos partes de verde por una de marrón"]
+          },
+          {
+            "text": "removerlo cada semana",
+            "variants": []
+          },
+          {
+            "text": "nada de carne ni de aceite",
+            "variants": []
+          },
+          {
+            "text": "tapado con una lona si llueve mucho",
+            "variants": []
+          }
+        ]
+      }
+    ],
     "goals": {
       "text": "Convertir la casa en venta en un jardín para todos",
       "projects": [
@@ -1622,6 +2150,40 @@
       ],
       "culture": "medio"
     },
+    "skills": {
+      "music": 0.8,
+      "storytelling": 0.3,
+      "cooking": 0.25,
+      "repair": 0.15,
+      "languages": 0.1
+    },
+    "lore": [
+      {
+        "kind": "song",
+        "title": "La canción del lago",
+        "skill": "music",
+        "placeId": "lago",
+        "from": null,
+        "elements": [
+          {
+            "text": "en re menor, despacio",
+            "variants": ["en la menor, despacio"]
+          },
+          {
+            "text": "el estribillo: «Leteo, llévate lo que pesa»",
+            "variants": []
+          },
+          {
+            "text": "el puente en sol, subiendo la voz",
+            "variants": []
+          },
+          {
+            "text": "se acaba en voz baja, casi hablando",
+            "variants": []
+          }
+        ]
+      }
+    ],
     "goals": {
       "text": "Vivir de la música",
       "projects": [
@@ -1726,6 +2288,43 @@
       "interests": ["fotografía y revelado", "la historia de su abuela", "el pasado del pueblo"],
       "culture": "alto"
     },
+    "skills": {
+      "photography": 0.85,
+      "cooking": 0.3,
+      "repair": 0.15,
+      "languages": 0.3
+    },
+    "lore": [
+      {
+        "kind": "technique",
+        "title": "Cómo revelar un carrete",
+        "skill": "photography",
+        "placeId": null,
+        "from": null,
+        "elements": [
+          {
+            "text": "a oscuras del todo para sacar la película del carrete",
+            "variants": []
+          },
+          {
+            "text": "revelador a 20 grados, ocho minutos",
+            "variants": ["revelador a 25 grados, cinco minutos"]
+          },
+          {
+            "text": "agitar suave el tanque cada minuto",
+            "variants": []
+          },
+          {
+            "text": "baño de paro, fijador y lavar bien con agua",
+            "variants": []
+          },
+          {
+            "text": "colgarlo a secar con pinzas, lejos del polvo",
+            "variants": []
+          }
+        ]
+      }
+    ],
     "offstagePeople": [
       {
         "name": "Alma",
@@ -1836,6 +2435,39 @@
       ],
       "culture": "medio"
     },
+    "skills": {
+      "storytelling": 0.3,
+      "care": 0.2,
+      "cooking": 0.3,
+      "repair": 0.2
+    },
+    "lore": [
+      {
+        "kind": "story",
+        "title": "Las cartas sin remitente",
+        "skill": "storytelling",
+        "placeId": null,
+        "from": null,
+        "elements": [
+          {
+            "text": "con matasellos de Madrid",
+            "variants": ["con matasellos de Barcelona"]
+          },
+          {
+            "text": "llegan el primer lunes de cada mes",
+            "variants": []
+          },
+          {
+            "text": "letra de mujer, muy redonda",
+            "variants": []
+          },
+          {
+            "text": "siempre en sobre azul",
+            "variants": ["siempre en sobre blanco"]
+          }
+        ]
+      }
+    ],
     "goals": {
       "text": "Que me tomen en serio",
       "projects": [
@@ -1944,6 +2576,65 @@
       ],
       "culture": "básico"
     },
+    "skills": {
+      "cooking": 0.7,
+      "storytelling": 0.6,
+      "gardening": 0.6,
+      "music": 0.45,
+      "repair": 0.2
+    },
+    "lore": [
+      {
+        "kind": "song",
+        "title": "La canción de las segadoras",
+        "skill": "music",
+        "placeId": null,
+        "from": "Alma",
+        "elements": [
+          {
+            "text": "a la sombra del almendro",
+            "variants": ["a la sombra del olivo"]
+          },
+          {
+            "text": "las segadoras van cantando",
+            "variants": []
+          },
+          {
+            "text": "el agua del Leteo baja",
+            "variants": ["el agua del molino baja"]
+          },
+          {
+            "text": "quien la bebe va olvidando",
+            "variants": []
+          }
+        ]
+      },
+      {
+        "kind": "story",
+        "title": "El verano en que Alma se fue",
+        "skill": "storytelling",
+        "placeId": null,
+        "from": null,
+        "elements": [
+          {
+            "text": "fue en septiembre del 47",
+            "variants": ["fue en septiembre del 49"]
+          },
+          {
+            "text": "se fue en el autobús de Palma, de madrugada",
+            "variants": []
+          },
+          {
+            "text": "llevaba una maleta de cartón atada con una cuerda",
+            "variants": []
+          },
+          {
+            "text": "prometió escribir y nunca escribió",
+            "variants": []
+          }
+        ]
+      }
+    ],
     "offstagePeople": [
       {
         "name": "Alma",
@@ -2063,6 +2754,36 @@
       ],
       "culture": "medio"
     },
+    "skills": {
+      "trade": 0.55,
+      "care": 0.4,
+      "cooking": 0.35,
+      "repair": 0.1,
+      "languages": 0.1
+    },
+    "lore": [
+      {
+        "kind": "technique",
+        "title": "Elegir la fruta buena",
+        "skill": "trade",
+        "placeId": "mercado",
+        "from": "aurora",
+        "elements": [
+          {
+            "text": "el melón que suena a hueco al darle con los nudillos",
+            "variants": []
+          },
+          {
+            "text": "la naranja que pesa más de lo que parece",
+            "variants": []
+          },
+          {
+            "text": "el tomate de rama que huele a mata",
+            "variants": ["el tomate más rojo"]
+          }
+        ]
+      }
+    ],
     "offstagePeople": [
       {
         "name": "Joana",
@@ -2179,6 +2900,40 @@
       "interests": ["medicina", "su familia", "el fútbol nigeriano", "la música highlife"],
       "culture": "alto"
     },
+    "skills": {
+      "care": 0.85,
+      "languages": 0.7,
+      "music": 0.25,
+      "cooking": 0.3,
+      "repair": 0.15
+    },
+    "lore": [
+      {
+        "kind": "recipe",
+        "title": "El suero casero de Ngozi",
+        "skill": "care",
+        "placeId": "consultorio",
+        "from": "Ngozi",
+        "elements": [
+          {
+            "text": "un litro de agua hervida y fría",
+            "variants": []
+          },
+          {
+            "text": "seis cucharaditas de azúcar",
+            "variants": ["dos cucharadas de azúcar"]
+          },
+          {
+            "text": "media cucharadita de sal",
+            "variants": []
+          },
+          {
+            "text": "a sorbos pequeños, poco a poco",
+            "variants": []
+          }
+        ]
+      }
+    ],
     "offstagePeople": [
       {
         "name": "Ngozi",

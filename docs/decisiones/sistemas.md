@@ -44,20 +44,23 @@ adelante, economía, metas u oficios son módulos (`SimSystem`) que se registran
 
 ## Sistemas actuales
 
-| id           | Acciones                              | Revisión (5 min)             | Prompt                                | Tabla                      |
-| ------------ | ------------------------------------- | ---------------------------- | ------------------------------------- | -------------------------- |
-| `meetings`   | propose/accept/decline/cancel_meeting | salidas, llegadas, plantones | AGENDA; huecos del plan               | `commitments`              |
-| `items`      | give/lend/return/take/leave_item      | préstamos vencidos           | LLEVAS, HAS PRESTADO, AQUÍ HAY…       | `inventory_items`          |
-| `objects`    | use_object                            | lo que dura vuelve solo      | —                                     | —                          |
-| `company`    | invite, accept/decline_invite, follow | seguir a quien acompaña      | INVITACIONES                          | —                          |
-| `notes`      | post_note, leave_note                 | caducar                      | (se leen como percepción)             | `notes`                    |
-| `norms`      | —                                     | abrir y cerrar, intrusos     | —                                     | —                          |
-| `places`     | explore                               | —                            | (lugares descubiertos, en agent-core) | `known_places`             |
-| `agreements` | — (los tipos los aportan los demás)   | —                            | —                                     | `memory_audit` (descartes) |
-| `world`      | —                                     | —                            | biblia (fijo); fecha (plan)           | —                          |
-| `knowledge`  | —                                     | —                            | (perfil y gente de fuera, agent-core) | `knowledge_log`            |
-| `goals`      | —                                     | medir, visitas; fichas (1 h) | METAS (plan); TU PROYECTO; noche      | `goals`, `departures`      |
-| `intentions` | —                                     | —                            | — (solo métricas, de la auditoría)    | (`memory_audit`)           |
+| id            | Acciones                                      | Revisión (5 min)                 | Prompt                                             | Tabla                       |
+| ------------- | --------------------------------------------- | -------------------------------- | -------------------------------------------------- | --------------------------- |
+| `meetings`    | propose/accept/decline/cancel_meeting         | salidas, llegadas, plantones     | AGENDA; huecos del plan                            | `commitments`               |
+| `items`       | give/lend/return/take/leave_item              | préstamos vencidos               | LLEVAS, HAS PRESTADO, AQUÍ HAY…                    | `inventory_items`           |
+| `objects`     | use_object                                    | lo que dura vuelve solo          | —                                                  | —                           |
+| `company`     | invite, accept/decline_invite, follow         | seguir a quien acompaña          | INVITACIONES                                       | —                           |
+| `notes`       | post_note, leave_note                         | caducar                          | (se leen como percepción)                          | `notes`                     |
+| `norms`       | —                                             | abrir y cerrar, intrusos         | —                                                  | —                           |
+| `places`      | explore                                       | —                                | (lugares descubiertos, en agent-core)              | `known_places`              |
+| `agreements`  | — (los tipos los aportan los demás)           | —                                | —                                                  | `memory_audit` (descartes)  |
+| `world`       | —                                             | —                                | biblia (fijo); fecha (plan)                        | —                           |
+| `knowledge`   | —                                             | —                                | (perfil y gente de fuera, agent-core)              | `knowledge_log`             |
+| `goals`       | —                                             | medir, visitas; fichas (1 h)     | METAS (plan); TU PROYECTO; noche                   | `goals`, `departures`       |
+| `intentions`  | —                                             | —                                | — (solo métricas, de la auditoría)                 | (`memory_audit`)            |
+| `skills`      | practice, enseñar/aprender, help, show_result | práctica, sesiones, olvido (día) | LO QUE SABES HACER; ENSEÑAR Y APRENDER; ids (fijo) | `skills`                    |
+| `lore`        | share_lore                                    | uso en su sitio; olvido (día)    | SABERES QUE PUEDES CONTAR                          | `lore`, `lore_holders`      |
+| `personality` | —                                             | deriva (semana)                  | — (rehace el prompt fijo si cambia)                | — (instantánea y auditoría) |
 
 ## Cómo añadir un sistema
 

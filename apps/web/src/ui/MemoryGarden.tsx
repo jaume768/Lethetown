@@ -12,6 +12,7 @@ import { GoalsPanel } from "./GoalsPanel";
 import { InventoryPanel } from "./InventoryPanel";
 import { PlacesPanel } from "./PlacesPanel";
 import { RelationshipsPanel } from "./RelationshipsPanel";
+import { SkillsPanel } from "./SkillsPanel";
 import { Tabs } from "./Tabs";
 
 const REFRESH_MS = 3000;
@@ -68,7 +69,7 @@ export function MemoryGarden(props: Props) {
   const { onFocus, onSelectAgent, marksOn, onMarksOn, onMarks, onOpenNetwork } = props;
   const { t } = useI18n();
   const [view, setView] = useState<
-    "mind" | "relations" | "goals" | "agenda" | "inventory" | "places"
+    "mind" | "relations" | "goals" | "skills" | "agenda" | "inventory" | "places"
   >("mind");
   const [data, setData] = useState<AgentMemoryResponse | null>(null);
   const [person, setPerson] = useState("");
@@ -165,6 +166,7 @@ export function MemoryGarden(props: Props) {
           { id: "mind", label: t("inspector.mind") },
           { id: "relations", label: t("inspector.relations") },
           { id: "goals", label: t("inspector.goals") },
+          { id: "skills", label: t("inspector.skills") },
           { id: "agenda", label: t("inspector.agenda") },
           { id: "inventory", label: t("inspector.inventory") },
           { id: "places", label: t("inspector.places") },
@@ -175,6 +177,8 @@ export function MemoryGarden(props: Props) {
       >
         {view === "goals" ? (
           <GoalsPanel agent={agent} agents={agents} world={world} />
+        ) : view === "skills" ? (
+          <SkillsPanel agent={agent} agents={agents} />
         ) : view === "agenda" ? (
           <AgendaPanel agent={agent} agents={agents} world={world} />
         ) : view === "inventory" ? (

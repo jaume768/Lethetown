@@ -53,7 +53,7 @@ describe("metas de partida", () => {
       ).toHaveLength(1);
       expect(mine.filter((g) => g.level === "project").length, a.id).toBeGreaterThanOrEqual(1);
     }
-    expect((await app.defaultWorld.goals.listFor("ines")).length).toBe(3);
+    expect((await app.defaultWorld.goals.listFor("ines")).length).toBe(4);
   });
 
   it("los conflictos sembrados se detectan y se notan en las fichas", () => {

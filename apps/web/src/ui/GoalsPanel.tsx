@@ -19,7 +19,7 @@ interface Props {
 type T = ReturnType<typeof useI18n>["t"];
 
 /** Barra de 0..1 accesible (rol meter). */
-function Meter({ value, label }: { value: number; label: string }) {
+export function Meter({ value, label }: { value: number; label: string }) {
   return (
     <div className="bar" title={`${label}: ${Math.round(value * 100)} %`}>
       <span>{label}</span>
@@ -103,6 +103,8 @@ function criterionText(
       return t("goals.c.intentions_kept", { count: c.count, done });
     case "projects":
       return t("goals.c.projects", { count: c.count });
+    case "skill_level":
+      return t("goals.c.skill_level", { skill: c.skill, level: Math.round(c.level * 100) });
     case "confirmed":
       return t("goals.c.confirmed", {
         measure: criterionText(t, c.measure, done, person, place),

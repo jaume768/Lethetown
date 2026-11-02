@@ -5,6 +5,7 @@ import { PgItemStore } from "../db/items";
 import { PgNoteStore } from "../db/notes";
 import { PgKnowledgeLogStore } from "../db/knowledge-log";
 import { PgDepartureStore, PgGoalStore } from "../db/goals";
+import { PgLoreStore, PgSkillStore } from "../db/skills";
 import {
   AgentState,
   RUNNING,
@@ -69,6 +70,8 @@ export class RemoteWorldGateway implements WorldGateway {
   readonly knowledgeLog: PgKnowledgeLogStore;
   readonly goals: PgGoalStore;
   readonly departures: PgDepartureStore;
+  readonly skills: PgSkillStore;
+  readonly lore: PgLoreStore;
   private readonly map: WorldMap;
   private state: LiveState;
   /** Date.now() al recibir el último estado vivo. */
@@ -105,6 +108,8 @@ export class RemoteWorldGateway implements WorldGateway {
     this.knowledgeLog = new PgKnowledgeLogStore(db, row.id);
     this.goals = new PgGoalStore(db, row.id);
     this.departures = new PgDepartureStore(db, row.id);
+    this.skills = new PgSkillStore(db, row.id);
+    this.lore = new PgLoreStore(db, row.id);
     this.state = initial;
     this.applySpots(initial.spots);
   }

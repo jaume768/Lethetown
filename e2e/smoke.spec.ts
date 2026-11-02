@@ -115,7 +115,7 @@ test("relaciones: pestaña del inspector, recíproca y red del pueblo", async ({
   await expect(dialog.getByRole("slider")).toBeVisible();
 });
 
-test("inspector: agenda, inventario y lugares conocidos", async ({ page }, info) => {
+test("inspector: agenda, inventario, lugares conocidos y habilidades", async ({ page }, info) => {
   await open(page);
   if (info.project.name === "movil") await page.locator(".sheet-handle").click();
   await page.getByRole("combobox", { name: "Elegir agente" }).selectOption("valentina");
@@ -130,5 +130,10 @@ test("inspector: agenda, inventario y lugares conocidos", async ({ page }, info)
   });
   await page.getByRole("tab", { name: "Agenda" }).click();
   await expect(page.getByRole("heading", { name: "Próximas citas" })).toBeVisible();
+  // Habilidades y saberes: su fotografía (con su barra de nivel) y cómo revelar un carrete.
+  await page.getByRole("tab", { name: "Habilidades y saberes" }).click();
+  await expect(page.getByText("fotografía", { exact: true })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByRole("meter", { name: "Nivel" }).first()).toBeVisible();
+  await expect(page.getByText("Cómo revelar un carrete")).toBeVisible();
   await expect(panel).toBeVisible();
 });

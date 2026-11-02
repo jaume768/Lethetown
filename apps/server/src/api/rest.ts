@@ -6,6 +6,8 @@ import type {
   InventoryResponse,
   KnownPlacesResponse,
   AgentGoalsResponse,
+  AgentSkillsResponse,
+  LoreResponse,
   DeparturesResponse,
   NotesResponse,
   MemoryView,
@@ -393,6 +395,35 @@ export function registerWorldRest(server: FastifyInstance, ctx: ApiContext): voi
       agentId: req.params.id,
       now: live.time,
       goals: await w.goals.listFor(req.params.id),
+    };
+    return body;
+  });
+
+  /** Habilidades del agente (nivel, práctica, de quién aprendió, historial). Visible para todos. */
+  server.get<{ Params: { id: string } }>("/agents/:id/skills", async (req, reply) => {
+    const w = worldOf(ctx, req, reply);
+    if (!w) return reply;
+    const live = w.live();
+    if (!live.agents.some((a) => a.id === req.params.id)) {
+      return reply.code(404).send({ error: "Agente no encontrado" });
+    }
+    const body: AgentSkillsResponse = {
+      agentId: req.params.id,
+      now: live.time,
+      labels: Object.fromEntries(w.memory.config.skills.catalog.map((s) => [s.id, s.label])),
+      skills: await w.skills.listFor(req.params.id),
+    };
+    return body;
+  });
+
+  /** Saberes del pueblo con la versión de cada uno (quién sabe qué y cómo). Visible para todos. */
+  server.get("/lore", async (req, reply) => {
+    const w = worldOf(ctx, req, reply);
+    if (!w) return reply;
+    const [items, holders] = await Promise.all([w.lore.lore(), w.lore.holders()]);
+    const body: LoreResponse = {
+      now: w.live().time,
+      items: items.map((lore) => ({ lore, holders: holders.filter((h) => h.loreId === lore.id) })),
     };
     return body;
   });

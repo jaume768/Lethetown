@@ -60,6 +60,13 @@ TypeScript estricto. El porqué de cada decisión está en [docs/decisiones/](do
   `social` (sin llamadas nuevas) y pasa por el MISMO manejador de la acción formal
   (`applyAgreements`); si no vale, a la auditoría con el motivo, no como «No pude…». Una acción
   que se pueda acordar hablando añade su `AgreementKind` al sistema.
+- **Habilidades y saberes** (sistemas `skills`, `lore`): el nivel y la fidelidad los mide el
+  motor (lo que hace cada uno, no lo que dice el LLM); lógica en agent-core (`SkillsConfig`,
+  `LoreConfig`); la deformación de un saber, sin LLM (variantes o números, nunca texto inventado).
+  Palabras de práctica de hacer, no de consumir. Con un menor, `teachingRule`. Ver
+  [skills](docs/decisiones/skills.md) y [lore](docs/decisiones/lore.md).
+- **Personalidad**: solo la cambia el sistema `personality` (deriva lenta, `DriftConfig`); tras
+  cambiarla, `agent.refreshIdentity()` (rompe la caché si cambia el texto).
 - **Intenciones**: por `agent.intend` (importancia, tope con la menos importante fuera,
   fusión de parecidas y caducidad de las poco importantes, todo auditado); un compromiso con
   hora o persona, con su `importance`.
@@ -93,7 +100,7 @@ TypeScript estricto. El porqué de cada decisión está en [docs/decisiones/](do
   `latency:probe [min] [x]` (prueba real corta) · `record <dir>` / `world:export <dir>` (grabar
   una partida) · `pnpm study:analyze <dir> [<otro>]` (analizarla) · `sim:text <horas>` ·
   `pnpm interview [--advance h]` · `pnpm personality:derive` · `pnpm knowledge:derive` ·
-  `pnpm goals:derive` · `pnpm map:generate` ·
+  `pnpm goals:derive` · `pnpm skills:derive` · `pnpm map:generate` ·
   `pnpm assets:check` · `pnpm portraits:compose` · `pnpm user:create <usuario> [rol]`.
 - Postgres de docker-compose en el puerto **5433**. Retención de datos: `config/retention.json`.
 - Partidas de estudio largas: `.env.study.example` (capa sobre `.env`; la Batch API solo a ≤ x10).
