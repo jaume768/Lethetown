@@ -46,7 +46,8 @@ describe.skipIf(!url)("PgSocialProfileStore (Postgres)", () => {
     const p = await store.get("tomas", "pilar");
     expect(p).toMatchObject({ bond: "romantic", relationshipType: "romantic" });
     expect(p!.grudge).toBeCloseTo(0.25);
-    expect(p!.familiarity).toBeCloseTo(1);
+    // Con rendimientos decrecientes (corrección 2.5): 0,1 + 0,9 × (1 − 0,6 × 0,1).
+    expect(p!.familiarity).toBeCloseTo(0.946, 3);
     const h = await store.history("tomas", "pilar");
     expect(h.map((c) => c.reason)).toEqual(["relación de partida", "discutieron"]);
     expect(h[1]).toMatchObject({ eventId: "c1", at: 20 });
