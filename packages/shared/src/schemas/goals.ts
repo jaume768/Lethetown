@@ -71,6 +71,15 @@ const MEASURABLE = [
   z.object({ type: z.literal("notes"), count: count(30) }),
   /** Intenciones cumplidas (memoria prospectiva). */
   z.object({ type: z.literal("intentions_kept"), count: count(50) }),
+  /**
+   * Aprender o mejorar en algo: llegar a ese nivel (0..1) en una habilidad del catálogo (sistema
+   * `skills`), desde el que tenía al crearla.
+   */
+  z.object({
+    type: z.literal("skill_level"),
+    skill: z.string().min(2).max(30),
+    level: z.coerce.number().min(0.05).max(1),
+  }),
   /** Para una meta vital: proyectos suyos conseguidos (los que avanzan cuentan su parte). */
   z.object({ type: z.literal("projects"), count: count(10) }),
 ] as const;

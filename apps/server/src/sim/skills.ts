@@ -7,8 +7,13 @@
  * Ver docs/decisiones/skills.md.
  */
 import {
+  applySocialUpdate,
   levelLabel,
+  makeMood,
   practiceGain,
+  qualityEffect,
+  qualityLabel,
+  resultQuality,
   skillAfterIdle,
   skillDef,
   skillForActivity,
@@ -17,6 +22,7 @@ import {
 } from "@lethetown/agent-core";
 import type { SkillState } from "@lethetown/shared";
 import { InMemorySkillStore, type SkillStore } from "../db/skills";
+import { itemsState, newItemId, saveItem } from "./items";
 import { errorMessage, type SimContext } from "./context";
 import { presentWith } from "./perception";
 import { systemsHold } from "./systems/registry";
@@ -59,10 +65,21 @@ export interface SkillsState {
   practiceMinutes: number;
   /** Quien escucha cuándo alguien practica (los resultados, la calidad, los saberes). */
   onPractice: ((p: PracticeTick) => void)[];
+  /** Práctica seguida de cada uno (para que salga un resultado: una foto, pan). */
+  streak: Map<string, { skill: string; minutes: number }>;
+  /** Lo que salió de practicar (objeto del inventario → calidad, quién y con qué habilidad). */
+  results: Map<string, SkillResult>;
+}
+
+export interface SkillResult {
+  quality: number;
+  makerId: string;
+  skill: string;
 }
 
 /** Lo que ha practicado alguien en una revisión. */
 export interface PracticeTick {
+  ctx: SimContext;
   agent: Agent;
   skill: string;
   minutes: number;
@@ -83,6 +100,8 @@ export const skillsState = (ctx: SimContext) =>
     shownAt: new Map(),
     practiceMinutes: 0,
     onPractice: [],
+    streak: new Map(),
+    results: new Map(),
   }));
 
 export const skillsCfg = (ctx: SimContext): SkillsConfig => ctx.deps.memory.config.skills;
@@ -224,7 +243,7 @@ export function addPractice(
     persist(ctx, s);
   }
   for (const l of skillsState(ctx).onPractice) {
-    l({ agent, skill, minutes, level: s.level, now });
+    l({ ctx, agent, skill, minutes, level: s.level, now });
   }
   return gain;
 }
@@ -364,4 +383,123 @@ export function decideSkillsLine(ctx: SimContext, agent: Agent, now: number): st
   const line = skillsLine(ctx, agent, now);
   if (line) st.shownAt.set(agent.id, now);
   return line;
+}
+
+// --- Lo que sale: calidad y resultados -------------------------------------------------------
+
+/** Objetos del mapa cuyo uso sirve algo a quien está delante (un café, la comida, el pan, una cura). */
+const SERVED: Record<string, { skill: string; what: string }> = {
+  cafetera: { skill: "hospitality", what: "el café" },
+  cocina: { skill: "cooking", what: "la comida" },
+  horno: { skill: "baking", what: "el pan" },
+  botiquin: { skill: "care", what: "la cura" },
+};
+
+/** Ánimo de alguien, un poco arriba o abajo. */
+function nudgeMood(agent: Agent, delta: number): void {
+  if (!delta) return;
+  const m = agent.state.mood;
+  agent.state.mood = makeMood(Math.max(-1, Math.min(1, m.valence + delta)), m.arousal);
+}
+
+/** Lo que nota quien recibe o prueba algo hecho por otro: ánimo y afinidad hacia quien lo hizo. */
+export function tasteResult(
+  ctx: SimContext,
+  receiverId: string,
+  makerId: string,
+  what: string,
+  quality: number,
+  now: number,
+): void {
+  const receiver = ctx.agents.get(receiverId);
+  if (!receiver || receiverId === makerId) return;
+  const effect = qualityEffect(quality, skillsCfg(ctx));
+  const label = qualityLabel(quality);
+  nudgeMood(receiver, effect.mood);
+  ctx.rt(receiverId).pending.push({
+    kind: "world",
+    text: `${capitalize(what)} de ${firstName(ctx, makerId)}: ${label === "regular" ? "regulín" : label}.`,
+    placeId: receiver.state.locationId,
+  });
+  ctx.deps.track?.(
+    applySocialUpdate(ctx.deps.social, {
+      ownerId: receiverId,
+      aboutId: makerId,
+      affinityDelta: effect.affinity,
+      now,
+      reason: `${what} que hizo: ${label}`,
+      config: ctx.deps.memory.config.social,
+    }).then(() => undefined),
+  );
+}
+
+const capitalize = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
+
+/**
+ * Al usar un objeto que sirve algo (cafetera, cocina, horno, botiquín): la calidad según su
+ * habilidad, y quien está delante lo nota. Devuelve la calidad en palabras, o null.
+ */
+export function serveResult(
+  ctx: SimContext,
+  agent: Agent,
+  spotId: string,
+  _label: string,
+  now: number,
+): string | null {
+  const cfg = skillsCfg(ctx);
+  const type = Object.keys(SERVED).find((t) => new RegExp(`^${t}`).test(spotId));
+  if (!cfg.enabled || !type) return null;
+  const served = SERVED[type]!;
+  const q = resultQuality(levelOf(ctx, agent.id, served.skill), ctx.deps.rng(), cfg);
+  for (const other of presentWith(ctx, agent))
+    tasteResult(ctx, other.id, agent.id, served.what, q, now);
+  return qualityLabel(q);
+}
+
+/** Resultados que guarda alguien ahora (lo que hizo y sigue siendo suyo). */
+export function resultsOf(ctx: SimContext, agentId: string): string[] {
+  const items = itemsState(ctx).items;
+  return [...skillsState(ctx).results]
+    .filter(([id, r]) => r.makerId === agentId && items.get(id)?.holderId === agentId)
+    .map(([id]) => id);
+}
+
+/**
+ * Practicar un rato seguido algo que deja resultado (fotos, dibujos, pan, verduras) da un objeto
+ * con su calidad, que se puede enseñar o regalar (`show_result`). Como mucho `maxResults` a la vez.
+ */
+export function maybeResult(ctx: SimContext, p: PracticeTick): void {
+  const st = skillsState(ctx);
+  const cfg = skillsCfg(ctx);
+  const def = skillDef(cfg, p.skill);
+  const prev = st.streak.get(p.agent.id);
+  const streak = prev?.skill === p.skill ? prev.minutes + p.minutes : p.minutes;
+  st.streak.set(p.agent.id, { skill: p.skill, minutes: streak });
+  if (!def?.result || streak < cfg.resultMinutes) return;
+  st.streak.set(p.agent.id, { skill: p.skill, minutes: 0 });
+  if (resultsOf(ctx, p.agent.id).length >= cfg.maxResults) return;
+  const q = resultQuality(p.level, ctx.deps.rng(), cfg);
+  const id = newItemId(ctx);
+  saveItem(ctx, {
+    id,
+    kind: def.result.kind,
+    name: `${def.result.name} de ${firstName(ctx, p.agent.id)} (${qualityLabel(q)})`,
+    description: `Lo hizo ${p.agent.seed.name} practicando ${skillLabel(ctx, p.skill)} (${qualityLabel(q)}).`,
+    ownerId: p.agent.id,
+    holderId: p.agent.id,
+    placeId: null,
+    loan: null,
+    value: 0,
+    createdAt: p.now,
+    updatedAt: p.now,
+  });
+  st.results.set(id, { quality: q, makerId: p.agent.id, skill: p.skill });
+  ctx.emit(
+    "action",
+    p.agent.id,
+    `🖼 ${p.agent.seed.name}: ${def.result.name} (${qualityLabel(q)})`,
+    [p.agent.id],
+    undefined,
+    { action: "skill_result", ok: true },
+  );
 }

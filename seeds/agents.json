@@ -569,6 +569,14 @@
             "keywords": ["foto", "carrete", "revel"],
             "hours": 8
           }
+        },
+        {
+          "text": "Aprender a hacer buenas fotos con Valentina",
+          "criterion": {
+            "type": "skill_level",
+            "skill": "photography",
+            "level": 0.5
+          }
         }
       ]
     },

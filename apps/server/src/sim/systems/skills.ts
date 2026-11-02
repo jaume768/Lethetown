@@ -9,6 +9,8 @@ import { SkillState } from "@lethetown/shared";
 import { z } from "zod";
 import {
   decideSkillsLine,
+  maybeResult,
+  type PracticeTick,
   seedSkills,
   skillsCfg,
   skillsLine,
@@ -19,6 +21,9 @@ import { registerSystem } from "./registry";
 import { REVIEW_MINUTES } from "./types";
 
 const Until = z.object({ skill: z.string(), until: z.number() });
+
+/** Lo que pasa al practicar: los resultados (fotos, pan…). Una sola función, para no duplicarla. */
+const listen = (p: PracticeTick) => maybeResult(p.ctx, p);
 
 registerSystem({
   id: "skills",
@@ -31,6 +36,11 @@ registerSystem({
       coached: z.record(z.string(), Until.extend({ masterId: z.string().nullable() })),
       lastDecayDay: z.number(),
       practiceMinutes: z.number(),
+      streak: z.record(z.string(), z.object({ skill: z.string(), minutes: z.number() })),
+      results: z.record(
+        z.string(),
+        z.object({ quality: z.number(), makerId: z.string(), skill: z.string() }),
+      ),
     }),
     save: (ctx) => {
       const s = skillsState(ctx);
@@ -40,6 +50,8 @@ registerSystem({
         coached: Object.fromEntries(s.coached),
         lastDecayDay: s.lastDecayDay,
         practiceMinutes: s.practiceMinutes,
+        streak: Object.fromEntries(s.streak),
+        results: Object.fromEntries(s.results),
       };
     },
     restore: (ctx, d) => {
@@ -49,11 +61,14 @@ registerSystem({
       s.coached = new Map(Object.entries(d.coached));
       s.lastDecayDay = d.lastDecayDay;
       s.practiceMinutes = d.practiceMinutes;
+      s.streak = new Map(Object.entries(d.streak));
+      s.results = new Map(Object.entries(d.results));
     },
   },
   load: async (ctx, { restored, now }) => {
-    if (restored) return;
     const s = skillsState(ctx);
+    if (!s.onPractice.includes(listen)) s.onPractice.push(listen);
+    if (restored) return;
     const stored = await s.store.list();
     if (stored.length) s.skills = new Map(stored.map((x) => [`${x.agentId}:${x.skill}`, x]));
     else seedSkills(ctx, now);

@@ -139,6 +139,7 @@ const es = {
   "goals.c.meetings": "{count} citas cumplidas {who} (lleva {done})",
   "goals.c.conversations": "{count} conversaciones {who}{where}{about} (lleva {done})",
   "goals.about": " hablando de: {topics}",
+  "goals.c.skill_level": "llegar a un nivel {level} % en {skill}",
   "goals.c.confirmed": "{measure}; y se comprueba de noche: {question}",
   "goals.rel.conversations": "{count} conversaciones (lleva {done})",
   "goals.c.places_discovered": "descubrir {count} sitios (lleva {done})",

@@ -141,6 +141,7 @@ const en: Record<MessageKey, string> = {
   "goals.c.meetings": "{count} kept appointments {who} (done {done})",
   "goals.c.conversations": "{count} conversations {who}{where}{about} (done {done})",
   "goals.about": " talking about: {topics}",
+  "goals.c.skill_level": "reach level {level}% in {skill}",
   "goals.c.confirmed": "{measure}; checked at night: {question}",
   "goals.rel.conversations": "{count} conversations (done {done})",
   "goals.c.places_discovered": "discover {count} places (done {done})",

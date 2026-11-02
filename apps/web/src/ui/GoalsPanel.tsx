@@ -103,6 +103,8 @@ function criterionText(
       return t("goals.c.intentions_kept", { count: c.count, done });
     case "projects":
       return t("goals.c.projects", { count: c.count });
+    case "skill_level":
+      return t("goals.c.skill_level", { skill: c.skill, level: Math.round(c.level * 100) });
     case "confirmed":
       return t("goals.c.confirmed", {
         measure: criterionText(t, c.measure, done, person, place),

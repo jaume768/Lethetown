@@ -3,14 +3,16 @@
  * el motor comprueba que el verbo vale en el estado actual, cambia el estado y, si dura, lo
  * devuelve solo pasado el rato (`objectsTick`). Arreglar algo roto puede no salir a la primera.
  */
+import { successChance } from "@lethetown/agent-core";
 import { verbsFor, type UseObjectAction } from "@lethetown/shared";
 import type { z } from "zod";
 import type { SimContext } from "../context";
 import { goOrDo } from "../routines";
+import { addPractice, levelOf, serveResult, skillsCfg } from "../skills";
 import { registerAction } from "./registry";
 
-/** Probabilidad de arreglar algo roto en un intento. */
-const REPAIR_SUCCESS = 0.7;
+/** Minutos de práctica de «arreglar cosas» que da un intento. */
+const REPAIR_PRACTICE = 20;
 
 /** Objetos del mapa en un estado que dura (la cafetera "en uso"): cuándo vuelven y a qué. */
 export interface ObjectsState {
@@ -58,7 +60,11 @@ registerAction<z.infer<typeof UseObjectAction>>({
     const rt = ctx.rt(agent.id);
     rt.overrideUntil = now + (verb.minutes ?? 15);
     goOrDo(ctx, agent, spot.placeId, spot.id, verb.activity, verb.activityKind);
-    if (verb.verb === "arreglar" && ctx.deps.rng() >= REPAIR_SUCCESS) {
+    // Arreglar: según lo que sepa (antes, un 70 % fijo); intentarlo ya es practicar.
+    const repairing = verb.verb === "arreglar";
+    if (repairing) addPractice(ctx, agent, "repair", REPAIR_PRACTICE, now);
+    const chance = successChance(levelOf(ctx, agent.id, "repair"), skillsCfg(ctx));
+    if (repairing && ctx.deps.rng() >= chance) {
       ctx.rt(agent.id).pending.push({
         kind: "world",
         text: `Intenté arreglar ${spot.name}, pero sigue ${spot.state}.`,
@@ -83,10 +89,12 @@ registerAction<z.infer<typeof UseObjectAction>>({
       objectsState(ctx).timers.delete(spot.id);
     }
     const icon = verb.verb === "arreglar" ? "🔧" : "🛠";
+    // Lo que sale (un café, la comida, el pan, una cura) tiene calidad y lo notan los demás.
+    const served = repairing ? null : serveResult(ctx, agent, spot.id, verb.label, now);
     const text =
       verb.verb === "arreglar"
         ? `${icon} ${agent.seed.name} arregla ${spot.name} (estaba ${before})`
-        : `${icon} ${agent.seed.name}: ${verb.label} (${spot.name})`;
+        : `${icon} ${agent.seed.name}: ${verb.label} (${spot.name})${served ? `: le sale ${served}` : ""}`;
     ctx.emit("action", agent.id, text, [agent.id], undefined, { action: "use_object", ok: true });
   },
 });
