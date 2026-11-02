@@ -20,7 +20,13 @@ import type { MemoryConfig } from "./config";
 import { currentStrength } from "./decay";
 import type { MemorySystem } from "./memory-system";
 import { IntentionInput } from "./prospective";
-import { SocialConfig, classifyRelationship, grudgeAfter, relationshipLabel } from "./social";
+import {
+  SocialConfig,
+  classifyRelationship,
+  dampedGain,
+  grudgeAfter,
+  relationshipLabel,
+} from "./social";
 
 const DEFAULT_SOCIAL = SocialConfig.parse({});
 import type { MemoryRecord } from "./types";
@@ -228,13 +234,26 @@ export async function applySocialUpdate(
   const prev =
     (await store.get(update.ownerId, update.aboutId)) ??
     emptyProfile(update.ownerId, update.aboutId, update.now);
-  const affinity = clamp(update.affinity ?? prev.affinity + (update.affinityDelta ?? 0), -1, 1);
+  // Las subidas, con rendimientos decrecientes (un valor absoluto, como el perdón, no).
+  const gain = (current: number, delta: number | undefined, k: number) =>
+    dampedGain(current, delta ?? 0, k, cfg.gainFloor);
+  const affinity = clamp(
+    update.affinity ??
+      prev.affinity + gain(prev.affinity, update.affinityDelta, cfg.affinityGainDamping),
+    -1,
+    1,
+  );
   const base = {
     ...prev,
     summary: update.summary?.trim() || prev.summary,
     affinity,
     trust: clamp(prev.trust + (update.trustDelta ?? 0), 0, 1),
-    familiarity: clamp(prev.familiarity + (update.familiarityDelta ?? 0), 0, 1),
+    familiarity: clamp(
+      prev.familiarity +
+        gain(prev.familiarity, update.familiarityDelta, cfg.familiarityGainDamping),
+      0,
+      1,
+    ),
     grudge: grudgeAfter(prev.grudge, affinity - prev.affinity, cfg),
     bond: update.bond === undefined ? prev.bond : update.bond,
     lastUpdated: update.now,

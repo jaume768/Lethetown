@@ -17,6 +17,7 @@ import { MemorySystem } from "../memory/memory-system";
 import {
   classifyRelationship,
   credibility,
+  dampedGain,
   exposureDelta,
   forgive,
   grudgeAfter,
@@ -211,5 +212,36 @@ describe("lo social en el agente", () => {
     // Todos hablan distinto.
     const registers = new Set(seeds.map((s) => s.speechStyle?.register));
     expect(registers.size).toBe(20);
+  });
+});
+
+describe("rendimientos decrecientes (corrección 2.5)", () => {
+  it("cuanto más alta la afinidad, menos sube por charla; las bajadas, enteras", () => {
+    expect(dampedGain(0, 0.1, 0.9, 0.1)).toBeCloseTo(0.1);
+    expect(dampedGain(0.5, 0.1, 0.9, 0.1)).toBeCloseTo(0.055);
+    expect(dampedGain(0.95, 0.1, 0.9, 0.1)).toBeCloseTo(0.0145);
+    expect(dampedGain(1, 0.1, 0.95, 0.1)).toBeCloseTo(0.01);
+    expect(dampedGain(0.8, -0.2, 0.9, 0.1)).toBe(-0.2);
+  });
+
+  it("una amistad no se satura en medio día: de 0 a 0,8 hacen falta muchas más charlas", async () => {
+    const store = new InMemorySocialProfileStore();
+    let talks = 0;
+    let affinity = 0;
+    while (affinity < 0.8 && talks < 100) {
+      talks++;
+      affinity = (
+        await applySocialUpdate(store, {
+          ownerId: "a",
+          aboutId: "b",
+          affinityDelta: 0.08,
+          familiarityDelta: 0.04,
+          now: talks,
+        })
+      ).affinity;
+    }
+    // Sin rendimientos decrecientes serían 10 charlas (0,08 por charla).
+    expect(talks).toBeGreaterThanOrEqual(16);
+    expect(talks).toBeLessThan(30);
   });
 });

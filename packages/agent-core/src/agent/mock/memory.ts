@@ -93,9 +93,11 @@ function mockGoals(prompt: string): unknown[] {
       const frustration = Number(l.slice(l.lastIndexOf("frustración ") + 12));
       return { id, label, text, frustration };
     });
-  // Una meta vital sin proyectos en marcha: uno nuevo (hablarlo con gente distinta).
+  // Una meta vital sin proyectos en marcha, o tras cumplir uno («propón el siguiente
+  // proyecto»): uno nuevo (hablarlo con gente distinta).
   const life = lines.find((m) => m.label === "vital");
-  if (life && !lines.some((m) => m.label.startsWith("proyecto"))) {
+  const nudged = prompt.includes("propón el siguiente proyecto");
+  if (life && (nudged || !lines.some((m) => m.label.startsWith("proyecto")))) {
     return [
       {
         op: "add",

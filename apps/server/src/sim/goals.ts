@@ -12,6 +12,7 @@ import {
   CRITERIA_CATALOG as CRITERIA,
   criterionCues,
   criterionText,
+  demandingRelationship,
   frustrationMood,
   goalDay,
   lifeChangeProbability,
@@ -283,9 +284,22 @@ export async function createGoal(
     return null;
   }
   const s = goalsState(ctx);
-  const c = input.criterion;
+  let c = input.criterion;
   const profile =
     c.type === "relationship" ? await ctx.deps.social.get(agent.id, c.personId) : undefined;
+  let demanding: string[] = [];
+  if (c.type === "relationship") {
+    // Que no se cumpla en medio día: más lejos de lo que hay y con conversaciones de verdad.
+    const cfg = cfgOf(ctx);
+    const harder = demandingRelationship(c, profile, {
+      minGain: cfg.relationshipMinGain,
+      minConversations: cfg.relationshipMinConversations,
+    });
+    if (harder) {
+      c = harder.criterion;
+      demanding = harder.changes;
+    }
+  }
   const goal: Goal = {
     id: `g${++s.seq}`,
     agentId: agent.id,
@@ -316,6 +330,7 @@ export async function createGoal(
       return null;
     }
   }
+  if (demanding.length) audit(ctx, goal, `objetivo de relación ajustado: ${demanding.join(", ")}`);
   historyEntry(goal, now, reason);
   s.goals.set(goal.id, goal);
   persist(ctx, goal);
@@ -423,6 +438,8 @@ export function goalsOnEvent(ctx: SimContext, e: SimEvent): void {
       [b, a],
     ] as const) {
       count(ctx, me, now, (c) => {
+        // Las de relación cuentan sus conversaciones (la ficha se mira cada hora).
+        if (c.type === "relationship") return c.personId === other ? `c:${conv}` : false;
         if (c.type !== "conversations") return false;
         if (c.personId && c.personId !== other) return false;
         if (c.placeId && c.placeId !== place) return false;
@@ -489,7 +506,7 @@ export async function relationshipTick(ctx: SimContext, now: number): Promise<vo
     const c = g.criterion;
     if (g.status !== "active" || c.type !== "relationship") continue;
     const profile = await ctx.deps.social.get(g.agentId, c.personId);
-    const p = relationshipProgress(c, profile, g.baseline);
+    const p = relationshipProgress(c, profile, g.baseline, g.measured);
     if (p !== g.progress) setProgress(ctx, g, p, now);
   }
 }
@@ -735,6 +752,83 @@ export function reviewNight(ctx: SimContext, agent: Agent, now: number): void {
   moodBy(agent, mood);
 }
 
+/** Palabras que no dicen de qué va una meta (para emparejar un paso con su proyecto). */
+const VAGUE = new Set(
+  normalizeText(
+    "hablar charlar conseguir hacer tener pasar volver poder sobre algo alguien pueblo vecinos gente mejor mucho poco cosas tiempo semana mañana tarde noche siempre otra otro ellos ellas quiero",
+  ).split(" "),
+);
+
+/** Palabras con contenido de un texto (sin tildes, de 4 letras o más). */
+function contentWords(text: string): Set<string> {
+  return new Set(
+    normalizeText(text)
+      .split(" ")
+      .filter((w) => w.length >= 4 && !VAGUE.has(w)),
+  );
+}
+
+/**
+ * Cuánto encaja un paso con un proyecto: la misma persona o el mismo lugar en su criterio (o en
+ * el de sus pasos), la persona del paso nombrada en el proyecto y las palabras que comparten.
+ */
+function fitScore(ctx: SimContext, project: Goal, text: string, c: GoalCriterion): number {
+  const cue = criterionCues(c);
+  let score = 0;
+  for (const g of [
+    project,
+    ...goalsOf(ctx, project.agentId).filter((x) => x.parentId === project.id),
+  ]) {
+    const other = criterionCues(g.criterion);
+    if (cue.personId && other.personId === cue.personId) score += 2;
+    if (cue.placeId && other.placeId === cue.placeId) score += 2;
+  }
+  const words = contentWords(project.text);
+  if (cue.personId && words.has(normalizeText(firstName(ctx, cue.personId)))) score += 2;
+  for (const w of contentWords(text)) if (words.has(w)) score++;
+  return score;
+}
+
+/**
+ * Dónde va lo que propone el modelo. Un paso sin proyecto (o colgado de la meta vital) se cuelga
+ * del proyecto activo que mejor encaje; si no encaja en ninguno (o cuelga de la vital), pasa a
+ * ser un proyecto de la meta vital. En la partida 2 se perdían así 35 de 49 propuestas.
+ */
+export function placeProposal(
+  ctx: SimContext,
+  agent: Agent,
+  prop: Extract<GoalProposal, { op: "add" }>,
+): { level: GoalLevel; parentId: string | null; note?: string } {
+  const active = goalsOf(ctx, agent.id, "active");
+  const life = active.find((g) => g.level === "life")?.id ?? null;
+  if (prop.level === "life") return { level: "life", parentId: null };
+  if (prop.level === "project") return { level: "project", parentId: prop.parent ?? life };
+  const given = prop.parent ? goalsState(ctx).goals.get(prop.parent) : undefined;
+  const mine = given?.agentId === agent.id && given.status === "active";
+  if (mine && given.level === "project") return { level: "step", parentId: given.id };
+  const room = (p: Goal) =>
+    active.filter((g) => g.parentId === p.id).length < cfgOf(ctx).maxStepsPerProject;
+  if (!(mine && given.level === "life")) {
+    const best = active
+      .filter((g) => g.level === "project" && room(g))
+      .map((g) => ({ g, score: fitScore(ctx, g, prop.text, prop.criterion) }))
+      .filter((x) => x.score > 0)
+      .sort((a, b) => b.score - a.score)[0];
+    if (best) {
+      return {
+        level: "step",
+        parentId: best.g.id,
+        note: `colgado de «${best.g.text}», donde encaja`,
+      };
+    }
+  }
+  return {
+    level: "project",
+    parentId: life,
+    note: "un paso sin proyecto donde encaje: pasa a ser un proyecto de su meta vital",
+  };
+}
+
 /** Aplica lo que propuso el modelo al consolidar (el motor valida cada cosa). */
 export async function applyProposals(
   ctx: SimContext,
@@ -758,25 +852,19 @@ export async function applyProposals(
     }
     const prop = parsed.data;
     if (prop.op === "add") {
-      const parentId =
-        prop.level === "life"
-          ? null
-          : (prop.parent ??
-            (prop.level === "project"
-              ? (goalsOf(ctx, agent.id, "active").find((g) => g.level === "life")?.id ?? null)
-              : null));
+      const placed = placeProposal(ctx, agent, prop);
       const created = await createGoal(
         ctx,
         agent,
         {
-          level: prop.level,
-          parentId,
+          level: placed.level,
+          parentId: placed.parentId,
           text: prop.text,
           criterion: prop.criterion,
           resource: prop.resource ?? null,
         },
         now,
-        "la propuso al repasar el día",
+        `la propuso al repasar el día${placed.note ? ` (${placed.note})` : ""}`,
       );
       if (created?.level === "life" && hadLife) {
         ctx.emit(
@@ -812,6 +900,27 @@ export async function applyProposals(
   }
 }
 
+/**
+ * Qué toca proponer esta noche: tras cumplir un proyecto (en el último día), el siguiente de su
+ * meta vital; y si la vital se queda sin proyectos activos, lo mismo. En la partida 2, siete
+ * metas vitales se quedaron en 0,50 sin proyectos y nadie propuso el siguiente.
+ */
+export function nextProjectNudge(ctx: SimContext, agent: Agent): string | null {
+  const now = ctx.clock.now();
+  const life = goalsOf(ctx, agent.id, "active").find((g) => g.level === "life");
+  if (!life) return null;
+  const kids = goalsOf(ctx, agent.id).filter((g) => g.parentId === life.id);
+  const done = kids.filter(
+    (g) => g.level === "project" && g.status === "achieved" && now - g.updatedAt <= 1440,
+  );
+  const activeKids = kids.filter((g) => g.status === "active").length;
+  if (!done.length && activeKids) return null;
+  const head = done.length
+    ? `Has cumplido ${done.map((g) => `«${g.text}»`).join(" y ")}: `
+    : `Tu meta vital (${life.id}) no tiene ningún proyecto en marcha: `;
+  return `${head}propón el siguiente proyecto de tu meta vital («${life.text}»): {"op":"add","level":"project","parent":"${life.id}",…}, medible y propio de tu vida.`;
+}
+
 /** Lo que entra en la consolidación: sus metas y cómo proponer cambios. */
 export function consolidationPrompt(ctx: SimContext, agent: Agent): string {
   const mine = goalsOf(ctx, agent.id).filter(
@@ -825,8 +934,9 @@ export function consolidationPrompt(ctx: SimContext, agent: Agent): string {
     return `- ${g.id} [${label}${state}] ${g.text}: ${criterionText(g.criterion, g.measured, names(ctx))} — ${Math.round(g.progress * 100)} %, motivación ${g.motivation.toFixed(1)}, frustración ${g.frustration.toFixed(1)}`;
   });
   const noLife = !mine.some((g) => g.level === "life");
+  const next = nextProjectNudge(ctx, agent);
   return `Tus metas (el progreso lo mide la vida, no tú):
-${lines.join("\n") || "- (ninguna)"}${noLife ? "\nAhora mismo no tienes meta vital: si te sale una, propónla (level life, criterio projects con el número de proyectos)." : ""}
+${lines.join("\n") || "- (ninguna)"}${noLife ? "\nAhora mismo no tienes meta vital: si te sale una, propónla (level life, criterio projects con el número de proyectos)." : ""}${next ? `\n${next}` : ""}
 Si hoy ha cambiado algo, propón (pocos, medibles y propios de tu vida en ${ctx.deps.bible?.year ?? "tu época"}): un proyecto nuevo o un paso de un proyecto, aplazar, abandonar o retomar. Criterios: ${CRITERIA}.
 En "goals": [{"op":"add","level":"project|step","parent":"g…","text":"…","criterion":{"type":"…",…}},{"op":"abandon|postpone|resume","id":"g…","reason":"…"}] ([] si nada cambia).`;
 }

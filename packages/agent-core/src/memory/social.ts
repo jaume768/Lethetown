@@ -18,6 +18,14 @@ export const SocialConfig = z.object({
    */
   romanceAffinity: z.number().min(0).max(1).default(0.75),
   romanceFamiliarity: z.number().min(0).max(1).default(0.6),
+  /**
+   * Rendimientos decrecientes: lo que sube la afinidad (o la familiaridad) se multiplica por
+   * max(gainFloor, 1 − k·valor actual). Cuanto mejor se llevan, menos suma otra charla (en la
+   * partida 2, Mateo llegó con Lucía a 0,8 a media mañana del día 0). Las bajadas, enteras.
+   */
+  affinityGainDamping: z.number().min(0).max(1).default(0.9),
+  familiarityGainDamping: z.number().min(0).max(1).default(0.6),
+  gainFloor: z.number().min(0).max(1).default(0.1),
   /** Familiaridad que suma cada conversación. */
   conversationFamiliarity: z.number().min(0).max(1).default(0.04),
   /** Mera exposición: minutos juntos (en el mismo sitio) en un día para que cuente. */
@@ -66,6 +74,12 @@ export function classifyRelationship(
   }
   if (p.bond === "work") return "work";
   return "neighbor";
+}
+
+/** Una subida, con rendimientos decrecientes según lo alto que esté ya el valor (0..1). */
+export function dampedGain(current: number, delta: number, k: number, floor: number): number {
+  if (delta <= 0) return delta;
+  return delta * Math.max(floor, 1 - k * Math.max(0, current));
 }
 
 /** Rencor tras un cambio de afinidad: una ofensa importante deja un poso. */

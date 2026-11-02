@@ -21,14 +21,19 @@ export function measuredProgress(c: GoalCriterion, measured: number): number {
   }
 }
 
-/** Progreso de una meta de relación: de lo que había al crearla (`baseline`) al objetivo. */
+/**
+ * Progreso de una meta de relación: de lo que había al crearla (`baseline`) al objetivo y, si
+ * el criterio pide conversaciones, las que lleva con esa persona (`conversations`).
+ */
 export function relationshipProgress(
   c: Extract<GoalCriterion, { type: "relationship" }>,
   now: { affinity: number; trust: number; relationshipType: string } | undefined,
   baseline: number | null,
+  conversations = 0,
 ): number {
   if (!now) return 0;
   const parts: number[] = [];
+  if (c.conversations) parts.push(clamp01(conversations / c.conversations));
   const toward = (cur: number, target: number) => {
     const from = baseline ?? 0;
     if (cur >= target) return 1;
@@ -50,6 +55,41 @@ export function relationshipBaseline(
   if (c.affinity !== undefined) return now.affinity;
   if (c.trust !== undefined) return now.trust;
   return null;
+}
+
+type RelationshipCriterion = Extract<GoalCriterion, { type: "relationship" }>;
+
+/**
+ * Una meta de relación exigente: el objetivo de afinidad (o de confianza) queda al menos `minGain`
+ * por encima de lo que hay al crearla y pide `minConversations` conversaciones con esa persona.
+ * Devuelve el criterio ajustado y qué se cambió (para la auditoría), o null si no hizo falta.
+ */
+export function demandingRelationship(
+  c: RelationshipCriterion,
+  now: { affinity: number; trust: number } | undefined,
+  cfg: { minGain: number; minConversations: number },
+): { criterion: RelationshipCriterion; changes: string[] } | null {
+  const out = { ...c };
+  const changes: string[] = [];
+  const round1 = (x: number) => Math.round(x * 100) / 100;
+  if (c.affinity !== undefined) {
+    const min = Math.min(1, round1((now?.affinity ?? 0) + cfg.minGain));
+    if (c.affinity < min) {
+      out.affinity = min;
+      changes.push(`afinidad ${c.affinity.toFixed(2)} → ${min.toFixed(2)}`);
+    }
+  } else if (c.trust !== undefined) {
+    const min = Math.min(1, round1((now?.trust ?? 0) + cfg.minGain));
+    if (c.trust < min) {
+      out.trust = min;
+      changes.push(`confianza ${c.trust.toFixed(2)} → ${min.toFixed(2)}`);
+    }
+  }
+  if (cfg.minConversations > 0 && (c.conversations ?? 0) < cfg.minConversations) {
+    out.conversations = cfg.minConversations;
+    changes.push(`y ${cfg.minConversations} conversaciones`);
+  }
+  return changes.length ? { criterion: out, changes } : null;
 }
 
 /** Personas o lugares de un criterio (para saber si viene a cuento en una decisión). */
@@ -98,7 +138,10 @@ export function criterionText(
         ...(c.trust !== undefined ? [`confianza ${c.trust.toFixed(1)}`] : []),
         ...(c.relationship ? [RELATIONSHIP_LABEL[c.relationship] ?? c.relationship] : []),
       ];
-      return `llegar con ${names.person(c.personId)} a ${parts.join(" y ")}`;
+      const talks = c.conversations
+        ? `, tras ${c.conversations} conversaciones (llevas ${measured})`
+        : "";
+      return `llegar con ${names.person(c.personId)} a ${parts.join(" y ")}${talks}`;
     }
     case "meetings": {
       const who = c.personId

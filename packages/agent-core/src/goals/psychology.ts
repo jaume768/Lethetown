@@ -60,6 +60,13 @@ export const GoalsConfig = z.object({
       oldFactor: z.number().min(0).max(5).default(0.4),
     })
     .prefault({}),
+  /**
+   * Metas de relación: el objetivo, al menos esto por encima de la afinidad (o la confianza) al
+   * crearla, y además estas conversaciones con esa persona (en la partida 2, un objetivo de +0,2
+   * duraba medio día).
+   */
+  relationshipMinGain: unit(0.3),
+  relationshipMinConversations: z.number().int().nonnegative().default(3),
   /** Proyectos activos como mucho por agente, y pasos por proyecto. */
   maxActiveProjects: z.number().int().positive().default(3),
   maxStepsPerProject: z.number().int().positive().default(3),

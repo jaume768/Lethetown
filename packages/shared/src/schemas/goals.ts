@@ -37,6 +37,8 @@ export const GoalCriterion = z.discriminatedUnion("type", [
     affinity: z.coerce.number().min(-1).max(1).optional(),
     trust: z.coerce.number().min(0).max(1).optional(),
     relationship: z.enum(["friendship", "neighbor", "work", "family", "rivalry"]).optional(),
+    /** Y además, conversaciones con esa persona (lo pone el motor: `goals.relationshipMinConversations`). */
+    conversations: count(50).optional(),
   }),
   /** Citas cumplidas: con alguien, o con N personas distintas. */
   z.object({
