@@ -33,6 +33,19 @@ export const ACTION_ICONS: Record<string, string> = {
   open_place: "🔓",
   close_place: "🔒",
   intruder: "🚪",
+  practice: "🎯",
+  ask_to_learn: "🙋",
+  teach: "🧑‍🏫",
+  accept_teaching: "📚",
+  decline_teaching: "✖",
+  help: "🤲",
+  show_result: "🖼",
+  share_lore: "📜",
+  skill: "🎓",
+  skill_result: "🖼",
+  lore: "📜",
+  lore_lost: "🕯",
+  personality: "🌱",
 };
 
 /** Lo acordado hablando (puente de la conversación a la acción), sea cual sea la acción. */
@@ -43,6 +56,10 @@ const ITEM_ICONS: Record<string, string> = {
   camara: "📷",
   guitarra: "🎸",
   paraguas: "☂",
+  foto: "📷",
+  dibujo: "🖍",
+  pan: "🥖",
+  verdura: "🥬",
 };
 
 export function itemIcon(kind: string): string {

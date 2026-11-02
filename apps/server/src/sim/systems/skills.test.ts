@@ -76,7 +76,7 @@ describe("sistema skills", () => {
 
   it("en el plan, compacto: lo que se le da bien y lo que está aprendiendo", () => {
     expect(skillsLine(ctx, agent("julian"), ctx.clock.now())).toMatch(
-      /^Se te da bien: panadería \(experto\)/,
+      /^Se te da bien: panadería \[baking\] \(experto\)/,
     );
     expect(skillsLine(ctx, agent("leo"), ctx.clock.now())).toMatch(
       /Estás aprendiendo: fotografía \(con Valentina\)/,

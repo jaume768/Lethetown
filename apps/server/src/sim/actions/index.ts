@@ -6,6 +6,7 @@ import "./objects";
 import "./items";
 import "./company";
 import "./notes";
+import "./skills";
 
 export * from "./registry";
 export { REPLAN_MINUTES } from "./core";

@@ -16,6 +16,7 @@ import "./mock/groups";
 import "./mock/items";
 import "./mock/company";
 import "./mock/notes";
+import "./mock/skills";
 
 export {
   agentMockResponder,

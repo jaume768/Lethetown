@@ -4,7 +4,7 @@
  * motor los pasa por el mismo manejador que la acción formal (ver docs/decisiones/acciones.md).
  *
  * El tipo es abierto: cada sistema del servidor registra los suyos (hoy, los de `AGREEMENT_TYPES`;
- * `pay` y `teach` llegarán con la economía y los oficios). Uno desconocido se descarta con motivo.
+ * `pay` llegará con la economía). Uno desconocido se descarta con motivo.
  */
 import { z } from "zod";
 
@@ -14,6 +14,9 @@ export const AGREEMENT_TYPES = {
   return: "devolver algo prestado: itemId (from devuelve)",
   gift: "regalar un objeto: itemId (from regala, to recibe)",
   invite: "ir juntos ahora mismo: placeId (from invita)",
+  teach: "enseñar algo ahora: skill (from enseña, to aprende)",
+  help: "ayudar ahora en lo que hace el otro (from ayuda a to)",
+  share_lore: "contar un saber concreto (una receta, un sitio): loreId (from lo cuenta)",
 } as const;
 export type AgreementType = keyof typeof AGREEMENT_TYPES;
 
@@ -27,6 +30,10 @@ export const Agreement = z.object({
   to: z.array(z.string().trim().max(40)).max(5).catch([]).default([]),
   itemId: optionalId,
   placeId: optionalId,
+  /** Habilidad (enseñar). */
+  skill: optionalId,
+  /** Saber que se cuenta (share_lore). */
+  loreId: optionalId,
   /** "HH:MM" (citas). */
   at: z.string().trim().max(5).nullable().catch(null).default(null),
   day: z.enum(["hoy", "mañana"]).catch("hoy").default("hoy"),

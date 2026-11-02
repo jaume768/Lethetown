@@ -69,6 +69,28 @@ export interface SkillsState {
   streak: Map<string, { skill: string; minutes: number }>;
   /** Lo que salió de practicar (objeto del inventario → calidad, quién y con qué habilidad). */
   results: Map<string, SkillResult>;
+  /** Sesiones de enseñanza (propuestas, en curso y acabadas recientes). */
+  sessions: Map<string, TeachingSession>;
+  seq: number;
+  /** Para «Evolución». */
+  counts: { sessions: number; helps: number; shown: number };
+}
+
+export type SessionStatus = "proposed" | "active" | "declined" | "done" | "expired";
+
+/** Una sesión de enseñanza: quién enseña a quién qué, dónde y hasta cuándo. */
+export interface TeachingSession {
+  id: string;
+  teacherId: string;
+  learnerId: string;
+  skill: string;
+  /** Quién la propuso (el que pide aprender o el que se ofrece a enseñar). */
+  proposedBy: string;
+  placeId: string;
+  status: SessionStatus;
+  createdAt: number;
+  /** Hasta cuándo se puede aceptar (propuesta) o cuándo acaba (en curso). */
+  until: number;
 }
 
 export interface SkillResult {
@@ -102,6 +124,9 @@ export const skillsState = (ctx: SimContext) =>
     onPractice: [],
     streak: new Map(),
     results: new Map(),
+    sessions: new Map(),
+    seq: 0,
+    counts: { sessions: 0, helps: 0, shown: 0 },
   }));
 
 export const skillsCfg = (ctx: SimContext): SkillsConfig => ctx.deps.memory.config.skills;
@@ -357,7 +382,7 @@ export function skillsLine(ctx: SimContext, agent: Agent, now: number): string |
   const parts = [
     ...(good.length
       ? [
-          `Se te da bien: ${good.map((s) => `${skillLabel(ctx, s.skill)} (${levelLabel(s.level)})`).join(", ")}`,
+          `Se te da bien: ${good.map((s) => `${skillLabel(ctx, s.skill)} [${s.skill}] (${levelLabel(s.level)})`).join(", ")}`,
         ]
       : []),
     ...(learning.length
@@ -410,6 +435,8 @@ export function tasteResult(
   what: string,
   quality: number,
   now: number,
+  /** Lo que percibe, si no es «El café de Mateo: bueno». */
+  phrase?: string,
 ): void {
   const receiver = ctx.agents.get(receiverId);
   if (!receiver || receiverId === makerId) return;
@@ -418,7 +445,7 @@ export function tasteResult(
   nudgeMood(receiver, effect.mood);
   ctx.rt(receiverId).pending.push({
     kind: "world",
-    text: `${capitalize(what)} de ${firstName(ctx, makerId)}: ${label === "regular" ? "regulín" : label}.`,
+    text: `${phrase ?? `${capitalize(what)} de ${firstName(ctx, makerId)}`}: ${label === "regular" ? "regulín" : label}.`,
     placeId: receiver.state.locationId,
   });
   ctx.deps.track?.(
@@ -502,4 +529,178 @@ export function maybeResult(ctx: SimContext, p: PracticeTick): void {
     undefined,
     { action: "skill_result", ok: true },
   );
+}
+
+// --- Enseñar y aprender ------------------------------------------------------------------
+
+/** Minutos que se puede tardar en responder a una propuesta de enseñar o aprender. */
+export const SESSION_ANSWER_MINUTES = 30;
+
+/** La sesión pendiente de respuesta para este agente, o el motivo. */
+export function pendingSession(
+  ctx: SimContext,
+  agentId: string,
+  sessionId: string,
+  now: number,
+): TeachingSession | string {
+  const v = skillsState(ctx).sessions.get(sessionId);
+  if (!v || (v.teacherId !== agentId && v.learnerId !== agentId)) {
+    return `no tengo ninguna sesión "${sessionId}"`;
+  }
+  if (v.proposedBy === agentId) return "esa sesión la propuse yo";
+  if (v.status !== "proposed") return "esa sesión ya no está pendiente";
+  if (now >= v.until) return "esa propuesta ya ha caducado";
+  return v;
+}
+
+/** Sesiones que esperan su respuesta. */
+export function sessionsAwaiting(ctx: SimContext, agentId: string, now: number) {
+  return [...skillsState(ctx).sessions.values()].filter(
+    (v) =>
+      v.status === "proposed" &&
+      v.proposedBy !== agentId &&
+      (v.teacherId === agentId || v.learnerId === agentId) &&
+      now < v.until,
+  );
+}
+
+/** Propone una sesión (pedir que te enseñen u ofrecerte a enseñar). */
+export function proposeSession(
+  ctx: SimContext,
+  input: Omit<TeachingSession, "id" | "status" | "createdAt" | "until">,
+  now: number,
+): TeachingSession {
+  const st = skillsState(ctx);
+  const v: TeachingSession = {
+    ...input,
+    id: `s${++st.seq}`,
+    status: "proposed",
+    createdAt: now,
+    until: now + SESSION_ANSWER_MINUTES,
+  };
+  st.sessions.set(v.id, v);
+  return v;
+}
+
+/** Empieza una sesión aceptada: los dos se quedan juntos y practican (uno aprende, otro enseña). */
+export function startSession(ctx: SimContext, v: TeachingSession, now: number): void {
+  const st = skillsState(ctx);
+  const cfg = skillsCfg(ctx);
+  v.status = "active";
+  v.until = now + cfg.sessionMinutes;
+  st.counts.sessions++;
+  st.coached.set(v.learnerId, { skill: v.skill, masterId: v.teacherId, until: v.until });
+  st.coached.set(v.teacherId, { skill: "teaching", masterId: null, until: v.until });
+}
+
+/** Al acabar una sesión: vínculo, recuerdos y el evento (drama «maestro y alumno»). */
+export function finishSession(ctx: SimContext, v: TeachingSession, now: number): void {
+  const cfg = skillsCfg(ctx);
+  v.status = "done";
+  const teacher = ctx.agents.get(v.teacherId);
+  const learner = ctx.agents.get(v.learnerId);
+  if (!teacher || !learner) return;
+  const what = skillLabel(ctx, v.skill);
+  for (const [me, other] of [
+    [teacher, learner],
+    [learner, teacher],
+  ] as const) {
+    ctx.deps.track?.(
+      applySocialUpdate(ctx.deps.social, {
+        ownerId: me.id,
+        aboutId: other.id,
+        affinityDelta: cfg.sessionAffinity,
+        familiarityDelta: cfg.sessionAffinity,
+        now,
+        reason: me === teacher ? `le enseñé ${what}` : `me enseñó ${what}`,
+        config: ctx.deps.memory.config.social,
+      }).then(() => undefined),
+    );
+  }
+  remember(ctx, learner.id, `${teacher.seed.name} me enseñó ${what}.`, [teacher.id], now);
+  remember(ctx, teacher.id, `Le enseñé ${what} a ${learner.seed.name}.`, [learner.id], now);
+  ctx.emit(
+    "action",
+    teacher.id,
+    `🧑‍🏫 ${teacher.seed.name} termina de enseñarle ${what} a ${learner.seed.name} (${levelLabel(levelOf(ctx, learner.id, v.skill))})`,
+    [teacher.id, learner.id],
+    undefined,
+    { action: "teach", ok: true },
+  );
+}
+
+function remember(ctx: SimContext, agentId: string, text: string, people: string[], now: number) {
+  ctx.deps.track?.(
+    ctx.deps.memory
+      .tryRemember(
+        { agentId, text, type: "observation", importance: 5, emotionalValence: 0.3, people },
+        now,
+      )
+      .catch((e: unknown) =>
+        ctx.emit("system", agentId, `⚠ No se pudo guardar el recuerdo: ${errorMessage(e)}`),
+      ),
+  );
+}
+
+/** Revisión de las sesiones: caducan las propuestas, acaban las que llegan a su hora (o se separan). */
+export function sessionsTick(ctx: SimContext, now: number): void {
+  for (const v of skillsState(ctx).sessions.values()) {
+    if (v.status === "proposed" && now >= v.until) v.status = "expired";
+    if (v.status !== "active") continue;
+    const t = ctx.agents.get(v.teacherId);
+    const l = ctx.agents.get(v.learnerId);
+    const apart = !t || !l || t.state.locationId !== l.state.locationId;
+    if (now >= v.until || apart) {
+      skillsState(ctx).coached.delete(v.teacherId);
+      skillsState(ctx).coached.delete(v.learnerId);
+      finishSession(ctx, v, now);
+    }
+  }
+  // Lo acabado hace más de un día ya no hace falta.
+  for (const [id, v] of skillsState(ctx).sessions) {
+    if (v.status !== "proposed" && v.status !== "active" && now - v.until > 1440) {
+      skillsState(ctx).sessions.delete(id);
+    }
+  }
+}
+
+/** Quién de los presentes sabe claramente más que él de algo (para pedirle que le enseñe). */
+export function mastersHere(ctx: SimContext, agent: Agent): { id: string; skill: string }[] {
+  const cfg = skillsCfg(ctx);
+  const out: { id: string; skill: string }[] = [];
+  for (const o of presentWith(ctx, agent)) {
+    for (const s of skillsOf(ctx, o.id)) {
+      if (s.level < cfg.promptMinLevel + cfg.masterGap) continue;
+      if (s.level - levelOf(ctx, agent.id, s.skill) < cfg.masterGap * 2) continue;
+      out.push({ id: o.id, skill: s.skill });
+    }
+  }
+  return out.sort((a, b) => levelOf(ctx, b.id, b.skill) - levelOf(ctx, a.id, a.skill)).slice(0, 2);
+}
+
+/** Lo variable de enseñar y aprender en la decisión (solo si hay algo). */
+export function teachingLines(ctx: SimContext, agent: Agent, now: number): string[] {
+  const lines: string[] = [];
+  for (const v of sessionsAwaiting(ctx, agent.id, now)) {
+    const what = `${skillLabel(ctx, v.skill)} [${v.skill}]`;
+    lines.push(
+      v.teacherId === agent.id
+        ? `Sesión ${v.id}: ${firstName(ctx, v.learnerId)} te pide que le enseñes ${what}`
+        : `Sesión ${v.id}: ${firstName(ctx, v.teacherId)} se ofrece a enseñarte ${what}`,
+    );
+  }
+  const masters = mastersHere(ctx, agent);
+  if (masters.length) {
+    lines.push(
+      `Aquí sabe más que tú: ${masters.map((m) => `${firstName(ctx, m.id)} (${m.id}) de ${skillLabel(ctx, m.skill)} [${m.skill}]`).join(", ")}`,
+    );
+  }
+  const results = resultsOf(ctx, agent.id);
+  if (results.length && presentWith(ctx, agent).length) {
+    const items = itemsState(ctx).items;
+    lines.push(
+      `Tus resultados: ${results.map((id) => `${id} ${items.get(id)?.name ?? ""}`).join(", ")}`,
+    );
+  }
+  return lines;
 }
