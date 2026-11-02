@@ -59,6 +59,14 @@
       "interests": ["ilustración y acuarela", "cuentos infantiles", "pintores (Miró, Sorolla)"],
       "culture": "alto"
     },
+    "offstagePeople": [
+      {
+        "name": "Montse",
+        "relation": "mi editora",
+        "where": "la editorial de Barcelona para la que dibujo",
+        "alive": true
+      }
+    ],
     "goals": {
       "text": "Terminar el cuento y vivir de la ilustración",
       "projects": [
@@ -160,6 +168,14 @@
       ],
       "culture": "medio"
     },
+    "offstagePeople": [
+      {
+        "name": "Bartomeu",
+        "relation": "mi padre, que llevaba el café antes que yo",
+        "where": "murió hace unos años; está enterrado en el pueblo",
+        "alive": false
+      }
+    ],
     "goals": {
       "text": "Sacar adelante el Café La Ola",
       "projects": [
@@ -274,6 +290,14 @@
       "interests": ["poesía", "el huerto", "la vida de sus antiguos alumnos"],
       "culture": "alto"
     },
+    "offstagePeople": [
+      {
+        "name": "Bartomeu",
+        "relation": "mi marido, el padre de Mateo",
+        "where": "murió hace unos años",
+        "alive": false
+      }
+    ],
     "goals": {
       "text": "Seguir siendo útil al pueblo",
       "projects": [
@@ -374,15 +398,28 @@
       "interests": ["el pan, las ensaimadas y la repostería", "la radio por las mañanas"],
       "culture": "medio"
     },
+    "offstagePeople": [
+      {
+        "name": "Francisca",
+        "relation": "mi mujer, la madre de Inés; la receta de las magdalenas era suya",
+        "where": "murió hace cinco años",
+        "alive": false
+      }
+    ],
     "goals": {
       "text": "Que Inés y yo volvamos a entendernos",
       "projects": [
         {
           "text": "Hablar de verdad con Inés",
           "criterion": {
-            "type": "conversations",
-            "personId": "ines",
-            "count": 8
+            "type": "confirmed",
+            "question": "¿Le ha dicho Julián a Inés lo que siente (que le da miedo quedarse solo) y han hablado en serio de lo de Palma?",
+            "measure": {
+              "type": "conversations",
+              "personId": "ines",
+              "count": 8,
+              "topics": ["palma", "estudi", "solo", "miedo"]
+            }
           }
         },
         {
@@ -469,6 +506,14 @@
       ],
       "culture": "medio"
     },
+    "offstagePeople": [
+      {
+        "name": "Francisca",
+        "relation": "mi madre",
+        "where": "murió hace cinco años",
+        "alive": false
+      }
+    ],
     "goals": {
       "text": "Prepararme para estudiar fotografía en Palma cuando sea mayor de edad",
       "departure": {
@@ -594,7 +639,8 @@
           "criterion": {
             "type": "conversations",
             "people": 8,
-            "count": 8
+            "count": 8,
+            "topics": ["casa", "vend", "llevant"]
           },
           "resource": "casa_en_venta"
         },
@@ -702,7 +748,8 @@
           "criterion": {
             "type": "conversations",
             "personId": "leo",
-            "count": 5
+            "count": 5,
+            "topics": ["pez"]
           }
         }
       ]
@@ -783,6 +830,14 @@
       ],
       "culture": "básico"
     },
+    "offstagePeople": [
+      {
+        "name": "Catalina",
+        "relation": "mi abuela, la de los ajos en la puerta",
+        "where": "murió hace muchos años",
+        "alive": false
+      }
+    ],
     "goals": {
       "text": "Que el huerto dé para todo el pueblo",
       "projects": [
@@ -899,7 +954,8 @@
           "criterion": {
             "type": "conversations",
             "people": 6,
-            "count": 6
+            "count": 6,
+            "topics": ["pagina", "libro", "historia"]
           }
         }
       ]
@@ -992,7 +1048,8 @@
           "criterion": {
             "type": "conversations",
             "personId": "ines",
-            "count": 5
+            "count": 5,
+            "topics": ["clase", "escuela", "estudi"]
           }
         }
       ]
@@ -1108,7 +1165,8 @@
           "criterion": {
             "type": "conversations",
             "personId": "hugo",
-            "count": 4
+            "count": 4,
+            "topics": ["debe", "deuda", "pag", "dinero", "peseta"]
           }
         }
       ]
@@ -1212,6 +1270,14 @@
       "interests": ["la tienda y las cuentas", "Leo", "las telenovelas de la tarde"],
       "culture": "medio"
     },
+    "offstagePeople": [
+      {
+        "name": "Toni",
+        "relation": "el padre de Leo",
+        "where": "se fue a trabajar a la Península y no volvió",
+        "alive": true
+      }
+    ],
     "goals": {
       "text": "Sacar adelante a Leo y la tienda",
       "projects": [
@@ -1323,6 +1389,14 @@
       ],
       "culture": "básico"
     },
+    "offstagePeople": [
+      {
+        "name": "Toni",
+        "relation": "mi padre",
+        "where": "se fue a la Península cuando yo era pequeño",
+        "alive": true
+      }
+    ],
     "goals": {
       "text": "Encontrar el pez gigante del lago",
       "projects": [
@@ -1339,7 +1413,8 @@
           "criterion": {
             "type": "conversations",
             "personId": "tomas",
-            "count": 5
+            "count": 5,
+            "topics": ["pez"]
           }
         }
       ]
@@ -1436,7 +1511,8 @@
           "criterion": {
             "type": "conversations",
             "people": 8,
-            "count": 8
+            "count": 8,
+            "topics": ["jardin", "casa"]
           },
           "resource": "casa_en_venta"
         },
@@ -1650,6 +1726,14 @@
       "interests": ["fotografía y revelado", "la historia de su abuela", "el pasado del pueblo"],
       "culture": "alto"
     },
+    "offstagePeople": [
+      {
+        "name": "Alma",
+        "relation": "mi abuela, que de joven vivió en este pueblo",
+        "where": "se fue del pueblo y nunca habló de él; murió en Madrid",
+        "alive": false
+      }
+    ],
     "goals": {
       "text": "Descubrir qué pasó con mi abuela",
       "projects": [
@@ -1658,7 +1742,8 @@
           "criterion": {
             "type": "conversations",
             "people": 5,
-            "count": 5
+            "count": 5,
+            "topics": ["abuela"]
           }
         },
         {
@@ -1760,7 +1845,8 @@
             "type": "conversations",
             "personId": "samuel",
             "placeId": "consultorio",
-            "count": 3
+            "count": 3,
+            "topics": ["revis", "salud", "dolor", "tension"]
           }
         },
         {
@@ -1858,6 +1944,20 @@
       ],
       "culture": "básico"
     },
+    "offstagePeople": [
+      {
+        "name": "Alma",
+        "relation": "mi amiga de juventud",
+        "where": "se marchó del pueblo y nunca volvió",
+        "alive": null
+      },
+      {
+        "name": "Joana",
+        "relation": "mi hija, la madre de Clara",
+        "where": "vive en Barcelona y llama algún domingo",
+        "alive": true
+      }
+    ],
     "goals": {
       "text": "No olvidar a los míos",
       "projects": [
@@ -1866,7 +1966,8 @@
           "criterion": {
             "type": "conversations",
             "personId": "clara",
-            "count": 10
+            "count": 10,
+            "topics": ["joven", "juventud", "cuando era", "antes", "alma"]
           }
         },
         {
@@ -1962,6 +2063,14 @@
       ],
       "culture": "medio"
     },
+    "offstagePeople": [
+      {
+        "name": "Joana",
+        "relation": "mi madre",
+        "where": "vive en Barcelona y llama algún domingo",
+        "alive": true
+      }
+    ],
     "goals": {
       "text": "Estudiar enfermería en Palma",
       "departure": {
@@ -1981,7 +2090,8 @@
           "criterion": {
             "type": "conversations",
             "personId": "samuel",
-            "count": 5
+            "count": 5,
+            "topics": ["enfermer", "estudi", "palma"]
           }
         }
       ]
@@ -2069,6 +2179,20 @@
       "interests": ["medicina", "su familia", "el fútbol nigeriano", "la música highlife"],
       "culture": "alto"
     },
+    "offstagePeople": [
+      {
+        "name": "Ngozi",
+        "relation": "mi madre",
+        "where": "Lagos (Nigeria); la llamo los domingos desde la cabina",
+        "alive": true
+      },
+      {
+        "name": "Chidi",
+        "relation": "mi hermano pequeño",
+        "where": "Lagos (Nigeria)",
+        "alive": true
+      }
+    ],
     "goals": {
       "text": "Sentirme en casa en Lethetown",
       "projects": [
@@ -2077,7 +2201,8 @@
           "criterion": {
             "type": "conversations",
             "personId": "aurora",
-            "count": 6
+            "count": 6,
+            "topics": ["memoria", "recuerd", "olvid"]
           }
         },
         {

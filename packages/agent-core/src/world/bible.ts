@@ -53,6 +53,20 @@ export const WorldBible = z.object({
    * tele, sucesos): el registro de referencias externas no las cuenta como incoherentes.
    */
   commonReferences: z.array(z.string()).default([]),
+  /**
+   * Referencias culturales de la época (música, tele, cine, deporte) con el año y de dónde sale
+   * la fecha: tampoco cuentan como incoherentes. Ver docs/decisiones/mundo.md.
+   */
+  culturalReferences: z
+    .array(
+      z.object({
+        term: z.string().min(2),
+        kind: z.enum(["music", "tv", "film", "sport", "other"]),
+        year: z.number().int().min(1900).max(2100),
+        source: z.string().min(3),
+      }),
+    )
+    .default([]),
   anachronisms: z.array(AnachronismTerm).default([]),
   /**
    * Registro de conocimiento externo (ExternalKnowledgeGuard). log: solo registra (por defecto);
@@ -61,6 +75,19 @@ export const WorldBible = z.object({
    */
   knowledgeGuard: z
     .object({ mode: z.enum(["log", "soften", "enforce"]).default("log") })
+    .prefault({}),
+  /**
+   * Personas inventadas (PersonGuard): enforce cambia el nombre por «alguien» (y repite la
+   * decisión una vez con el aviso; una intención con alguien que no existe se descarta); log
+   * solo registra. Personajes públicos de la época que cualquiera puede nombrar (lista
+   * ampliable) y nombres de pila de más para reconocer a una persona sin artículo.
+   */
+  personGuard: z
+    .object({
+      mode: z.enum(["log", "enforce"]).default("enforce"),
+      publicFigures: z.array(z.string()).default([]),
+      extraGivenNames: z.array(z.string()).default([]),
+    })
     .prefault({}),
   /** Fiestas y días señalados ("MM-DD" → qué se celebra). */
   holidays: z.array(z.object({ date: MonthDay, name: z.string() })).default([]),

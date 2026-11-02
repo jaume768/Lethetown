@@ -7,7 +7,9 @@
 import {
   ExternalKnowledgeGuard,
   KnowledgeDetector,
+  PersonGuard,
   type KnowledgeRecord,
+  type PersonRecord,
 } from "@lethetown/agent-core";
 import type { SimEvent } from "@lethetown/shared";
 import { z } from "zod";
@@ -23,6 +25,10 @@ const LEARNED_IMPORTANCE = 5;
 interface KnowledgeState {
   guard: ExternalKnowledgeGuard | null;
   detector: KnowledgeDetector | null;
+  /** Personas inventadas (PersonGuard, reescritor de MinorGuard). */
+  people: PersonGuard | null;
+  /** Gente de fuera que cada uno conoce por lo que le contaron (de la instantánea, hasta cargar). */
+  acquaintances: Record<string, string[]>;
   store: KnowledgeLogStore;
   /** "oyente:nombre": lo que ya aprendió (cada cosa, una vez). */
   learned: Set<string>;
@@ -35,6 +41,8 @@ export const knowledgeState = (ctx: SimContext) =>
   ctx.state<KnowledgeState>("knowledge", () => ({
     guard: null,
     detector: null,
+    people: null,
+    acquaintances: {},
     store: ctx.deps.knowledgeLog ?? new InMemoryKnowledgeLogStore(),
     learned: new Set(),
     counts: {},
@@ -55,6 +63,26 @@ function record(ctx: SimContext, r: KnowledgeRecord): void {
   );
 }
 
+const PERSON_LABEL: Record<PersonRecord["outcome"], string> = {
+  retried: "persona inventada: se repite la decisión con el aviso",
+  replaced: "persona inventada: cambiada por «alguien»",
+  dropped: "persona inventada: no se guarda",
+  logged: "posible persona inventada (solo se registra)",
+};
+
+/** Una persona inventada va al mismo registro (`knowledge_log`, tipo `person`). */
+function recordPerson(ctx: SimContext, r: PersonRecord): void {
+  record(ctx, {
+    at: r.at,
+    agentId: r.agentId,
+    kind: "person",
+    term: r.name,
+    label: PERSON_LABEL[r.outcome],
+    text: r.text,
+    source: r.source,
+  });
+}
+
 /**
  * Lo que dice alguien a otros con nombres de fuera que el oyente no conoce (y no son del pueblo
  * ni de la época): se lo queda como recuerdo semántico «contado por» quien lo dijo.
@@ -65,11 +93,17 @@ function learnFrom(ctx: SimContext, e: SimEvent): void {
   const speaker = ctx.agents.get(e.agentId);
   const utterance = /: "(.*)"$/s.exec(e.text)?.[1];
   if (!s.detector || !speaker || !utterance) return;
-  const names = s.detector.externalNames(utterance);
-  if (!names.length) return;
   const listeners = [e.participants[1], ...(e.meta?.group ?? [])].filter(
     (id): id is string => !!id && id !== speaker.id,
   );
+  // Una persona inventada no se aprende nunca; la gente de fuera de quien habla, sí (ahora el
+  // oyente también la conoce y la puede nombrar).
+  const invented = new Set(
+    s.people?.find(utterance, { kind: "speech", agentId: speaker.id, actors: listeners }) ?? [],
+  );
+  for (const id of listeners) s.people?.learn(id, speaker.id, utterance);
+  const names = s.detector.externalNames(utterance).filter((n) => !invented.has(n));
+  if (!names.length) return;
   for (const id of listeners) {
     const listener = ctx.agents.get(id);
     if (!listener) continue;
@@ -102,19 +136,27 @@ registerSystem({
   description:
     "Lo que sabe cada uno: registro de anacronismos y referencias externas, y lo que aprende de otros.",
   snapshot: {
-    version: 1,
+    // 2: gente de fuera que cada uno conoce por lo que le contaron (PersonGuard).
+    version: 2,
     schema: z.object({
       learned: z.array(z.string()),
       counts: z.record(z.string(), z.number()),
+      acquaintances: z.record(z.string(), z.array(z.string())),
     }),
     save: (ctx) => {
       const s = knowledgeState(ctx);
-      return { learned: [...s.learned], counts: { ...s.counts } };
+      return {
+        learned: [...s.learned],
+        counts: { ...s.counts },
+        acquaintances: s.people?.acquaintances() ?? s.acquaintances,
+      };
     },
     restore: (ctx, d) => {
       const s = knowledgeState(ctx);
       s.learned = new Set(d.learned);
       s.counts = { ...d.counts };
+      s.acquaintances = d.acquaintances;
+      s.people?.restore(d.acquaintances);
     },
   },
   load: (ctx) => {
@@ -146,6 +188,26 @@ registerSystem({
       onRecord: (r) => record(ctx, r),
     });
     ctx.deps.memory.guard?.addInspector(s.guard.inspect);
+    const pg = bible.personGuard;
+    s.people = new PersonGuard({
+      neighbors: seeds,
+      publicFigures: pg.publicFigures,
+      extraGivenNames: pg.extraGivenNames,
+      known: [
+        bible.town,
+        bible.city.name,
+        ...bible.glossary.map((g) => g.term),
+        ...bible.commonReferences,
+        ...bible.culturalReferences.map((r) => r.term),
+        ...ctx.world.places.map((p) => p.name),
+      ],
+      isCommonWord: (w) => s.detector!.isCommonWord(w),
+      mode: pg.mode,
+      now: () => ctx.clock.now(),
+      onRecord: (r) => recordPerson(ctx, r),
+    });
+    s.people.restore(s.acquaintances);
+    ctx.deps.memory.guard?.addRewriter(s.people.rewriter);
     ctx.onEvent((e) => learnFrom(ctx, e));
   },
   retention: { table: "knowledge_log", policy: "knowledgeLog" },
@@ -156,6 +218,10 @@ registerSystem({
       external: 0,
       blocked: s.guard?.stats().blocked ?? 0,
       learned: s.learned.size,
+      person: 0,
+      "person.retried": s.people?.stats().retried ?? 0,
+      "person.replaced": s.people?.stats().replaced ?? 0,
+      "person.dropped": s.people?.stats().dropped ?? 0,
     };
     for (const [key, n] of Object.entries(s.counts)) {
       const kind = key.slice(key.lastIndexOf(":") + 1);

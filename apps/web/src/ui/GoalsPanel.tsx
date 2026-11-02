@@ -73,6 +73,9 @@ function criterionText(
         ...(c.affinity !== undefined ? [t("goals.rel.affinity", { v: c.affinity })] : []),
         ...(c.trust !== undefined ? [t("goals.rel.trust", { v: c.trust })] : []),
         ...(c.relationship ? [t(`rel.type.${c.relationship}` as MessageKey)] : []),
+        ...(c.conversations
+          ? [t("goals.rel.conversations", { count: c.conversations, done })]
+          : []),
       ].join(", ");
       return t("goals.c.relationship", { person: person(c.personId), target });
     }
@@ -83,6 +86,7 @@ function criterionText(
         count: c.count,
         who: who(c.personId, c.people),
         where: c.placeId ? t("goals.where", { place: place(c.placeId) }) : "",
+        about: c.topics ? t("goals.about", { topics: c.topics.join(", ") }) : "",
         done,
       });
     case "places_discovered":
@@ -99,6 +103,11 @@ function criterionText(
       return t("goals.c.intentions_kept", { count: c.count, done });
     case "projects":
       return t("goals.c.projects", { count: c.count });
+    case "confirmed":
+      return t("goals.c.confirmed", {
+        measure: criterionText(t, c.measure, done, person, place),
+        question: c.question,
+      });
   }
 }
 

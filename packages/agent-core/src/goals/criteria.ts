@@ -2,12 +2,18 @@
  * Criterios de las metas: cuánto falta según lo medido (lógica pura) y cómo se dice en el
  * prompt. Lo medido lo cuenta el servidor (sistema `goals`); el LLM nunca marca el progreso.
  */
-import type { GoalCriterion } from "@lethetown/shared";
+import type { GoalCriterion, MeasurableCriterion } from "@lethetown/shared";
 
 const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
 
+/** Lo que cuenta el motor (en una meta `confirmed`, su `measure`). */
+export function measureOf(c: GoalCriterion): MeasurableCriterion {
+  return c.type === "confirmed" ? c.measure : c;
+}
+
 /** Progreso (0..1) de lo medido: minutos para las de horas, veces para el resto. */
-export function measuredProgress(c: GoalCriterion, measured: number): number {
+export function measuredProgress(criterion: GoalCriterion, measured: number): number {
+  const c = measureOf(criterion);
   switch (c.type) {
     case "activity_hours":
     case "place_time":
@@ -21,14 +27,19 @@ export function measuredProgress(c: GoalCriterion, measured: number): number {
   }
 }
 
-/** Progreso de una meta de relación: de lo que había al crearla (`baseline`) al objetivo. */
+/**
+ * Progreso de una meta de relación: de lo que había al crearla (`baseline`) al objetivo y, si
+ * el criterio pide conversaciones, las que lleva con esa persona (`conversations`).
+ */
 export function relationshipProgress(
   c: Extract<GoalCriterion, { type: "relationship" }>,
   now: { affinity: number; trust: number; relationshipType: string } | undefined,
   baseline: number | null,
+  conversations = 0,
 ): number {
   if (!now) return 0;
   const parts: number[] = [];
+  if (c.conversations) parts.push(clamp01(conversations / c.conversations));
   const toward = (cur: number, target: number) => {
     const from = baseline ?? 0;
     if (cur >= target) return 1;
@@ -52,8 +63,44 @@ export function relationshipBaseline(
   return null;
 }
 
+type RelationshipCriterion = Extract<GoalCriterion, { type: "relationship" }>;
+
+/**
+ * Una meta de relación exigente: el objetivo de afinidad (o de confianza) queda al menos `minGain`
+ * por encima de lo que hay al crearla y pide `minConversations` conversaciones con esa persona.
+ * Devuelve el criterio ajustado y qué se cambió (para la auditoría), o null si no hizo falta.
+ */
+export function demandingRelationship(
+  c: RelationshipCriterion,
+  now: { affinity: number; trust: number } | undefined,
+  cfg: { minGain: number; minConversations: number },
+): { criterion: RelationshipCriterion; changes: string[] } | null {
+  const out = { ...c };
+  const changes: string[] = [];
+  const round1 = (x: number) => Math.round(x * 100) / 100;
+  if (c.affinity !== undefined) {
+    const min = Math.min(1, round1((now?.affinity ?? 0) + cfg.minGain));
+    if (c.affinity < min) {
+      out.affinity = min;
+      changes.push(`afinidad ${c.affinity.toFixed(2)} → ${min.toFixed(2)}`);
+    }
+  } else if (c.trust !== undefined) {
+    const min = Math.min(1, round1((now?.trust ?? 0) + cfg.minGain));
+    if (c.trust < min) {
+      out.trust = min;
+      changes.push(`confianza ${c.trust.toFixed(2)} → ${min.toFixed(2)}`);
+    }
+  }
+  if (cfg.minConversations > 0 && (c.conversations ?? 0) < cfg.minConversations) {
+    out.conversations = cfg.minConversations;
+    changes.push(`y ${cfg.minConversations} conversaciones`);
+  }
+  return changes.length ? { criterion: out, changes } : null;
+}
+
 /** Personas o lugares de un criterio (para saber si viene a cuento en una decisión). */
-export function criterionCues(c: GoalCriterion): { personId?: string; placeId?: string } {
+export function criterionCues(criterion: GoalCriterion): { personId?: string; placeId?: string } {
+  const c = measureOf(criterion);
   return {
     ...("personId" in c && c.personId ? { personId: c.personId } : {}),
     ...("placeId" in c && c.placeId ? { placeId: c.placeId } : {}),
@@ -85,6 +132,17 @@ export function criterionText(
   measured: number,
   names: { person(id: string): string; place(id: string): string },
 ): string {
+  if (c.type === "confirmed") {
+    return `${measurableText(c.measure, measured, names)}, y que de verdad: ${c.question}`;
+  }
+  return measurableText(c, measured, names);
+}
+
+function measurableText(
+  c: MeasurableCriterion,
+  measured: number,
+  names: { person(id: string): string; place(id: string): string },
+): string {
   switch (c.type) {
     case "activity_hours":
       return `pasar ${c.hours} h en algo de ${c.keywords.map((k) => `«${k}»`).join(" o ")} (llevas ${hoursText(measured)})`;
@@ -98,7 +156,10 @@ export function criterionText(
         ...(c.trust !== undefined ? [`confianza ${c.trust.toFixed(1)}`] : []),
         ...(c.relationship ? [RELATIONSHIP_LABEL[c.relationship] ?? c.relationship] : []),
       ];
-      return `llegar con ${names.person(c.personId)} a ${parts.join(" y ")}`;
+      const talks = c.conversations
+        ? `, tras ${c.conversations} conversaciones (llevas ${measured})`
+        : "";
+      return `llegar con ${names.person(c.personId)} a ${parts.join(" y ")}${talks}`;
     }
     case "meetings": {
       const who = c.personId
@@ -115,7 +176,8 @@ export function criterionText(
           ? ` con ${c.people} personas distintas`
           : "";
       const where = c.placeId ? ` en ${names.place(c.placeId)}` : "";
-      return `${c.count} conversaciones${who}${where} (llevas ${measured})`;
+      const about = c.topics ? ` hablando de ${c.topics.map((t) => `«${t}»`).join(" o ")}` : "";
+      return `${c.count} conversaciones${who}${where}${about} (llevas ${measured})`;
     }
     case "places_discovered":
       return `descubrir ${c.count} sitios del pueblo (llevas ${measured})`;
@@ -137,9 +199,10 @@ export const CRITERIA_CATALOG = [
   'visits {"placeId":"…","count":3}',
   'relationship {"personId":"…","affinity":0.5|"trust":0.6|"relationship":"friendship"}',
   'meetings {"personId":"…"|"people":3,"count":2}',
-  'conversations {"personId":"…"|"people":4|"placeId":"…","count":5}',
+  'conversations {"personId":"…"|"people":4|"placeId":"…","topics":["palma"],"count":5} (topics: solo cuentan las charlas en que se dice)',
   'places_discovered {"count":2}',
   'items {"action":"use_object|return_item|give_item|lend_item","count":2}',
   'notes {"count":2}',
   'intentions_kept {"count":3}',
+  'confirmed {"question":"¿Le ha dicho lo que siente?","measure":{…uno de los anteriores…}} (para lo que no basta contar: hablar de verdad, reconciliarse, convencer; cuando se cumpla lo medido, lo comprobarás tú con lo que se dijo)',
 ].join("; ");

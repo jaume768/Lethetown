@@ -28,6 +28,8 @@ import { isHere, registerAction, type ActionContext } from "./registry";
 
 /** Citas abiertas que puede tener alguien a la vez (para que no llene la agenda). */
 const MAX_OPEN = 3;
+/** Importancia (1-10) de la intención de ir a una cita: un compromiso con alguien. */
+const APPOINTMENT_IMPORTANCE = 8;
 /** Antelación mínima (minutos de juego) para proponer una cita. */
 const MIN_NOTICE = 30;
 /** Horas en que se puede quedar (de 07:00 a 22:00, cuando no duermen). */
@@ -118,6 +120,7 @@ registerAction<z.infer<typeof ProposeMeetingAction>>({
     const others = a.with.map((id) => firstOf(ctx, id)).join(" y ");
     const id = await agent.intend(now, {
       text: `ir a la cita con ${others} en ${where} (${a.reason})`,
+      importance: APPOINTMENT_IMPORTANCE,
     });
     if (id) meeting.intentions[agent.id] = id;
     saveMeeting(ctx, meeting);
@@ -174,6 +177,7 @@ registerAction<z.infer<typeof AcceptMeetingAction>>({
     const others = m.participants.filter((p) => p !== agent.id).map((p) => firstOf(ctx, p));
     const id = await agent.intend(now, {
       text: `ir a la cita con ${others.join(" y ")} en ${where} (${m.reason})`,
+      importance: APPOINTMENT_IMPORTANCE,
     });
     if (id) m.intentions[agent.id] = id;
     // En una casa: quienes no viven allí son invitados durante la cita.

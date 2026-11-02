@@ -149,12 +149,15 @@ export class MemoryMaintenance {
     report: MaintenanceReport,
   ) {
     try {
-      const gist = await this.deps.gist!.compress(owner, m);
-      const safe = await this.memory.guard?.allows(gist, {
-        kind: "gist",
+      const raw = await this.deps.gist!.compress(owner, m);
+      const ctx = {
+        kind: "gist" as const,
         actors: [owner.agentId, ...m.people],
         agentId: owner.agentId,
-      });
+      };
+      const gist = this.memory.guard ? this.memory.guard.rewrite(raw, ctx) : raw;
+      if (gist === null) return;
+      const safe = await this.memory.guard?.allows(gist, ctx);
       if (safe === false) return;
       await this.memory.store.update(m.id, { gist });
       await this.memory.audit({

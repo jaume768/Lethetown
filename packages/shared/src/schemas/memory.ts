@@ -120,6 +120,10 @@ export const MemoryAuditAction = z.enum([
   "intention_forgotten",
   /** Una intención caducó sin hacerse. */
   "intention_expired",
+  /** Una intención parecida a otra que ya tenía (misma persona o lugar): se quedó una, reforzada. */
+  "intention_merged",
+  /** Demasiadas intenciones abiertas: se descartó la menos importante. */
+  "intention_dropped",
 ]);
 export type MemoryAuditAction = z.infer<typeof MemoryAuditAction>;
 

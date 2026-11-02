@@ -27,6 +27,8 @@ export * from "./util/random";
 export * from "./world/bible";
 export * from "./world/knowledge";
 export * from "./world/knowledge-guard";
+export * from "./world/person-guard";
+export * from "./world/given-names";
 export * from "./goals/psychology";
 export * from "./goals/criteria";
 

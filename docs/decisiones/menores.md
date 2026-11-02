@@ -6,6 +6,10 @@
   sensible a mayúsculas: "leo" el verbo no cuenta).
 - **Léxico claro → descarte directo; ambiguo → moderación `fast`** (`moderate_minor`), fail-closed
   y cacheada por texto: no se paga una llamada por cada frase de un menor.
+- **Lo corriente en una familia con niños no es léxico claro**: «acostarse» (irse a dormir), «la
+  atracción» de la feria, «desnudo» (el baño) o «amante de los libros» van a la moderación. En
+  la partida 2, «ya es hora de acostarse» (Tomás con Leo) se bloqueó sin moderar. «Acostarse
+  con» y «me atrae» siguen siendo descarte directo.
 - **Conservador a propósito**: un menor tampoco guarda recuerdos con léxico romántico claro aunque
   hablen de adultos.
 - **Qué pasa con lo descartado**: frase o acción → sigue su plan; bloque de plan → fuera; recuerdo →

@@ -13,6 +13,7 @@ import "./agreements";
 import "./world";
 import "./knowledge";
 import "./goals";
+import "./intentions";
 
 export * from "./registry";
 export * from "./types";

@@ -20,7 +20,7 @@ export async function writeChronicle(
   events: string[],
   maxEvents = 120,
   language: PromptLanguage = "es",
-  /** Protección de menores: se quitan las frases que no pasen. */
+  /** Protección de menores (y personas inventadas): se quitan o corrigen las frases. */
   guard?: MinorGuard,
 ): Promise<Chronicle> {
   const lines = events.slice(-maxEvents);
@@ -41,6 +41,7 @@ Formato:
   if (!guard) return chronicle;
   const ctx = { kind: "chronicle" as const };
   const text = await guard.filterSentences(chronicle.text, ctx);
-  const title = (await guard.allows(chronicle.title, ctx)) ? chronicle.title : `Día ${day}`;
+  const fixed = guard.rewrite(chronicle.title, ctx);
+  const title = fixed !== null && (await guard.allows(fixed, ctx)) ? fixed : `Día ${day}`;
   return { day, title, text: text || "Fue un día tranquilo en Lethetown." };
 }

@@ -136,6 +136,8 @@ export class MemorySystem {
     return this.config.retrieval;
   }
 
+  private readonly auditListeners: ((e: MemoryAuditEntry) => void)[] = [];
+
   onEffect(listener: (e: MemoryEffect) => void): void {
     this.effectListeners.push(listener);
   }
@@ -144,7 +146,17 @@ export class MemorySystem {
     for (const l of this.effectListeners) l(effect);
   }
 
+  /** Oye cada entrada de la auditoría (métricas de los sistemas: intenciones, personas…). */
+  onAudit(listener: (e: MemoryAuditEntry) => void): () => void {
+    this.auditListeners.push(listener);
+    return () => {
+      const i = this.auditListeners.indexOf(listener);
+      if (i >= 0) this.auditListeners.splice(i, 1);
+    };
+  }
+
   async audit(entry: MemoryAuditEntry): Promise<void> {
+    for (const l of this.auditListeners) l(entry);
     await this.store.addAudit(entry);
   }
 
@@ -152,16 +164,25 @@ export class MemorySystem {
    * Guarda un recuerdo. Si la protección de menores lo descarta, lanza `BlockedContentError`
    * (ver `tryRemember`).
    */
-  async remember(input: NewMemory, now: number): Promise<MemoryRecord> {
-    if (
-      this.guard &&
-      !(await this.guard.allows(input.text, {
-        kind: input.type === "reflection" ? "reflection" : "memory",
+  async remember(original: NewMemory, now: number): Promise<MemoryRecord> {
+    let input = original;
+    if (this.guard) {
+      // Corregido (personas inventadas) y revisado (menores); una intención con alguien que no
+      // existe no se guarda.
+      // (`rewrite` es síncrono: el mismo `await` de siempre, sin cambiar el orden del mock.)
+      const ctx = {
+        kind:
+          input.type === "reflection"
+            ? ("reflection" as const)
+            : input.type === "intention"
+              ? ("intention" as const)
+              : ("memory" as const),
         actors: [input.agentId, ...(input.people ?? [])],
         agentId: input.agentId,
-      }))
-    ) {
-      throw new BlockedContentError();
+      };
+      const text = this.guard.rewrite(input.text, ctx);
+      if (text === null || !(await this.guard.allows(text, ctx))) throw new BlockedContentError();
+      if (text !== input.text) input = { ...input, text };
     }
     const [embedding] = await this.embedder.embed([input.text]);
     const valence = input.emotionalValence ?? 0;
@@ -409,12 +430,16 @@ export class MemorySystem {
       socialSummary: await ctx.socialSummary(m.people),
     });
     if (!filled || filled.text === m.text) return false;
-    const safe = await this.guard?.allows(filled.text, {
-      kind: "reconsolidation",
-      actors: [m.agentId, ...m.people],
-      agentId: m.agentId,
-    });
-    if (safe === false) return false;
+    if (this.guard) {
+      const ctx = {
+        kind: "reconsolidation" as const,
+        actors: [m.agentId, ...m.people],
+        agentId: m.agentId,
+      };
+      const text = this.guard.rewrite(filled.text, ctx);
+      if (text === null || !(await this.guard.allows(text, ctx))) return false;
+      filled.text = text;
+    }
     await this.store.transaction(async (tx) => {
       const previous = await tx.versions(m.id);
       await tx.addVersion({
@@ -475,12 +500,16 @@ export class MemorySystem {
       socialSummary: await ctx.socialSummary(m.people),
     });
     if (!rewritten || rewritten.text === m.text) return;
-    const safe = await this.guard?.allows(rewritten.text, {
-      kind: "reconsolidation",
-      actors: [m.agentId, ...m.people],
-      agentId: m.agentId,
-    });
-    if (safe === false) return;
+    if (this.guard) {
+      const ctx = {
+        kind: "reconsolidation" as const,
+        actors: [m.agentId, ...m.people],
+        agentId: m.agentId,
+      };
+      const text = this.guard.rewrite(rewritten.text, ctx);
+      if (text === null || !(await this.guard.allows(text, ctx))) return;
+      rewritten.text = text;
+    }
     // Versión + cambio + auditoría, todo o nada.
     await this.store.transaction(async (tx) => {
       const previous = await tx.versions(m.id);

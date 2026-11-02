@@ -12,7 +12,13 @@ import { HashEmbedder } from "../memory/hash-embedder";
 import { InMemorySocialProfileStore, updateSocialAfterConversation } from "../memory/human";
 import { InMemoryStore } from "../memory/in-memory-store";
 import { MemorySystem } from "../memory/memory-system";
-import { cuePresent, recallChance } from "../memory/prospective";
+import {
+  cuePresent,
+  intentionImportance,
+  intentionSimilarity,
+  recallChance,
+  sameIntention,
+} from "../memory/prospective";
 import { NEUTRAL_PROFILE } from "../memory/psychology";
 
 const cfg = MemoryConfig.parse({}).prospective;
@@ -165,5 +171,83 @@ describe("intenciones en el agente", () => {
     });
     expect(provider.calls.at(-1)!.meta.task).toBe("decide");
     expect(agent.mind.intentions.map((i) => i.text)).toContain("ir a ver a Pilar al huerto");
+  });
+});
+
+describe("inflación de intenciones (corrección 2.5)", () => {
+  it("parecido: misma persona o lugar y palabras en común", () => {
+    expect(
+      intentionSimilarity("preguntarle a Carmen por su libro", "devolver el libro a Carmen"),
+    ).toBeGreaterThan(0.4);
+    expect(
+      sameIntention(
+        { text: "devolverle a Carmen su libro de poemas", personId: "carmen", placeId: null },
+        { text: "llevarle el libro a Carmen", personId: "carmen", placeId: null },
+        cfg.mergeSimilarity,
+      ),
+    ).toBe(true);
+    // Otra cosa con la misma persona, otra persona o sin pista en común: no es la misma.
+    expect(
+      sameIntention(
+        { text: "preguntar a Carmen por su salud", personId: "carmen", placeId: null },
+        { text: "devolverle a Carmen su libro", personId: "carmen", placeId: null },
+        cfg.mergeSimilarity,
+      ),
+    ).toBe(false);
+    expect(
+      sameIntention(
+        { text: "devolverle a Carmen su libro", personId: "carmen", placeId: null },
+        { text: "devolverle a Mateo su libro", personId: "mateo", placeId: null },
+        cfg.mergeSimilarity,
+      ),
+    ).toBe(false);
+    expect(intentionImportance({ personId: null, placeId: null, atMinute: 600 })).toBe(7);
+    expect(intentionImportance({ personId: "carmen", placeId: null, atMinute: null })).toBe(6);
+    expect(intentionImportance({ personId: null, placeId: null, atMinute: null })).toBe(4);
+  });
+
+  it("la misma intención dicha de otra forma: se queda una, reforzada (auditado)", async () => {
+    const { agent, store } = setup();
+    await agent.intend(0, { text: "enseñarle los bocetos a Mateo", personId: "mateo" });
+    const id = await agent.intend(10, {
+      text: "enseñar a Mateo los bocetos del cuento",
+      personId: "mateo",
+    });
+    const mine = agent.mind.intentions.filter((i) => i.personId === "mateo");
+    expect(mine).toHaveLength(1);
+    // No se apunta nada nuevo (la conversación no lo anuncia otra vez).
+    expect(id).toBeNull();
+    expect(mine[0]!.importance).toBe(7);
+    expect((await store.audit("lucia")).some((a) => a.action === "intention_merged")).toBe(true);
+  });
+
+  it("con el tope lleno sale la menos importante; una idea suelta no echa a una cita", async () => {
+    const { agent, store } = setup();
+    const max = cfg.maxOpen;
+    for (let i = 0; i < max; i++) {
+      await agent.intend(i, { text: `ir a la cita número ${i} en la plaza`, importance: 8 });
+    }
+    // Sin pista y poco importante: no entra (las otras son más importantes).
+    expect(await agent.intend(20, { text: "ordenar el estudio algún día" })).toBeNull();
+    expect(agent.mind.intentions).toHaveLength(max);
+    // Algo más importante que la menos importante: entra y sale la más antigua de las de 8.
+    await agent.intend(21, { text: "ir a correos a las 10:00", at: "10:00", importance: 9 });
+    expect(agent.mind.intentions.filter((i) => i.status === "pending")).toHaveLength(max);
+    expect(agent.mind.intentions.some((i) => i.text === "ir a la cita número 0 en la plaza")).toBe(
+      false,
+    );
+    const dropped = (await store.audit("lucia")).filter((a) => a.action === "intention_dropped");
+    expect(dropped).toHaveLength(2);
+    expect(dropped.map((a) => a.reason).join(" ")).toMatch(/demasiadas cosas pendientes/);
+  });
+
+  it("lo poco importante caduca solo si en unos días nada se lo recuerda", async () => {
+    const { agent, store } = setup();
+    await agent.intend(0, { text: "aprender a hacer ensaimadas" });
+    await agent.intend(0, { text: "pasar por la biblioteca", placeId: "biblioteca" });
+    await agent.checkIntentions(3 * 1440, 10, []);
+    expect(agent.mind.intentions.map((i) => i.text)).toEqual(["pasar por la biblioteca"]);
+    const audit = await store.audit("lucia");
+    expect(audit.find((a) => a.action === "intention_expired")!.reason).toMatch(/poco importante/);
   });
 });

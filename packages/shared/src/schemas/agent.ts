@@ -89,6 +89,21 @@ export const KnowledgeProfile = z.object({
 });
 export type KnowledgeProfile = z.infer<typeof KnowledgeProfile>;
 
+/**
+ * Alguien de fuera del pueblo que existe en la vida de un vecino (familia lejos, difuntos,
+ * amigos de antes): lo puede nombrar sin que cuente como persona inventada (PersonGuard).
+ */
+export const OffstagePerson = z.object({
+  name: z.string().min(2).max(40),
+  /** «mi padre», «mi editora en Barcelona». */
+  relation: z.string().min(2).max(80),
+  /** Dónde está o qué fue de él («murió en 1991», «Lagos (Nigeria)»). */
+  where: z.string().max(120).default(""),
+  /** true = vive; false = murió; null = no se sabe. */
+  alive: z.boolean().nullable().default(true),
+});
+export type OffstagePerson = z.infer<typeof OffstagePerson>;
+
 export const AgentSeed = z.object({
   id: z.string(),
   name: z.string(),
@@ -155,6 +170,8 @@ export const AgentSeed = z.object({
   items: z.array(SeedItem).default([]),
   /** Lo que sabe por su vida: estudios, oficio, idiomas, viajes, intereses. */
   knowledge: KnowledgeProfile.optional(),
+  /** Gente de fuera del pueblo que conoce (la única, además de los vecinos, que puede nombrar). */
+  offstagePeople: z.array(OffstagePerson).default([]),
   /** Meta vital y proyectos con los que empieza (medibles; ver el sistema `goals`). */
   goals: SeedGoal.optional(),
   /** Cosas que tiene pensado hacer cuando surja (memoria prospectiva). */

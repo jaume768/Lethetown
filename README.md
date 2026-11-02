@@ -21,7 +21,8 @@ Parte de [_Generative Agents: Interactive Simulacra of Human Behavior_](https://
 - **Metas**: cada vecino tiene una meta vital, proyectos y pasos que el motor mide (la IA propone,
   el motor decide); avanzar motiva, estancarse frustra, se abandona o se cambia de rumbo según la
   personalidad, hay metas que chocan y quien lo consigue puede irse a vivir a Palma (y volver de
-  visita).
+  visita). Lo que no basta contar («hablar de verdad» con alguien) lo comprueba la reflexión
+  nocturna con lo que se dijo.
 - **Protección de menores**: ningún menor tiene ni recibe contenido romántico o sexual, ni en los prompts ni en lo que escribe el LLM, y ningún adulto puede quedar a solas con un menor fuera de un sitio público.
 
 Todo funciona **sin API keys** gracias a un proveedor LLM simulado (mock).
@@ -179,9 +180,14 @@ flowchart LR
 - **Época y lugar**: `config/world.json` es la biblia del mundo (Mallorca, 1996: tecnología, lo de
   fuera, cultura, glosario, fiestas y clima por estación). Va compacta en el prompt fijo; la fecha
   del calendario y la fiesta del día, en el plan. Cada semilla lleva su **perfil de conocimiento**
-  (estudios, oficio, idiomas, viajes, intereses). El **registro de conocimiento externo** apunta
-  anacronismos y referencias que no encajan con quien habla, sin bloquear nada (modo `log`). Ver
+  (estudios, oficio, idiomas, viajes, intereses) y la **gente de fuera** que conoce
+  (`offstagePeople`: familia lejos, difuntos, amigos de antes). El **registro de conocimiento
+  externo** apunta anacronismos y referencias que no encajan con quien habla, sin bloquear nada
+  (modo `log`). Ver
   [mundo](docs/decisiones/mundo.md#mallorca-1996-la-biblia-del-mundo-y-lo-que-sabe-cada-uno).
+- **Nadie inventa vecinos** («la Pepa» de la segunda partida de estudio): el `PersonGuard` cambia
+  por «alguien» el nombre de una persona que no existe (en la decisión, antes repite una vez con
+  el aviso; una intención así se descarta) y lo registra. Ver [personas](docs/decisiones/personas.md).
 
 ### Memoria
 
@@ -339,8 +345,18 @@ Producción en un VPS (Caddy con HTTPS, api, workers y Postgres): **[docs/despli
 - **Gasto**: el servidor lo suma (por mundo, día y mes) para verlo, pero no lo limita: eso se
   controla con el saldo de la API key. Kill switch para admin.
 - LLM con timeout propio, reintentos con backoff y jitter en 429/5xx y circuit breaker; Batch API
-  (activa por defecto, `LLM_BATCH`; solo Anthropic y a ≤ x10) para la consolidación nocturna y las
-  crónicas.
+  (activa por defecto, `LLM_BATCH=on`; solo Anthropic) para la consolidación nocturna y las
+  crónicas: la mitad de precio en casi la mitad del gasto. **Solo se usa mientras ningún mundo va
+  más rápido que `LLM_BATCH_MAX_SPEED` (x10)**: para aprovecharla, las noches tienen que ir a x10
+  o menos (a más velocidad, esas llamadas van por la vía normal, a precio completo). Si un lote
+  tarda más de `LLM_BATCH_MAX_WAIT_MINUTES`, se repite por la vía normal.
+
+### Partidas de estudio largas
+
+[`.env.study.example`](.env.study.example) es una capa sobre `.env` (sin secretos) para grabar
+partidas de 7 días con el LLM real: x10, Batch activa, sin pausar cuando nadie mira y una
+semilla por base de datos. Lleva los comandos para dos semillas (7 y 13): crear la base, migrar,
+`pnpm dev`, `record --hours 168`, `world:export` y `pnpm study:analyze` para compararlas.
 
 Todas las variables, con su explicación, están en [`.env.example`](.env.example).
 
@@ -465,6 +481,13 @@ tareas nuevas: el prompt fijo crece con la biblia y el perfil (casi todo leído 
 y la consolidación llevan las metas, y el mock cambia de trayectoria con las semillas nuevas.
 Detalle en [PROGRESS-MUNDO-METAS.md](PROGRESS-MUNDO-METAS.md).
 
+Corrección 2.5 (de la segunda partida de estudio; mismo método): de 4.131 llamadas y ≈ 0,79 $ a
+3.525 y ≈ 0,74 $. Las fichas suben menos por charla (rendimientos decrecientes) y en el mock eso
+deja menos charlas (524 → 384 respuestas), y por tanto menos decisiones, importancias y fichas;
+la consolidación y el plan, igual. Las metas conseguidas en 48 h bajan de 9 a 3: con tema, el
+mock ya no cumple proyectos con cualquier charla. Detalle en
+[PROGRESS-CORRECCION-2-5.md](PROGRESS-CORRECCION-2-5.md).
+
 ### Limitaciones
 
 - No reproduce la memoria humana: son analogías computacionales con parámetros de diseño
@@ -568,4 +591,5 @@ El cliente elige automáticamente el pack con el que se generó el mapa (propied
 6. **Psicología** ✅ protección de menores, hábitos, perfiles, ánimo, sueño, sesgos, memoria prospectiva y relaciones visibles.
 7. **Acciones** ✅ catálogo validado por el motor: citas, explorar, grupos, objetos e inventario, invitar y acompañar, notas, normas del mundo; agenda, inventario y lugares en el inspector.
 8. **Mundo y metas** ✅ Mallorca en 1996 (biblia, calendario, clima, perfil de conocimiento, registro de anacronismos) y metas medibles con psicología, conflictos y marcharse del pueblo.
+   - **Corrección 2.5** ✅ (de la segunda partida de estudio): pasos que no se pierden y siguiente proyecto, metas cualitativas comprobadas de noche, frustración que lleva a abandonos en una semana, intenciones sin inflación, nadie inventa vecinos (`PersonGuard`) y menos ruido en los registros.
 9. **Siguiente**: economía (`buy_item` / `sell_item`, ya preparada con `Item.value`; en pesetas), mensajes a distancia (teléfonos fijos y cabinas, cartas), ciclo vital (las metas aplazadas de los menores), la evaluación comparativa con modelos reales, OAuth, editor de mundos y agentes desde la web, traducción de los prompts (hoy se pide al modelo que responda en el idioma del mundo).

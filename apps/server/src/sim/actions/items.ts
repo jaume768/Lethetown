@@ -110,6 +110,8 @@ registerAction<z.infer<typeof LendItemAction>>({
     await ctx.agents.get(a.to)?.intend(now, {
       text: `devolverle a ${firstOf(ctx, agent.id)} ${item.name}`,
       personId: agent.id,
+      // Lo que es de otro pesa más que una idea suelta.
+      importance: 7,
     });
     announce(
       c,

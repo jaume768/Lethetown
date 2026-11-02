@@ -45,7 +45,8 @@ const ROWS: [MessageKey, (d: DayMetrics) => number | string][] = [
   ],
   [
     "evolution.knowledgeRow",
-    (d) => `${d.knowledge?.anachronism ?? 0} / ${d.knowledge?.external ?? 0}`,
+    (d) =>
+      `${d.knowledge?.anachronism ?? 0} / ${d.knowledge?.external ?? 0} / ${d.knowledge?.person ?? 0}`,
   ],
 ];
 
@@ -131,6 +132,7 @@ export function EvolutionPanel() {
                         name: id,
                         anachronism: k.anachronism ?? 0,
                         external: k.external ?? 0,
+                        person: k.person ?? 0,
                       })}
                     </li>
                   ))}

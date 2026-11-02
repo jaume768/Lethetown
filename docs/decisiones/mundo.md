@@ -53,10 +53,20 @@
   referencias externas (nombres propios a media frase que no son vecinos, lugares, glosario,
   referencias comunes ni encajan con el perfil). `enforce` descarta los textos con anacronismos;
   `soften` de momento solo registra. No usa el LLM.
+- **Referencias culturales de 1996** (`culturalReferences` en la biblia: término, tipo, año y de
+  dónde sale la fecha): música (Oasis, Blur, Nirvana, Radiohead, Héroes del Silencio…), series y
+  programas, cine y deportes de la época. No cuentan como de fuera ni como personas inventadas.
+  Alguna es de más tarde en 1996 (las Spice Girls, de julio; la partida empieza en abril): queda
+  anotado en `source`.
+- **Personas inventadas**: el `PersonGuard` (ver [personas](personas.md)) registra en la misma
+  tabla, con el tipo `person`, y corrige el texto en modo `enforce`.
 - **Heurística de nombres**: la mayúscula de inicio de frase engaña (lo que revisa la decisión
   empieza por el id del destinatario: «marta Tienes razón»), así que una palabra suelta que se
   haya visto en minúscula no es un nombre (vocabulario aprendido de las semillas, la biblia y lo
   que se lee); los textos recortados («Palm…», «Ern…») cuentan como el principio de una palabra
-  conocida y hacen falta 4 letras. En un recuerdo, lo que va entre comillas lo dijo otro (ya se
+  conocida y hacen falta 4 letras. Los ids del principio («hugo Marchando», «ines cafe_ola
+  Tomar…») no hacen nombre de la palabra que sigue, y en las listas (plan y textos que recuerdan
+  o resumen) una coma abre elemento («Desayunar…, Pintar…, Pasear…»). En la partida 2, esos dos
+  casos eran 72 de las 134 detecciones y casi todo el resto de falsos positivos. En un recuerdo, lo que va entre comillas lo dijo otro (ya se
   registró al decirlo) y los implicados también cuentan para el perfil. Es para revisar con los
   ejemplos de «Evolución», no una verdad.

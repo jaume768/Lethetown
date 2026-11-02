@@ -9,7 +9,8 @@ import type { SafetyContext, SafetyKind, TextInspector } from "../agent/minor-sa
 import type { WorldBible } from "./bible";
 import { normalizeText, type KnowledgeDetector } from "./knowledge";
 
-export type KnowledgeKind = "anachronism" | "external";
+/** person = persona inventada (lo registra el PersonGuard en la misma tabla). */
+export type KnowledgeKind = "anachronism" | "external" | "person";
 
 /** Una detección (fila de `knowledge_log`). */
 export interface KnowledgeRecord {
@@ -30,6 +31,8 @@ export interface KnowledgeRecord {
 export interface KnowledgeGuardStats {
   anachronism: number;
   external: number;
+  /** Lo registra el PersonGuard (aquí siempre 0). */
+  person: number;
   /** Textos descartados (solo en modo enforce). */
   blocked: number;
 }
@@ -53,6 +56,8 @@ const RETOLD = new Set<SafetyKind>([
   "summary",
   "chronicle",
 ]);
+/** Textos que suelen ser listas (plan, diario): la coma abre elemento. */
+const LISTS = new Set<SafetyKind>([...RETOLD, "plan"]);
 const MAX_TEXT = 300;
 const RECENT = 300;
 
@@ -75,7 +80,12 @@ export function withoutQuotes(text: string): string {
 
 export class ExternalKnowledgeGuard {
   private readonly recent: { key: string; norm: string; at: number }[] = [];
-  private readonly counts: KnowledgeGuardStats = { anachronism: 0, external: 0, blocked: 0 };
+  private readonly counts: KnowledgeGuardStats = {
+    anachronism: 0,
+    external: 0,
+    person: 0,
+    blocked: 0,
+  };
 
   constructor(private readonly opts: ExternalKnowledgeGuardOptions) {}
 
@@ -132,14 +142,15 @@ export class ExternalKnowledgeGuard {
     ];
     // En un recuerdo, lo que va entre comillas lo dijo otro (quizá alguien sin nombre): ya se
     // registró, si tocaba, cuando lo dijo.
+    const scan = { listCommas: LISTS.has(ctx.kind) };
     let names = this.opts.detector
-      .externalNames(retold ? withoutQuotes(text) : text)
+      .externalNames(retold ? withoutQuotes(text) : text, scan)
       .filter((n) => !isAnachronism(n));
     for (const id of actors) {
       if (!names.length) break;
       const seed = this.opts.seedOf(id);
       if (!seed) continue;
-      const outside = new Set(this.opts.detector.outsideProfile(text, seed));
+      const outside = new Set(this.opts.detector.outsideProfile(text, seed, scan));
       names = names.filter((n) => outside.has(n));
     }
     for (const name of names) {

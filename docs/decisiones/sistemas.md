@@ -27,7 +27,7 @@ adelante, economía, metas u oficios son módulos (`SimSystem`) que se registran
 - **Instantánea por sistema** (`SimSnapshot.systems`: id → `{ version, data }`, validado con el
   `schema` zod del sistema). Si un sistema cambia su forma, sube **su** versión: al restaurar,
   solo ese sistema empieza de cero (con un aviso en el log) y el resto del mundo se restaura.
-  `SIM_SNAPSHOT_VERSION` (18) solo sube si cambia lo común.
+  `SIM_SNAPSHOT_VERSION` (19) solo sube si cambia lo común.
 - **Activos por mundo** (`worlds.systems`, jsonb, `{ "notes": false }`; por defecto, todos). Un
   sistema desactivado no revisa, no añade nada al prompt, no guarda instantánea y sus acciones no
   se ofrecen; si el LLM las pide igualmente, el motor responde «eso no se puede hacer en este
@@ -55,8 +55,9 @@ adelante, economía, metas u oficios son módulos (`SimSystem`) que se registran
 | `places`     | explore                               | —                            | (lugares descubiertos, en agent-core) | `known_places`             |
 | `agreements` | — (los tipos los aportan los demás)   | —                            | —                                     | `memory_audit` (descartes) |
 | `world`      | —                                     | —                            | biblia (fijo); fecha (plan)           | —                          |
-| `knowledge`  | —                                     | —                            | (perfil en agent-core)                | `knowledge_log`            |
+| `knowledge`  | —                                     | —                            | (perfil y gente de fuera, agent-core) | `knowledge_log`            |
 | `goals`      | —                                     | medir, visitas; fichas (1 h) | METAS (plan); TU PROYECTO; noche      | `goals`, `departures`      |
+| `intentions` | —                                     | —                            | — (solo métricas, de la auditoría)    | (`memory_audit`)           |
 
 ## Cómo añadir un sistema
 

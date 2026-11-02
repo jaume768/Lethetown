@@ -60,8 +60,19 @@ const SENTENCE_START = new Set([
   "-",
   "…",
   "(",
+  "•",
   "\n",
 ]);
+
+/** Cómo leer un texto al buscar nombres propios. */
+export interface NameScanOptions {
+  /**
+   * Es una lista (el plan, el diario de la consolidación): tras una coma empieza un elemento y la
+   * mayúscula no indica nombre («Desayunar…, Pintar…, Pasear…»: 72 de las 134 detecciones de la
+   * partida 2).
+   */
+  listCommas?: boolean;
+}
 
 export interface Anachronism {
   term: string;
@@ -69,8 +80,11 @@ export interface Anachronism {
 }
 
 export interface KnowledgeDetectorOptions {
-  /** Vecinos (sus nombres y apellidos no son de fuera). */
-  neighbors: Pick<AgentSeed, "name">[];
+  /**
+   * Vecinos (sus nombres y apellidos no son de fuera). Con su id: lo que revisa la decisión
+   * empieza por el id del destinatario («hugo Marchando») y la palabra que sigue abre frase.
+   */
+  neighbors: (Pick<AgentSeed, "name"> & { id?: string })[];
   /** Nombres de los lugares del pueblo. */
   places: string[];
   /** Textos de los que aprender el vocabulario corriente (descripciones, recuerdos iniciales). */
@@ -102,9 +116,12 @@ export class KnowledgeDetector {
   private readonly profiles = new WeakMap<object, Set<string>>();
   /** Vocabulario corriente: lo que se ha visto en minúscula (con mayúscula, abre una frase). */
   private readonly lower = new Set<string>(COMMON_WORDS);
+  /** Ids de los vecinos (para no leer como nombre la palabra que sigue al destinatario). */
+  private readonly ids: Set<string>;
 
   constructor(bible: WorldBible, opts: KnowledgeDetectorOptions) {
     for (const t of opts.vocabulary ?? []) this.observe(t);
+    this.ids = new Set(opts.neighbors.flatMap((n) => (n.id ? [n.id] : [])));
     this.terms = bible.anachronisms.map((a) => {
       const prefix = a.term.endsWith("*");
       return { words: words(a.term), prefix, label: a.label, term: a.term.replace(/\*$/, "") };
@@ -116,6 +133,7 @@ export class KnowledgeDetector {
           bible.city.name,
           ...bible.glossary.map((g) => g.term),
           ...bible.commonReferences,
+          ...bible.culturalReferences.map((r) => r.term),
           ...opts.places,
           ...opts.neighbors.map((n) => n.name),
         ].join(" "),
@@ -149,7 +167,7 @@ export class KnowledgeDetector {
    * Nombres propios del texto (palabras en mayúscula que no empiezan frase, con sus conectores):
    * "Lagos", "Son Dureta", "Miguel Induráin".
    */
-  properNames(text: string): string[] {
+  properNames(text: string, opts: NameScanOptions = {}): string[] {
     const out: string[] = [];
     let current: string[] = [];
     let pendingConnectors: string[] = [];
@@ -159,8 +177,10 @@ export class KnowledgeDetector {
       current = [];
       pendingConnectors = [];
     };
-    // Recorre el texto por palabras, recordando si la anterior cerraba una frase.
-    let i = 0;
+    // Recorre el texto por palabras, recordando si la anterior cerraba una frase. Lo que revisa
+    // una decisión empieza por los ids de la acción («hugo Marchando», «ines cafe_ola Tomar
+    // algo»): la palabra que sigue abre la frase.
+    let i = this.idPrefix(text);
     while (i < text.length) {
       const ch = text[i]!;
       if (/\p{L}/u.test(ch)) {
@@ -181,7 +201,7 @@ export class KnowledgeDetector {
         i = j;
         continue;
       }
-      if (SENTENCE_START.has(ch)) {
+      if (SENTENCE_START.has(ch) || (opts.listCommas && ch === ",")) {
         flush();
         atStart = true;
       } else if (!/\s/.test(ch)) {
@@ -191,6 +211,21 @@ export class KnowledgeDetector {
     }
     flush();
     return [...new Set(out)];
+  }
+
+  /** ¿Es una palabra corriente (vista en minúscula)? Normalizada. */
+  isCommonWord(normalized: string): boolean {
+    return this.lower.has(normalized);
+  }
+
+  /** Longitud de los ids del principio (de vecinos o con «_», como los de lugares). */
+  private idPrefix(text: string): number {
+    let at = 0;
+    for (;;) {
+      const m = /^\s*([a-z0-9_]+)\s+/.exec(text.slice(at, at + 48));
+      if (!m || !(this.ids.has(m[1]!) || m[1]!.includes("_"))) return at;
+      at += m[0].length;
+    }
   }
 
   /** Aprende el vocabulario corriente de un texto (sus palabras en minúscula). */
@@ -207,8 +242,8 @@ export class KnowledgeDetector {
   }
 
   /** Nombres propios que no son del pueblo, del glosario ni referencias comunes de la época. */
-  externalNames(text: string): string[] {
-    return this.properNames(text).filter((name) => {
+  externalNames(text: string, opts: NameScanOptions = {}): string[] {
+    return this.properNames(text, opts).filter((name) => {
       const ws = words(name);
       // Una sola palabra que también se usa en minúscula es una palabra corriente.
       if (ws.length === 1 && this.lower.has(ws[0]!)) return false;
@@ -217,8 +252,12 @@ export class KnowledgeDetector {
   }
 
   /** De esos, los que no encajan con lo que sabe esta persona (su perfil de conocimiento). */
-  outsideProfile(text: string, seed: Pick<AgentSeed, "knowledge"> | undefined): string[] {
-    const external = this.externalNames(text);
+  outsideProfile(
+    text: string,
+    seed: Pick<AgentSeed, "knowledge"> | undefined,
+    opts: NameScanOptions = {},
+  ): string[] {
+    const external = this.externalNames(text, opts);
     if (!seed) return external;
     let mine = this.profiles.get(seed);
     if (!mine) {

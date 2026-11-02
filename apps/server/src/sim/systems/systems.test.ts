@@ -44,6 +44,7 @@ describe("registro de sistemas", () => {
       "world",
       "knowledge",
       "goals",
+      "intentions",
     ]);
   });
 
@@ -110,6 +111,7 @@ describe("instantánea por sistema", () => {
       "norms",
       "knowledge",
       "goals",
+      "intentions",
     ]);
     expect(snap.items!.version).toBe(1);
   });

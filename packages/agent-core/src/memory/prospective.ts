@@ -27,8 +27,20 @@ export const ProspectiveConfig = z.object({
   expireDays: z.number().positive().default(7),
   /** Importancia (1-10) del recuerdo de una intención. */
   importance: z.number().int().min(1).max(10).default(6),
-  /** Intenciones abiertas por agente como mucho (las más antiguas caducan antes). */
+  /**
+   * Intenciones abiertas por agente como mucho: al pasarse, se descarta la menos importante
+   * (auditado). En la partida 2 se proponían 199 al día y solo se cumplía el 46 %.
+   */
   maxOpen: z.number().int().positive().default(8),
+  /** Importancia (1-10) hasta la que una intención es poco importante… */
+  lowImportance: z.number().int().min(1).max(10).default(4),
+  /** …y caduca sola tras estos días de juego sin que aparezca su pista. */
+  lowExpireDays: z.number().positive().default(2),
+  /**
+   * Parecido (palabras con contenido en común, 0..1) desde el que dos intenciones con la misma
+   * persona o el mismo lugar son la misma: se queda una, reforzada.
+   */
+  mergeSimilarity: z.number().min(0).max(1).default(0.5),
 });
 export type ProspectiveConfig = z.infer<typeof ProspectiveConfig>;
 
@@ -48,6 +60,10 @@ export const IntentionState = z.object({
   createdAt: z.number(),
   /** ¿Estaba la pista presente en la última comprobación? (solo cuenta cuando aparece). */
   cueActive: z.boolean(),
+  /** Importancia (1-10): la menos importante es la que se descarta al pasarse del tope. */
+  importance: z.number().int().min(1).max(10).default(6),
+  /** Última vez que apareció su pista (para que caduquen las poco importantes). */
+  lastCueAt: z.number().nullable().default(null),
 });
 export type IntentionState = z.infer<typeof IntentionState>;
 
@@ -58,8 +74,66 @@ export const IntentionInput = z.object({
   placeId: z.string().nullish(),
   /** "HH:MM" opcional. */
   at: z.string().nullish(),
+  /** Importancia (1-10); si no viene, por reglas (`intentionImportance`). */
+  importance: z.coerce.number().int().min(1).max(10).nullish(),
 });
 export type IntentionInput = z.infer<typeof IntentionInput>;
+
+/**
+ * Importancia de una intención por reglas: con hora, 7; con alguien o un sitio, 6; sin nada
+ * que la recuerde («ya lo haré»), 4. Una cita o un préstamo la llevan ya puesta.
+ */
+export function intentionImportance(
+  i: Pick<IntentionState, "personId" | "placeId" | "atMinute">,
+): number {
+  if (i.atMinute !== null) return 7;
+  if (i.personId || i.placeId) return 6;
+  return 4;
+}
+
+const STOP = new Set(
+  "a al algo con de del el en es la las le lo los me mi para por que se su sus te tu un una y ya hablar decir preguntar contar ir volver quedar hacer ver".split(
+    " ",
+  ),
+);
+
+/** Palabras con contenido de una intención (minúsculas, sin tildes). */
+function intentionWords(text: string): Set<string> {
+  return new Set(
+    text
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/\p{M}/gu, "")
+      .split(/[^a-z0-9ñ]+/)
+      .filter((w) => w.length >= 3 && !STOP.has(w)),
+  );
+}
+
+/**
+ * Parecido entre dos textos (0..1): palabras en común sobre las del más largo (así el nombre de
+ * la persona, que comparten casi todas las suyas, no basta: «preguntar a Carmen por su salud» no
+ * es «devolverle a Carmen su libro»).
+ */
+export function intentionSimilarity(a: string, b: string): number {
+  const x = intentionWords(a);
+  const y = intentionWords(b);
+  if (!x.size || !y.size) return 0;
+  let shared = 0;
+  for (const w of x) if (y.has(w)) shared++;
+  return shared / Math.max(x.size, y.size);
+}
+
+/** ¿Son la misma intención? La misma persona o el mismo lugar y un texto parecido. */
+export function sameIntention(
+  a: Pick<IntentionState, "text" | "personId" | "placeId">,
+  b: Pick<IntentionState, "text" | "personId" | "placeId">,
+  minSimilarity: number,
+): boolean {
+  const samePerson = !!a.personId && a.personId === b.personId;
+  const samePlace = !!a.placeId && a.placeId === b.placeId;
+  if (!samePerson && !samePlace) return false;
+  return intentionSimilarity(a.text, b.text) >= minSimilarity;
+}
 
 /** ¿Está presente la pista? La persona (si está aquí), el lugar o la hora. */
 export function cuePresent(

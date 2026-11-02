@@ -5,6 +5,7 @@ import { Agent, type DecideInput } from "../agent/agent";
 import { writeChronicle } from "../agent/chronicle";
 import {
   MinorGuard,
+  hasSoftRomance,
   hasStrongRomance,
   minorsOf,
   minorsRule,
@@ -120,6 +121,25 @@ describe("MinorGuard", () => {
     // El mismo texto otra vez no vuelve a preguntar.
     await guard.allows(family, { kind: "memory", actors: ["leo"] });
     expect(provider.calls).toHaveLength(2);
+  });
+
+  it("palabras corrientes en una familia con niños no se bloquean sin moderar (partida 2)", async () => {
+    const { guard, provider } = setup();
+    // La decisión de Tomás que se bloqueó en la partida 2 por «acostarse».
+    const tomas = "Leo sigue remoloneando con el pez gigante y ya es hora de acostarse";
+    for (const t of [
+      tomas,
+      "Leo quiere subir a la atracción de la feria",
+      "Leo se bañó en el lago con los pies desnudos",
+      "Leo es un amante de los peces",
+    ]) {
+      expect(hasStrongRomance(t), t).toBe(false);
+      expect(hasSoftRomance(t), t).toBe(true);
+    }
+    expect(await guard.allows(tomas, { kind: "action", actors: ["tomas", "leo"] })).toBe(true);
+    expect(provider.calls.map((c) => c.meta.task)).toEqual(["moderate_minor"]);
+    // Lo claro sigue siendo claro.
+    expect(hasStrongRomance("quería acostarse con ella")).toBe(true);
   });
 
   it("si la moderación falla, se repite; si sigue fallando, se descarta (fail-closed)", async () => {
