@@ -166,6 +166,7 @@ registerSystem({
     const seeds = [...ctx.agents.values()].map((a) => a.seed);
     s.detector = new KnowledgeDetector(bible, {
       neighbors: seeds,
+      people: seeds.flatMap((x) => x.offstagePeople.map((p) => p.name)),
       places: ctx.world.places.map((p) => p.name),
       // El vocabulario corriente sale de las semillas y la biblia (y de lo que se va leyendo).
       vocabulary: [

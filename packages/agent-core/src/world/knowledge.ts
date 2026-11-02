@@ -87,6 +87,8 @@ export interface KnowledgeDetectorOptions {
   neighbors: (Pick<AgentSeed, "name"> & { id?: string })[];
   /** Nombres de los lugares del pueblo. */
   places: string[];
+  /** Otros nombres que existen: la gente de fuera de las semillas (`offstagePeople`). */
+  people?: string[];
   /** Textos de los que aprender el vocabulario corriente (descripciones, recuerdos iniciales). */
   vocabulary?: string[];
 }
@@ -136,6 +138,7 @@ export class KnowledgeDetector {
           ...bible.culturalReferences.map((r) => r.term),
           ...opts.places,
           ...opts.neighbors.map((n) => n.name),
+          ...(opts.people ?? []),
         ].join(" "),
       ),
     );
@@ -218,12 +221,17 @@ export class KnowledgeDetector {
     return this.lower.has(normalized);
   }
 
-  /** Longitud de los ids del principio (de vecinos o con «_», como los de lugares). */
+  /**
+   * Longitud de los ids del principio: de vecinos, con «_» (lugares) o letra y número (un saber
+   * «l24», un objeto «i3», una sesión «s2»).
+   */
   private idPrefix(text: string): number {
     let at = 0;
     for (;;) {
       const m = /^\s*([a-z0-9_]+)\s+/.exec(text.slice(at, at + 48));
-      if (!m || !(this.ids.has(m[1]!) || m[1]!.includes("_"))) return at;
+      if (!m || !(this.ids.has(m[1]!) || m[1]!.includes("_") || /^[a-z]\d+$/.test(m[1]!))) {
+        return at;
+      }
       at += m[0].length;
     }
   }

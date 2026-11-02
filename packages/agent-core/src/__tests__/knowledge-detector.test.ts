@@ -160,6 +160,16 @@ describe("ruido del registro (corrección 2.5, ejemplos de la partida 2)", () =>
     expect(bible.culturalReferences.every((r) => r.year <= bible.year && r.source)).toBe(true);
   });
 
+  it("la gente de fuera de las semillas existe; los ids de saberes y objetos se saltan", () => {
+    const detector = new KnowledgeDetector(bible, {
+      neighbors: seeds,
+      places: [],
+      people: seeds.flatMap((x) => x.offstagePeople.map((p) => p.name)),
+    });
+    expect(detector.externalNames("Samuel me contó el suero casero de Ngozi")).toEqual([]);
+    expect(detector.externalNames("elena l24 Le cuento lo del suero")).toEqual([]);
+  });
+
   it("lo de verdad de fuera se sigue registrando (Lagos en boca de Leo)", () => {
     const { guard } = make();
     expect(
