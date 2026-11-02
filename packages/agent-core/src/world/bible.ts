@@ -62,6 +62,19 @@ export const WorldBible = z.object({
   knowledgeGuard: z
     .object({ mode: z.enum(["log", "soften", "enforce"]).default("log") })
     .prefault({}),
+  /**
+   * Personas inventadas (PersonGuard): enforce cambia el nombre por «alguien» (y repite la
+   * decisión una vez con el aviso; una intención con alguien que no existe se descarta); log
+   * solo registra. Personajes públicos de la época que cualquiera puede nombrar (lista
+   * ampliable) y nombres de pila de más para reconocer a una persona sin artículo.
+   */
+  personGuard: z
+    .object({
+      mode: z.enum(["log", "enforce"]).default("enforce"),
+      publicFigures: z.array(z.string()).default([]),
+      extraGivenNames: z.array(z.string()).default([]),
+    })
+    .prefault({}),
   /** Fiestas y días señalados ("MM-DD" → qué se celebra). */
   holidays: z.array(z.object({ date: MonthDay, name: z.string() })).default([]),
   climate: z

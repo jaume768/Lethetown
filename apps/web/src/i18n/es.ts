@@ -341,12 +341,15 @@ const es = {
   "evolution.task": "{task}: {calls} llamadas, {usd}",
   "evolution.system": "sistema {system}: {usd}",
   "evolution.systems": "Sistemas (ahora)",
-  "evolution.knowledgeRow": "Conocimiento: anacronismos / referencias externas",
+  "evolution.knowledgeRow":
+    "Conocimiento: anacronismos / referencias externas / personas inventadas",
   "evolution.knowledge": "Conocimiento externo (solo se registra)",
-  "evolution.knowledgeAgent": "{name}: {anachronism} anacronismos, {external} referencias externas",
+  "evolution.knowledgeAgent":
+    "{name}: {anachronism} anacronismos, {external} referencias externas, {person} personas inventadas",
   "evolution.knowledgeNone": "Nada registrado todavía.",
   "evolution.knowledgeKind.anachronism": "anacronismo",
   "evolution.knowledgeKind.external": "referencia externa",
+  "evolution.knowledgeKind.person": "persona inventada",
   "director.nonCommercial": "Assets no comerciales en uso ({n}) · pnpm assets:check",
   "director.loginNeeded": "Entra con una cuenta de director para intervenir.",
   "director.error": "No se pudo: {error}",

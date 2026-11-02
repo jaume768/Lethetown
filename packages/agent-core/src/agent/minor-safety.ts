@@ -86,7 +86,8 @@ export type SafetyKind =
   | "summary"
   | "chronicle"
   | "interview"
-  | "thought";
+  | "thought"
+  | "intention";
 
 export interface SafetyContext {
   kind: SafetyKind;
@@ -108,6 +109,17 @@ export interface SafetyBlock {
 
 /** Otro registro sobre los mismos textos: el motivo para descartarlo, o null si puede entrar. */
 export type TextInspector = (text: string, ctx: SafetyContext) => string | null;
+
+/**
+ * Corrige un texto antes de que entre en el mundo (PersonGuard: «la Pepa» → «alguien»).
+ * `find` dice qué cambiaría sin cambiarlo (para repetir una decisión con el aviso), `note` lo
+ * registra como reintento, y `rewrite` devuelve el texto corregido o null si hay que descartarlo.
+ */
+export interface TextRewriter {
+  find(text: string, ctx: SafetyContext): string[];
+  note(text: string, ctx: SafetyContext): void;
+  rewrite(text: string, ctx: SafetyContext): string | null;
+}
 
 /** Recuento de lo que hace el guardián (para «Evolución» y las métricas). */
 export interface GuardStats {
@@ -145,6 +157,7 @@ export class MinorGuard {
   private readonly verdicts = new Map<string, boolean>();
   private readonly listeners: ((b: SafetyBlock) => void)[] = [];
   private readonly inspectors: TextInspector[] = [];
+  private readonly rewriters: TextRewriter[] = [];
   private readonly counts: GuardStats = { blockedContent: 0, blockedError: 0, retries: 0 };
 
   constructor(private readonly opts: MinorGuardOptions) {
@@ -183,6 +196,45 @@ export class MinorGuard {
       const i = this.inspectors.indexOf(inspect);
       if (i >= 0) this.inspectors.splice(i, 1);
     };
+  }
+
+  /** Añade un reescritor (ver `TextRewriter`). Devuelve cómo quitarlo. */
+  addRewriter(rewriter: TextRewriter): () => void {
+    this.rewriters.push(rewriter);
+    return () => {
+      const i = this.rewriters.indexOf(rewriter);
+      if (i >= 0) this.rewriters.splice(i, 1);
+    };
+  }
+
+  /** Lo que cambiarían los reescritores (personas inventadas…), sin cambiarlo. */
+  findRewrites(text: string, ctx: SafetyContext): string[] {
+    return this.rewriters.flatMap((r) => r.find(text, ctx));
+  }
+
+  /** Registra que se repite una decisión por lo que cambiarían los reescritores. */
+  noteRewrites(text: string, ctx: SafetyContext): void {
+    for (const r of this.rewriters) r.note(text, ctx);
+  }
+
+  /**
+   * El texto tal como puede entrar en el mundo: corregido por los reescritores y revisado como
+   * en `allows`. Null si no puede entrar (lo descarta un reescritor o la protección de menores).
+   */
+  async vet(text: string, ctx: SafetyContext): Promise<string | null> {
+    const out = this.rewrite(text, ctx);
+    if (out === null) return null;
+    return (await this.allows(out, ctx)) ? out : null;
+  }
+
+  /** Solo los reescritores (sin revisar): el texto corregido, o null si hay que descartarlo. */
+  rewrite(text: string, ctx: SafetyContext): string | null {
+    let out: string | null = text;
+    for (const r of this.rewriters) {
+      out = r.rewrite(out, ctx);
+      if (out === null) return null;
+    }
+    return out;
   }
 
   /** Menores implicados: entre los actores o nombrados en el texto. */
@@ -229,16 +281,19 @@ export class MinorGuard {
     );
   }
 
-  /** Versión de `allows` que devuelve el texto o null. */
+  /** Versión de `vet` (con los reescritores) que devuelve el texto o null. */
   async filter(text: string, ctx: SafetyContext): Promise<string | null> {
-    return (await this.allows(text, ctx)) ? text : null;
+    return this.vet(text, ctx);
   }
 
-  /** Quita de un texto largo (crónica, entrevista) las frases que no pasen. */
+  /** Quita de un texto largo (crónica, entrevista) las frases que no pasen (y corrige las demás). */
   async filterSentences(text: string, ctx: SafetyContext): Promise<string> {
     const sentences = text.match(/[^.!?…]+[.!?…]*\s*/g) ?? [text];
     const kept: string[] = [];
-    for (const s of sentences) if (await this.allows(s.trim(), ctx)) kept.push(s);
+    for (const s of sentences) {
+      const ok = this.rewrite(s.trim(), ctx);
+      if (ok !== null && (await this.allows(ok, ctx))) kept.push(s.replace(s.trim(), ok));
+    }
     return kept.join("").trim();
   }
 

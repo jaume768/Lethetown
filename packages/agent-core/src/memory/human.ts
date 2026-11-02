@@ -378,14 +378,18 @@ Formato:
 {"summary":"...","affinityDelta":0.05,"trustDelta":0,"intentions":[{"text":"...","personId":"...","placeId":null,"at":null}],"agreements":[{"type":"meeting","from":"...","to":["..."],"placeId":"...","at":"17:00","day":"mañana","itemId":null,"what":"tomar algo","quote":"Vale, a las cinco."}]}`,
   });
   const r = parseWith(SocialResponse, res.text);
+  // La opinión, corregida (personas inventadas) y revisada (menores).
+  const socialCtx = {
+    kind: "social" as const,
+    actors: [opts.owner.agentId, opts.other.id],
+    agentId: opts.owner.agentId,
+  };
+  const fixed = opts.guard ? opts.guard.rewrite(r.summary, socialCtx) : r.summary;
+  if (fixed !== null) r.summary = fixed;
   const agreements = r.agreements.filter((a) => a.type);
   if (agreements.length) await opts.onAgreements?.(agreements);
   if (r.intentions.length) await opts.onIntentions?.(r.intentions);
-  const safe = await opts.guard?.allows(r.summary, {
-    kind: "social",
-    actors: [opts.owner.agentId, opts.other.id],
-    agentId: opts.owner.agentId,
-  });
+  const safe = fixed !== null && (await opts.guard?.allows(r.summary, socialCtx)) !== false;
   const cfg = opts.config ?? DEFAULT_SOCIAL;
   const common = {
     ownerId: opts.owner.agentId,
@@ -619,11 +623,15 @@ Formato:
 
     const known = new Set(people.map((p) => p.id));
     for (const p of r.people.filter((x) => known.has(x.id))) {
-      const safe = await this.memory.guard?.allows(p.summary, {
-        kind: "social",
+      const ctx = {
+        kind: "social" as const,
         actors: [owner.agentId, p.id],
         agentId: owner.agentId,
-      });
+      };
+      const summary = this.memory.guard ? this.memory.guard.rewrite(p.summary, ctx) : p.summary;
+      if (summary === null) continue;
+      p.summary = summary;
+      const safe = await this.memory.guard?.allows(summary, ctx);
       if (safe === false) continue;
       await applySocialUpdate(this.social, {
         ownerId: owner.agentId,

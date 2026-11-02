@@ -66,15 +66,13 @@ PREGUNTA: ${q.question}
 Formato:
 {"answer":"..."}`,
     });
-    const answer = parseWith(InterviewResponse, res.text).answer;
-    const safe = await memory.guard?.allows(answer, {
-      kind: "interview",
-      actors: [agent.id],
-      agentId: agent.id,
-    });
+    const raw = parseWith(InterviewResponse, res.text).answer;
+    const ctx = { kind: "interview" as const, actors: [agent.id], agentId: agent.id };
+    const answer = memory.guard ? memory.guard.rewrite(raw, ctx) : raw;
+    const safe = answer !== null && (await memory.guard?.allows(answer, ctx)) !== false;
     out.push({
       ...q,
-      answer: safe === false ? "(respuesta retirada por la protección de menores)" : answer,
+      answer: safe ? answer : "(respuesta retirada por la protección de menores)",
       memories,
     });
   }

@@ -9,7 +9,8 @@ import type { SafetyContext, SafetyKind, TextInspector } from "../agent/minor-sa
 import type { WorldBible } from "./bible";
 import { normalizeText, type KnowledgeDetector } from "./knowledge";
 
-export type KnowledgeKind = "anachronism" | "external";
+/** person = persona inventada (lo registra el PersonGuard en la misma tabla). */
+export type KnowledgeKind = "anachronism" | "external" | "person";
 
 /** Una detección (fila de `knowledge_log`). */
 export interface KnowledgeRecord {
@@ -30,6 +31,8 @@ export interface KnowledgeRecord {
 export interface KnowledgeGuardStats {
   anachronism: number;
   external: number;
+  /** Lo registra el PersonGuard (aquí siempre 0). */
+  person: number;
   /** Textos descartados (solo en modo enforce). */
   blocked: number;
 }
@@ -75,7 +78,12 @@ export function withoutQuotes(text: string): string {
 
 export class ExternalKnowledgeGuard {
   private readonly recent: { key: string; norm: string; at: number }[] = [];
-  private readonly counts: KnowledgeGuardStats = { anachronism: 0, external: 0, blocked: 0 };
+  private readonly counts: KnowledgeGuardStats = {
+    anachronism: 0,
+    external: 0,
+    person: 0,
+    blocked: 0,
+  };
 
   constructor(private readonly opts: ExternalKnowledgeGuardOptions) {}
 

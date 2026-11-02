@@ -67,3 +67,55 @@ describe("sistema knowledge", () => {
     expect(report.knowledge?.examples[0]?.term).toBe("whatsapp");
   });
 });
+
+describe("personas inventadas (PersonGuard, partida 2: «la Pepa»)", () => {
+  it("lo que se guarda no lleva a la Pepa: «alguien», registrado como persona inventada", async () => {
+    const rec = await ctx.deps.memory.tryRemember(
+      {
+        agentId: "rafael",
+        text: "Ernesto me dijo que la Pepa la vio hablar con alguien de Palma.",
+        type: "observation",
+        importance: 5,
+        people: ["ernesto"],
+      },
+      ctx.clock.now(),
+    );
+    expect(rec!.text).toBe("Ernesto me dijo que alguien la vio hablar con alguien de Palma.");
+    const rows = await app.defaultWorld.knowledgeLog.list();
+    expect(rows.some((r) => r.kind === "person" && r.term === "la Pepa")).toBe(true);
+    const m = app.defaultWorld.sim.systemMetrics().knowledge!;
+    expect(m.person).toBeGreaterThanOrEqual(1);
+    expect(m["person.replaced"]).toBeGreaterThanOrEqual(1);
+  });
+
+  it("una intención con alguien que no existe se descarta", async () => {
+    const id = await ctx.agents.get("ernesto")!.intend(ctx.clock.now(), {
+      text: "preguntar a la Pepa si la han llamado de Promociones Llevant",
+    });
+    expect(id).toBeNull();
+  });
+
+  it("aprender de otros nunca aprende una persona inexistente; a la gente de fuera real, sí", async () => {
+    ctx.emit(
+      "speech",
+      "ernesto",
+      'Ernesto Blasco → Rafael Castro: "Me lo ha dicho la Pepa, de Lagos."',
+      ["ernesto", "rafael"],
+    );
+    ctx.emit("speech", "aurora", 'Aurora Méndez → Samuel Okafor: "Alma se fue y nunca volvió."', [
+      "aurora",
+      "samuel",
+    ]);
+    await new Promise((r) => setTimeout(r, 50));
+    const rafael = await ctx.deps.memory.store.listByAgent("rafael");
+    expect(rafael.some((m) => m.text.includes("me contó algo de Pepa"))).toBe(false);
+    // Samuel ya puede nombrar a Alma sin que cuente como inventada.
+    const guard = ctx.deps.memory.guard!;
+    expect(
+      guard.findRewrites("Dicen que Alma era muy guapa.", { kind: "speech", agentId: "samuel" }),
+    ).toEqual([]);
+    expect(
+      guard.findRewrites("Dicen que Alma era muy guapa.", { kind: "speech", agentId: "leo" }),
+    ).toEqual(["Alma"]);
+  });
+});

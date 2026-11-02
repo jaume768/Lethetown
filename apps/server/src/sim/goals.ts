@@ -288,14 +288,19 @@ export async function createGoal(
   const guard = ctx.deps.memory.guard;
   const measure = measureOf(input.criterion);
   const people = "personId" in measure && measure.personId ? [measure.personId] : [];
-  if (
-    guard &&
-    !(await guard.allows(input.text, {
-      kind: "plan",
-      actors: [agent.id, ...people],
-      agentId: agent.id,
-    }))
-  ) {
+  // Sin personas inventadas («hablar con la Pepa» → «hablar con alguien»); síncrono.
+  const guardCtx = { kind: "plan" as const, actors: [agent.id, ...people], agentId: agent.id };
+  const fixed = guard ? guard.rewrite(input.text, guardCtx) : input.text;
+  if (fixed === null) {
+    audit(
+      ctx,
+      { agentId: agent.id, id: "nueva", text: input.text },
+      "meta descartada: persona inventada",
+    );
+    return null;
+  }
+  input = { ...input, text: fixed };
+  if (guard && !(await guard.allows(input.text, guardCtx))) {
     audit(
       ctx,
       { agentId: agent.id, id: "nueva", text: input.text },

@@ -59,6 +59,14 @@
       "interests": ["ilustración y acuarela", "cuentos infantiles", "pintores (Miró, Sorolla)"],
       "culture": "alto"
     },
+    "offstagePeople": [
+      {
+        "name": "Montse",
+        "relation": "mi editora",
+        "where": "la editorial de Barcelona para la que dibujo",
+        "alive": true
+      }
+    ],
     "goals": {
       "text": "Terminar el cuento y vivir de la ilustración",
       "projects": [
@@ -160,6 +168,14 @@
       ],
       "culture": "medio"
     },
+    "offstagePeople": [
+      {
+        "name": "Bartomeu",
+        "relation": "mi padre, que llevaba el café antes que yo",
+        "where": "murió hace unos años; está enterrado en el pueblo",
+        "alive": false
+      }
+    ],
     "goals": {
       "text": "Sacar adelante el Café La Ola",
       "projects": [
@@ -274,6 +290,14 @@
       "interests": ["poesía", "el huerto", "la vida de sus antiguos alumnos"],
       "culture": "alto"
     },
+    "offstagePeople": [
+      {
+        "name": "Bartomeu",
+        "relation": "mi marido, el padre de Mateo",
+        "where": "murió hace unos años",
+        "alive": false
+      }
+    ],
     "goals": {
       "text": "Seguir siendo útil al pueblo",
       "projects": [
@@ -374,6 +398,14 @@
       "interests": ["el pan, las ensaimadas y la repostería", "la radio por las mañanas"],
       "culture": "medio"
     },
+    "offstagePeople": [
+      {
+        "name": "Francisca",
+        "relation": "mi mujer, la madre de Inés; la receta de las magdalenas era suya",
+        "where": "murió hace cinco años",
+        "alive": false
+      }
+    ],
     "goals": {
       "text": "Que Inés y yo volvamos a entendernos",
       "projects": [
@@ -474,6 +506,14 @@
       ],
       "culture": "medio"
     },
+    "offstagePeople": [
+      {
+        "name": "Francisca",
+        "relation": "mi madre",
+        "where": "murió hace cinco años",
+        "alive": false
+      }
+    ],
     "goals": {
       "text": "Prepararme para estudiar fotografía en Palma cuando sea mayor de edad",
       "departure": {
@@ -790,6 +830,14 @@
       ],
       "culture": "básico"
     },
+    "offstagePeople": [
+      {
+        "name": "Catalina",
+        "relation": "mi abuela, la de los ajos en la puerta",
+        "where": "murió hace muchos años",
+        "alive": false
+      }
+    ],
     "goals": {
       "text": "Que el huerto dé para todo el pueblo",
       "projects": [
@@ -1222,6 +1270,14 @@
       "interests": ["la tienda y las cuentas", "Leo", "las telenovelas de la tarde"],
       "culture": "medio"
     },
+    "offstagePeople": [
+      {
+        "name": "Toni",
+        "relation": "el padre de Leo",
+        "where": "se fue a trabajar a la Península y no volvió",
+        "alive": true
+      }
+    ],
     "goals": {
       "text": "Sacar adelante a Leo y la tienda",
       "projects": [
@@ -1333,6 +1389,14 @@
       ],
       "culture": "básico"
     },
+    "offstagePeople": [
+      {
+        "name": "Toni",
+        "relation": "mi padre",
+        "where": "se fue a la Península cuando yo era pequeño",
+        "alive": true
+      }
+    ],
     "goals": {
       "text": "Encontrar el pez gigante del lago",
       "projects": [
@@ -1662,6 +1726,14 @@
       "interests": ["fotografía y revelado", "la historia de su abuela", "el pasado del pueblo"],
       "culture": "alto"
     },
+    "offstagePeople": [
+      {
+        "name": "Alma",
+        "relation": "mi abuela, que de joven vivió en este pueblo",
+        "where": "se fue del pueblo y nunca habló de él; murió en Madrid",
+        "alive": false
+      }
+    ],
     "goals": {
       "text": "Descubrir qué pasó con mi abuela",
       "projects": [
@@ -1872,6 +1944,20 @@
       ],
       "culture": "básico"
     },
+    "offstagePeople": [
+      {
+        "name": "Alma",
+        "relation": "mi amiga de juventud",
+        "where": "se marchó del pueblo y nunca volvió",
+        "alive": null
+      },
+      {
+        "name": "Joana",
+        "relation": "mi hija, la madre de Clara",
+        "where": "vive en Barcelona y llama algún domingo",
+        "alive": true
+      }
+    ],
     "goals": {
       "text": "No olvidar a los míos",
       "projects": [
@@ -1977,6 +2063,14 @@
       ],
       "culture": "medio"
     },
+    "offstagePeople": [
+      {
+        "name": "Joana",
+        "relation": "mi madre",
+        "where": "vive en Barcelona y llama algún domingo",
+        "alive": true
+      }
+    ],
     "goals": {
       "text": "Estudiar enfermería en Palma",
       "departure": {
@@ -2085,6 +2179,20 @@
       "interests": ["medicina", "su familia", "el fútbol nigeriano", "la música highlife"],
       "culture": "alto"
     },
+    "offstagePeople": [
+      {
+        "name": "Ngozi",
+        "relation": "mi madre",
+        "where": "Lagos (Nigeria); la llamo los domingos desde la cabina",
+        "alive": true
+      },
+      {
+        "name": "Chidi",
+        "relation": "mi hermano pequeño",
+        "where": "Lagos (Nigeria)",
+        "alive": true
+      }
+    ],
     "goals": {
       "text": "Sentirme en casa en Lethetown",
       "projects": [

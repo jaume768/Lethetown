@@ -45,42 +45,98 @@ export async function decide(a: Agent, now: number, input: DecideInput): Promise
 
   try {
     const { salient: _salient, actions, agenda, ...context } = input;
-    const res = await a.deps.llm.run({
-      kind: "fast",
-      task: "decide",
-      agentId: a.id,
-      system: a.system,
-      prompt: decidePrompt({
-        ...context,
-        weather: a.weatherHere(input.weather),
-        actions: actions ?? defaultActions(input.present),
-        agenda,
-        discovered: a.discoveredPlaces(),
-        innerVoice: (input.innerVoice ?? []).map(untrusted),
-        doneToday: a.diaryText(),
-        now,
-        locationId: a.state.locationId,
-        action: a.state.action,
-        moodLabel: describeMood(a.state.mood),
-        needs: a.state.needs,
-        planItem: a.currentPlanItem(now),
-        workingMemory: a.workingMemory.render(),
-      }),
+    const prompt = decidePrompt({
+      ...context,
+      weather: a.weatherHere(input.weather),
+      actions: actions ?? defaultActions(input.present),
+      agenda,
+      discovered: a.discoveredPlaces(),
+      innerVoice: (input.innerVoice ?? []).map(untrusted),
+      doneToday: a.diaryText(),
+      now,
+      locationId: a.state.locationId,
+      action: a.state.action,
+      moodLabel: describeMood(a.state.mood),
+      needs: a.state.needs,
+      planItem: a.currentPlanItem(now),
+      workingMemory: a.workingMemory.render(),
     });
-    const parsed = parseWith(DecideResponse, res.text);
+    // Devuelve la promesa tal cual (sin `async`): un paso de microtareas más cambiaría el mock.
+    const ask = (extra = "") =>
+      a.deps.llm.run({
+        kind: "fast",
+        task: "decide",
+        agentId: a.id,
+        system: a.system,
+        prompt: prompt + extra,
+      });
+    const cfg = a.deps.memory.config.speech;
+    const max = { say: speechMax(a.seed, cfg), reason: cfg.reasonMaxChars };
+    let parsed = parseWith(DecideResponse, (await ask()).text);
+    // Una persona inventada («la Pepa»): se repite UNA vez la decisión con el aviso. Si vuelve a
+    // pasar, `checked` cambia el nombre por «alguien».
+    const invented = inventedIn(a, parsed, max);
+    if (invented.length) {
+      parsed = parseWith(
+        DecideResponse,
+        (
+          await ask(
+            `\n\nOJO: ${invented.join(", ")} no existe: ni vive en el pueblo ni lo conoces. No inventes personas (vecinos, familiares ni conocidos); si es un rumor, «dicen por ahí», «me lo contó alguien» o un vecino de verdad. Decide otra vez.`,
+          )
+        ).text,
+      );
+    }
     // Algo que se propone hacer más adelante (memoria prospectiva).
     if (parsed.intention?.text) await a.intend(now, parsed.intention);
-    const cfg = a.deps.memory.config.speech;
-    return await checked(
-      a,
-      toDecision(parsed, { say: speechMax(a.seed, cfg), reason: cfg.reasonMaxChars }),
-    );
+    return await checked(a, toDecision(parsed, max));
   } catch (error) {
     a.deps.onError?.(a.id, "decide", error);
     return { kind: "follow_plan" };
   } finally {
     rewriteLater();
   }
+}
+
+/** Textos de una decisión que entran en el mundo, con su tipo (para los guardianes). */
+function decisionTexts(d: Decision): { text: string; kind: "speech" | "action" }[] {
+  const out: { text: string; kind: "speech" | "action" }[] = [];
+  if (d.kind === "act") {
+    const fields = d.action as unknown as Record<string, unknown>;
+    for (const f of TEXT_FIELDS) {
+      const v = fields[f];
+      if (typeof v === "string" && v)
+        out.push({ text: v, kind: d.action.type === "say" ? "speech" : "action" });
+    }
+  }
+  if (d.reason) out.push({ text: d.reason, kind: "action" });
+  return out;
+}
+
+/** Campos de las acciones que llevan texto del LLM (lo que dice, la nota, el motivo). */
+const TEXT_FIELDS = ["text", "reason"] as const;
+
+/** Personas inventadas en lo que decidió (y en lo que se propone), y lo registra como reintento. */
+function inventedIn(
+  a: Agent,
+  parsed: DecideResponse,
+  max: { say: number; reason: number },
+): string[] {
+  const guard = a.deps.memory.guard;
+  if (!guard) return [];
+  const d = toDecision(parsed, max);
+  const actors = [a.id, ...(d.kind === "act" ? actionPeople(d.action) : [])];
+  const texts = [
+    ...decisionTexts(d),
+    ...(parsed.intention?.text ? [{ text: parsed.intention.text, kind: "action" as const }] : []),
+  ];
+  const found: string[] = [];
+  for (const t of texts) {
+    const ctx = { kind: t.kind, actors, agentId: a.id };
+    const names = guard.findRewrites(t.text, ctx);
+    if (names.length) guard.noteRewrites(t.text, ctx);
+    found.push(...names);
+  }
+  return [...new Set(found)];
 }
 
 /** ¿Pasa la protección de menores? (sin guardián, siempre). */
@@ -94,8 +150,13 @@ export async function safe(
   return !guard || guard.allows(text, { kind, actors: [a.id, ...actors], agentId: a.id });
 }
 
-/** Lo que la protección de menores descarta se convierte en seguir el plan. */
-export async function checked(a: Agent, d: Decision): Promise<Decision> {
+/**
+ * Lo que la protección de menores descarta se convierte en seguir el plan. Antes, los
+ * reescritores corrigen cada texto (una persona inventada pasa a ser «alguien»).
+ */
+export async function checked(a: Agent, input: Decision): Promise<Decision> {
+  const d = rewritten(a, input);
+  if (!d) return { kind: "follow_plan" };
   const reason = d.reason ?? "";
   if (d.kind === "act") {
     const kind = d.action.type === "say" ? "speech" : "action";
@@ -106,6 +167,33 @@ export async function checked(a: Agent, d: Decision): Promise<Decision> {
     return { kind: "follow_plan" };
   }
   return d;
+}
+
+/** La decisión con sus textos corregidos por los reescritores (null si alguno la descarta). */
+function rewritten(a: Agent, d: Decision): Decision | null {
+  const guard = a.deps.memory.guard;
+  if (!guard) return d;
+  const actors = [a.id, ...(d.kind === "act" ? actionPeople(d.action) : [])];
+  const fix = (text: string, kind: "speech" | "action") =>
+    guard.rewrite(text, { kind, actors, agentId: a.id });
+  let out: Decision = d;
+  if (d.kind === "act") {
+    const kind = d.action.type === "say" ? "speech" : "action";
+    const action = { ...d.action } as Record<string, unknown>;
+    for (const f of TEXT_FIELDS) {
+      const v = action[f];
+      if (typeof v !== "string" || !v) continue;
+      const fixed = fix(v, kind);
+      if (fixed === null) return null;
+      action[f] = fixed;
+    }
+    out = { ...d, action: action as unknown as AgentAction };
+  }
+  if (out.reason) {
+    const why = fix(out.reason, "action");
+    out = why === null ? { ...out, reason: "" } : { ...out, reason: why };
+  }
+  return out;
 }
 
 /**

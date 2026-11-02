@@ -193,6 +193,11 @@ export class KnowledgeDetector {
     return [...new Set(out)];
   }
 
+  /** ¿Es una palabra corriente (vista en minúscula)? Normalizada. */
+  isCommonWord(normalized: string): boolean {
+    return this.lower.has(normalized);
+  }
+
   /** Aprende el vocabulario corriente de un texto (sus palabras en minúscula). */
   observe(text: string): void {
     for (const w of lowercaseWords(text)) this.lower.add(w);

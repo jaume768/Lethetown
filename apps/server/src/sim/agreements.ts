@@ -141,6 +141,11 @@ async function carryOut(
   if (text && guard && !(await guard.allows(text, { kind: "action", actors: a.people }))) {
     return "la protección de menores no lo permite";
   }
+  // Lo que se acordó entra en la agenda: sin personas inventadas («con la Pepa» → «con alguien»).
+  if (a.what && guard) {
+    // Síncrono (ya se revisó arriba): sin un `await` más que cambie el orden del mock.
+    a.what = guard.rewrite(a.what, { kind: "action", actors: a.people }) ?? a.what;
+  }
   const dup = kind.duplicate?.(ctx, a);
   if (dup) return dup;
   const steps = kind.steps(ctx, a);
