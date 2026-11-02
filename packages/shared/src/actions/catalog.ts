@@ -242,6 +242,7 @@ export const AgentAction = z.discriminatedUnion("type", [
   DeclineTeachingAction,
   HelpAction,
   ShowResultAction,
+  ShareLoreAction,
 ]);
 export type AgentAction = z.infer<typeof AgentAction>;
 export type ActionType = AgentAction["type"];
@@ -387,6 +388,12 @@ export const ACTION_SPECS: Record<ActionType, ActionSpec> = {
     type: "show_result",
     params: '{"who":"id de alguien presente","itemId":"… o null"}',
     description: "le enseñas y regalas algo que has hecho tú (ver TUS RESULTADOS)",
+  },
+  share_lore: {
+    type: "share_lore",
+    params: '{"who":"id de alguien presente","loreId":"…"}',
+    description:
+      "le cuentas a alguien de aquí un saber tuyo: una receta, una técnica, un sitio, una historia o una canción (ver SABERES QUE PUEDES CONTAR)",
   },
 };
 

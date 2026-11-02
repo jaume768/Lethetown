@@ -1,7 +1,8 @@
 /**
  * Mock de habilidades: responder a una sesión de enseñanza (casi siempre sí), pedirle a quien
  * sabe más que le enseñe, enseñar lo que ha hecho, ayudar a quien trabaja y, a solas, ponerse a
- * practicar lo suyo. Lee lo mismo que un LLM: ENSEÑAR Y APRENDER y LO QUE SABES HACER.
+ * practicar lo suyo; y contar un saber a quien tiene delante. Lee lo mismo que un LLM: ENSEÑAR Y
+ * APRENDER, LO QUE SABES HACER y SABERES QUE PUEDES CONTAR.
  */
 import { sectionLines, type DecideCtx } from "./context";
 import { registerDecideRule, type DecideReply } from "./registry";
@@ -61,6 +62,16 @@ function practice(c: DecideCtx): DecideReply | null {
   return act({ type: "practice", skill, placeId: null, spotId: null }, "Un rato para lo mío.");
 }
 
+function shareLore(c: DecideCtx): DecideReply | null {
+  if (!c.available.has("share_lore") || !c.someone || c.speaker || c.h % 17 !== 0) return null;
+  const m = sectionLines(c.p, "SABERES QUE PUEDES CONTAR")
+    .map((l) => /^(l\d+) (.+?) \(/.exec(l))
+    .find(Boolean);
+  if (!m) return null;
+  return act({ type: "share_lore", who: c.someone, loreId: m[1] }, `Le cuento ${m[2]}.`);
+}
+
+registerDecideRule({ name: "share-lore", respond: shareLore }, { before: "greet" });
 registerDecideRule({ name: "answer-teaching", respond: answerTeaching }, { before: "reply" });
 registerDecideRule({ name: "ask-to-learn", respond: askToLearn }, { before: "greet" });
 registerDecideRule({ name: "show-result", respond: showResult }, { before: "greet" });

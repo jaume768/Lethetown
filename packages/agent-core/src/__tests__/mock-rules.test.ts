@@ -63,6 +63,7 @@ describe("mock declarativo: reglas de decisión", () => {
       "lend-item",
       "invite",
       "follow",
+      "share-lore",
       "ask-to-learn",
       "show-result",
       "help",

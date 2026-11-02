@@ -39,7 +39,8 @@ describe("catálogo de acciones", () => {
     // Sin plan todavía: tiempo libre, así que también puede ponerse a practicar algo.
     expect(availableActions({ ctx, agent: lucia, now })).toEqual(["do_activity", "practice"]);
     at("mateo", "biblioteca");
-    // Mateo sabe de barra y Lucía de dibujo: pedirle que le enseñe u ofrecerse a enseñarle.
+    // Mateo sabe de barra y Lucía de dibujo: pedirle que le enseñe u ofrecerse a enseñarle; y
+    // con alguien delante, contarle un saber suyo (la acuarela).
     expect(availableActions({ ctx, agent: lucia, now })).toEqual([
       "do_activity",
       "say",
@@ -49,6 +50,7 @@ describe("catálogo de acciones", () => {
       "practice",
       "ask_to_learn",
       "teach",
+      "share_lore",
     ]);
   });
 

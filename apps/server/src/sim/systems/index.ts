@@ -15,6 +15,7 @@ import "./knowledge";
 import "./goals";
 import "./intentions";
 import "./skills";
+import "./lore";
 
 export * from "./registry";
 export * from "./types";

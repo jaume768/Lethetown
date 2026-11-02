@@ -32,6 +32,7 @@ export * from "./world/given-names";
 export * from "./goals/psychology";
 export * from "./goals/criteria";
 export * from "./skills/skills";
+export * from "./lore/lore";
 
 export * from "./agent/agent";
 export * from "./agent/prompts";
