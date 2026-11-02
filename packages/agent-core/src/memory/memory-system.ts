@@ -136,6 +136,8 @@ export class MemorySystem {
     return this.config.retrieval;
   }
 
+  private readonly auditListeners: ((e: MemoryAuditEntry) => void)[] = [];
+
   onEffect(listener: (e: MemoryEffect) => void): void {
     this.effectListeners.push(listener);
   }
@@ -144,7 +146,17 @@ export class MemorySystem {
     for (const l of this.effectListeners) l(effect);
   }
 
+  /** Oye cada entrada de la auditoría (métricas de los sistemas: intenciones, personas…). */
+  onAudit(listener: (e: MemoryAuditEntry) => void): () => void {
+    this.auditListeners.push(listener);
+    return () => {
+      const i = this.auditListeners.indexOf(listener);
+      if (i >= 0) this.auditListeners.splice(i, 1);
+    };
+  }
+
   async audit(entry: MemoryAuditEntry): Promise<void> {
+    for (const l of this.auditListeners) l(entry);
     await this.store.addAudit(entry);
   }
 

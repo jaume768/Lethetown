@@ -272,6 +272,8 @@ const en: Record<MessageKey, string> = {
   "memory.audit.intention_kept": "remembered to",
   "memory.audit.intention_forgotten": "forgot to",
   "memory.audit.intention_expired": "let expire",
+  "memory.audit.intention_merged": "merged with a similar one",
+  "memory.audit.intention_dropped": "set aside",
   "memory.falseMemory": "false memory",
 
   "events.live": "Live",

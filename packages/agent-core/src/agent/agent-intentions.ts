@@ -1,7 +1,9 @@
 import { reinforce } from "../memory/decay";
 import {
   cuePresent,
+  intentionImportance,
   recallChance,
+  sameIntention,
   type IntentionInput,
   type IntentionState,
 } from "../memory/prospective";
@@ -22,9 +24,11 @@ function describeCue(i: IntentionState, names: Record<string, string> = {}): str
 /**
  * Se propone hacer algo más adelante (memoria prospectiva): un recuerdo de tipo `intention`
  * con sus pistas (persona, lugar, hora) que se lleva en la cabeza (`mind.intentions`).
- * Devuelve false si no se guarda (repetida, protección de menores, desactivado).
+ * Una parecida a otra que ya tenía (misma persona o lugar) no se apunta: refuerza la que había.
+ * Con demasiadas abiertas, se descarta la menos importante (quizá la nueva). Todo, auditado.
+ * Devuelve el id del recuerdo de la intención, o null si no se apunta nada nuevo (repetida o
+ * fusionada con otra, menos importante que todas, protección de menores, desactivado).
  */
-/** Devuelve el id del recuerdo de la intención, o null si no se guarda. */
 export async function intend(a: Agent, now: number, input: IntentionInput): Promise<string | null> {
   const memory = a.deps.memory;
   const cfg = memory.config.prospective;
@@ -38,6 +42,58 @@ export async function intend(a: Agent, now: number, input: IntentionInput): Prom
   const atMinute = input.at ? parseClock(input.at) : null;
   const open = a.mind.intentions.filter((i) => i.status === "pending" || i.status === "forgotten");
   if (open.some((i) => i.text.toLowerCase() === text.toLowerCase())) return null;
+  const importance = input.importance ?? intentionImportance({ personId, placeId, atMinute });
+  // La misma intención dicha de otra forma: se queda una, reforzada.
+  const twin = open.find((i) => sameIntention(i, { text, personId, placeId }, cfg.mergeSimilarity));
+  if (twin) {
+    twin.importance = Math.min(10, Math.max(twin.importance, importance) + 1);
+    twin.status = "pending";
+    twin.misses = 0;
+    const rec = await memory.store.get(twin.memoryId);
+    if (rec) {
+      await memory.store.update(rec.id, reinforce(rec, now, memory.config.decay));
+      await memory.audit({
+        agentId: a.id,
+        memoryId: rec.id,
+        memoryText: rec.text,
+        action: "intention_merged",
+        reason: `«${text}» es lo mismo que «${twin.text}»: se queda una, reforzada (importancia ${twin.importance})`,
+        at: now,
+      });
+    }
+    return null;
+  }
+  // Demasiadas en la cabeza: la menos importante (y, a igualdad, la más antigua) sale.
+  if (open.length >= cfg.maxOpen) {
+    const weakest = [...open].sort(
+      (x, y) => x.importance - y.importance || x.createdAt - y.createdAt,
+    )[0]!;
+    if (weakest.importance > importance) {
+      await memory.audit({
+        agentId: a.id,
+        memoryId: "intention:nueva",
+        memoryText: text,
+        action: "intention_dropped",
+        reason: `ya tiene ${open.length} cosas pendientes más importantes: «${text}» se queda en nada`,
+        at: now,
+      });
+      return null;
+    }
+    const rec = await memory.store.get(weakest.memoryId);
+    weakest.status = "expired";
+    if (rec) {
+      await syncIntention(a, weakest, rec);
+      await memory.audit({
+        agentId: a.id,
+        memoryId: rec.id,
+        memoryText: rec.text,
+        action: "intention_dropped",
+        reason: `demasiadas cosas pendientes (${open.length}): deja de lado «${weakest.text}» (importancia ${weakest.importance}) por «${text}»`,
+        at: now,
+      });
+    }
+    open.splice(open.indexOf(weakest), 1);
+  }
   const meta = {
     intention: { status: "pending" as const, personId, placeId, atMinute, misses: 0 },
   };
@@ -68,8 +124,10 @@ export async function intend(a: Agent, now: number, input: IntentionInput): Prom
       createdAt: now,
       // Nace en su contexto (con esa persona, en ese sitio): la pista tiene que irse y volver.
       cueActive: true,
+      importance,
+      lastCueAt: null,
     },
-  ].slice(-cfg.maxOpen);
+  ];
   return record.id;
 }
 
@@ -99,6 +157,22 @@ export async function checkIntentions(
       out.push({ kind: "expired", intention: i });
       continue;
     }
+    // Lo poco importante se diluye solo si en unos días no aparece nada que lo recuerde.
+    if (
+      i.importance <= cfg.lowImportance &&
+      now - (i.lastCueAt ?? i.createdAt) > cfg.lowExpireDays * 24 * 60
+    ) {
+      await closeIntention(
+        a,
+        i,
+        rec,
+        "expired",
+        now,
+        `poco importante y en ${cfg.lowExpireDays} días nada se lo recordó`,
+      );
+      out.push({ kind: "expired", intention: i });
+      continue;
+    }
     if (i.status === "forgotten") {
       // Caer en la cuenta, tarde: "¡vaya, se me olvidó!". Vuelve a tenerlo pendiente.
       if (memory.rng() < 1 - Math.pow(1 - cfg.lateRecallPerHour, minutes / 60)) {
@@ -124,6 +198,7 @@ export async function checkIntentions(
     const cue = cuePresent(i, ctx, cfg.timeWindowMinutes);
     const appeared = cue && !i.cueActive;
     i.cueActive = cue;
+    if (cue) i.lastCueAt = now;
     if (!appeared) {
       keep.push(i);
       continue;

@@ -270,6 +270,8 @@ const es = {
   "memory.audit.intention_kept": "se acordó de",
   "memory.audit.intention_forgotten": "olvidó hacer",
   "memory.audit.intention_expired": "dejó caducar",
+  "memory.audit.intention_merged": "juntó con otra igual",
+  "memory.audit.intention_dropped": "dejó de lado",
   "memory.falseMemory": "falso recuerdo",
 
   "events.live": "En vivo",
