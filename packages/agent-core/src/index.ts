@@ -31,6 +31,7 @@ export * from "./world/person-guard";
 export * from "./world/given-names";
 export * from "./goals/psychology";
 export * from "./goals/criteria";
+export * from "./skills/skills";
 
 export * from "./agent/agent";
 export * from "./agent/prompts";
