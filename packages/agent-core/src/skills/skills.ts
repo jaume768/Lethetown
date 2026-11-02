@@ -27,7 +27,7 @@ export const SkillDef = z.object({
 });
 export type SkillDef = z.infer<typeof SkillDef>;
 
-/** Lo que se sabe hacer en un pueblo de Mallorca en 1996 (configurable). */
+/** Lo que se sabe hacer en un pueblo de Mallorca en 2002 (configurable). */
 export const DEFAULT_SKILLS: SkillDef[] = [
   {
     id: "cooking",

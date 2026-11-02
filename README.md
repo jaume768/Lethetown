@@ -15,9 +15,11 @@ Parte de [_Generative Agents: Interactive Simulacra of Human Behavior_](https://
 - **Psicología**: personalidad (Big Five) y memoria propia por agente, ánimo bidimensional, hábitos, sueño, sesgos, falsos recuerdos, memoria prospectiva y relaciones que evolucionan (ver [Psicología](#psicología)).
 - **Acciones con consecuencias**: quedar (y dar plantón), explorar y descubrir el pueblo, conversar en grupo, usar objetos, prestar y devolver cosas, invitar a casa, acompañar a alguien y dejar notas. La IA decide qué hacer; el motor comprueba si es posible y lo ejecuta (ver [Qué pueden hacer](#qué-pueden-hacer-los-habitantes)).
 - **Normas del mundo**: casas privadas con sus invitados (y quien se cuela), horarios de apertura.
-- **Mallorca, 1996**: un pueblo inventado del interior de la isla, con teléfonos fijos, cartas,
-  carretes y pesetas. Cada vecino sabe lo que sabría alguien con su vida en esa época, aprende lo
-  que le cuentan los demás y un registro apunta los anacronismos (ver [El mundo](#el-mundo)).
+- **Mallorca, 2002**: un pueblo inventado del interior de la isla, recién llegado el euro, con
+  móviles sencillos y SMS, cabinas, cartas y carretes, sin redes sociales ni teléfonos con
+  internet. Cada vecino sabe lo que sabría alguien con su vida en esa época, aprende lo que le
+  cuentan los demás y un registro apunta los anacronismos (ver [El mundo](#el-mundo) y
+  [por qué 2002](#por-qué-2002-y-no-1996)).
 - **Metas**: cada vecino tiene una meta vital, proyectos y pasos que el motor mide (la IA propone,
   el motor decide); avanzar motiva, estancarse frustra, se abandona o se cambia de rumbo según la
   personalidad, hay metas que chocan y quien lo consigue puede irse a vivir a Palma (y volver de
@@ -184,14 +186,39 @@ flowchart LR
 - El servidor calcula la ruta A* (que prefiere los caminos) y su duración, y envía los waypoints. El cliente interpola la posición con el reloj de juego y elige el frame según la distancia recorrida, así a x360 se saltan frames en vez de ir a trompicones.
 - **Normas**: las casas son privadas (entran quienes viven allí y sus invitados) y los locales tienen horario (`private` y `hours` en el `.tmj`, desde `tools/generate-map.ts`); el tablón de anuncios es un spot de la plaza.
 - Los agentes van a **spots** concretos (dormir en su cama, sentarse en la barra) y su `activityKind` decide la animación y el emote.
-- **Época y lugar**: `config/world.json` es la biblia del mundo (Mallorca, 1996: tecnología, lo de
+- **Época y lugar**: `config/world.json` es la biblia del mundo (Mallorca, 2002: tecnología, lo de
   fuera, cultura, glosario, fiestas y clima por estación). Va compacta en el prompt fijo; la fecha
   del calendario y la fiesta del día, en el plan. Cada semilla lleva su **perfil de conocimiento**
   (estudios, oficio, idiomas, viajes, intereses) y la **gente de fuera** que conoce
   (`offstagePeople`: familia lejos, difuntos, amigos de antes). El **registro de conocimiento
   externo** apunta anacronismos y referencias que no encajan con quien habla, sin bloquear nada
   (modo `log`). Ver
-  [mundo](docs/decisiones/mundo.md#mallorca-1996-la-biblia-del-mundo-y-lo-que-sabe-cada-uno).
+  [mundo](docs/decisiones/mundo.md#mallorca-2002-la-biblia-del-mundo-y-lo-que-sabe-cada-uno).
+
+#### Por qué 2002 (y no 1996)
+
+En un principio el pueblo vivía en **1996**: se eligió para que hubiera poca tecnología (nada de
+internet en casa ni móviles corrientes), y así las conversaciones fueran en persona, por carta o
+por el fijo, y los agentes no se apoyaran en lo que no existía. Lo que no se tuvo en cuenta fue
+la **moneda**: en 1996 se pagaba en pesetas, y la siguiente fase es la **economía**. Con pesetas
+los precios son números grandes (un café, cien pesetas; un sueldo, más de cien mil) que el modelo
+y quien estudia las partidas tienen que convertir para compararlos con nada actual.
+
+Por eso se ha pasado a **abril de 2002**: el euro está en circulación desde el 1 de enero y es
+una moneda ya establecida (los precios son pequeños y comparables: un café, unos 90 céntimos;
+un menú, unos 7 euros), lo que hace la economía más fácil de calibrar y la investigación más
+sencilla (se leen los precios sin convertir, y entre partidas se comparan igual). Y casi todo lo
+que se buscaba con 1996 sigue ahí: el móvil es sencillo (llamadas y SMS), internet es lento, caro
+y de pocas casas, las fotos son de carrete y no hay redes sociales, mensajería instantánea en el
+teléfono ni nada de lo posterior. Como recién llegado el euro, más de uno aún lo pasa a pesetas en
+la cabeza («eso son mil pesetas»), que es natural en la época.
+
+Lo que cambió: la biblia (año, moneda, tecnología, lo de fuera, personajes y referencias de la
+época, anacronismos: el euro, el móvil, los SMS, internet o el DVD ya no lo son; IB3, Son Espases,
+los smartphones o las redes sociales, sí), un par de semillas (la libreta del fiado de Marta en
+euros; la música de Inés y los dibujos de Leo, de su edad en 2002) y los tests. El 15 de abril de
+2002 también cae en lunes, así que el calendario de partida es el mismo.
+
 - **Habilidades y saberes** (fase 3): 14 habilidades que suben con la práctica y se oxidan sin
   ella, y 24 saberes del pueblo que cada uno sabe a su manera. Ver [habilidades](docs/decisiones/skills.md)
   y [saberes](docs/decisiones/lore.md).
@@ -262,7 +289,7 @@ Citas, inventario, objetos, invitar y acompañar, notas, normas, lugares conocid
 los acuerdos hablados son **sistemas** (`SimSystem`, en `apps/server/src/sim/systems/`): cada uno
 declara sus acciones, su parte de la instantánea (con su versión), su revisión periódica, sus
 secciones del prompt, su retención y sus métricas, y `simulation.ts` solo recorre el registro.
-Se pueden desactivar por mundo (`worlds.systems`, `{ "notes": false }`). El mundo de 1996
+Se pueden desactivar por mundo (`worlds.systems`, `{ "notes": false }`). El mundo de 2002
 (`world`), lo que sabe cada uno (`knowledge`) y las **metas** (`goals`: vital, proyectos y pasos
 medibles, motivación y frustración, conflictos, marcharse del pueblo; ver
 [metas](docs/decisiones/metas.md)) ya son sistemas. Los siguientes (economía, oficios,
@@ -487,7 +514,7 @@ Fase de cimientos (`cost:report 48`, mock; coste estimado con los tokens del moc
 Haiku 5.5 y Sonnet 5.5): de 4.420 llamadas y ≈ 0,94 $ a 3.791 y ≈ 0,65 $, con el puente de los
 acuerdos ya puesto. Detalle por paso en [PROGRESS-CIMIENTOS.md](PROGRESS-CIMIENTOS.md).
 
-Mundo de 1996 y metas (mismo método): de 3.791 llamadas y ≈ 0,65 $ a 4.131 y ≈ 0,79 $. No hay
+Mundo de la época y metas (entonces, 1996; mismo método): de 3.791 llamadas y ≈ 0,65 $ a 4.131 y ≈ 0,79 $. No hay
 tareas nuevas: el prompt fijo crece con la biblia y el perfil (casi todo leído de caché), el plan
 y la consolidación llevan las metas, y el mock cambia de trayectoria con las semillas nuevas.
 Detalle en [PROGRESS-MUNDO-METAS.md](PROGRESS-MUNDO-METAS.md).
@@ -607,7 +634,7 @@ El cliente elige automáticamente el pack con el que se generó el mapa (propied
 5. **Producción** ✅ multi-mundo con instantáneas, seguridad, api + workers, observabilidad, Docker con Caddy e interfaz para espectadores, directores y streaming.
 6. **Psicología** ✅ protección de menores, hábitos, perfiles, ánimo, sueño, sesgos, memoria prospectiva y relaciones visibles.
 7. **Acciones** ✅ catálogo validado por el motor: citas, explorar, grupos, objetos e inventario, invitar y acompañar, notas, normas del mundo; agenda, inventario y lugares en el inspector.
-8. **Mundo y metas** ✅ Mallorca en 1996 (biblia, calendario, clima, perfil de conocimiento, registro de anacronismos) y metas medibles con psicología, conflictos y marcharse del pueblo.
+8. **Mundo y metas** ✅ Mallorca en 2002 (al principio, 1996) (biblia, calendario, clima, perfil de conocimiento, registro de anacronismos) y metas medibles con psicología, conflictos y marcharse del pueblo.
    - **Desarrollo y aprendizaje** ✅ habilidades que se practican, se enseñan y se oxidan; saberes del pueblo que se cuentan, se deforman y se pierden; deriva lenta de la personalidad; pestaña «Habilidades y saberes» y «Saberes del pueblo».
    - **Corrección 2.5** ✅ (de la segunda partida de estudio): pasos que no se pierden y siguiente proyecto, metas cualitativas comprobadas de noche, frustración que lleva a abandonos en una semana, intenciones sin inflación, nadie inventa vecinos (`PersonGuard`) y menos ruido en los registros.
-9. **Siguiente**: economía (`buy_item` / `sell_item`, ya preparada con `Item.value`; en pesetas), mensajes a distancia (teléfonos fijos y cabinas, cartas), ciclo vital (las metas aplazadas de los menores), la evaluación comparativa con modelos reales, OAuth, editor de mundos y agentes desde la web, traducción de los prompts (hoy se pide al modelo que responda en el idioma del mundo).
+9. **Siguiente**: economía (`buy_item` / `sell_item`, ya preparada con `Item.value`; en euros), mensajes a distancia (teléfonos fijos y cabinas, cartas), ciclo vital (las metas aplazadas de los menores), la evaluación comparativa con modelos reales, OAuth, editor de mundos y agentes desde la web, traducción de los prompts (hoy se pide al modelo que responda en el idioma del mundo).

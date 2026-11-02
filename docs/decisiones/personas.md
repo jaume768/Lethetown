@@ -16,7 +16,7 @@ realista: en un pueblo pequeño todo el mundo sabe quién vive y quién no.
 - **Lo que le contaron**: quien oye a alguien nombrar a su gente de fuera la conoce desde ese
   momento (Samuel, tras oír a Aurora hablar de Alma). Va en la instantánea del sistema
   `knowledge`.
-- **Personajes públicos de 1996** (`personGuard.publicFigures` en la biblia, ampliable), más las
+- **Personajes públicos de la época** (2002) (`personGuard.publicFigures` en la biblia, ampliable), más las
   referencias comunes y culturales y los lugares del glosario.
 
 ## Decisiones

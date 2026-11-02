@@ -1,5 +1,5 @@
 /**
- * Nombres de pila corrientes en España y en Mallorca en 1996 (castellanos, catalanes y
+ * Nombres de pila corrientes en España y en Mallorca hacia 2002 (castellanos, catalanes y
  * mallorquines, con sus diminutivos), para que el `PersonGuard` reconozca a una persona aunque
  * no lleve artículo («me lo dijo Pepa»). Se amplía con `personGuard.extraGivenNames` de la
  * biblia. Normalizados al comparar (sin tildes).

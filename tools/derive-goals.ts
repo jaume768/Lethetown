@@ -2,7 +2,7 @@
  * Propone una meta vital y uno o dos proyectos medibles por agente de seeds/agents.json, a partir
  * de su trabajo, sus temas, sus relaciones y su perfil de conocimiento. Solo usa el catálogo de
  * criterios que el motor sabe medir (GoalCriterion en shared). Es un punto de partida: las metas
- * del repositorio están revisadas a mano después (coherentes con 1996 y con cada personaje; los
+ * del repositorio están revisadas a mano después (coherentes con 2002 y con cada personaje; los
  * conflictos sembrados, con `resource`).
  *
  * Uso: pnpm goals:derive             (muestra la propuesta)

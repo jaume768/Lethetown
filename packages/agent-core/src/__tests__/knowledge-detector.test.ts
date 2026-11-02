@@ -21,12 +21,14 @@ describe("detector de conocimiento externo", () => {
     expect(normalizeText("¡Qué Año, señor! E-mail")).toBe("que año señor e mail");
   });
 
-  it("anacronismos: móvil, WhatsApp, internet, euros; no lo de 1996", () => {
+  it("anacronismos: WhatsApp, Instagram, el iPhone; no lo de 2002 (euros, móvil, SMS, internet)", () => {
     const terms = (t: string) => detector.anachronisms(t).map((a) => a.term);
-    expect(terms("Te mando un WhatsApp y lo miro en internet")).toEqual(["whatsapp", "internet"]);
-    expect(terms("Cuesta 5 euros, mándamelo al móvil")).toEqual(["euros"]);
+    expect(terms("Te mando un WhatsApp y lo subo a Instagram")).toEqual(["whatsapp", "instagram"]);
+    expect(terms("Cuesta 5 euros, mándamelo al móvil por SMS")).toEqual([]);
+    expect(terms("Lo miré en internet, en un cibercafé de Palma")).toEqual([]);
     expect(terms("Te llamo desde la cabina y te escribo una carta")).toEqual([]);
-    expect(terms("Me ha costado cien pesetas el carrete")).toEqual([]);
+    expect(terms("Antes me costaba cien pesetas el carrete")).toEqual([]);
+    expect(terms("Lo vi en IB3 con el iphone")).toEqual(["ib3", "iphone"]);
     // Prefijo: "youtube*" cubre "youtuber".
     expect(terms("Quiero ser youtuber")).toEqual(["youtube"]);
   });
@@ -97,9 +99,9 @@ describe("ExternalKnowledgeGuard", () => {
 
   it("en modo enforce descarta los anacronismos (las referencias, no)", async () => {
     const { minor } = make("enforce");
-    expect(await minor.allows("Lo busco en internet", { kind: "speech", agentId: "ines" })).toBe(
-      false,
-    );
+    expect(
+      await minor.allows("Te lo mando por WhatsApp", { kind: "speech", agentId: "ines" }),
+    ).toBe(false);
     expect(await minor.allows("Mi abuelo vivía en Lagos", { kind: "speech", agentId: "leo" })).toBe(
       true,
     );
@@ -147,7 +149,7 @@ describe("ruido del registro (corrección 2.5, ejemplos de la partida 2)", () =>
     ).toEqual([]);
   });
 
-  it("referencias de 1996 (Oasis, Blur, Nirvana, series y deportes) no son de fuera", () => {
+  it("referencias de la época (Oasis, Blur, Nirvana, OT, series y deportes) no son de fuera", () => {
     const { guard } = make();
     for (const t of [
       "Es de Oasis, en plan, flipante.",

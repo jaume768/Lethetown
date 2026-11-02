@@ -19,11 +19,11 @@ beforeAll(async () => {
 afterAll(() => app.close());
 
 describe("sistema world", () => {
-  it("el prompt fijo de cada agente lleva la biblia (1996, Mallorca, pesetas) y la regla", () => {
+  it("el prompt fijo de cada agente lleva la biblia (2002, Mallorca, euros) y la regla", () => {
     const system = ctx.agents.get("ines")!.system;
-    expect(system).toMatch(/interior de Mallorca; es el año 1996/);
-    expect(system).toMatch(/pesetas/);
-    expect(system).toMatch(/Sabes lo que sabría alguien con tu vida en 1996/);
+    expect(system).toMatch(/interior de Mallorca; es el año 2002/);
+    expect(system).toMatch(/euros desde el 1 de enero/);
+    expect(system).toMatch(/Sabes lo que sabría alguien con tu vida en 2002/);
     // Igual para todos (cacheable): la parte del mundo no depende del agente.
     const world = (s: string) => s.slice(s.indexOf("- El mundo:"), s.indexOf("- Sabes lo que"));
     expect(world(system)).toBe(world(ctx.agents.get("aurora")!.system));
@@ -32,7 +32,7 @@ describe("sistema world", () => {
   it("el plan del día lleva la fecha del calendario", async () => {
     const agent = ctx.agents.get("mateo")!;
     expect(systemPlanSections(ctx, agent, 0)[0]!.lines[0]).toBe(
-      "Hoy es lunes, 15 de abril de 1996 (primavera).",
+      "Hoy es lunes, 15 de abril de 2002 (primavera).",
     );
     const prompts: string[] = [];
     const llm = agent.deps.llm;

@@ -665,7 +665,7 @@
       "places": ["Palma (pocas veces)"],
       "interests": [
         "fotografía de carrete",
-        "música (Héroes del Silencio, Nirvana, Oasis)",
+        "música (Estopa, Linkin Park, El Canto del Loco)",
         "revistas de música"
       ],
       "culture": "medio"
@@ -1605,7 +1605,7 @@
             "type": "conversations",
             "personId": "hugo",
             "count": 4,
-            "topics": ["debe", "deuda", "pag", "dinero", "peseta"]
+            "topics": ["debe", "deuda", "pag", "dinero", "euro"]
           }
         }
       ]
@@ -1727,8 +1727,11 @@
             "variants": []
           },
           {
-            "text": "nunca más de dos mil pesetas por casa",
-            "variants": ["nunca más de cinco mil pesetas por casa"]
+            "text": "nunca más de veinte euros por casa",
+            "variants": [
+              "nunca más de treinta euros por casa",
+              "nunca más de tres mil pesetas por casa"
+            ]
           },
           {
             "text": "lo que se paga se tacha delante del cliente",
@@ -1851,7 +1854,7 @@
       "interests": [
         "el pez gigante del lago",
         "los perros",
-        "los dibujos animados (Los Simpson, Dragon Ball)",
+        "los dibujos animados (Los Simpson, Pokémon, Dragon Ball)",
         "los cromos de fútbol"
       ],
       "culture": "básico"

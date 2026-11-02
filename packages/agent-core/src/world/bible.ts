@@ -36,7 +36,7 @@ export const WorldBible = z.object({
   town: z.string().default("Lethetown"),
   /** "un pueblo pequeño (inventado) del interior de Mallorca". */
   where: z.string(),
-  year: z.number().int().min(1900).max(2100).default(1996),
+  year: z.number().int().min(1900).max(2100).default(2002),
   /** Fecha del día 0 de la partida (mes y día; el año es `year`). */
   startDate: MonthDay.default("04-15"),
   city: z.object({ name: z.string(), distance: z.string() }),
@@ -179,7 +179,7 @@ export function gameDate(bible: Pick<WorldBible, "year" | "startDate">, minutes:
   return { year: y, month: m, day: d, weekday, season: seasonOf(m), monthDay };
 }
 
-/** "martes, 16 de abril de 1996". */
+/** "martes, 16 de abril de 2002". */
 export function formatGameDate(date: GameDate): string {
   return `${WEEKDAYS[date.weekday]}, ${date.day} de ${MONTHS[date.month - 1]} de ${date.year}`;
 }

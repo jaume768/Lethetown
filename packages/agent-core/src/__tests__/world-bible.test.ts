@@ -16,16 +16,16 @@ const bible = WorldBible.parse(
 const DAY = 1440;
 
 describe("biblia del mundo", () => {
-  it("config/world.json valida y es de 1996 en Mallorca", () => {
-    expect(bible.year).toBe(1996);
+  it("config/world.json valida y es de 2002 en Mallorca (con euros)", () => {
+    expect(bible.year).toBe(2002);
     expect(bible.where).toMatch(/Mallorca/);
     expect(bible.city.name).toBe("Palma");
-    expect(bible.currency).toMatch(/pesetas/);
+    expect(bible.currency).toMatch(/^euros/);
   });
 
-  it("calendario sin Date: el día 0 es el 15 de abril de 1996, un lunes", () => {
-    expect(formatGameDate(gameDate(bible, 0))).toBe("lunes, 15 de abril de 1996");
-    expect(formatGameDate(gameDate(bible, DAY + 60))).toBe("martes, 16 de abril de 1996");
+  it("calendario sin Date: el día 0 es el 15 de abril de 2002, un lunes", () => {
+    expect(formatGameDate(gameDate(bible, 0))).toBe("lunes, 15 de abril de 2002");
+    expect(formatGameDate(gameDate(bible, DAY + 60))).toBe("martes, 16 de abril de 2002");
     // Fin de mes y año bisiesto (1996 lo es).
     const feb = { year: 1996, startDate: "02-28" };
     expect(gameDate(feb, DAY).monthDay).toBe("02-29");
@@ -35,7 +35,7 @@ describe("biblia del mundo", () => {
   });
 
   it("la fecha y la fiesta del día van al plan", () => {
-    expect(todayLine(bible, 0)).toBe("Hoy es lunes, 15 de abril de 1996 (primavera).");
+    expect(todayLine(bible, 0)).toBe("Hoy es lunes, 15 de abril de 2002 (primavera).");
     const santJoan = { ...bible, startDate: "06-24" };
     expect(todayLine(santJoan, 0)).toMatch(/Sant Joan/);
   });
@@ -63,7 +63,7 @@ describe("biblia del mundo", () => {
 
   it("las líneas del prompt fijo son compactas y sin nada variable", () => {
     const lines = bibleLines(bible);
-    expect(lines.join("\n")).toMatch(/1996/);
+    expect(lines.join("\n")).toMatch(/2002/);
     expect(lines.join("\n")).not.toMatch(/Hoy es/);
     expect(lines.join("\n").length).toBeLessThan(3000);
   });

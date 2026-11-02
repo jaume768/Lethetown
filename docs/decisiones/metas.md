@@ -93,7 +93,7 @@ llegar y pasos concretos) sin que el LLM se invente el progreso. Sistema `goals`
   menor; lo resolverá el ciclo vital). Ningún criterio de un menor puede ser estar en una casa
   ajena; las citas ya pasan por `minorMeetingRule`; el texto de toda meta pasa por `MinorGuard`.
 - **Metas de partida**: `pnpm goals:derive` propone una vital y 1–2 proyectos por reglas (trabajo,
-  temas, relaciones); las 20 de `seeds/agents.json` están revisadas a mano (coherentes con 1996 y
+  temas, relaciones); las 20 de `seeds/agents.json` están revisadas a mano (coherentes con la época y
   cada personaje; sin conflictos nuevos). Los objetivos de relación se calibran por encima de lo
   que hay al empezar: una meta que ya se cumple al crearla se descarta.
 - **Frustración: 0,2 por día estancado** (era 0,12: en los 3 días de la partida 2 nadie llegó a

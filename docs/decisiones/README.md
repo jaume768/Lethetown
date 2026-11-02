@@ -6,7 +6,7 @@ márcala como sustituida) en el mismo commit.
 
 | Área                                                          | Archivo                        |
 | ------------------------------------------------------------- | ------------------------------ |
-| Mundo (Mallorca, 1996), mapa, conocimiento y personajes       | [mundo.md](mundo.md)           |
+| Mundo (Mallorca, 2002), mapa, conocimiento y personajes       | [mundo.md](mundo.md)           |
 | Simulación (bucle, conversaciones, instantáneas, test dorado) | [simulacion.md](simulacion.md) |
 | Memoria humana                                                | [memoria.md](memoria.md)       |
 | Psicología (perfil, ánimo, sueño, sesgos, intenciones)        | [psicologia.md](psicologia.md) |

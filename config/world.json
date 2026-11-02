@@ -2,24 +2,24 @@
   "$comment": "Biblia del mundo (la valida WorldBible en packages/agent-core/src/world/bible.ts). Lo de everyday, outside, culture y knowledgeRule entra tal cual en el prompt fijo de identidad: compacto. anachronisms y commonReferences son para el registro de conocimiento externo (solo registra). Ver docs/decisiones/mundo.md.",
   "town": "Lethetown",
   "where": "un pueblo pequeño (inventado) del interior de Mallorca",
-  "year": 1996,
+  "year": 2002,
   "startDate": "04-15",
   "city": { "name": "Palma", "distance": "a una hora en coche o en el autobús de línea" },
-  "currency": "pesetas (un café, unas cien pesetas; un duro son cinco)",
+  "currency": "euros desde el 1 de enero (un café, unos 90 céntimos; un menú, unos 7 euros); mucha gente aún lo pasa a pesetas en la cabeza: un euro son 166 pesetas",
   "everyday": [
-    "teléfono fijo en casa y cabinas en la calle; cartas y postales por correo; la tele (TVE, Antena 3, Telecinco), la radio y el periódico.",
-    "cintas de casete y CD, vídeos VHS (las películas se alquilan en el videoclub), cámaras de carrete (las fotos se llevan a revelar), coches y el autobús de línea.",
-    "los móviles son rarísimos (quizá algún empresario de Palma), casi nadie tiene ordenador e internet casi no existe."
+    "teléfono fijo en casa y cabinas en la calle; casi todos tienen ya un móvil sencillo (Nokia, de tarjeta), para llamar y mandar SMS; cartas y postales por correo; la tele (TVE, Antena 3, Telecinco, Canal 4), la radio y el periódico.",
+    "CD, algún MP3 en el ordenador, DVD y vídeos VHS (las películas se alquilan en el videoclub), cámaras de carrete (las fotos se llevan a revelar; las digitales son caras y raras), coches y el autobús de línea.",
+    "algunas casas tienen ordenador e internet con módem (lento y caro), el correo electrónico es de pocos y para buscar algo, a los libros o a un cibercafé de Palma; nada de redes sociales ni de teléfonos con internet."
   ],
   "outside": [
-    "Palma, el resto de la isla, la península (en barco o en avión) y el mundo; las noticias llegan por la tele, la radio y el periódico. En marzo hubo elecciones generales y las ganó el PP de Aznar.",
-    "puedes mencionar gente, sucesos, música, deportes y marcas reales si existían en 1996 y tu personaje los conocería; nada posterior."
+    "Palma, el resto de la isla, la península (en barco o en avión) y el mundo; las noticias llegan por la tele, la radio y el periódico. Gobierna Aznar (mayoría absoluta desde 2000) y en el Govern balear, Francesc Antich; en septiembre pasado fueron los atentados de Nueva York, y en junio es el Mundial de Corea y Japón.",
+    "puedes mencionar gente, sucesos, música, deportes y marcas reales si existían en abril de 2002 y tu personaje los conocería; nada posterior."
   ],
   "culture": [
     "Mallorca con naturalidad, sin caricaturas: pa amb oli, ensaïmadas, sobrasada, tumbet, frit; herbes de sobremesa; el mercadillo; Sant Antoni con sus foguerons, Sant Joan, las fiestas del pueblo en agosto, las matanzas en invierno.",
     "la simulación va en castellano; los de aquí también hablan mallorquín entre ellos: alguna palabra suelta (bon dia, idò, al·lot, padrina) solo si encaja con tu personaje."
   ],
-  "knowledgeRule": "Sabes lo que sabría alguien con tu vida en 1996 (Lo que sabes). Si te preguntan algo que no sabrías o que no existe en tu época, responde como lo haría tu personaje («ni idea», «eso suena a cosas de Palma»…), sin explicarlo como un experto.",
+  "knowledgeRule": "Sabes lo que sabría alguien con tu vida en 2002 (Lo que sabes). Si te preguntan algo que no sabrías o que no existe en tu época, responde como lo haría tu personaje («ni idea», «eso suena a cosas de Palma»…), sin explicarlo como un experto.",
   "glossary": [
     { "term": "Palma", "kind": "outside", "note": "la ciudad" },
     { "term": "Son Dureta", "kind": "institution", "note": "el hospital de Palma" },
@@ -139,6 +139,93 @@
     "Carnaval"
   ],
   "culturalReferences": [
+    {
+      "term": "Operación Triunfo",
+      "kind": "tv",
+      "year": 2001,
+      "source": "TVE, desde octubre de 2001; Rosa representa a España en Eurovisión en mayo de 2002"
+    },
+    { "term": "Gran Hermano", "kind": "tv", "year": 2000, "source": "Telecinco, desde 2000" },
+    {
+      "term": "Cuéntame cómo pasó",
+      "kind": "tv",
+      "year": 2001,
+      "source": "TVE, desde septiembre de 2001"
+    },
+    { "term": "7 vidas", "kind": "tv", "year": 1999, "source": "Telecinco, desde 1999" },
+    { "term": "Crónicas marcianas", "kind": "tv", "year": 1997, "source": "Telecinco, desde 1997" },
+    { "term": "Pokémon", "kind": "tv", "year": 1999, "source": "en España desde 1999" },
+    {
+      "term": "Harry Potter",
+      "kind": "film",
+      "year": 2001,
+      "source": "La piedra filosofal, estreno en España en noviembre de 2001"
+    },
+    {
+      "term": "El Señor de los Anillos",
+      "kind": "film",
+      "year": 2001,
+      "source": "La Comunidad del Anillo, diciembre de 2001"
+    },
+    { "term": "Shrek", "kind": "film", "year": 2001, "source": "estreno en España, 2001" },
+    { "term": "Los otros", "kind": "film", "year": 2001, "source": "Alejandro Amenábar, 2001" },
+    { "term": "Amélie", "kind": "film", "year": 2001, "source": "2001" },
+    {
+      "term": "Linkin Park",
+      "kind": "music",
+      "year": 2000,
+      "source": "álbum Hybrid Theory (2000)"
+    },
+    { "term": "El Canto del Loco", "kind": "music", "year": 2000, "source": "primer álbum, 2000" },
+    {
+      "term": "La Oreja de Van Gogh",
+      "kind": "music",
+      "year": 1998,
+      "source": "en activo desde 1998"
+    },
+    { "term": "Eminem", "kind": "music", "year": 1999, "source": "en activo desde 1999" },
+    { "term": "Britney Spears", "kind": "music", "year": 1999, "source": "en activo desde 1999" },
+    {
+      "term": "Mundial de Corea y Japón",
+      "kind": "sport",
+      "year": 2002,
+      "source": "Mundial de fútbol, junio de 2002"
+    },
+    {
+      "term": "la novena",
+      "kind": "sport",
+      "year": 2002,
+      "source": "el Real Madrid gana su novena Copa de Europa, mayo de 2002 (Glasgow)"
+    },
+    {
+      "term": "Movistar",
+      "kind": "other",
+      "year": 1995,
+      "source": "telefonía móvil de Telefónica"
+    },
+    { "term": "Amena", "kind": "other", "year": 1999, "source": "telefonía móvil, desde 1999" },
+    { "term": "Vodafone", "kind": "other", "year": 2001, "source": "antes Airtel; desde 2001" },
+    { "term": "Nokia", "kind": "other", "year": 1990, "source": "los móviles más corrientes" },
+    {
+      "term": "Messenger",
+      "kind": "other",
+      "year": 1999,
+      "source": "MSN Messenger, en algunos ordenadores"
+    },
+    {
+      "term": "PlayStation 2",
+      "kind": "other",
+      "year": 2000,
+      "source": "en España desde noviembre de 2000"
+    },
+    { "term": "Game Boy Advance", "kind": "other", "year": 2001, "source": "2001" },
+    {
+      "term": "11-S",
+      "kind": "other",
+      "year": 2001,
+      "source": "atentados de Nueva York, 11 de septiembre de 2001"
+    },
+    { "term": "Ryanair", "kind": "other", "year": 1985, "source": "vuelos baratos a Palma" },
     {
       "term": "Oasis",
       "kind": "music",
@@ -391,22 +478,13 @@
     { "term": "Mercedes", "kind": "other", "year": 1926, "source": "la marca de coches" }
   ],
   "anachronisms": [
-    { "term": "teléfono móvil", "label": "móvil como algo corriente" },
-    { "term": "el móvil", "label": "móvil como algo corriente" },
-    { "term": "mi móvil", "label": "móvil como algo corriente" },
-    { "term": "tu móvil", "label": "móvil como algo corriente" },
-    { "term": "un móvil", "label": "móvil como algo corriente" },
-    { "term": "móviles", "label": "móvil como algo corriente" },
-    { "term": "smartphone", "label": "móvil como algo corriente" },
-    { "term": "sms", "label": "mensajes al móvil" },
+    { "term": "móvil con internet", "label": "teléfonos con internet (posteriores)" },
+    { "term": "apps", "label": "teléfonos con internet (posteriores)" },
+    { "term": "ib3", "label": "la tele autonómica (de 2005)" },
+    { "term": "son espases", "label": "el hospital (de 2011)" },
+    { "term": "smartphone", "label": "teléfonos con internet (posteriores)" },
     { "term": "whatsapp*", "label": "mensajería instantánea" },
     { "term": "wasap*", "label": "mensajería instantánea" },
-    { "term": "internet", "label": "internet como algo de todos los días" },
-    { "term": "online", "label": "internet como algo de todos los días" },
-    { "term": "página web", "label": "internet como algo de todos los días" },
-    { "term": "email", "label": "correo electrónico" },
-    { "term": "e mail", "label": "correo electrónico" },
-    { "term": "correo electrónico", "label": "correo electrónico" },
     { "term": "redes sociales", "label": "redes sociales" },
     { "term": "facebook", "label": "redes sociales" },
     { "term": "instagram", "label": "redes sociales" },
@@ -416,22 +494,11 @@
     { "term": "influencer*", "label": "redes sociales" },
     { "term": "hashtag*", "label": "redes sociales" },
     { "term": "selfie*", "label": "fotografía digital" },
-    { "term": "cámara digital", "label": "fotografía digital" },
-    { "term": "foto digital", "label": "fotografía digital" },
-    { "term": "fotos digitales", "label": "fotografía digital" },
-    { "term": "google*", "label": "buscadores" },
-    { "term": "wikipedia", "label": "buscadores" },
     { "term": "wifi", "label": "redes inalámbricas" },
     { "term": "wi fi", "label": "redes inalámbricas" },
-    { "term": "bluetooth", "label": "redes inalámbricas" },
     { "term": "tablet*", "label": "aparatos posteriores" },
     { "term": "ipad", "label": "aparatos posteriores" },
     { "term": "iphone", "label": "aparatos posteriores" },
-    { "term": "dvd", "label": "aparatos posteriores" },
-    { "term": "mp3", "label": "aparatos posteriores" },
-    { "term": "usb", "label": "aparatos posteriores" },
-    { "term": "pendrive*", "label": "aparatos posteriores" },
-    { "term": "gps", "label": "aparatos posteriores" },
     { "term": "streaming", "label": "servicios posteriores" },
     { "term": "netflix", "label": "servicios posteriores" },
     { "term": "spotify", "label": "servicios posteriores" },
@@ -439,8 +506,6 @@
     { "term": "bizum", "label": "servicios posteriores" },
     { "term": "airbnb", "label": "servicios posteriores" },
     { "term": "emoji*", "label": "servicios posteriores" },
-    { "term": "euro", "label": "euros (en 1996 se paga en pesetas)" },
-    { "term": "euros", "label": "euros (en 1996 se paga en pesetas)" },
     { "term": "covid", "label": "sucesos posteriores" },
     { "term": "coronavirus", "label": "sucesos posteriores" },
     { "term": "brexit", "label": "sucesos posteriores" }
@@ -448,6 +513,27 @@
   "personGuard": {
     "mode": "enforce",
     "publicFigures": [
+      "José Luis Rodríguez Zapatero",
+      "Zapatero",
+      "Mariano Rajoy",
+      "Francesc Antich",
+      "Jaume Matas",
+      "Carlos Moyà",
+      "Rafa Nadal",
+      "Fernando Alonso",
+      "Valentino Rossi",
+      "Iker Casillas",
+      "Zidane",
+      "Figo",
+      "Del Bosque",
+      "David Bisbal",
+      "David Bustamante",
+      "Rosa López",
+      "Chenoa",
+      "Shakira",
+      "Estopa",
+      "George Bush",
+      "Tony Blair",
       "Aznar",
       "José María Aznar",
       "Felipe González",

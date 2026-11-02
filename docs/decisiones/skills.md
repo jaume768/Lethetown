@@ -8,7 +8,7 @@ y que eso se note en el mundo, sin que el LLM se invente el nivel de nadie. Sist
 ## Decisiones
 
 - **Catálogo cerrado y configurable** (`SkillsConfig.catalog`, zod; 14 habilidades de un pueblo
-  de Mallorca en 1996): cocina, panadería, café y barra, huerto, pesca, arreglar cosas,
+  de Mallorca en 2002): cocina, panadería, café y barra, huerto, pesca, arreglar cosas,
   fotografía, dibujo, música, enseñar, cuidados y primeros auxilios, vender y negociar, contar
   historias e idiomas. Cada una dice con qué se practica: objetos del mapa (la cafetera, el
   horno, los bancales, el botiquín), palabras de la actividad y sitios. Las ids van al prompt

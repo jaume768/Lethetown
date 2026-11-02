@@ -31,7 +31,8 @@ TypeScript estricto. El porqué de cada decisión está en [docs/decisiones/](do
 - **Psicología y memoria**: lógica pura en agent-core; todo parámetro en `MemoryConfig` con valor
   por defecto y unidades; nada de lógica psicológica en prompts si se puede calcular. Cada olvido o
   transformación, con `memory.audit(...)` y motivo legible. Fichas sociales con `applySocialUpdate`.
-- **Mundo de 1996** (`config/world.json`, `WorldBible`): Mallorca, pesetas, tecnología de la época;
+- **Mundo de 2002** (`config/world.json`, `WorldBible`): Mallorca, euros (recién llegados),
+  móviles sencillos y SMS, internet de pocos, sin redes sociales; tecnología de la época;
   nada posterior en semillas, mock ni prompts. Lo fijo del mundo va al prompt de identidad
   (`identityLines`); la fecha, al plan. Cada semilla tiene `knowledge` (lo que sabe). Todo texto
   del LLM pasa también por el `ExternalKnowledgeGuard` (inspector de `MinorGuard`, solo registra);

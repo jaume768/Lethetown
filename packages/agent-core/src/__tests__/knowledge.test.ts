@@ -1,4 +1,4 @@
-/** Perfiles de conocimiento de las semillas: todos tienen uno y encaja con su vida en 1996. */
+/** Perfiles de conocimiento de las semillas: todos tienen uno y encaja con su vida en 2002. */
 import { readFileSync } from "node:fs";
 import { AgentSeed } from "@lethetown/shared";
 import { describe, expect, it } from "vitest";
@@ -69,8 +69,8 @@ describe("perfil de conocimiento", () => {
     expect(byId.andres!.knowledge!.studies).toMatch(/Biblioteconomía/);
   });
 
-  it("nada posterior a 1996 en los perfiles", () => {
+  it("nada posterior a 2002 en los perfiles", () => {
     const text = JSON.stringify(seeds.map((s) => s.knowledge));
-    expect(text).not.toMatch(/internet|móvil|ordenador|euro|digital|redes sociales/i);
+    expect(text).not.toMatch(/smartphone|whatsapp|redes sociales|instagram|youtube|tablet/i);
   });
 });
