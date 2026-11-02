@@ -127,6 +127,13 @@
       "when": 1793440351335,
       "tag": "0017_goals",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1793626373624,
+      "tag": "0018_skills_lore",
+      "breakpoints": true
     }
   ]
 }

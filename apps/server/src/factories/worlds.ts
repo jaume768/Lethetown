@@ -59,6 +59,14 @@ import {
   type DepartureStore,
   type GoalStore,
 } from "../db/goals";
+import {
+  InMemoryLoreStore,
+  InMemorySkillStore,
+  PgLoreStore,
+  PgSkillStore,
+  type LoreStore,
+  type SkillStore,
+} from "../db/skills";
 import { describeReport, pruneGlobalPg, pruneWorldPg, pruneWorldRam } from "../retention";
 import { createWorldLlm } from "./llm";
 import { createMaintenance, createWorldMemory } from "./memory";
@@ -119,6 +127,8 @@ export async function openWorld(services: Services, row: WorldRow): Promise<Worl
   const departures: DepartureStore = db
     ? new PgDepartureStore(db.db, row.id)
     : new InMemoryDepartureStore();
+  const skills: SkillStore = db ? new PgSkillStore(db.db, row.id) : new InMemorySkillStore();
+  const lore: LoreStore = db ? new PgLoreStore(db.db, row.id) : new InMemoryLoreStore();
   const chronicles: ChronicleStore = db
     ? new PgChronicleStore(db.db, row.id)
     : new InMemoryChronicleStore();
@@ -162,6 +172,8 @@ export async function openWorld(services: Services, row: WorldRow): Promise<Worl
     knowledgeLog,
     goals,
     departures,
+    skills,
+    lore,
     track: (w) => services.track(w),
   });
   placeOf = (id) => sim.agents.get(id)?.state.locationId ?? null;
@@ -247,6 +259,8 @@ export async function openWorld(services: Services, row: WorldRow): Promise<Worl
     knowledgeLog,
     goals,
     departures,
+    skills,
+    lore,
     costs,
     restoredFrom: snapshot?.time ?? null,
     status: () => status,

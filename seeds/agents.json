@@ -59,6 +59,13 @@
       "interests": ["ilustración y acuarela", "cuentos infantiles", "pintores (Miró, Sorolla)"],
       "culture": "alto"
     },
+    "skills": {
+      "drawing": 0.8,
+      "storytelling": 0.35,
+      "cooking": 0.3,
+      "repair": 0.15,
+      "languages": 0.1
+    },
     "offstagePeople": [
       {
         "name": "Montse",
@@ -167,6 +174,13 @@
         "la gente del pueblo"
       ],
       "culture": "medio"
+    },
+    "skills": {
+      "hospitality": 0.75,
+      "trade": 0.35,
+      "cooking": 0.4,
+      "repair": 0.2,
+      "languages": 0.15
     },
     "offstagePeople": [
       {
@@ -290,6 +304,14 @@
       "interests": ["poesía", "el huerto", "la vida de sus antiguos alumnos"],
       "culture": "alto"
     },
+    "skills": {
+      "teaching": 0.8,
+      "cooking": 0.55,
+      "gardening": 0.45,
+      "storytelling": 0.4,
+      "repair": 0.15,
+      "languages": 0.1
+    },
     "offstagePeople": [
       {
         "name": "Bartomeu",
@@ -398,6 +420,11 @@
       "interests": ["el pan, las ensaimadas y la repostería", "la radio por las mañanas"],
       "culture": "medio"
     },
+    "skills": {
+      "baking": 0.85,
+      "cooking": 0.5,
+      "repair": 0.25
+    },
     "offstagePeople": [
       {
         "name": "Francisca",
@@ -505,6 +532,13 @@
         "revistas de música"
       ],
       "culture": "medio"
+    },
+    "skills": {
+      "photography": 0.35,
+      "music": 0.2,
+      "baking": 0.15,
+      "cooking": 0.1,
+      "languages": 0.1
     },
     "offstagePeople": [
       {
@@ -631,6 +665,12 @@
       "interests": ["política municipal", "urbanismo y turismo", "las noticias"],
       "culture": "alto"
     },
+    "skills": {
+      "trade": 0.6,
+      "cooking": 0.3,
+      "repair": 0.15,
+      "languages": 0.2
+    },
     "goals": {
       "text": "Ganar las próximas municipales",
       "projects": [
@@ -732,6 +772,12 @@
       "interests": ["la pesca", "el lago Leteo", "las historias del pueblo"],
       "culture": "básico"
     },
+    "skills": {
+      "fishing": 0.9,
+      "storytelling": 0.7,
+      "repair": 0.4,
+      "cooking": 0.4
+    },
     "goals": {
       "text": "Que no se pierdan las historias del lago",
       "projects": [
@@ -829,6 +875,12 @@
         "la cocina mallorquina"
       ],
       "culture": "básico"
+    },
+    "skills": {
+      "gardening": 0.85,
+      "cooking": 0.75,
+      "care": 0.35,
+      "repair": 0.2
     },
     "offstagePeople": [
       {
@@ -938,6 +990,13 @@
       "interests": ["libros y poesía", "la historia del pueblo", "archivos y documentos antiguos"],
       "culture": "alto"
     },
+    "skills": {
+      "storytelling": 0.4,
+      "languages": 0.45,
+      "teaching": 0.25,
+      "cooking": 0.3,
+      "repair": 0.15
+    },
     "goals": {
       "text": "Atreverme a vivir y no solo a leer",
       "projects": [
@@ -1031,6 +1090,14 @@
         "cuentos y libros infantiles"
       ],
       "culture": "alto"
+    },
+    "skills": {
+      "teaching": 0.75,
+      "storytelling": 0.45,
+      "gardening": 0.35,
+      "cooking": 0.3,
+      "repair": 0.15,
+      "languages": 0.2
     },
     "goals": {
       "text": "Que los niños aprendan fuera del aula",
@@ -1146,6 +1213,14 @@
       "places": ["Palma", "Cala Millor", "Ibiza"],
       "interests": ["los rumores del pueblo", "el fútbol", "la noche y la música de los ochenta"],
       "culture": "medio"
+    },
+    "skills": {
+      "hospitality": 0.75,
+      "storytelling": 0.5,
+      "cooking": 0.45,
+      "music": 0.2,
+      "repair": 0.25,
+      "languages": 0.1
     },
     "goals": {
       "text": "Que la taberna sea el corazón del pueblo",
@@ -1270,6 +1345,11 @@
       "interests": ["la tienda y las cuentas", "Leo", "las telenovelas de la tarde"],
       "culture": "medio"
     },
+    "skills": {
+      "trade": 0.7,
+      "cooking": 0.4,
+      "repair": 0.2
+    },
     "offstagePeople": [
       {
         "name": "Toni",
@@ -1389,6 +1469,11 @@
       ],
       "culture": "básico"
     },
+    "skills": {
+      "drawing": 0.2,
+      "fishing": 0.1,
+      "cooking": 0.05
+    },
     "offstagePeople": [
       {
         "name": "Toni",
@@ -1502,6 +1587,12 @@
       "places": ["Palma", "la Serra de Tramuntana", "Cabrera (una salida del GOB)"],
       "interests": ["plantas y huertos", "ecología y el GOB", "los pájaros"],
       "culture": "medio"
+    },
+    "skills": {
+      "gardening": 0.8,
+      "cooking": 0.3,
+      "repair": 0.2,
+      "languages": 0.1
     },
     "goals": {
       "text": "Convertir la casa en venta en un jardín para todos",
@@ -1622,6 +1713,13 @@
       ],
       "culture": "medio"
     },
+    "skills": {
+      "music": 0.8,
+      "storytelling": 0.3,
+      "cooking": 0.25,
+      "repair": 0.15,
+      "languages": 0.1
+    },
     "goals": {
       "text": "Vivir de la música",
       "projects": [
@@ -1725,6 +1823,12 @@
       "places": ["Madrid", "Barcelona", "Lisboa", "Palma"],
       "interests": ["fotografía y revelado", "la historia de su abuela", "el pasado del pueblo"],
       "culture": "alto"
+    },
+    "skills": {
+      "photography": 0.85,
+      "cooking": 0.3,
+      "repair": 0.15,
+      "languages": 0.3
     },
     "offstagePeople": [
       {
@@ -1836,6 +1940,12 @@
       ],
       "culture": "medio"
     },
+    "skills": {
+      "storytelling": 0.3,
+      "care": 0.2,
+      "cooking": 0.3,
+      "repair": 0.2
+    },
     "goals": {
       "text": "Que me tomen en serio",
       "projects": [
@@ -1943,6 +2053,13 @@
         "canciones antiguas"
       ],
       "culture": "básico"
+    },
+    "skills": {
+      "cooking": 0.7,
+      "storytelling": 0.6,
+      "gardening": 0.6,
+      "music": 0.45,
+      "repair": 0.2
     },
     "offstagePeople": [
       {
@@ -2063,6 +2180,13 @@
       ],
       "culture": "medio"
     },
+    "skills": {
+      "trade": 0.55,
+      "care": 0.4,
+      "cooking": 0.35,
+      "repair": 0.1,
+      "languages": 0.1
+    },
     "offstagePeople": [
       {
         "name": "Joana",
@@ -2178,6 +2302,13 @@
       "places": ["Lagos (Nigeria)", "Londres", "Madrid", "Palma"],
       "interests": ["medicina", "su familia", "el fútbol nigeriano", "la música highlife"],
       "culture": "alto"
+    },
+    "skills": {
+      "care": 0.85,
+      "languages": 0.7,
+      "music": 0.25,
+      "cooking": 0.3,
+      "repair": 0.15
     },
     "offstagePeople": [
       {

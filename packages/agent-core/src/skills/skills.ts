@@ -13,7 +13,10 @@ export const SkillDef = z.object({
   id: z.string().min(2).max(30),
   /** Cómo se dice («panadería»). */
   label: z.string(),
-  /** Raíces de palabras de la actividad que la practican («horne», «pan »…), sin tildes. */
+  /**
+   * Raíces de palabras de la actividad que la practican («horne», «pan »…), sin tildes. Lo que es
+   * hacerlo, no consumirlo: «tomar un café» no practica la barra, ni «ir al médico» los cuidados.
+   */
   keywords: z.array(z.string()).default([]),
   /** Tipos de objeto del mapa con los que se practica (shared/objects/machines.ts). */
   objects: z.array(z.string()).default([]),
@@ -29,7 +32,16 @@ export const DEFAULT_SKILLS: SkillDef[] = [
   {
     id: "cooking",
     label: "cocina",
-    keywords: ["cocin", "guis", "tumbet", "sopa", "frit", "comida"],
+    keywords: [
+      "cocin",
+      "guis",
+      "tumbet",
+      "sopa",
+      "frit",
+      "preparar el desayuno",
+      "preparar la comida",
+      "preparar la cena",
+    ],
     objects: ["cocina"],
     places: ["home"],
     result: null,
@@ -45,7 +57,14 @@ export const DEFAULT_SKILLS: SkillDef[] = [
   {
     id: "hospitality",
     label: "café y barra",
-    keywords: ["cafe", "servir", "barra", "camarer", "atender el", "taberna"],
+    keywords: [
+      "servir",
+      "detras de la barra",
+      "camarer",
+      "atender el cafe",
+      "atender la taberna",
+      "atender el bar",
+    ],
     objects: ["cafetera"],
     places: ["cafe", "bar"],
     result: null,
@@ -53,7 +72,16 @@ export const DEFAULT_SKILLS: SkillDef[] = [
   {
     id: "gardening",
     label: "huerto",
-    keywords: ["huert", "regar", "bancal", "plant", "sembr", "cosech", "jardin", "girasol"],
+    keywords: [
+      "huert",
+      "regar",
+      "bancal",
+      "plant",
+      "sembr",
+      "cosech",
+      "girasol",
+      "cuidar el jardin",
+    ],
     objects: ["bancal"],
     places: ["huerto"],
     result: { kind: "verdura", name: "un cesto de verduras" },
@@ -61,7 +89,7 @@ export const DEFAULT_SKILLS: SkillDef[] = [
   {
     id: "fishing",
     label: "pesca",
-    keywords: ["pesc", "caña", "anzuel"],
+    keywords: ["pescar", "pescando", "de pesca", "la caña", "anzuel"],
     objects: [],
     places: ["lago"],
     result: null,
@@ -109,7 +137,16 @@ export const DEFAULT_SKILLS: SkillDef[] = [
   {
     id: "care",
     label: "cuidados y primeros auxilios",
-    keywords: ["curar", "curando", "consulta", "paciente", "cuidar", "medic", "enferm"],
+    keywords: [
+      "curar",
+      "curando",
+      "pasar consulta",
+      "pacientes",
+      "cuidar a",
+      "cuidar de",
+      "vendar",
+      "primeros auxilios",
+    ],
     objects: ["botiquin"],
     places: ["consultorio"],
     result: null,
@@ -117,7 +154,16 @@ export const DEFAULT_SKILLS: SkillDef[] = [
   {
     id: "trade",
     label: "vender y negociar",
-    keywords: ["vend", "tienda", "mercad", "cobrar", "negoci", "puesto", "cliente"],
+    keywords: [
+      "vend",
+      "cobrar",
+      "negoci",
+      "atender la tienda",
+      "atender el ultramarinos",
+      "atender el puesto",
+      "reponer",
+      "clientes",
+    ],
     objects: [],
     places: ["tienda", "mercado"],
     result: null,
@@ -125,7 +171,7 @@ export const DEFAULT_SKILLS: SkillDef[] = [
   {
     id: "storytelling",
     label: "contar historias",
-    keywords: ["historia", "cuento", "leyenda", "relat", "contando"],
+    keywords: ["contar historias", "contando historias", "contar un cuento", "leyenda", "relat"],
     objects: [],
     places: ["plaza", "taberna"],
     result: null,

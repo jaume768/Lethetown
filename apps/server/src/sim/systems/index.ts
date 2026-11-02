@@ -14,6 +14,7 @@ import "./world";
 import "./knowledge";
 import "./goals";
 import "./intentions";
+import "./skills";
 
 export * from "./registry";
 export * from "./types";

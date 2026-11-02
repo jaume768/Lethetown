@@ -1,4 +1,6 @@
 /** Habilidades (lógica pura): práctica, maestro, olvido, éxito, calidad y qué se practica. */
+import { readFileSync } from "node:fs";
+import { AgentSeed } from "@lethetown/shared";
 import { describe, expect, it } from "vitest";
 import {
   SkillsConfig,
@@ -103,6 +105,56 @@ describe("qué se practica", () => {
     expect(of("dar clase")).toBe("teaching");
     expect(of("ir a clase")).toBeNull();
     expect(of("comprarse un pantalón")).toBeNull();
+    // Consumir no es practicar.
+    expect(of("tomar un café en la terraza")).toBeNull();
+    expect(of("ir a la tienda a comprar")).toBeNull();
+    expect(of("ir al médico")).toBeNull();
+    expect(of("comprar pescado en el mercado")).toBeNull();
+    expect(of("pasear por el Jardín del Recuerdo")).toBeNull();
+    expect(of("leer un libro de historia")).toBeNull();
+    expect(of("atender el café")).toBe("hospitality");
+    expect(of("atender la tienda")).toBe("trade");
     expect(of("durmiendo")).toBeNull();
+  });
+});
+
+describe("habilidades de partida (semillas revisadas a mano)", () => {
+  const seeds = AgentSeed.array().parse(
+    JSON.parse(readFileSync(new URL("../../../../seeds/agents.json", import.meta.url), "utf8")),
+  );
+  const ids = new Set(cfg.catalog.map((s) => s.id));
+  /** El oficio de cada uno, en su mejor habilidad. */
+  const TRADE: Record<string, string> = {
+    julian: "baking",
+    mateo: "hospitality",
+    rafael: "hospitality",
+    tomas: "fishing",
+    valentina: "photography",
+    lucia: "drawing",
+    hugo: "music",
+    sofia: "teaching",
+    carmen: "teaching",
+    samuel: "care",
+    nuria: "gardening",
+    pilar: "gardening",
+    marta: "trade",
+    clara: "trade",
+  };
+
+  it("todas del catálogo, entre 0 y 1, y cada oficio es su mejor habilidad", () => {
+    for (const s of seeds) {
+      expect(Object.keys(s.skills).length, s.id).toBeGreaterThan(0);
+      for (const id of Object.keys(s.skills)) expect(ids.has(id), `${s.id}: ${id}`).toBe(true);
+      const best = Object.entries(s.skills).sort((a, b) => b[1] - a[1])[0]![0];
+      if (TRADE[s.id]) expect(best, s.id).toBe(TRADE[s.id]);
+    }
+  });
+
+  it("los menores no son expertos en nada; los mayores saben cocinar", () => {
+    for (const s of seeds) {
+      if (s.age < 18)
+        for (const v of Object.values(s.skills)) expect(v, s.id).toBeLessThanOrEqual(0.4);
+      if (s.age > 60) expect(s.skills.cooking ?? 0, s.id).toBeGreaterThanOrEqual(0.4);
+    }
   });
 });

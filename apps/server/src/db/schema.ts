@@ -492,3 +492,63 @@ export const departures = pgTable(
   },
   (t) => [primaryKey({ columns: [t.worldId, t.agentId] })],
 );
+
+/** Habilidades de cada agente (sistema `skills`): nivel, práctica, de quién aprendió e historial. */
+export const skills = pgTable(
+  "skills",
+  {
+    worldId: worldId(),
+    agentId: text("agent_id").notNull(),
+    /** Id del catálogo ("baking"). */
+    skill: text("skill").notNull(),
+    level: real("level").notNull(),
+    peak: real("peak").notNull(),
+    practiceMinutes: doublePrecision("practice_minutes").notNull().default(0),
+    lastUsedAt: doublePrecision("last_used_at"),
+    learnedFrom: text("learned_from"),
+    /** Cambios con su motivo (SkillHistoryEntry[], acotado). */
+    history: jsonb("history").notNull().default([]),
+    updatedAt: doublePrecision("updated_at").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.worldId, t.agentId, t.skill] })],
+);
+
+/** Saberes del pueblo (sistema `lore`): recetas, técnicas, sitios, historias y canciones. */
+export const lore = pgTable(
+  "lore",
+  {
+    worldId: worldId(),
+    /** Id corto dentro del mundo ("l3"). */
+    id: text("id").notNull(),
+    /** recipe | technique | place | story | song. */
+    kind: text("kind").notNull(),
+    title: text("title").notNull(),
+    skill: text("skill"),
+    placeId: text("place_id"),
+    /** La versión original (LoreElement[]). */
+    elements: jsonb("elements").notNull(),
+    /** LoreOrigin: un vecino o una persona que existe. */
+    origin: jsonb("origin").notNull(),
+    createdAt: doublePrecision("created_at").notNull(),
+    lostAt: doublePrecision("lost_at"),
+  },
+  (t) => [primaryKey({ columns: [t.worldId, t.id] })],
+);
+
+/** Quién sabe cada saber y cómo (su versión, con su fidelidad). */
+export const loreHolders = pgTable(
+  "lore_holders",
+  {
+    worldId: worldId(),
+    loreId: text("lore_id").notNull(),
+    agentId: text("agent_id").notNull(),
+    fidelity: real("fidelity").notNull(),
+    /** HeldElement[]: lo que conserva. */
+    elements: jsonb("elements").notNull(),
+    learnedFrom: text("learned_from"),
+    learnedAt: doublePrecision("learned_at").notNull(),
+    lastUsedAt: doublePrecision("last_used_at"),
+    forgottenAt: doublePrecision("forgotten_at"),
+  },
+  (t) => [primaryKey({ columns: [t.worldId, t.loreId, t.agentId] })],
+);

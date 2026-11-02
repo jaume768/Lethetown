@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { SeedLore } from "./lore";
 import { TilePoint } from "./world";
 import { SeedItem } from "./items";
 import { SeedGoal } from "./goals";
@@ -170,6 +171,10 @@ export const AgentSeed = z.object({
   items: z.array(SeedItem).default([]),
   /** Lo que sabe por su vida: estudios, oficio, idiomas, viajes, intereses. */
   knowledge: KnowledgeProfile.optional(),
+  /** Lo que sabe hacer al empezar (habilidad del catálogo → nivel 0..1; ver sistema `skills`). */
+  skills: z.record(z.string(), z.number().min(0).max(1)).default({}),
+  /** Saberes que conoce al empezar (recetas, técnicas, sitios, historias; sistema `lore`). */
+  lore: z.array(SeedLore).max(4).default([]),
   /** Gente de fuera del pueblo que conoce (la única, además de los vecinos, que puede nombrar). */
   offstagePeople: z.array(OffstagePerson).default([]),
   /** Meta vital y proyectos con los que empieza (medibles; ver el sistema `goals`). */

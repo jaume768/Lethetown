@@ -272,6 +272,9 @@ const es = {
   "memory.audit.intention_expired": "dejó caducar",
   "memory.audit.intention_merged": "juntó con otra igual",
   "memory.audit.intention_dropped": "dejó de lado",
+  "memory.audit.skill": "cambió en una habilidad:",
+  "memory.audit.lore": "cambió en un saber:",
+  "memory.audit.personality": "cambió un poco su forma de ser:",
   "memory.falseMemory": "falso recuerdo",
 
   "events.live": "En vivo",

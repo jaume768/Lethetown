@@ -124,6 +124,12 @@ export const MemoryAuditAction = z.enum([
   "intention_merged",
   /** Demasiadas intenciones abiertas: se descartó la menos importante. */
   "intention_dropped",
+  /** Una habilidad cambia de nivel (práctica, enseñanza u olvido; sistema `skills`). */
+  "skill",
+  /** Un saber se aprende, se deforma, se refuerza o se olvida (sistema `lore`). */
+  "lore",
+  /** La personalidad cambia un poco con la experiencia (sistema `personality`). */
+  "personality",
 ]);
 export type MemoryAuditAction = z.infer<typeof MemoryAuditAction>;
 
