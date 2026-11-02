@@ -55,8 +55,9 @@ adelante, economía, metas u oficios son módulos (`SimSystem`) que se registran
 | `places`     | explore                               | —                            | (lugares descubiertos, en agent-core) | `known_places`             |
 | `agreements` | — (los tipos los aportan los demás)   | —                            | —                                     | `memory_audit` (descartes) |
 | `world`      | —                                     | —                            | biblia (fijo); fecha (plan)           | —                          |
-| `knowledge`  | —                                     | —                            | (perfil en agent-core)                | `knowledge_log`            |
+| `knowledge`  | —                                     | —                            | (perfil y gente de fuera, agent-core) | `knowledge_log`            |
 | `goals`      | —                                     | medir, visitas; fichas (1 h) | METAS (plan); TU PROYECTO; noche      | `goals`, `departures`      |
+| `intentions` | —                                     | —                            | — (solo métricas, de la auditoría)    | (`memory_audit`)           |
 
 ## Cómo añadir un sistema
 

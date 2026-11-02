@@ -30,3 +30,11 @@ psicológica en los prompts si se puede calcular en código.
   pista _aparece_ (nace activa); probabilidad 0.7 × claridad ÷ olvido de intenciones; tras 2
   fallos se olvida y puede caer en la cuenta después. Se detectan en la ficha social de fin de
   charla y en la decisión (sin llamadas nuevas).
+- **Sin inflación de intenciones** (partida 2: 199 al día, 46 % cumplidas): cada una lleva
+  importancia (la que da quien la crea: citas 8, préstamos 7; si no, con hora 7, con persona o
+  lugar 6, sin pista 4). Con `prospective.maxOpen` (8) abiertas, sale la menos importante (o no
+  entra la nueva si es la menos importante): `intention_dropped`. Una parecida a otra (misma
+  persona o lugar y la mitad de las palabras en común, sobre el texto más largo) no se apunta:
+  refuerza la que había (`intention_merged`). Las de importancia ≤ 4 caducan solas a los 2 días
+  sin que aparezca su pista (`lowExpireDays`). El sistema `intentions` las cuenta para
+  «Evolución».

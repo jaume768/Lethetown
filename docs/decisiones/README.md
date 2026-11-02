@@ -20,3 +20,4 @@ márcala como sustituida) en el mismo commit.
 | Sistemas de la simulación (`SimSystem`)                       | [sistemas.md](sistemas.md)     |
 | Métricas de evolución y análisis de partidas                  | [evolucion.md](evolucion.md)   |
 | Metas (ambición), marcharse del pueblo                        | [metas.md](metas.md)           |
+| Personas: ni vecinos ni conocidos inventados                  | [personas.md](personas.md)     |

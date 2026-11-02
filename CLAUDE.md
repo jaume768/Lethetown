@@ -38,7 +38,14 @@ TypeScript estricto. El porqué de cada decisión está en [docs/decisiones/](do
   amplía la lista de anacronismos en la biblia. Ver [mundo](docs/decisiones/mundo.md).
 - **Metas** (sistema `goals`): el LLM propone y redacta, el motor mide con el catálogo de
   criterios (`GoalCriterion`); nunca progreso puesto por el modelo. Una meta que no se puede medir
-  no se crea. Psicología en agent-core (`GoalsConfig`), auditada. Ver [metas](docs/decisiones/metas.md).
+  no se crea; lo que propone se coloca (`placeProposal`: un paso sin proyecto, donde encaje, o
+  como proyecto). Lo cualitativo, `confirmed`: el motor la deja candidata y la consolidación
+  solo confirma lo que el motor le presenta. Psicología en agent-core (`GoalsConfig`), auditada.
+  Ver [metas](docs/decisiones/metas.md).
+- **Personas** (`PersonGuard`, reescritor de `MinorGuard`): solo existen los vecinos, su gente de
+  fuera (`offstagePeople` en la semilla, o lo que les contaron) y los personajes públicos de la
+  biblia; nada de nombres inventados en semillas, mock ni prompts. Lo que guarde texto del LLM,
+  con `guard.rewrite` (síncrono) y luego `allows`, o `vet`. Ver [personas](docs/decisiones/personas.md).
 - **Sistemas** (`SimSystem`, `sim/systems/`): todo lo nuevo del mundo (economía, oficios…)
   es un sistema registrado, con su estado (`ctx.state`), su parte de la instantánea con su
   versión, su revisión, sus secciones del prompt (decidir y plan), su parte de la consolidación
@@ -53,6 +60,9 @@ TypeScript estricto. El porqué de cada decisión está en [docs/decisiones/](do
   `social` (sin llamadas nuevas) y pasa por el MISMO manejador de la acción formal
   (`applyAgreements`); si no vale, a la auditoría con el motivo, no como «No pude…». Una acción
   que se pueda acordar hablando añade su `AgreementKind` al sistema.
+- **Intenciones**: por `agent.intend` (importancia, tope con la menos importante fuera,
+  fusión de parecidas y caducidad de las poco importantes, todo auditado); un compromiso con
+  hora o persona, con su `importance`.
 - **Ritmo y habla**: quien recibe una frase piensa al minuto (`ctx.wake`, un solo tick pendiente
   por agente); lo que se oye en una charla en curso se valora por reglas (`rateHeard`); lo que se
   dice se recorta en código (`clipText`); tareas urgentes en `URGENT_TASKS` de la cola LLM. Ver
@@ -86,6 +96,7 @@ TypeScript estricto. El porqué de cada decisión está en [docs/decisiones/](do
   `pnpm goals:derive` · `pnpm map:generate` ·
   `pnpm assets:check` · `pnpm portraits:compose` · `pnpm user:create <usuario> [rol]`.
 - Postgres de docker-compose en el puerto **5433**. Retención de datos: `config/retention.json`.
+- Partidas de estudio largas: `.env.study.example` (capa sobre `.env`; la Batch API solo a ≤ x10).
 
 ## Estilo
 
