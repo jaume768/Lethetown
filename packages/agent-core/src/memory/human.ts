@@ -17,7 +17,7 @@ import { MAX_TOKENS } from "../llm/limits";
 import type { LLMClient } from "../llm/client";
 import type { Rng } from "../util/random";
 import type { MemoryConfig } from "./config";
-import { currentStrength } from "./decay";
+import { capStability, currentStrength } from "./decay";
 import type { MemorySystem } from "./memory-system";
 import { IntentionInput } from "./prospective";
 import {
@@ -572,14 +572,17 @@ Formato:
           id: m.id,
           patch: {
             strength: Math.min(1, m.strength * this.cfg.reinforceFactor),
-            stability: m.stability * this.cfg.reinforceFactor,
+            stability: capStability(
+              m.stability * this.cfg.reinforceFactor,
+              this.memory.config.decay,
+            ),
           },
         })),
         ...emotional.map((m) => ({
           id: m.id,
           patch: {
             strength: Math.min(1, m.strength * emotionalGain(m)),
-            stability: m.stability * emotionalGain(m),
+            stability: capStability(m.stability * emotionalGain(m), this.memory.config.decay),
           },
         })),
         ...weakened.map((m) => ({

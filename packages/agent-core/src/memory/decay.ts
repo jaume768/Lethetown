@@ -11,6 +11,11 @@ export interface DecayConfig {
   recallStrengthGain: number;
   /** Factor de crecimiento de la estabilidad al recordar (antes del bonus por dificultad). */
   recallStabilityGrowth: number;
+  /**
+   * Tope de la estabilidad (horas de juego). Sin él, lo que se evoca en cada decisión (las
+   * metas) crecía ×1,8 por evocación hasta salirse del `real` de Postgres en 3 días de juego.
+   */
+  maxStabilityHours: number;
 }
 
 export const DEFAULT_DECAY: DecayConfig = {
@@ -19,7 +24,13 @@ export const DEFAULT_DECAY: DecayConfig = {
   emotionBoost: 1.5,
   recallStrengthGain: 0.6,
   recallStabilityGrowth: 1.8,
+  maxStabilityHours: 87_600,
 };
+
+/** La estabilidad, como mucho `maxStabilityHours` (10 años de juego por defecto). */
+export function capStability(stability: number, config: DecayConfig = DEFAULT_DECAY): number {
+  return Math.min(stability, config.maxStabilityHours);
+}
 
 const MINUTES_PER_HOUR = 60;
 
@@ -58,7 +69,10 @@ export function reinforce(
   const difficultyBonus = 1 + (1 - s);
   return {
     strength: Math.min(1, s + (1 - s) * config.recallStrengthGain),
-    stability: memory.stability * config.recallStabilityGrowth * difficultyBonus,
+    stability: capStability(
+      memory.stability * config.recallStabilityGrowth * difficultyBonus,
+      config,
+    ),
     lastAccessedAt: now,
     accessCount: memory.accessCount + 1,
   };

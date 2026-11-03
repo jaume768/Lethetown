@@ -59,6 +59,8 @@ export const MemoryConfig = z.object({
       recallStrengthGain: z.number().min(0).max(1).default(0.6),
       /** Crecimiento de la estabilidad al recordar (antes del bonus por dificultad). */
       recallStabilityGrowth: z.number().min(1).default(1.8),
+      /** Tope de la estabilidad, en horas de juego (por defecto, 10 años). */
+      maxStabilityHours: z.number().positive().default(87_600),
     })
     .default({
       baseStabilityHours: 12,
@@ -66,6 +68,7 @@ export const MemoryConfig = z.object({
       emotionBoost: 1.5,
       recallStrengthGain: 0.6,
       recallStabilityGrowth: 1.8,
+      maxStabilityHours: 87_600,
     }),
   /** Elementos de la memoria de trabajo (lo único que entra en el prompt). */
   workingMemoryCapacity: z.number().int().positive().default(7),
