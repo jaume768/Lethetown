@@ -7,7 +7,10 @@
  *
  * Uso (con `pnpm dev` en marcha):
  *   RECORD_USER=… RECORD_PASSWORD=… pnpm --filter @lethetown/server record <carpeta> \
- *     [--hours 48] [--every 10] [--api http://localhost:3001] [--origin http://localhost:5173]
+ *     [--hours 48] [--until <minuto>] [--every 10] [--api http://localhost:3001] \
+ *     [--origin http://localhost:5173]
+ * `--until`: minuto de juego absoluto en que termina (para reanudar una grabación cortada sin
+ * volver a contar `--hours` desde el principio).
  * Ficheros: messages.jsonl (todo menos los deltas), states.jsonl (fotos), meta.json.
  * Lo que guarda la BD (recuerdos, auditoría, fichas sociales, llm_calls…) lo exporta
  * `pnpm --filter @lethetown/server world:export <carpeta>`.
@@ -29,6 +32,7 @@ const outDir = resolve(
   args.find((a, i) => !a.startsWith("--") && !args[i - 1]?.startsWith("--")) ?? "recording",
 );
 const hours = Number(flag("hours", "48"));
+const until = flag("until", "");
 const every = Number(flag("every", "10"));
 const api = flag("api", "http://localhost:3001");
 const origin = flag("origin", "http://localhost:5173");
@@ -135,7 +139,9 @@ connect();
 
 await new Promise<void>((resolveDone) => {
   const timer = setInterval(() => {
-    if (startTime === null || lastTime < startTime + hours * 60) return;
+    if (startTime === null) return;
+    const end = until ? Number(until) : startTime + hours * 60;
+    if (lastTime < end) return;
     clearInterval(timer);
     resolveDone();
   }, 2000);
@@ -146,7 +152,15 @@ await pause(cookie);
 writeFileSync(
   join(outDir, "meta.json"),
   JSON.stringify(
-    { startedAt, endedAt: new Date().toISOString(), startTime, endTime: lastTime, hours, every },
+    {
+      startedAt,
+      endedAt: new Date().toISOString(),
+      startTime,
+      endTime: lastTime,
+      hours,
+      until: until ? Number(until) : null,
+      every,
+    },
     null,
     2,
   ),

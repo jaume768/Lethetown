@@ -4,7 +4,9 @@ import { LLMRefusalError } from "./types";
 
 /**
  * Modelos que aceptan el fallback del lado servidor (`fallbacks: "default"`), que reenvía
- * la petición a otro modelo si la rechaza un clasificador. Haiku 5.5 no lo admite.
+ * la petición a otro modelo si la rechaza un clasificador. Haiku 5.5 no lo admite, y los
+ * lotes tampoco (la API responde 400 «The `fallbacks` parameter is not supported for batch
+ * requests»): en un lote va sin él y, si se rechaza, se repite por la vía normal, que sí lo lleva.
  */
 const SERVER_FALLBACK_MODELS = new Set([
   "claude-sonnet-5-5",
@@ -32,9 +34,9 @@ export class AnthropicProvider implements BatchCapableProvider {
       new Anthropic({ maxRetries: 0, ...(options.apiKey ? { apiKey: options.apiKey } : {}) });
   }
 
-  /** Cuerpo de la petición, igual para la llamada directa y para un lote. */
-  private params(req: CompletionRequest) {
-    const useFallback = SERVER_FALLBACK_MODELS.has(req.model);
+  /** Cuerpo de la petición, igual para la llamada directa y para un lote (sin el fallback). */
+  private params(req: CompletionRequest, batch = false) {
+    const useFallback = !batch && SERVER_FALLBACK_MODELS.has(req.model);
     return {
       model: req.model,
       max_tokens: req.maxTokens,
@@ -77,10 +79,8 @@ export class AnthropicProvider implements BatchCapableProvider {
     reqs: CompletionRequest[],
     opts: { pollMs: number; signal: AbortSignal },
   ): Promise<(CompletionResult | Error)[]> {
-    const betas = [...new Set(reqs.flatMap((r) => this.betas(r)))];
     const batch = await this.client.beta.messages.batches.create({
-      requests: reqs.map((r, i) => ({ custom_id: `r${i}`, params: this.params(r) })),
-      ...(betas.length ? { betas } : {}),
+      requests: reqs.map((r, i) => ({ custom_id: `r${i}`, params: this.params(r, true) })),
     });
     try {
       for (;;) {

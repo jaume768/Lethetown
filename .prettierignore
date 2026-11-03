@@ -2,3 +2,5 @@ pnpm-lock.yaml
 apps/server/drizzle/
 dist/
 .cache/
+# Registro que escribe la vigilancia de una partida (línea a línea)
+estudio/**/vigilancia.md

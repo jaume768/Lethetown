@@ -17,6 +17,9 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 OUT="$ROOT/estudio/semana-fase3"
 HOURS="${HOURS:-168}"
+# Minuto de juego en que acaba la grabación: el inicio (día 0, 06:50) más HOURS. Así, si hay que
+# relanzar `record`, termina donde debía.
+UNTIL="${UNTIL:-$((410 + HOURS * 60))}"
 SEEDS=(s7 s13)
 cd "$ROOT"
 
@@ -93,11 +96,11 @@ record() {
       continue
     fi
     RECORD_USER=grabador RECORD_PASSWORD="$(cat "$dir/.record-pass")" \
-      setsid pnpm -s --filter @lethetown/server record "$dir" --hours "$HOURS" \
+      setsid pnpm -s --filter @lethetown/server record "$dir" --hours "$HOURS" --until "$UNTIL" \
       --api "http://localhost:$(port_of "$seed")" --origin "$(origin_of "$seed")" \
       >>"$dir/record.log" 2>&1 </dev/null &
     echo $! >"$dir/record.pid"
-    echo "$seed: grabando $HOURS h de juego (pid $!), log en $dir/record.log."
+    echo "$seed: grabando hasta el minuto de juego $UNTIL ($HOURS h desde el día 0; pid $!), log en $dir/record.log."
   done
 }
 
