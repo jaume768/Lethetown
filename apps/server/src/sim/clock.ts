@@ -24,6 +24,8 @@ export class GameClock {
   private _speed: SimSpeed;
   /** Tope de ritmo (minutos de juego por minuto real), p. ej. x10 durante una conversación. */
   private _cap: number | null = null;
+  /** Ritmo de la noche rápida (SIM_NIGHT_SPEED): sustituye a la velocidad elegida mientras dure. */
+  private _boost: number | null = null;
 
   constructor(
     startTime: number,
@@ -40,9 +42,18 @@ export class GameClock {
     return this._speed;
   }
 
-  /** Ritmo real: la velocidad elegida, limitada por el tope si lo hay. */
+  /** Ritmo de la noche rápida, si está puesta. */
+  get boost(): number | null {
+    return this._boost;
+  }
+
+  /**
+   * Ritmo real: la velocidad elegida (o la de la noche rápida), limitada por el tope si lo hay.
+   * En pausa (velocidad 0) no corre aunque haya noche rápida.
+   */
   get rate(): number {
-    return this._cap === null ? this._speed : Math.min(this._speed, this._cap);
+    const base = this._speed === 0 || this._boost === null ? this._speed : this._boost;
+    return this._cap === null ? base : Math.min(base, this._cap);
   }
 
   /** Tiempo de juego actual (minutos), interpolado entre eventos. */
@@ -62,6 +73,14 @@ export class GameClock {
     if (cap === this._cap) return;
     this.reanchor();
     this._cap = cap;
+    this.arm();
+  }
+
+  /** Pone (o quita, con null) la noche rápida sin cambiar la velocidad elegida. */
+  setBoost(boost: number | null): void {
+    if (boost === this._boost) return;
+    this.reanchor();
+    this._boost = boost;
     this.arm();
   }
 

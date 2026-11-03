@@ -341,6 +341,9 @@ const en: Record<MessageKey, string> = {
   "director.weather.heat": "🥵 heat",
   "header.weather": "Weather in town",
   "header.slowed": "(now x{rate}: conversations going on)",
+  "header.night": "(now x{rate}: everyone is asleep)",
+  "header.night.title":
+    "With the whole town asleep and nothing pending, the night goes by faster (SIM_NIGHT_SPEED).",
   "header.slowed.title":
     "While people are talking the clock runs at x10 so you can follow along (SIM_SLOWDOWN_IN_CONVERSATION).",
   "director.objects": "Objects",

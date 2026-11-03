@@ -50,6 +50,13 @@ const Env = z.object({
   SIM_SPEED: z.coerce.number().default(10),
   /** Por encima de x10, el reloj va a x10 mientras haya alguna conversación en el mundo. */
   SIM_SLOWDOWN_IN_CONVERSATION: z.enum(["on", "off"]).default("on"),
+  /**
+   * Noche rápida: con todos durmiendo y nada pendiente del LLM, el reloj va a este ritmo
+   * (minutos de juego por minuto real; 0 = desactivada). Ver sim/night-speed.ts.
+   */
+  SIM_NIGHT_SPEED: z.coerce.number().nonnegative().default(0),
+  /** Minutos de juego antes de la hora de despertar en que la noche rápida vuelve a SIM_SPEED. */
+  SIM_WAKE_MARGIN_MINUTES: z.coerce.number().nonnegative().default(30),
   /** Velocidad de paseo de los agentes, en baldosas por minuto de juego. */
   /** Semilla del azar de la memoria (reconsolidación, rumores...). Vacía = aleatoria. */
   SIM_SEED: z.preprocess(emptyToUndefined, z.coerce.number().int().optional()),

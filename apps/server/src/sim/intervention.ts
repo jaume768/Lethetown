@@ -89,6 +89,11 @@ export function setWeather(ctx: SimContext, weather: Weather): void {
 }
 
 /** Avisa de que el mundo se pausó o se reanudó (presupuesto, kill switch, manual...). */
+/** Cambio de ritmo del reloj (noche rápida): un aviso del sistema en la línea de tiempo. */
+export function notifyClock(ctx: SimContext, text: string): void {
+  ctx.emit("system", null, text);
+}
+
 export function notifyStatus(ctx: SimContext, status: WorldRunStatus): void {
   const text =
     status.state === "running"

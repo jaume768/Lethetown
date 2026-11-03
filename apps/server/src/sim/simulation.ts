@@ -33,6 +33,7 @@ import { startDemo } from "./demo";
 import * as intervention from "./intervention";
 import { WEATHER_NOW } from "./intervention";
 import { consolidate, maintain, scheduleChronicle, writeChronicle } from "./memory-routines";
+import { everyoneAsleep } from "./night";
 import { availableActions, failAction, runAction } from "./actions";
 import { gatherPerceptions, presentWith } from "./perception";
 import { mayEnter } from "./norms";
@@ -279,6 +280,11 @@ export class Simulation {
     this.restored = true;
   }
 
+  /** ¿Duerme todo el pueblo y ha empezado su consolidación? (noche rápida, ver night.ts). */
+  everyoneAsleep(): boolean {
+    return everyoneAsleep(this.ctx, this.clock.now());
+  }
+
   /** Conversaciones abiertas ahora mismo. */
   conversationCount(): number {
     return this.ctx.conversations.size;
@@ -309,6 +315,11 @@ export class Simulation {
 
   notifyStatus(status: WorldRunStatus): void {
     intervention.notifyStatus(this.ctx, status);
+  }
+
+  /** Aviso del reloj en la línea de tiempo (p. ej. empieza o acaba la noche rápida). */
+  notifyClock(text: string): void {
+    intervention.notifyClock(this.ctx, text);
   }
 
   /** Publica un drama (rumor, discusión…) a los clientes. */

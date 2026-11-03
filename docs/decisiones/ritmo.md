@@ -45,6 +45,26 @@ disparar el número de llamadas.
   cambia (la interfaz la sigue mostrando como elegida); el ritmo real va en `ClockState.rate` y
   la cabecera lo indica. «Mundo visible» es el que corre en ese proceso: sin espectadores ya
   manda `NO_VIEWERS_MODE`.
+- **Noche rápida** (`SIM_NIGHT_SPEED`, 0 = desactivada; en las partidas de estudio, 360). Cuando
+  todo el pueblo duerme (en su cama y con la consolidación de la noche empezada), no hay ninguna
+  conversación, ya pasó la crónica de las 23:00 y no queda ninguna llamada al LLM en curso
+  (también las que esperan en un lote), tras 15 min de juego así el reloj pasa a ese ritmo
+  (`GameClock.setBoost`, `sim/night-speed.ts`). Vuelve a `SIM_SPEED` `SIM_WAKE_MARGIN_MINUTES`
+  (30) antes de las 07:00 (un evento programado: a x360 no se pasa), en cuanto alguien está
+  despierto o habla, o si empieza una llamada que no sea el mantenimiento horario de la memoria
+  (`BACKGROUND_TASKS`: esencias, resúmenes, confabulación; si frenara, la noche se cortaría cada
+  hora). Los 15 min de calma evitan que oscile: en el mock, una subida y una bajada por noche.
+  Cada cambio va a la línea de tiempo (⏩ / ▶, con el motivo) y la cabecera lo muestra.
+  - La velocidad elegida no cambia, solo el ritmo (`ClockState.rate`, ahora también por
+    encima): la instantánea guarda la elegida y la regla de la Batch API (`LLM_BATCH_MAX_SPEED`)
+    mira la elegida. Mientras se consolida el mundo va a x10, así que la consolidación y la
+    crónica pueden ir en lote; un mundo en noche rápida no tiene nada pendiente que frenar.
+  - Efecto en el tiempo real (x10 de día): la noche de 22:00 a 07:00 son 54 min reales a x10. Con
+    la noche rápida, lo que tarde la consolidación (si va en lote, lo que tarde el lote: unos
+    minutos, como mucho `LLM_BATCH_MAX_WAIT_MINUTES`) más la crónica y 15 min de juego de calma
+    (90 s), y el resto a x360 (unos 70 s). Un día de juego pasa de 2,4 h reales a unas 1,7–2 h
+    (≈ 1,6 h de día más la noche); con un lote lento, cada minuto de espera es un minuto real
+    más.
 - **Sin límites de gasto** en el servidor (ver [producción](produccion.md)).
 - **Tope de turnos según el interés** (`conversationEnd`, agent-core). El tope fijo de 12 cortó
   16 de 204 charlas en la partida real, alguna en pleno interés. Ahora 12 (más 4 por persona

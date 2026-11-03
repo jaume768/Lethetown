@@ -26,10 +26,16 @@ export function Header(p: Props) {
       <span className="clock" aria-live="off">
         {formatGameTime(p.clock.time)}
         {p.clock.speed !== 1 && <span className="muted small"> · x{p.clock.speed}</span>}
-        {p.clock.rate !== undefined && (
+        {p.clock.rate !== undefined && p.clock.rate < p.clock.speed && (
           <span className="muted small" title={t("header.slowed.title")}>
             {" "}
             {t("header.slowed", { rate: p.clock.rate })}
+          </span>
+        )}
+        {p.clock.rate !== undefined && p.clock.rate > p.clock.speed && (
+          <span className="muted small" title={t("header.night.title")}>
+            {" "}
+            {t("header.night", { rate: p.clock.rate })}
           </span>
         )}
       </span>

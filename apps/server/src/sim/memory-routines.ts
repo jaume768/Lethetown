@@ -6,7 +6,8 @@ import { systemConsolidation } from "./systems/registry";
 /** Memoria humana en la simulación: mantenimiento, consolidación nocturna y crónica diaria. */
 
 const MAINTENANCE_EVERY = 60;
-const CHRONICLE_MINUTE = 23 * 60;
+/** Hora de la crónica diaria (minuto del día). */
+export const CHRONICLE_MINUTE = 23 * 60;
 /** Líneas del día que ve el cronista. */
 const CHRONICLE_LINES = 120;
 
@@ -46,9 +47,12 @@ export async function maintain(ctx: SimContext, agent: Agent, now: number): Prom
   }
 }
 
+/** Noche a la que pertenece un instante (la del día d va de las 07:00 del d a las 07:00 del d+1). */
+export const nightOf = (now: number): number => Math.floor((now - 7 * 60) / 1440);
+
 export async function consolidate(ctx: SimContext, agent: Agent, now: number): Promise<void> {
   const rt = ctx.rt(agent.id);
-  const night = Math.floor((now - 7 * 60) / 1440);
+  const night = nightOf(now);
   if (!ctx.deps.consolidator || rt.consolidatedNight === night) return;
   rt.consolidatedNight = night;
   try {

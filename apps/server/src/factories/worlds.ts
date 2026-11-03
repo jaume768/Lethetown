@@ -29,6 +29,7 @@ import {
 } from "../db/stores";
 import { type WorldRow } from "../db/worlds";
 import { GameClock } from "../sim/clock";
+import { NightSpeed } from "../sim/night-speed";
 import { DramaDetector } from "../sim/dramas";
 import { Simulation } from "../sim/simulation";
 import { parseSnapshot } from "../sim/snapshot";
@@ -197,6 +198,20 @@ export async function openWorld(services: Services, row: WorldRow): Promise<Worl
   // Con conversaciones abiertas, el reloj no pasa de x10 (se pueden seguir; ver ritmo.md).
   if (config.SIM_SLOWDOWN_IN_CONVERSATION === "on") {
     sim.onEvent(() => clock.setCap(sim.conversationCount() > 0 ? CONVERSATION_SPEED : null));
+  }
+  // Noche rápida (SIM_NIGHT_SPEED): con todos dormidos y nada pendiente del LLM.
+  const night = new NightSpeed({
+    clock,
+    nightSpeed: config.SIM_NIGHT_SPEED,
+    wakeMarginMinutes: config.SIM_WAKE_MARGIN_MINUTES,
+    everyoneAsleep: () => sim.everyoneAsleep(),
+    conversations: () => sim.conversationCount(),
+    notify: (text) => sim.notifyClock(text),
+  });
+  if (night.enabled) {
+    llm.onCall((e) => (e.phase === "start" ? night.callStarted(e.task) : night.callEnded(e.task)));
+    sim.onTick(() => night.update());
+    sim.onEvent(() => night.update());
   }
   const seeded = await sim.seedMemoriesIfEmpty(startTime);
   if (seeded) worldLog(`Sembrados los recuerdos iniciales de ${seeded} agentes.`);
