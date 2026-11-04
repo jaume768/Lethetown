@@ -271,6 +271,7 @@ Todos los parámetros (pesos, umbrales, probabilidades, presupuesto) están en `
 - **Habla oral**: réplicas cortas, a veces de una a tres palabras, sin saludar en cada turno ni repetir lo dicho. Cada agente ve las 4 últimas frases de la charla (las suyas como «tú: …»). Lo que dice se recorta en código según su forma de hablar (90/160/240 caracteres; los menores, 120).
 - **Menos espera**: en una charla en curso, la importancia de lo que se oye sale de reglas y no de otra llamada; la reconsolidación de lo recordado se hace después de contestar; la cola del LLM atiende antes conversación y decisiones que esencias, fichas, resúmenes y crónicas.
 - **A más de x10**, mientras hay conversaciones el reloj va a x10 (`SIM_SLOWDOWN_IN_CONVERSATION`) para que se puedan seguir.
+- **Noche rápida** (`SIM_NIGHT_SPEED`, desactivada por defecto): con todo el pueblo dormido y nada pendiente del LLM, la noche pasa a ese ritmo y vuelve a `SIM_SPEED` antes de despertar (`SIM_WAKE_MARGIN_MINUTES`).
 
 Detalle y mediciones en [docs/decisiones/ritmo.md](docs/decisiones/ritmo.md).
 

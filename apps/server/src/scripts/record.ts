@@ -7,10 +7,17 @@
  *
  * Uso (con `pnpm dev` en marcha):
  *   RECORD_USER=… RECORD_PASSWORD=… pnpm --filter @lethetown/server record <carpeta> \
- *     [--hours 48] [--every 10] [--api http://localhost:3001] [--origin http://localhost:5173]
+ *     [--hours 48] [--until <minuto>] [--every 10] [--api http://localhost:3001] \
+ *     [--origin http://localhost:5173]
+ * `--until`: minuto de juego absoluto en que termina (para reanudar una grabación cortada sin
+ * volver a contar `--hours` desde el principio).
  * Ficheros: messages.jsonl (todo menos los deltas), states.jsonl (fotos), meta.json.
  * Lo que guarda la BD (recuerdos, auditoría, fichas sociales, llm_calls…) lo exporta
  * `pnpm --filter @lethetown/server world:export <carpeta>`.
+ *
+ * Cuenta horas de juego (no reales): aguanta los cambios de ritmo (x10 en las charlas, la noche
+ * rápida a x360) y los cortes del servidor (reconecta y sigue). Varios mundos a la vez: un
+ * servidor por puerto, `--api http://localhost:3002 --origin <uno de su ALLOWED_ORIGINS>`.
  */
 import { createWriteStream, mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
@@ -25,6 +32,7 @@ const outDir = resolve(
   args.find((a, i) => !a.startsWith("--") && !args[i - 1]?.startsWith("--")) ?? "recording",
 );
 const hours = Number(flag("hours", "48"));
+const until = flag("until", "");
 const every = Number(flag("every", "10"));
 const api = flag("api", "http://localhost:3001");
 const origin = flag("origin", "http://localhost:5173");
@@ -53,11 +61,18 @@ async function login(): Promise<string | null> {
 
 async function pause(cookie: string | null): Promise<void> {
   if (!cookie) return log("Sin RECORD_USER/RECORD_PASSWORD: no pauso el mundo.");
-  const res = await fetch(`${api}/api/speed`, {
-    method: "POST",
-    headers: { "content-type": "application/json", origin, cookie },
-    body: JSON.stringify({ speed: 0 }),
-  });
+  const send = (c: string) =>
+    fetch(`${api}/api/speed`, {
+      method: "POST",
+      headers: { "content-type": "application/json", origin, cookie: c },
+      body: JSON.stringify({ speed: 0 }),
+    });
+  let res = await send(cookie);
+  // Tras horas de grabación (o un reinicio del servidor) la sesión puede haber caducado.
+  if (res.status === 401 || res.status === 403) {
+    const fresh = await login().catch(() => null);
+    if (fresh) res = await send(fresh);
+  }
   log(`Mundo en pausa: ${res.status}`);
 }
 
@@ -93,7 +108,8 @@ function onMessage(msg: ServerMessage) {
     lastTime = msg.clock.time;
     if (startTime !== null && lastTime >= nextShot) {
       shot(lastTime);
-      nextShot += every;
+      // A x360 un mensaje puede saltarse varias fotos: la siguiente, después de esta hora.
+      nextShot = (Math.floor(lastTime / every) + 1) * every;
     }
     return;
   }
@@ -123,7 +139,9 @@ connect();
 
 await new Promise<void>((resolveDone) => {
   const timer = setInterval(() => {
-    if (startTime === null || lastTime < startTime + hours * 60) return;
+    if (startTime === null) return;
+    const end = until ? Number(until) : startTime + hours * 60;
+    if (lastTime < end) return;
     clearInterval(timer);
     resolveDone();
   }, 2000);
@@ -134,7 +152,15 @@ await pause(cookie);
 writeFileSync(
   join(outDir, "meta.json"),
   JSON.stringify(
-    { startedAt, endedAt: new Date().toISOString(), startTime, endTime: lastTime, hours, every },
+    {
+      startedAt,
+      endedAt: new Date().toISOString(),
+      startTime,
+      endTime: lastTime,
+      hours,
+      until: until ? Number(until) : null,
+      every,
+    },
     null,
     2,
   ),

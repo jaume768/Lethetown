@@ -51,7 +51,7 @@ export type CommandResult =
 export interface LiveState {
   time: number;
   speed: SimSpeed;
-  /** Ritmo real, si un tope lo frena (ver `GameClock.setCap`). */
+  /** Ritmo real, si un tope lo frena o va a noche rápida (ver `GameClock.setCap` y `setBoost`). */
   rate?: number;
   agents: AgentState[];
   weather: Weather;
@@ -145,7 +145,7 @@ export function liveState(w: WorldRuntime): LiveState {
   return {
     time: w.clock.now(),
     speed: w.clock.speed,
-    ...(w.clock.rate < w.clock.speed ? { rate: w.clock.rate } : {}),
+    ...(w.clock.rate !== w.clock.speed ? { rate: w.clock.rate } : {}),
     agents: w.sim.agentStates(),
     weather: w.world.weather,
     status: w.status(),
