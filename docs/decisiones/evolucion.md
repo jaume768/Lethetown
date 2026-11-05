@@ -46,9 +46,22 @@ pestaña de admin y en el estudio de una partida grabada, sin llamadas nuevas al
 | Metas: activas, conseguidas, abandonadas, progreso y frustración medios (y por agente) | `goals` (historial de cada meta)           |
 | Conocimiento externo: anacronismos y referencias por tipo, agente y día, con ejemplos  | `knowledge_log`                            |
 
-## `pnpm study:analyze <carpeta> [<otra>]`
+## `pnpm study:analyze <carpeta> [<otra> …]`
 
 Lee lo que graban `record` (`messages.jsonl`, con la hora real) y `world:export` (una tabla por
 fichero, en la carpeta o en `bd/`) y escribe `analysis.json` y `analysis.md` en la carpeta. Con
 dos carpetas, la tabla pone las dos partidas y la diferencia (A → B). Sustituye al `analiza.py`
 de la partida de estudio (que no está en el repo).
+
+Con dos o más carpetas, además, **el coste conjunto** (llamadas y $ por mundo, la suma y el coste
+por mundo y día) con un aviso: mundos que corren a la vez con la misma cuenta comparten la caché
+de prompts (en la partida de una semana, s13 escribía y s7 leía), así que el reparto entre ellos
+no es comparable; vale la suma (corrección 3.5).
+
+## Partidas en paralelo (`scripts/estudio-semana.sh`)
+
+- `STUDY_DIR` elige la carpeta de la partida; `OFFSET_MINUTES` (p. ej. 30) arranca cada semilla
+  ese rato real después de la anterior, para que no planifiquen en el mismo segundo.
+- `ABLATION=on` añade un tercer mundo, `s7a`: la semilla 7 con `MEMORY_ABLATION`
+  (`noForgetting`, `noVagueness`: flags de `MemoryConfig.ablation`, aplicados con
+  `withAblation`: umbrales de olvido y vaguedad a 0 y presupuesto sin límite) como control.

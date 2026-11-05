@@ -3,15 +3,16 @@
  * lo que graban `record` y `world:export`, escribe <carpeta>/analysis.json y analysis.md (el
  * resumen de ESTUDIO.md: coste por tarea, espera de respuesta, longitud de las frases por estilo,
  * intenciones, acciones, red social, memoria y errores) y lo muestra. Con dos carpetas, la tabla
- * compara las dos partidas.
- * Uso: pnpm study:analyze <carpeta> [<otra carpeta>]
+ * compara las dos partidas; con dos o más, además, el coste conjunto (con el aviso de que el
+ * reparto entre mundos que comparten caché no es comparable).
+ * Uso: pnpm study:analyze <carpeta> [<otra carpeta> …]
  */
 import { writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { basename, join, resolve } from "node:path";
 import { AgentSeed } from "@lethetown/shared";
 import { z } from "zod";
 import { analyzeEvolution } from "../analysis/evolution";
-import { evolutionMarkdown } from "../analysis/markdown";
+import { evolutionMarkdown, jointCostMarkdown } from "../analysis/markdown";
 import { loadStudy } from "../analysis/study-files";
 import { readJson } from "../factories/files";
 
@@ -20,8 +21,8 @@ const dirs = process.argv
   .filter((a) => a !== "--")
   // Rutas relativas a donde se lanzó pnpm (INIT_CWD), no a apps/server.
   .map((d) => resolve(process.env.INIT_CWD ?? process.cwd(), d));
-if (!dirs.length || dirs.length > 2) {
-  console.error("Uso: pnpm study:analyze <carpeta> [<otra carpeta para comparar>]");
+if (!dirs.length) {
+  console.error("Uso: pnpm study:analyze <carpeta> [<otra carpeta> …]");
   process.exit(1);
 }
 const seeds = await readJson(z.array(AgentSeed), "seeds/agents.json");
@@ -38,8 +39,12 @@ const reports = dirs.map((dir) => {
   console.error(`${dir}: analysis.json y analysis.md`);
   return { report, markdown };
 });
+const joint =
+  reports.length >= 2
+    ? `\n${jointCostMarkdown(reports.map((r, i) => ({ label: basename(dirs[i]!), report: r.report })))}`
+    : "";
 console.log(
   reports.length === 2
-    ? `A = ${dirs[0]}\nB = ${dirs[1]}\n\n${evolutionMarkdown(reports[0]!.report, reports[1]!.report)}`
-    : reports[0]!.markdown,
+    ? `A = ${dirs[0]}\nB = ${dirs[1]}\n\n${evolutionMarkdown(reports[0]!.report, reports[1]!.report)}${joint}`
+    : `${reports.map((r) => r.markdown).join("\n")}${joint}`,
 );

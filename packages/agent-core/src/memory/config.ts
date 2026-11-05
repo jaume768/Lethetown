@@ -325,7 +325,35 @@ export const MemoryConfig = z.object({
       maxInPlan: z.number().int().nonnegative().default(4),
     })
     .prefault({}),
+  /**
+   * Ablación para partidas de estudio (un mundo de control): sin olvido (nada baja del umbral de
+   * olvido ni se borra o resume por presupuesto) y sin vaguedad (nada se vuelve vago ni se queda
+   * en esencia). Se aplican con `withAblation`; por defecto, apagadas.
+   */
+  ablation: z
+    .object({
+      noForgetting: z.boolean().default(false),
+      noVagueness: z.boolean().default(false),
+    })
+    .prefault({}),
 });
 export type MemoryConfig = z.infer<typeof MemoryConfig>;
+
+/** Nombres de los flags de ablación (para `MEMORY_ABLATION` y el manifiesto de una partida). */
+export const ABLATION_FLAGS = ["noForgetting", "noVagueness"] as const;
+
+/** La config con la ablación aplicada (umbrales a 0, presupuesto sin límite). */
+export function withAblation(cfg: MemoryConfig): MemoryConfig {
+  const { noForgetting, noVagueness } = cfg.ablation;
+  return {
+    ...cfg,
+    retrieval: {
+      ...cfg.retrieval,
+      ...(noForgetting ? { forgetThreshold: 0 } : {}),
+      ...(noVagueness ? { vagueThreshold: 0 } : {}),
+    },
+    budget: noForgetting ? { ...cfg.budget, tokensPerAgent: Number.MAX_SAFE_INTEGER } : cfg.budget,
+  };
+}
 
 export const DEFAULT_MEMORY_CONFIG: MemoryConfig = MemoryConfig.parse({});

@@ -33,3 +33,7 @@
   similitud).
 - **Retención** (ver [produccion.md](produccion.md)): solo se borran recuerdos olvidados o
   archivados; los activos nunca.
+- **Ablación para estudios** (`MemoryConfig.ablation`, corrección 3.5): `noForgetting` (nada se
+  olvida ni se borra o resume por presupuesto) y `noVagueness` (nada se vuelve vago ni se queda
+  en esencia), aplicados al cargar con `withAblation`; en el servidor, `MEMORY_ABLATION`. Sirven
+  para un mundo de control en una partida de estudio, no para jugar.
