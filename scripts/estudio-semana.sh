@@ -114,6 +114,7 @@ record() {
     fi
     RECORD_USER=grabador RECORD_PASSWORD="$(cat "$dir/.record-pass")" \
       setsid pnpm -s --filter @lethetown/server record "$dir" --hours "$HOURS" --until "$UNTIL" \
+      --env-file "$ROOT/.env.study.$seed" \
       --api "http://localhost:$(port_of "$seed")" --origin "$(origin_of "$seed")" \
       >>"$dir/record.log" 2>&1 </dev/null &
     echo $! >"$dir/record.pid"

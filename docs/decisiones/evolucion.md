@@ -53,6 +53,12 @@ fichero, en la carpeta o en `bd/`) y escribe `analysis.json` y `analysis.md` en 
 dos carpetas, la tabla pone las dos partidas y la diferencia (A → B). Sustituye al `analiza.py`
 de la partida de estudio (que no está en el repo).
 
+**Manifiesto** (corrección 3.5): `record` escribe al empezar `manifest.json` (SHA del código y si
+había cambios sin commit, semilla, velocidad y noche rápida, proveedor y modelos, el enrutado de
+`llm-routing.json`, los precios de `pricing.json`, la ablación de la memoria y la fecha), con lo
+que lee de `.env` y del `--env-file` de la partida, solo de una lista blanca (nunca secretos); no
+se pisa al reanudar. `study:analyze` lo pone al principio de `analysis.md`.
+
 Con dos o más carpetas, además, **el coste conjunto** (llamadas y $ por mundo, la suma y el coste
 por mundo y día) con un aviso: mundos que corren a la vez con la misma cuenta comparten la caché
 de prompts (en la partida de una semana, s13 escribía y s7 leía), así que el reparto entre ellos

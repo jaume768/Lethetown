@@ -7,11 +7,12 @@
  * reparto entre mundos que comparten caché no es comparable).
  * Uso: pnpm study:analyze <carpeta> [<otra carpeta> …]
  */
-import { writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, join, resolve } from "node:path";
 import { AgentSeed } from "@lethetown/shared";
 import { z } from "zod";
 import { analyzeEvolution } from "../analysis/evolution";
+import { manifestMarkdown, StudyManifest } from "../analysis/manifest";
 import { evolutionMarkdown, jointCostMarkdown } from "../analysis/markdown";
 import { loadStudy } from "../analysis/study-files";
 import { readJson } from "../factories/files";
@@ -33,7 +34,12 @@ const reports = dirs.map((dir) => {
     process.exit(1);
   }
   const report = analyzeEvolution(input);
-  const markdown = evolutionMarkdown(report);
+  // El manifiesto que escribió `record` (si lo hay), al principio del informe.
+  const manifestFile = join(dir, "manifest.json");
+  const manifest = existsSync(manifestFile)
+    ? StudyManifest.safeParse(JSON.parse(readFileSync(manifestFile, "utf8")))
+    : null;
+  const markdown = `${manifest?.success ? `${manifestMarkdown(manifest.data)}\n` : ""}${evolutionMarkdown(report)}`;
   writeFileSync(join(dir, "analysis.json"), `${JSON.stringify(report, null, 2)}\n`);
   writeFileSync(join(dir, "analysis.md"), markdown);
   console.error(`${dir}: analysis.json y analysis.md`);
