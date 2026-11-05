@@ -8,6 +8,7 @@ import { runAction } from "../actions";
 import { applyAgreements } from "../agreements";
 import type { SimContext } from "../context";
 import { heldBy, holderOf, loreLines, loreState, loreTick } from "../lore";
+import { knowledgeState } from "./knowledge";
 import { restoreSystems, snapshotSystems } from ".";
 
 let app: App;
@@ -166,6 +167,24 @@ describe("no contarlo otra vez a quien ya lo sabe (corrección 3.5)", () => {
     expect(loreLines(ctx, agent("aurora"), t0 + 60).some((x) => x.startsWith(`${l.id} `))).toBe(
       true,
     );
+  });
+});
+
+describe("la gente de un saber, conocida al aprenderlo (corrección 3.5)", () => {
+  it("Elena aprende Las magdalenas de Francisca: Francisca no es una persona inventada", async () => {
+    const l = byTitle("Las magdalenas de Francisca");
+    const people = knowledgeState(ctx).people!;
+    const said = "Julián Ortega me ha contado Las magdalenas de Francisca.";
+    const memory = { kind: "memory" as const, agentId: "elena", actors: ["elena"] };
+    expect(people.find(said, memory)).toEqual(["Francisca"]);
+    at("julian", "plaza");
+    at("elena", "plaza");
+    await runAction(
+      { ctx, agent: agent("julian"), now: now() },
+      { type: "share_lore", who: "elena", loreId: l.id },
+    );
+    expect(holderOf(ctx, l.id, "elena")).toBeDefined();
+    expect(people.find(said, memory)).toEqual([]);
   });
 });
 

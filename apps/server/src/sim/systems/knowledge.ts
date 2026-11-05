@@ -12,11 +12,11 @@ import {
   type KnowledgeRecord,
   type PersonRecord,
 } from "@lethetown/agent-core";
-import type { SimEvent } from "@lethetown/shared";
+import type { Lore, SimEvent } from "@lethetown/shared";
 import { z } from "zod";
 import { InMemoryKnowledgeLogStore, type KnowledgeLogStore } from "../../db/knowledge-log";
 import { errorMessage, type SimContext } from "../context";
-import { heldBy } from "../lore";
+import { heldBy, loreState } from "../lore";
 import { registerSystem } from "./registry";
 
 /** Ejemplos recientes que se guardan para la pestaña «Evolución». */
@@ -135,6 +135,24 @@ function learnFrom(ctx: SimContext, e: SimEvent): void {
   }
 }
 
+/** La gente de fuera (de cualquier semilla) que sale en un saber: su título, elementos y variantes. */
+function namesInLore(lore: Lore, everyone: string[]): string[] {
+  const words = new Set(
+    normalizeText(
+      [lore.title, ...lore.elements.flatMap((e) => [e.text, ...e.variants])].join(" "),
+    ).split(" "),
+  );
+  return everyone.filter((n) =>
+    normalizeText(n)
+      .split(" ")
+      .every((w) => words.has(w)),
+  );
+}
+
+const everyoneOffstage = (ctx: SimContext) => [
+  ...new Set([...ctx.agents.values()].flatMap((a) => a.seed.offstagePeople.map((p) => p.name))),
+];
+
 /**
  * Gente de fuera que cada uno conoce sin habérsela oído nombrar (corrección 3.5): la que sale en
  * un saber que tiene (Alma, en «El verano en que Alma se fue», para Clara) y la de los vecinos
@@ -152,20 +170,7 @@ async function acquaintAll(ctx: SimContext): Promise<void> {
   const min = bible.personGuard.acquaintanceFamiliarity;
   for (const agent of ctx.agents.values()) {
     const names: string[] = [];
-    for (const { lore } of heldBy(ctx, agent.id)) {
-      const words = new Set(
-        normalizeText(
-          [lore.title, ...lore.elements.flatMap((e) => [e.text, ...e.variants])].join(" "),
-        ).split(" "),
-      );
-      names.push(
-        ...everyone.filter((n) =>
-          normalizeText(n)
-            .split(" ")
-            .every((w) => words.has(w)),
-        ),
-      );
-    }
+    for (const { lore } of heldBy(ctx, agent.id)) names.push(...namesInLore(lore, everyone));
     for (const p of await ctx.deps.social.list(agent.id)) {
       if (p.familiarity >= min) names.push(...(offstageOf.get(p.aboutId) ?? []));
     }
@@ -253,6 +258,10 @@ registerSystem({
     s.people.restore(s.acquaintances);
     ctx.deps.memory.guard?.addRewriter(s.people.rewriter);
     ctx.onEvent((e) => learnFrom(ctx, e));
+    // Al aprender un saber, en el momento (antes de que lo recuerde), no a la hora siguiente.
+    loreState(ctx).onLearned.push((agentId, lore) =>
+      s.people?.acquaint(agentId, namesInLore(lore, everyoneOffstage(ctx))),
+    );
     await acquaintAll(ctx);
   },
   tick: { every: ACQUAINT_EVERY, run: (ctx) => acquaintAll(ctx) },

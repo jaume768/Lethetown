@@ -34,6 +34,8 @@ export interface LoreState {
   listening: boolean;
   /** Cuándo se le ofrecieron sus saberes en una decisión. */
   shownAt: Map<string, number>;
+  /** Quien escucha cuándo alguien aprende un saber (el sistema `knowledge`: a quién conoce). */
+  onLearned: ((agentId: string, l: Lore) => void)[];
 }
 
 const hkey = (loreId: string, agentId: string) => `${loreId}:${agentId}`;
@@ -48,6 +50,7 @@ export const loreState = (ctx: SimContext) =>
     counts: { transmissions: 0, forgotten: 0, lost: 0, altered: 0 },
     listening: false,
     shownAt: new Map(),
+    onLearned: [],
   }));
 
 export const loreCfg = (ctx: SimContext): LoreConfig => ctx.deps.memory.config.lore;
@@ -217,6 +220,8 @@ export function shareLore(
     saveHolder(ctx, prev);
     return { kept: r.elements.length, lost: r.lost, altered: r.altered };
   }
+  // Antes de que lo recuerde: ya conoce a la gente que sale en el saber (Francisca, Alma).
+  for (const f of s.onLearned) f(listenerId, l);
   saveHolder(ctx, {
     loreId,
     agentId: listenerId,
