@@ -18,6 +18,16 @@ y que eso se note en el mundo, sin que el LLM se invente el nivel de nadie. Sist
   palabras de su actividad, o por lo que se propuso (`practice`), una sesión de enseñanza o una
   ayuda. Las palabras son de **hacer, no de consumir**: «tomar un café» no practica la barra ni
   «ir al médico» los cuidados (en el primer dorado, Clara y Marta subían en «café y barra»).
+- **Práctica rutinaria** (corrección 3.5): las comidas de cada día cuentan con peso reducido
+  (`SkillsConfig.routinePracticeWeight`, 0,3). «Rutinario» lo decide el motor con lo que hace:
+  una actividad con palabras de las comidas del día (`routineActivities`: desayuno, comida,
+  cena, merienda…, al principio de palabra) en una habilidad que no deja resultado. Lo que se
+  propone practicar (`practice`), una sesión, una ayuda, algo que deja resultado (el pan, las
+  fotos) o cocinar algo que no es la comida del día («un tumbet para la fiesta») cuenta entero.
+  En la partida de una semana casi todo el pueblo subía en cocina de 0,30 a 0,55–0,60 con
+  unos 1.300 min de desayunos, comidas y cenas; ahora un adulto que solo hace sus tres comidas
+  se queda en «se defiende» (0,39 en una semana, test). Las horas de práctica se apuntan
+  enteras; solo cuenta menos lo que sube.
 - **Rendimientos decrecientes**: por hora, el nivel sube `practiceRate` (0,02) × lo que le falta;
   la curva es exacta (1 − e^(−r·h)), así que no depende de cada cuánto se mida. De 0 a 0,5, unas
   35 h; de 0,5 a 0,75, otras tantas. × 2 con un maestro delante que le saque 0,2 (en una sesión o,

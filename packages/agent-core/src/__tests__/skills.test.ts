@@ -4,6 +4,8 @@ import { AgentSeed } from "@lethetown/shared";
 import { describe, expect, it } from "vitest";
 import {
   LEVEL_THRESHOLDS,
+  isRoutinePractice,
+  levelLabel,
   levelTier,
   nextTier,
   tierLabel,
@@ -119,6 +121,33 @@ describe("qué se practica", () => {
     expect(of("atender el café")).toBe("hospitality");
     expect(of("atender la tienda")).toBe("trade");
     expect(of("durmiendo")).toBeNull();
+  });
+});
+
+describe("práctica rutinaria (corrección 3.5)", () => {
+  it("las comidas del día son rutina; un guiso de fiesta, el pan o la palabra «escena», no", () => {
+    expect(isRoutinePractice("Preparar el desayuno", "cooking", cfg)).toBe(true);
+    expect(isRoutinePractice("preparar la comida en casa", "cooking", cfg)).toBe(true);
+    expect(isRoutinePractice("hacer la cena", "cooking", cfg)).toBe(true);
+    expect(isRoutinePractice("cocinar un tumbet para la fiesta", "cooking", cfg)).toBe(false);
+    expect(isRoutinePractice("hornear el pan del desayuno", "baking", cfg)).toBe(false);
+    expect(isRoutinePractice("cocinar la escena del teatro", "cooking", cfg)).toBe(false);
+  });
+
+  it("un adulto que solo hace sus tres comidas no pasa de «se defiende» en una semana", () => {
+    const adult = { age: 40, openness: 0.5 };
+    const week = (weight: number) => {
+      let level = 0.3;
+      for (let day = 0; day < 7; day++) {
+        for (let meal = 0; meal < 3; meal++) {
+          level += practiceGain(level, 60 * weight, adult, cfg);
+        }
+      }
+      return level;
+    };
+    expect(levelLabel(week(cfg.routinePracticeWeight))).toBe("se defiende");
+    // Sin el peso (como en la partida de una semana) llegaba a «bien».
+    expect(levelLabel(week(1))).toBe("bien");
   });
 });
 

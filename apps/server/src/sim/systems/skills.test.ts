@@ -61,6 +61,24 @@ describe("sistema skills", () => {
     expect(skillState(ctx, "leo", "photography", 0).learnedFrom).toBe("valentina");
   });
 
+  it("las comidas de cada día cuentan con peso reducido; practicar a propósito, entero", () => {
+    for (const a of ctx.agents.values()) a.state.activityKind = "sleep";
+    // Elena (52) cocina sola en su casa: la cena del día.
+    doing("elena", "preparar la cena", "casa_elena");
+    const c0 = levelOf(ctx, "elena", "cooking");
+    skillsTick(ctx, ctx.clock.now(), 60);
+    const routine = levelOf(ctx, "elena", "cooking") - c0;
+    // Lo mismo con un guiso para la fiesta (no es una comida del día): entero.
+    doing("elena", "cocinar un tumbet para la fiesta", "casa_elena");
+    const c1 = levelOf(ctx, "elena", "cooking");
+    skillsTick(ctx, ctx.clock.now(), 60);
+    const deliberate = levelOf(ctx, "elena", "cooking") - c1;
+    expect(routine).toBeGreaterThan(0);
+    expect(routine / deliberate).toBeCloseTo(0.3, 1);
+    // Las horas de práctica se cuentan enteras.
+    expect(skillState(ctx, "elena", "cooking", 0).practiceMinutes).toBe(120);
+  });
+
   it("sin práctica se oxida despacio, con su hito en la auditoría", async () => {
     const s = skillState(ctx, "hugo", "music", 0);
     s.lastUsedAt = ctx.clock.now() - 100 * 1440;

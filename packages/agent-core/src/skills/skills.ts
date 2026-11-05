@@ -238,6 +238,18 @@ export const SkillsConfig = z.object({
    * la vez el día 4 (valores de partida justo en 0,20, 0,45 o 0,70 que perdían milésimas).
    */
   labelHysteresis: unit(0.02),
+  /**
+   * Práctica rutinaria (corrección 3.5): las comidas de cada día (lo que hace por su plan y su
+   * actividad lo dice: «preparar el desayuno», «hacer la cena») cuentan con este peso. En la
+   * partida de una semana todo el pueblo subía en cocina de 0,30 a 0,55–0,60 con unos 1.300 min
+   * de desayunos, comidas y cenas. Lo que se propone practicar (`practice`), una sesión, una
+   * ayuda o algo que deja resultado (pan, fotos…) cuenta entero.
+   */
+  routinePracticeWeight: unit(0.3),
+  /** Palabras de las comidas del día (normalizadas al comparar). */
+  routineActivities: z
+    .array(z.string())
+    .default(["desayun", "almuerz", "comida", "comer ", "merend", "merienda", "cena", "cenar"]),
   /** En el prompt: habilidades destacadas desde este nivel, como mucho `maxInPrompt`. */
   promptMinLevel: unit(0.35),
   maxInPrompt: z.number().int().positive().default(3),
@@ -365,6 +377,19 @@ export function skillDef(cfg: SkillsConfig, id: string): SkillDef | undefined {
  * Qué habilidad practica quien hace esto: el objeto que usa (la cafetera, el horno), si no las
  * palabras de la actividad. Null si no practica nada.
  */
+/**
+ * ¿Es práctica rutinaria? Una actividad de las comidas del día (`routineActivities`) con una
+ * habilidad que no deja resultado. Se decide con lo que hace (su actividad), nunca con el LLM.
+ */
+export function isRoutinePractice(action: string, skill: string, cfg: SkillsConfig): boolean {
+  if (skillDef(cfg, skill)?.result) return false;
+  const text = ` ${normalizeText(action)} `;
+  // Al principio de una palabra: «cena» no es «escena».
+  return cfg.routineActivities.some((k) =>
+    text.includes(` ${normalizeText(k)}${k.endsWith(" ") ? " " : ""}`),
+  );
+}
+
 export function skillForActivity(
   what: { action: string; spotId?: string | null },
   cfg: SkillsConfig,

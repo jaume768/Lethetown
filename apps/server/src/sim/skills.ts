@@ -18,6 +18,7 @@ import {
   resultQuality,
   skillAfterIdle,
   skillDef,
+  isRoutinePractice,
   skillForActivity,
   type Agent,
   type SkillsConfig,
@@ -255,6 +256,8 @@ export function addPractice(
   minutes: number,
   now: number,
   masterId: string | null = null,
+  /** Peso de esta práctica (las comidas de cada día, `routinePracticeWeight`). */
+  weight = 1,
 ): number {
   const cfg = skillsCfg(ctx);
   const s = skillState(ctx, agent.id, skill, now);
@@ -262,7 +265,7 @@ export function addPractice(
   const masterLevel = masterId ? levelOf(ctx, masterId, skill) : null;
   const gain = practiceGain(
     before,
-    minutes,
+    minutes * weight,
     { age: agent.seed.age, openness: agent.seed.personality.openness, masterLevel },
     cfg,
   );
@@ -302,17 +305,18 @@ export function practiceNow(
   ctx: SimContext,
   agent: Agent,
   now: number,
-): { skill: string; masterId: string | null } | null {
+): { skill: string; masterId: string | null; routine?: boolean } | null {
   const st = skillsState(ctx);
   const coached = st.coached.get(agent.id);
   if (coached && coached.until > now) return { skill: coached.skill, masterId: coached.masterId };
   const planned = st.practicing.get(agent.id);
   if (planned && planned.until > now) return { skill: planned.skill, masterId: null };
-  const skill = skillForActivity(
-    { action: agent.state.action, spotId: agent.state.spotId },
-    skillsCfg(ctx),
-  );
-  return skill ? { skill, masterId: null } : null;
+  const cfg = skillsCfg(ctx);
+  const skill = skillForActivity({ action: agent.state.action, spotId: agent.state.spotId }, cfg);
+  // Las comidas de cada día cuentan con peso reducido (lo que se propuso practicar, entero).
+  return skill
+    ? { skill, masterId: null, routine: isRoutinePractice(agent.state.action, skill, cfg) }
+    : null;
 }
 
 /**
@@ -327,11 +331,13 @@ export function skillsTick(ctx: SimContext, now: number, minutes: number): void 
   for (const [id, p] of st.practicing) if (p.until <= now) st.practicing.delete(id);
   for (const [id, c] of st.coached) if (c.until <= now) st.coached.delete(id);
   const doing = new Map<string, string>();
+  const routine = new Set<string>();
   for (const agent of ctx.agents.values()) {
     if (systemsHold(ctx, agent.id) || ctx.rt(agent.id).travelling) continue;
     if (agent.state.activityKind === "sleep") continue;
     const p = practiceNow(ctx, agent, now);
     if (p) doing.set(agent.id, p.skill);
+    if (p?.routine) routine.add(agent.id);
   }
   for (const [id, skill] of doing) {
     const agent = ctx.agents.get(id)!;
@@ -344,7 +350,8 @@ export function skillsTick(ctx: SimContext, now: number, minutes: number): void 
         .map((o) => o.id)
         .sort((a, b) => levelOf(ctx, b, skill) - levelOf(ctx, a, skill))[0] ??
       null;
-    addPractice(ctx, agent, skill, minutes, now, master);
+    const weight = routine.has(id) ? cfg.routinePracticeWeight : 1;
+    addPractice(ctx, agent, skill, minutes, now, master, weight);
   }
   const day = Math.floor(now / 1440);
   if (st.lastDecayDay < 0) st.lastDecayDay = day;
