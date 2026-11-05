@@ -32,6 +32,11 @@ export const LoreConfig = z.object({
   unusedGraceDays: z.number().nonnegative().default(5),
   /** Fidelidad que se pierde por día sin usarlo (más despacio con la habilidad en eso). */
   decayPerDay: unit(0.012),
+  /**
+   * No se le vuelve a contar a quien ya lo sabe con todos sus elementos y lo oyó o usó hace
+   * menos de estos días (corrección 3.5: Aurora le contó a Clara lo de Alma 6 y 11 veces).
+   */
+  retellCooldownDays: z.number().nonnegative().default(3),
   /** Por debajo de esto ya no recuerda cómo era; si nadie llega, se pierde para el pueblo. */
   minFidelity: unit(0.25),
 });

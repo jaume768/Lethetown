@@ -9,6 +9,7 @@ import { forgetLore, transmit, useLore, type Agent, type LoreConfig } from "@let
 import type { HeldElement, Lore, LoreHolder } from "@lethetown/shared";
 import { InMemoryLoreStore, type LoreStore } from "../db/skills";
 import { errorMessage, type SimContext } from "./context";
+import { presentWith } from "./perception";
 import { levelOf, skillsState, type PracticeTick } from "./skills";
 
 /** Usar un saber cuenta, como mucho, una vez cada este rato (min de juego). */
@@ -91,6 +92,25 @@ export function heldBy(ctx: SimContext, agentId: string): { lore: Lore; holder: 
 
 export function holderOf(ctx: SimContext, loreId: string, agentId: string) {
   return loreState(ctx).holders.get(hkey(loreId, agentId));
+}
+
+/**
+ * ¿Ya lo sabe entero y lo oyó o usó hace poco (`retellCooldownDays`)? Entonces no tiene sentido
+ * contárselo otra vez (ni se ofrece ni se acepta).
+ */
+export function knowsFreshly(ctx: SimContext, loreId: string, agentId: string, now: number) {
+  const l = loreState(ctx).lore.get(loreId);
+  const h = holderOf(ctx, loreId, agentId);
+  if (!l || !h || h.forgottenAt !== null || h.elements.length < l.elements.length) return false;
+  const last = h.lastUsedAt ?? h.learnedAt;
+  return now - last < loreCfg(ctx).retellCooldownDays * 1440;
+}
+
+/** Saberes suyos que tiene sentido contar a alguno de estos (que no lo sepa ya, o no hace poco). */
+export function tellable(ctx: SimContext, agentId: string, listeners: string[], now: number) {
+  return heldBy(ctx, agentId).filter(({ lore: l }) =>
+    listeners.some((id) => !knowsFreshly(ctx, l.id, id, now)),
+  );
 }
 
 /**
@@ -326,8 +346,12 @@ export function loreLines(ctx: SimContext, agent: Agent, now: number): string[] 
   const s = loreState(ctx);
   const last = s.shownAt.get(agent.id);
   if (last !== undefined && now - last < DECIDE_COOLDOWN) return [];
+  // Solo lo que alguno de los presentes no sabe ya (o no oyó hace poco).
+  const present = presentWith(ctx, agent).map((p) => p.id);
+  const items = tellable(ctx, agent.id, present, now);
+  if (!items.length) return [];
   s.shownAt.set(agent.id, now);
-  return heldBy(ctx, agent.id)
+  return items
     .sort((a, b) => b.holder.fidelity - a.holder.fidelity)
     .slice(0, 3)
     .map(

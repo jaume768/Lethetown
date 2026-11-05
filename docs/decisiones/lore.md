@@ -36,6 +36,12 @@ personas inventadas. Sistema `lore` (`apps/server/src/sim/systems/lore.ts`, lóg
 - **Prompt**: con alguien delante, «SABERES QUE PUEDES CONTAR» (ids para `share_lore`), como mucho
   cada 3 h por vecino: en cada decisión con alguien delante subía el coste del mock de ≈ 0,74 a
   ≈ 0,92 $ en 48 h.
+- **No se cuenta otra vez a quien ya lo sabe** (corrección 3.5; Aurora le contó a Clara «El
+  verano en que Alma se fue» 6 y 11 veces, y Clara ya lo sabía entero): un saber no sale en
+  «SABERES QUE PUEDES CONTAR» ni se ofrece `share_lore` si todos los presentes ya lo tienen con
+  todos sus elementos y lo oyeron o usaron hace menos de `LoreConfig.retellCooldownDays` (3);
+  si el LLM lo pide igual (o lo acuerdan hablando), el motor lo rechaza con el motivo. A
+  alguien que lo sabe a medias o hace días, sí.
 - **Acordado hablando**: el acuerdo `share_lore` (con su `loreId`) pasa por la acción formal.
 
 ## A revisar
