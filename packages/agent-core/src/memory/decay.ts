@@ -57,8 +57,28 @@ export function currentStrength(
 }
 
 /**
- * Refuerzo al recordar (repetición espaciada): la fuerza sube hacia 1 y la estabilidad crece.
- * Recordar algo que ya estaba debilitado consolida más ("dificultad deseable").
+ * Multiplicador de la estabilidad al evocar (efecto de espaciado): k(Δt) = 1 + (k_max − 1) ·
+ * (1 − e^(−Δt/τ)), con Δt el tiempo de juego desde la evocación anterior y τ la estabilidad
+ * actual (las dos en horas). k_max = `recallStabilityGrowth` × la dificultad (×1,8 a ×3,6, la
+ * regla de siempre). Evocar algo un minuto después casi no consolida; evocarlo cuando ya se
+ * estaba olvidando, casi k_max. Corrección 3.5: las metas, evocadas en cada decisión (cada
+ * 10 min), acumulaban 142 evocaciones ×1,8 en 3 días.
+ */
+export function spacingFactor(
+  memory: Pick<MemoryRecord, "strength" | "stability" | "lastAccessedAt">,
+  now: number,
+  config: DecayConfig = DEFAULT_DECAY,
+): number {
+  const s = currentStrength(memory, now);
+  const kMax = config.recallStabilityGrowth * (1 + (1 - s));
+  const hours = Math.max(0, now - memory.lastAccessedAt) / MINUTES_PER_HOUR;
+  return 1 + (kMax - 1) * (1 - Math.exp(-hours / memory.stability));
+}
+
+/**
+ * Refuerzo al recordar (repetición espaciada): la fuerza sube hacia 1 y la estabilidad crece
+ * según lo espaciado de la evocación (`spacingFactor`). Recordar algo que ya estaba debilitado
+ * consolida más ("dificultad deseable").
  */
 export function reinforce(
   memory: Pick<MemoryRecord, "strength" | "stability" | "lastAccessedAt" | "accessCount">,
@@ -66,13 +86,9 @@ export function reinforce(
   config: DecayConfig = DEFAULT_DECAY,
 ): Pick<MemoryRecord, "strength" | "stability" | "lastAccessedAt" | "accessCount"> {
   const s = currentStrength(memory, now);
-  const difficultyBonus = 1 + (1 - s);
   return {
     strength: Math.min(1, s + (1 - s) * config.recallStrengthGain),
-    stability: capStability(
-      memory.stability * config.recallStabilityGrowth * difficultyBonus,
-      config,
-    ),
+    stability: capStability(memory.stability * spacingFactor(memory, now, config), config),
     lastAccessedAt: now,
     accessCount: memory.accessCount + 1,
   };
