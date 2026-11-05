@@ -3,6 +3,7 @@ import { Lore, LoreHolder, SkillState } from "@lethetown/shared";
 import { and, eq } from "drizzle-orm";
 import type { Db } from "./client";
 import { lore, loreHolders, skills } from "./schema";
+import { bounded, RANGES } from "./ranges";
 
 export interface SkillStore {
   upsert(s: SkillState): Promise<void>;
@@ -66,7 +67,8 @@ export class PgSkillStore implements SkillStore {
     readonly worldId: string,
   ) {}
 
-  async upsert(s: SkillState) {
+  async upsert(state: SkillState) {
+    const s = bounded(state, RANGES.skill);
     const { agentId: _a, skill: _s, ...set } = s;
     await this.db
       .insert(skills)
@@ -105,7 +107,8 @@ export class PgLoreStore implements LoreStore {
       .onConflictDoUpdate({ target: [lore.worldId, lore.id], set });
   }
 
-  async upsertHolder(h: LoreHolder) {
+  async upsertHolder(holder: LoreHolder) {
+    const h = bounded(holder, RANGES.loreHolder);
     const { loreId: _l, agentId: _a, ...set } = h;
     await this.db
       .insert(loreHolders)

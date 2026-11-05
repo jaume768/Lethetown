@@ -3,6 +3,7 @@ import { Departure, Goal } from "@lethetown/shared";
 import { and, eq } from "drizzle-orm";
 import type { Db } from "./client";
 import { departures, goals } from "./schema";
+import { bounded, RANGES } from "./ranges";
 
 export interface GoalStore {
   upsert(goal: Goal): Promise<void>;
@@ -53,7 +54,8 @@ export class PgGoalStore implements GoalStore {
     readonly worldId: string,
   ) {}
 
-  async upsert(goal: Goal) {
+  async upsert(g: Goal) {
+    const goal = bounded(g, RANGES.goal);
     const { id: _id, ...set } = goal;
     await this.db
       .insert(goals)
