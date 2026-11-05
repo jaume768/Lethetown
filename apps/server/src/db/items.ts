@@ -10,6 +10,8 @@ export interface ItemStore {
   listAll(): Promise<Item[]>;
   /** Los que lleva o son suyos. */
   listFor(agentId: string): Promise<Item[]>;
+  /** Ya no existe (se lo comió: el pan, las verduras). */
+  remove(id: string): Promise<void>;
 }
 
 /** "i12" → 12. */
@@ -29,6 +31,10 @@ export class InMemoryItemStore implements ItemStore {
 
   async listFor(agentId: string) {
     return (await this.listAll()).filter((i) => i.holderId === agentId || i.ownerId === agentId);
+  }
+
+  async remove(id: string) {
+    this.items.delete(id);
   }
 }
 
@@ -68,5 +74,11 @@ export class PgItemStore implements ItemStore {
         ),
       );
     return rows.map(toItem).sort(byId);
+  }
+
+  async remove(id: string) {
+    await this.db
+      .delete(inventoryItems)
+      .where(and(eq(inventoryItems.worldId, this.worldId), eq(inventoryItems.id, id)));
   }
 }

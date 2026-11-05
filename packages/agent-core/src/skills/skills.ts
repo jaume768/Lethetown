@@ -224,6 +224,15 @@ export const SkillsConfig = z.object({
   qualityAffinity: unit(0.03),
   /** Resultados (fotos, dibujos, pan…) que puede guardar alguien a la vez. */
   maxResults: z.number().int().nonnegative().default(3),
+  /**
+   * Consumir lo hecho (corrección 3.5: en una semana se acumularon 49 cestas de verdura y 14
+   * panes sin comer). Con hambre ≥ `eatMinHunger`, quien lleva algo de comer de estos tipos se lo
+   * come (como mucho uno cada `eatEveryMinutes`): desaparece y el hambre baja `eatHungerRelief`.
+   */
+  edibleKinds: z.array(z.string()).default(["pan", "verdura"]),
+  eatMinHunger: unit(0.5),
+  eatHungerRelief: unit(0.3),
+  eatEveryMinutes: z.number().int().positive().default(120),
   /** Minutos de práctica seguidos para que salga un resultado. */
   resultMinutes: z.number().int().positive().default(45),
   /** Duración (min de juego) de una sesión de enseñanza y de una ayuda. */

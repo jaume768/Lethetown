@@ -38,6 +38,15 @@ export function saveItem(ctx: SimContext, item: Item, touch = true): void {
   ctx.deps.track?.(write);
 }
 
+/** Un objeto que deja de existir (se lo come alguien). */
+export function removeItem(ctx: SimContext, id: string): void {
+  itemsState(ctx).items.delete(id);
+  const write = ctx.itemStore
+    .remove(id)
+    .catch((e: unknown) => ctx.emit("system", null, `⚠ No se pudo quitar el objeto: ${String(e)}`));
+  ctx.deps.track?.(write);
+}
+
 /**
  * Carga los objetos al arrancar: los de la instantánea si se restauró, si no los guardados y, en
  * un mundo nuevo, los de las semillas (con sus préstamos).

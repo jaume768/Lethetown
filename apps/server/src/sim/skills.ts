@@ -25,7 +25,7 @@ import {
 } from "@lethetown/agent-core";
 import type { SkillState } from "@lethetown/shared";
 import { InMemorySkillStore, type SkillStore } from "../db/skills";
-import { itemsState, newItemId, saveItem } from "./items";
+import { itemsState, newItemId, removeItem, saveItem } from "./items";
 import { errorMessage, type SimContext } from "./context";
 import { presentWith } from "./perception";
 import { systemsHold } from "./systems/registry";
@@ -76,7 +76,9 @@ export interface SkillsState {
   sessions: Map<string, TeachingSession>;
   seq: number;
   /** Para «Evolución». */
-  counts: { sessions: number; helps: number; shown: number };
+  counts: { sessions: number; helps: number; shown: number; eaten: number };
+  /** Cuándo comió algo de su inventario por última vez (para no comerse todo de golpe). */
+  lastAte: Map<string, number>;
   /** Sesiones empezadas hoy por pareja y habilidad ("día|a|b|skill" → n). */
   pairDay: Map<string, number>;
 }
@@ -131,7 +133,8 @@ export const skillsState = (ctx: SimContext) =>
     results: new Map(),
     sessions: new Map(),
     seq: 0,
-    counts: { sessions: 0, helps: 0, shown: 0 },
+    counts: { sessions: 0, helps: 0, shown: 0, eaten: 0 },
+    lastAte: new Map(),
     pairDay: new Map(),
   }));
 
@@ -356,6 +359,10 @@ export function skillsTick(ctx: SimContext, now: number, minutes: number): void 
     const weight = routine.has(id) ? cfg.routinePracticeWeight : 1;
     addPractice(ctx, agent, skill, minutes, now, master, weight);
   }
+  for (const agent of ctx.agents.values()) {
+    if (systemsHold(ctx, agent.id) || agent.state.activityKind === "sleep") continue;
+    eatFromInventory(ctx, agent, now);
+  }
   const day = Math.floor(now / 1440);
   if (st.lastDecayDay < 0) st.lastDecayDay = day;
   if (day > st.lastDecayDay) {
@@ -523,6 +530,42 @@ export function resultsOf(ctx: SimContext, agentId: string): string[] {
   return [...skillsState(ctx).results]
     .filter(([id, r]) => r.makerId === agentId && items.get(id)?.holderId === agentId)
     .map(([id]) => id);
+}
+
+/**
+ * Con hambre, se come algo de comer que lleva (pan, verduras: de lo que salió de practicar o
+ * le regalaron): el objeto desaparece y el hambre baja. Si lo hizo otro, nota la calidad. Sin
+ * LLM ni acción nueva (corrección 3.5). Devuelve el objeto que se comió.
+ */
+export function eatFromInventory(ctx: SimContext, agent: Agent, now: number): string | null {
+  const cfg = skillsCfg(ctx);
+  const st = skillsState(ctx);
+  if (agent.state.needs.hunger < cfg.eatMinHunger) return null;
+  const last = st.lastAte.get(agent.id);
+  if (last !== undefined && now - last < cfg.eatEveryMinutes) return null;
+  const food = [...itemsState(ctx).items.values()]
+    .filter((i) => i.holderId === agent.id && !i.loan && cfg.edibleKinds.includes(i.kind))
+    .sort((a, b) => a.createdAt - b.createdAt)[0];
+  if (!food) return null;
+  st.lastAte.set(agent.id, now);
+  st.counts.eaten++;
+  agent.state.needs = {
+    ...agent.state.needs,
+    hunger: Math.max(0, agent.state.needs.hunger - cfg.eatHungerRelief),
+  };
+  const made = st.results.get(food.id);
+  removeItem(ctx, food.id);
+  st.results.delete(food.id);
+  if (made) tasteResult(ctx, agent.id, made.makerId, food.kind, made.quality, now);
+  ctx.emit(
+    "action",
+    agent.id,
+    `🍞 ${agent.seed.name} se come ${food.name}`,
+    [agent.id, ...(made && made.makerId !== agent.id ? [made.makerId] : [])],
+    undefined,
+    { action: "eat_result", ok: true },
+  );
+  return food.id;
 }
 
 /**

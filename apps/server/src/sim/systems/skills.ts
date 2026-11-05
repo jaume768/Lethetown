@@ -7,6 +7,7 @@
 import { formalAction } from "../agreements";
 import { SkillState } from "@lethetown/shared";
 import { z } from "zod";
+import { itemsState } from "../items";
 import {
   decideSkillsLine,
   labelOf,
@@ -186,6 +187,14 @@ registerSystem({
       tracked: all.length,
       sessions: skillsState(ctx).counts.sessions,
       helps: skillsState(ctx).counts.helps,
+      eaten: skillsState(ctx).counts.eaten,
+      // Lo que lleva encima el que más lleva (los inventarios no deben crecer sin límite).
+      carriedMax: Math.max(
+        0,
+        ...[...ctx.agents.keys()].map(
+          (id) => [...itemsState(ctx).items.values()].filter((i) => i.holderId === id).length,
+        ),
+      ),
       shown: skillsState(ctx).counts.shown,
       results: skillsState(ctx).results.size,
     };

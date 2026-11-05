@@ -64,8 +64,14 @@ y que eso se note en el mundo, sin que el LLM se invente el nivel de nadie. Sist
   de ánimo y de afinidad hacia quien lo hizo (algo en contra si sale mal).
 - **Resultados**: 45 minutos seguidos practicando algo que deja resultado (fotos, dibujos, pan,
   verduras) dan un objeto del inventario con su calidad, como mucho 3 a la vez por persona; se
-  regalan con `show_result` (quien lo recibe nota la calidad). No hay economía todavía: el pan se
-  acumula hasta 3.
+  regalan con `show_result` (quien lo recibe nota la calidad). No hay economía todavía.
+- **Consumir lo hecho** (corrección 3.5; en la partida de una semana se acumularon 49 cestas de
+  verdura y 14 panes sin comer): con hambre ≥ `SkillsConfig.eatMinHunger` (0,5), quien lleva pan
+  o verduras (`edibleKinds`) se come uno, como mucho cada `eatEveryMinutes` (120): el objeto
+  desaparece (`ItemStore.remove`), el hambre baja `eatHungerRelief` (0,3) y, si lo hizo otro,
+  nota su calidad. Lo hace el motor en la revisión de habilidades, sin acción nueva ni LLM (no
+  cambia el catálogo) y sin comprar ni vender. En 7 días de mock (`SIM_SEED=7`): 34 cosas
+  comidas, 29 objetos en el pueblo y nadie lleva más de 4 (métrica `carriedMax`).
 - **Metas** `skill_level` {skill, level}: aprender o mejorar en algo, desde el nivel al crearla
   (lo que ya se sabe no es una meta). Inés empieza con «Aprender a hacer buenas fotos con
   Valentina» (0,5).
