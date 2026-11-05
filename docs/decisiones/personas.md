@@ -53,6 +53,31 @@ realista: en un pueblo pequeño todo el mundo sabe quién vive y quién no.
   ejemplos; las métricas del sistema `knowledge`, `person.retried`, `person.replaced` y
   `person.dropped`.
 
+## Ruido de la partida de una semana (corrección 3.5)
+
+De 12 decisiones repetidas, solo una era una persona inventada («la señora Pepa», otra vez
+Ernesto). El resto, y buena parte de lo cambiado por «alguien», era ruido. Ahora no cuentan:
+
+- **Apodos** (`nicknames` en la semilla, solo los que salen de su nombre: «Rafa» por Rafael) y
+  el **principio de un nombre** que existe (≥ 4 letras: «Valen…», «Ngoz…»), salvo que sea otro
+  nombre de pila de la lista («Julia» no es Julián: así no se cuela una persona inventada).
+- **Siglas e instituciones** de la época (`institutions` en la biblia: BUP, COU, ESO, PAU,
+  Selectividad, UIB, el Ajuntament, el Govern, el Consell, el Insalud…), también para el
+  registro de conocimiento externo.
+- **Listas**: en el plan y en los textos que recuerdan o resumen (`LIST_KINDS`), una coma abre
+  elemento («mi madre, Abrir…»), como ya hacía el registro de conocimiento.
+- **Conocidos por otros**: la gente de fuera que sale en un saber que se tiene (Alma, en «El
+  verano en que Alma se fue», para Clara) o la de un vecino con quien hay trato (familiaridad ≥
+  `personGuard.acquaintanceFamiliarity`, 0,5: Francisca, la mujer de Julián, para Andrés). El
+  sistema `knowledge` lo repasa al cargar y cada hora (`PersonGuard.acquaint`), y queda en su
+  instantánea como lo que le contaron.
+- «Fela» (Fela Kuti) es una figura pública; Fela Kuti y Bob Dylan, referencias de la época.
+- Al cambiar un nombre por «alguien» se quita su artículo («lo de la señora Pepa» → «lo de
+  alguien»; «al Pep» → «a alguien»).
+
+Siguen detectándose «la señora Pepa», «Toni el del taller» (para quien no conoce al padre de
+Leo) y «el Pep» (test de regresión con los ejemplos de la partida).
+
 ## A revisar con una partida real
 
 - Que la regla del prompt baste para que casi no haga falta reintentar (cada reintento es una
