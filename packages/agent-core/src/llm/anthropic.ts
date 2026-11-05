@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { BatchCapableProvider, CompletionRequest, CompletionResult } from "./types";
-import { LLMRefusalError } from "./types";
+import { IDENTITY_HEADING, LLMRefusalError } from "./types";
 
 /**
  * Modelos que aceptan el fallback del lado servidor (`fallbacks: "default"`), que reenvía
@@ -40,18 +40,19 @@ export class AnthropicProvider implements BatchCapableProvider {
     return {
       model: req.model,
       max_tokens: req.maxTokens,
-      // Identidad estable en `system` con breakpoint de caché; lo volátil va en el mensaje.
-      system: [
-        {
-          type: "text" as const,
-          text: req.system,
-          cache_control: {
-            type: "ephemeral" as const,
-            // TTL de 1 h (documentado: escritura a 2× la entrada); sin él, 5 min.
-            ...(req.cacheTtl === "1h" ? { ttl: "1h" as const } : {}),
-          },
+      // `system` estable con puntos de caché; lo volátil va en el mensaje. Si trae la
+      // identidad aparte (`## Quién eres`), dos bloques: lo común a todos los vecinos (lo
+      // comparten los 20) y lo de cada uno. Hasta 4 puntos por petición; los dos con el mismo
+      // TTL (uno de 1 h no puede ir detrás de uno de 5 min).
+      system: splitSystem(req.system).map((text) => ({
+        type: "text" as const,
+        text,
+        cache_control: {
+          type: "ephemeral" as const,
+          // TTL de 1 h (documentado: escritura a 2× la entrada); sin él, 5 min.
+          ...(req.cacheTtl === "1h" ? { ttl: "1h" as const } : {}),
         },
-      ],
+      })),
       messages: [{ role: "user" as const, content: req.prompt }],
       output_config: { effort: req.effort },
       ...(useFallback ? { fallbacks: "default" as const } : {}),
@@ -142,4 +143,14 @@ function toResult(response: BetaMessage): CompletionResult {
       cacheWriteTokens: usage.cache_creation_input_tokens ?? 0,
     },
   };
+}
+
+/**
+ * El `system` en bloques de caché: lo común a todos (hasta «## Quién eres») y lo de cada uno.
+ * Sin el encabezado, un solo bloque. Concatenados dan exactamente el texto original.
+ */
+export function splitSystem(system: string): string[] {
+  const at = system.indexOf(`\n${IDENTITY_HEADING}\n`);
+  if (at <= 0) return [system];
+  return [system.slice(0, at + 1), system.slice(at + 1)];
 }

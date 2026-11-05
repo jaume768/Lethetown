@@ -34,6 +34,22 @@
   agente. `CostTracker` cobra lo escrito a 1 h a 2× la entrada (o `cacheWrite1h` de
   `pricing.json`). Sin medir aún con el LLM real: si la consolidación va por lote, su escritura
   en caché es de mejor esfuerzo y el plan puede no encontrarla (el mock no simula la caché).
+- **Prefijo común a los 20, con su propio punto de caché** (corrección 3.5; en la partida de
+  una semana el plan era la tarea más cara, el 31 %, y en el mundo que escribía la caché solo
+  leía un 23 %): el prompt fijo empieza por lo que es igual byte a byte para todos los vecinos
+  del mundo (`sharedSystemPrompt`: el catálogo de acciones, las reglas, las líneas fijas de los
+  sistemas con la biblia, la lista de menores y el idioma) y sigue con «## Quién eres» (su
+  identidad, su gente de fuera, su regla de menor si lo es, su casa y los lugares que conoce).
+  El proveedor de Anthropic lo parte ahí en dos bloques de `system`, cada uno con su
+  `cache_control` y el mismo TTL (`splitSystem`): el primero lo leen de la caché los 20 (y las
+  dos semillas de una partida en paralelo); el segundo, cada agente. Documentación oficial
+  (comprobada en la referencia de prompt caching): hasta 4 puntos por petición, orden `tools →
+system → messages`, una entrada de 1 h no puede ir detrás de una de 5 min, y el mínimo
+  cacheable en Sonnet 5.5 y Haiku 5.5 es de 512 tokens (el prefijo común pasa de 1.500). Vale
+  para todas las tareas por agente (decidir y las de memoria también, con 5 min) y en los lotes
+  (caché de mejor esfuerzo). OpenAI recibe el texto entero. **El mock no mide la caché real**
+  (cachea por el `system` entero): con `cost:report 48` sale lo mismo; hay que medirlo con
+  `latency:probe` (ver PROGRESS-CORRECCION-3-5.md).
 - **Prompt caching**: el prompt fijo de identidad no contiene nada variable; lo variable va en el
   prompt de usuario. Anthropic con `cache_control`; OpenAI con `prompt_cache_key` por agente.
 - **Respuesta en un único JSON** validado con zod; si falla, comportamiento por defecto (seguir el

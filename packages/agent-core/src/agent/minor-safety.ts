@@ -60,13 +60,22 @@ export function minorsOf(seeds: Pick<AgentSeed, "id" | "name" | "age" | "isMinor
  * Vacía si en el pueblo no hay menores.
  */
 export function minorsRule(minors: MinorInfo[], selfId: string): string {
+  return minorsListRule(minors) + minorSelfRule(minors, selfId);
+}
+
+/** La parte común a todos (la lista de menores y la regla): va en el prefijo compartido. */
+export function minorsListRule(minors: MinorInfo[]): string {
   if (!minors.length) return "";
   const list = minors.map((m) => `${m.name} (${m.age} años)`).join(", ");
+  return `\n- En el pueblo hay menores de edad: ${list}. Nadie tiene ni busca con ellos relaciones románticas o sexuales: ningún adulto flirtea con un menor ni muestra interés romántico por él. Los adultos los tratan como lo que son, niños o adolescentes del pueblo (vecinos, alumnos, familia), con cariño y respeto adecuados a su edad.`;
+}
+
+/** La parte de quien es menor (va en su identidad). */
+export function minorSelfRule(minors: MinorInfo[], selfId: string): string {
   const self = minors.find((m) => m.id === selfId);
-  const own = self
+  return self
     ? `\n- Tú tienes ${self.age} años: eres menor de edad. No tienes relaciones románticas ni sexuales, no flirteas con nadie y nadie lo hace contigo.`
     : "";
-  return `\n- En el pueblo hay menores de edad: ${list}. Nadie tiene ni busca con ellos relaciones románticas o sexuales: ningún adulto flirtea con un menor ni muestra interés romántico por él. Los adultos los tratan como lo que son, niños o adolescentes del pueblo (vecinos, alumnos, familia), con cariño y respeto adecuados a su edad.${own}`;
 }
 
 /**
