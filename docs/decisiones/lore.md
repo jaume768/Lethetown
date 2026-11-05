@@ -51,6 +51,12 @@ personas inventadas. Sistema `lore` (`apps/server/src/sim/systems/lore.ts`, lóg
   alguien que lo sabe a medias o hace días, sí.
 - **Acordado hablando**: el acuerdo `share_lore` (con su `loreId`) pasa por la acción formal.
 
+- **La pérdida no se ve en una semana** (corrección 3.5): con 5 días de gracia y 0,012 al día,
+  un saber que nadie usa tarda unos 60–70 días en caer por debajo de 0,25 en todos sus
+  portadores (test en agent-core, `knownByTown`). En la partida de 7 días no se perdió ninguno, y
+  es lo esperado: los parámetros de olvido no se tocan; para verla hace falta una partida de más
+  de dos meses de juego.
+
 ## A revisar
 
 - Con el LLM real, cuántos saberes se cuentan de verdad (en el mock, pocos: solo cuando sale la

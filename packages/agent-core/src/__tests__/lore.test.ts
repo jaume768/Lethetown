@@ -1,7 +1,7 @@
 /** Saberes (lógica pura): deformación al contarse, refuerzo con el uso y olvido. */
 import type { LoreElement } from "@lethetown/shared";
 import { describe, expect, it } from "vitest";
-import { LoreConfig, alterElement, forgetLore, transmit, useLore } from "../lore/lore";
+import { LoreConfig, alterElement, forgetLore, knownByTown, transmit, useLore } from "../lore/lore";
 import { seededRng } from "../util/random";
 
 const cfg = LoreConfig.parse({});
@@ -91,5 +91,31 @@ describe("uso y olvido", () => {
     const after = (skill: number) =>
       forgetLore({ fidelity: 0.9, elements: full }, 20, 30, skill, 5, rng, cfg).fidelity;
     expect(after(0.9)).toBeGreaterThan(after(0));
+  });
+});
+
+describe("pérdida para el pueblo (corrección 3.5: no se ve en una semana)", () => {
+  it("60–70 días sin que nadie lo use: ningún portador llega a 0,25 y se pierde", () => {
+    const rng = seededRng(9);
+    // Dos portadores (quien lo sabía y quien lo aprendió), algo de oficio, sin usarlo nunca.
+    let holders = [
+      { fidelity: 0.9, elements: full, skill: 0.3, forgotten: false },
+      { fidelity: 0.8, elements: full.slice(0, 3), skill: 0, forgotten: false },
+    ];
+    const alive: Record<number, boolean> = {};
+    for (let day = 1; day <= 70; day++) {
+      holders = holders.map((h) => {
+        if (h.forgotten) return h;
+        const r = forgetLore(h, day, 1, h.skill, full.length, rng, cfg);
+        return { ...h, ...r, forgotten: r.fidelity < cfg.minFidelity };
+      });
+      alive[day] = knownByTown(holders, cfg);
+    }
+    // En una semana (la partida de estudio) no se nota: sigue intacto.
+    expect(alive[7]).toBe(true);
+    expect(holders.every((h) => h.forgotten)).toBe(true);
+    const lostOn = Number(Object.keys(alive).find((d) => !alive[Number(d)]));
+    expect(lostOn).toBeGreaterThanOrEqual(55);
+    expect(lostOn).toBeLessThanOrEqual(70);
   });
 });

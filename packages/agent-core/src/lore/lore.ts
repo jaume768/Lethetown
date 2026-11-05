@@ -136,6 +136,17 @@ export function transmit(
   return { elements: out, fidelity, lost, altered };
 }
 
+/**
+ * ¿Lo sigue sabiendo el pueblo? Sí mientras algún portador que no lo ha olvidado llegue a
+ * `minFidelity`; si no, se pierde para el pueblo.
+ */
+export function knownByTown(
+  holders: { fidelity: number; forgotten: boolean }[],
+  cfg: LoreConfig,
+): boolean {
+  return holders.some((h) => !h.forgotten && h.fidelity >= cfg.minFidelity);
+}
+
 /** Usarlo lo refuerza (sin recuperar lo que ya se perdió). */
 export function useLore(fidelity: number, cfg: LoreConfig): number {
   return clamp01(fidelity + cfg.useBoost);

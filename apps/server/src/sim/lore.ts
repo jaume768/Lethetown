@@ -5,7 +5,14 @@
  * habilidad, ir a su sitio) lo refuerza; sin uso se olvida y, si nadie lo sabe ya con fidelidad
  * suficiente, se pierde para el pueblo. Ver docs/decisiones/lore.md.
  */
-import { forgetLore, transmit, useLore, type Agent, type LoreConfig } from "@lethetown/agent-core";
+import {
+  forgetLore,
+  knownByTown,
+  transmit,
+  useLore,
+  type Agent,
+  type LoreConfig,
+} from "@lethetown/agent-core";
 import type { HeldElement, Lore, LoreHolder } from "@lethetown/shared";
 import { InMemoryLoreStore, type LoreStore } from "../db/skills";
 import { errorMessage, type SimContext } from "./context";
@@ -320,10 +327,10 @@ export function loreTick(ctx: SimContext, now: number): void {
   }
   for (const l of s.lore.values()) {
     if (l.lostAt !== null) continue;
-    const alive = [...s.holders.values()].some(
-      (h) => h.loreId === l.id && h.forgottenAt === null && h.fidelity >= cfg.minFidelity,
-    );
-    if (alive) continue;
+    const holders = [...s.holders.values()]
+      .filter((h) => h.loreId === l.id)
+      .map((h) => ({ fidelity: h.fidelity, forgotten: h.forgottenAt !== null }));
+    if (knownByTown(holders, cfg)) continue;
     l.lostAt = now;
     s.counts.lost++;
     saveLore(ctx, l);
