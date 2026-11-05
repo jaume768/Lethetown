@@ -3212,16 +3212,16 @@
 [día 1, 21:58] action andres Andrés Molina: hablando con Tomás y Elena
 [día 1, 21:58] speech andres Andrés Molina → Tomás Herrero: "¿Te cuento una cosa? Quiero volver a quedar con Ernesto"
 [día 1, 21:59] action - Tomás, Elena y Andrés terminan de hablar (24 turnos; se estaban repitiendo)
+[día 1, 22:00] memory tomas 📝 Tomás Herrero se propone volver a quedar con Andrés
 [día 1, 22:00] action julian Julián Ortega: cenar y descansar
 [día 1, 22:00] action mateo Mateo Ruiz: caminando a Casa roja
 [día 1, 22:00] action marta Marta Gil: caminando a Casa naranja
-[día 1, 22:00] memory tomas 📝 Tomás Herrero se propone volver a quedar con Andrés
+[día 1, 22:00] memory tomas 📝 Tomás Herrero se propone volver a quedar con Ernesto
 [día 1, 22:00] world - 🔒 Cierra Café La Ola
 [día 1, 22:00] action tomas Tomás Herrero: caminando a Casa ocre
 [día 1, 22:00] action andres Andrés Molina: caminando a Casa marrón
 [día 1, 22:00] action ernesto Ernesto Blasco: caminando a Casa del molino
 [día 1, 22:01] action clara Clara Méndez: caminando a Casa del jardín
-[día 1, 22:01] memory tomas 📝 Tomás Herrero se propone volver a quedar con Ernesto
 [día 1, 22:01] memory elena 📝 Elena Sanz se propone volver a quedar con Tomás
 [día 1, 22:01] memory andres 📝 Andrés Molina se propone volver a quedar con Julián
 [día 1, 22:01] memory andres 📝 Andrés Molina se propone volver a quedar con Tomás

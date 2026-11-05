@@ -136,6 +136,7 @@ export class KnowledgeDetector {
           ...bible.glossary.map((g) => g.term),
           ...bible.commonReferences,
           ...bible.culturalReferences.map((r) => r.term),
+          ...bible.institutions,
           ...opts.places,
           ...opts.neighbors.map((n) => n.name),
           ...(opts.people ?? []),

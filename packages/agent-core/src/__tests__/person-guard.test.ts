@@ -45,6 +45,8 @@ function makeGuard(mode: "log" | "enforce" = "enforce") {
       bible.city.name,
       ...bible.glossary.map((g) => g.term),
       ...bible.commonReferences,
+      ...bible.culturalReferences.map((r) => r.term),
+      ...bible.institutions,
       "Café La Ola",
       "Taberna El Faro",
     ],
@@ -113,6 +115,80 @@ describe("qué es una persona inventada", () => {
     expect(g.find("Dicen que Alma era muy guapa.", speech("samuel"))).toEqual([]);
     expect(g.learn("rafael", "ernesto", "Me lo dijo la Pepa.")).toEqual([]);
     expect(g.acquaintances().samuel).toContain("alma");
+  });
+});
+
+describe("ruido de la partida de una semana (corrección 3.5)", () => {
+  /** Lo que haría el guardián con el texto: nombres cambiados y registrados (también «la X»). */
+  function outcome(text: string, ctx: Parameters<PersonGuard["find"]>[1]) {
+    const { guard, records } = makeGuard();
+    return { out: guard.rewriter.rewrite(text, ctx), records: records.map((r) => r.name) };
+  }
+
+  it("A1: los apodos de la semilla («Rafa» por Rafael) y el principio de un nombre", () => {
+    const hugo = "Rafa, ya te lo pago, de verdad. Esta semana, lo prometo.";
+    expect(outcome(hugo, speech("hugo", ["rafael"]))).toEqual({ out: hugo, records: [] });
+    // Hablando con otro, también: el apodo es de todo el pueblo.
+    const other = "Le debo dinero a Rafa y me da vergüenza.";
+    expect(outcome(other, speech("hugo", ["valentina"]))).toEqual({ out: other, records: [] });
+    // Un texto recortado o un apodo de 4 letras o más de un vecino o de su gente de fuera.
+    expect(outcome("Valen, ¿vienes al lago?", speech("hugo")).records).toEqual([]);
+    expect(outcome("Le he escrito a Ngoz…", speech("samuel")).records).toEqual([]);
+    // Otro nombre de pila no es el principio de un vecino («Julia» no es Julián).
+    expect(outcome("Me lo dijo Julia en la plaza.", speech("hugo")).records).toEqual(["Julia"]);
+  });
+
+  it("A2: siglas de estudios e instituciones", () => {
+    for (const [text, who] of [
+      ["Pues la PAU, en junio, y con buena nota.", "samuel"],
+      ["Inés está con el BUP, que no es poco.", "julian"],
+      ["Eso lo tiene que arreglar el Ajuntament.", "elena"],
+      ["El Govern y el Consell no dicen nada de la casa.", "elena"],
+      ["Si apruebo la Selectividad me voy a la UIB.", "clara"],
+    ] as const) {
+      expect(outcome(text, speech(who)), text).toEqual({ out: text, records: [] });
+    }
+  });
+
+  it("A3: en una lista (plan, recuerdo, resumen), tras una coma empieza un elemento", () => {
+    const plan = "Desayunar con mi madre, Abrir el café, Comer con mi abuela, Pasear por la plaza";
+    expect(outcome(plan, { kind: "plan", agentId: "mateo" })).toEqual({ out: plan, records: [] });
+    const day = "El día 2: cenar con mi hija, Leer en casa, Escribir a mi editora";
+    expect(outcome(day, { kind: "memory", agentId: "lucia" }).records).toEqual([]);
+    // En una lista, un nombre inventado sigue siéndolo.
+    expect(
+      outcome("Desayunar, Pepa me espera", { kind: "plan", agentId: "mateo" }).records,
+    ).toEqual(["Pepa"]);
+  });
+
+  it("A4: gente que se conoce por un saber o por un vecino con quien hay trato", () => {
+    const { guard } = makeGuard();
+    const alma = "Mi abuela me habló de Alma, que se fue del pueblo.";
+    expect(guard.find(alma, speech("clara", ["hugo"]))).toEqual(["Alma"]);
+    guard.acquaint("clara", ["Alma"]); // lo que hace el sistema `knowledge` con sus saberes
+    expect(guard.find(alma, speech("clara", ["hugo"]))).toEqual([]);
+    const andres = "Julián, Francisca hacía unas magdalenas buenísimas.";
+    expect(guard.find(andres, speech("andres", ["hugo"]))).toEqual(["Francisca"]);
+    guard.acquaint("andres", ["Francisca"]);
+    expect(guard.find(andres, speech("andres", ["hugo"]))).toEqual([]);
+  });
+
+  it("A6: Fela Kuti y Bob Dylan son referencias de la época", () => {
+    const fela = "A ver si adivinas esto. ¿Fela o no? El Fela de Lagos, como Bob Dylan.";
+    expect(outcome(fela, speech("hugo", ["samuel"]))).toEqual({ out: fela, records: [] });
+  });
+
+  it("las personas inventadas de verdad se siguen cambiando", () => {
+    const pepa = "¿Te has enterado de lo de la señora Pepa? Dicen que le llegó una carta de Palma.";
+    expect(outcome(pepa, speech("ernesto", ["rafael"])).out).toBe(
+      "¿Te has enterado de lo de alguien? Dicen que le llegó una carta de Palma.",
+    );
+    expect(outcome("Toni el del taller me lo arregló.", speech("hugo", ["rafael"])).out).toBe(
+      "Alguien el del taller me lo arregló.",
+    );
+    expect(outcome("Se lo dije al Pep y se rió.", speech("ernesto", ["rafael"])).records).toEqual([
+      "Pep",
+    ]);
   });
 });
 

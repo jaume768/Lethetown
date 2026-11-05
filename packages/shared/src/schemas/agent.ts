@@ -108,6 +108,11 @@ export type OffstagePerson = z.infer<typeof OffstagePerson>;
 export const AgentSeed = z.object({
   id: z.string(),
   name: z.string(),
+  /**
+   * Apodos con que lo llama el pueblo («Rafa» por Rafael): no cuentan como persona inventada.
+   * Solo los que salen de su nombre o de su historia (sin inventar).
+   */
+  nicknames: z.array(z.string().min(2).max(20)).default([]),
   age: z.number().int().positive(),
   /** Rasgos estables: forman el prefijo fijo del prompt (cacheable). */
   traits: z.array(z.string()),

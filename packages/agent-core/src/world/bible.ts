@@ -67,6 +67,11 @@ export const WorldBible = z.object({
       }),
     )
     .default([]),
+  /**
+   * Siglas de estudios e instituciones de la época (BUP, PAU, el Ajuntament, el Govern…): ni el
+   * PersonGuard ni el registro de conocimiento externo las cuentan como personas o referencias.
+   */
+  institutions: z.array(z.string().min(2)).default([]),
   anachronisms: z.array(AnachronismTerm).default([]),
   /**
    * Registro de conocimiento externo (ExternalKnowledgeGuard). log: solo registra (por defecto);
@@ -87,6 +92,11 @@ export const WorldBible = z.object({
       mode: z.enum(["log", "enforce"]).default("enforce"),
       publicFigures: z.array(z.string()).default([]),
       extraGivenNames: z.array(z.string()).default([]),
+      /**
+       * Familiaridad (0..1) con un vecino a partir de la cual se conoce a su gente de fuera
+       * (Andrés conoce a Francisca, la mujer de Julián, sin habérsela oído nombrar).
+       */
+      acquaintanceFamiliarity: z.number().min(0).max(1).default(0.5),
     })
     .prefault({}),
   /** Fiestas y días señalados ("MM-DD" → qué se celebra). */
