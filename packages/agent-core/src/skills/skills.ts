@@ -233,6 +233,14 @@ export const SkillsConfig = z.object({
   sessionAffinity: unit(0.05),
   helpAffinity: unit(0.03),
   /**
+   * Repetir la sesión (corrección 3.5): la misma pareja con la misma habilidad el mismo día no
+   * se ofrece más de `maxSessionsPerPairDay` veces, y cada repetición deja afinidad,
+   * familiaridad y drama × `sessionRepeatDamping`^(n − 1). En la partida de una semana, Mateo y
+   * Hugo encadenaron 17 eventos de enseñanza de café y barra.
+   */
+  maxSessionsPerPairDay: z.number().int().positive().default(2),
+  sessionRepeatDamping: unit(0.5),
+  /**
    * Histéresis de las etiquetas: se sube al cruzar el umbral y se baja solo por debajo de
    * umbral − esto. En la partida de una semana, 8 habilidades por mundo bajaban de etiqueta a
    * la vez el día 4 (valores de partida justo en 0,20, 0,45 o 0,70 que perdían milésimas).

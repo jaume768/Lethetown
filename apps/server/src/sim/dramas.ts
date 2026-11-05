@@ -11,6 +11,8 @@ import {
   type SocialProfile,
 } from "@lethetown/shared";
 
+/** Cada repetición del mismo drama el mismo día (`meta.repeat`) vale esto de la anterior. */
+const REPEAT_DAMPING = 0.5;
 /** Dos dramas del mismo tipo con los mismos agentes en menos de esto (min de juego) son uno. */
 const DEDUPE_MINUTES = 30;
 
@@ -112,7 +114,9 @@ export class DramaDetector {
     // Metas: conseguidas, abandonadas, cambio de rumbo, conflictos, marcharse y volver.
     const goal = GOAL_DRAMAS[e.meta?.action ?? ""]?.(e.meta?.ok !== false);
     if (goal) {
-      const [kind, score] = goal;
+      const [kind, base] = goal;
+      // Lo repetido ese día (la misma pareja enseñando lo mismo) vale cada vez menos.
+      const score = base * REPEAT_DAMPING ** ((e.meta?.repeat ?? 1) - 1);
       this.publish(
         kind,
         score,

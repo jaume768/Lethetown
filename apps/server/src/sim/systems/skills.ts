@@ -111,6 +111,8 @@ registerSystem({
         z.string(),
         z.object({ quality: z.number(), makerId: z.string(), skill: z.string() }),
       ),
+      /** Sesiones de hoy por pareja y habilidad (corrección 3.5; sin ella, vacías). */
+      pairDay: z.record(z.string(), z.number()).default({}),
     }),
     save: (ctx) => {
       const s = skillsState(ctx);
@@ -124,6 +126,7 @@ registerSystem({
         practiceMinutes: s.practiceMinutes,
         streak: Object.fromEntries(s.streak),
         results: Object.fromEntries(s.results),
+        pairDay: Object.fromEntries(s.pairDay),
       };
     },
     restore: (ctx, d) => {
@@ -137,6 +140,7 @@ registerSystem({
       s.practiceMinutes = d.practiceMinutes;
       s.streak = new Map(Object.entries(d.streak));
       s.results = new Map(Object.entries(d.results));
+      s.pairDay = new Map(Object.entries(d.pairDay));
     },
   },
   load: async (ctx, { restored, now }) => {

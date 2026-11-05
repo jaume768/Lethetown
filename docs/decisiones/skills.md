@@ -81,6 +81,13 @@ Ver las acciones en [acciones](acciones.md#aprender-y-enseñar).
   en 30 minutos. Juntas 60 minutos (`sessionMinutes`): el alumno practica con maestro y el maestro
   practica «enseñar». Si se separan, acaba antes. Al acabar, afinidad y familiaridad para los dos
   (0,05), un recuerdo para cada uno y el drama «maestro y alumno».
+- **Sin encadenar sesiones** (corrección 3.5; en la partida de una semana, Mateo y Hugo
+  encadenaron 17 eventos de enseñanza de café y barra): la misma pareja y habilidad no tiene más
+  de `SkillsConfig.maxSessionsPerPairDay` (2) sesiones al día. Pasado el tope no se ofrece (ni
+  «Aquí sabe más que tú», ni `teach`, ni `ask_to_learn`) y, si el LLM lo pide, el motor lo
+  rechaza con el motivo. Cada repetición del día deja afinidad y familiaridad ×
+  `sessionRepeatDamping`^(n − 1) (0,5) y el evento lleva `meta.repeat`: su drama vale la mitad
+  (la segunda ya no llega al mínimo). Las cuentas del día van en la instantánea del sistema.
 - **Solo se ofrecen cuando tienen sentido** (cada acción ofrecida cuesta tokens): pedir si alguien
   de aquí sabe claramente más; enseñar si se le saca ventaja a alguien de aquí; ayudar si alguien
   practica algo; practicar con tiempo libre.

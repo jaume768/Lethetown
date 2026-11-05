@@ -77,6 +77,8 @@ export interface SkillsState {
   seq: number;
   /** Para «Evolución». */
   counts: { sessions: number; helps: number; shown: number };
+  /** Sesiones empezadas hoy por pareja y habilidad ("día|a|b|skill" → n). */
+  pairDay: Map<string, number>;
 }
 
 export type SessionStatus = "proposed" | "active" | "declined" | "done" | "expired";
@@ -130,6 +132,7 @@ export const skillsState = (ctx: SimContext) =>
     sessions: new Map(),
     seq: 0,
     counts: { sessions: 0, helps: 0, shown: 0 },
+    pairDay: new Map(),
   }));
 
 export const skillsCfg = (ctx: SimContext): SkillsConfig => ctx.deps.memory.config.skills;
@@ -595,6 +598,32 @@ export function sessionsAwaiting(ctx: SimContext, agentId: string, now: number) 
   );
 }
 
+/** Clave de una pareja (sin orden) con una habilidad, un día. */
+const pairKey = (day: number, a: string, b: string, skill: string) =>
+  `${day}|${[a, b].sort().join("|")}|${skill}`;
+
+/** Sesiones de esa habilidad que ya han empezado hoy esa pareja. */
+export function sessionsToday(
+  ctx: SimContext,
+  a: string,
+  b: string,
+  skill: string,
+  now: number,
+): number {
+  return skillsState(ctx).pairDay.get(pairKey(Math.floor(now / 1440), a, b, skill)) ?? 0;
+}
+
+/** ¿Pueden tener hoy otra sesión de eso? (`maxSessionsPerPairDay`). */
+export function mayRepeatSession(
+  ctx: SimContext,
+  a: string,
+  b: string,
+  skill: string,
+  now: number,
+): boolean {
+  return sessionsToday(ctx, a, b, skill, now) < skillsCfg(ctx).maxSessionsPerPairDay;
+}
+
 /** Propone una sesión (pedir que te enseñen u ofrecerte a enseñar). */
 export function proposeSession(
   ctx: SimContext,
@@ -620,6 +649,8 @@ export function startSession(ctx: SimContext, v: TeachingSession, now: number): 
   v.status = "active";
   v.until = now + cfg.sessionMinutes;
   st.counts.sessions++;
+  const k = pairKey(Math.floor(now / 1440), v.teacherId, v.learnerId, v.skill);
+  st.pairDay.set(k, (st.pairDay.get(k) ?? 0) + 1);
   st.coached.set(v.learnerId, { skill: v.skill, masterId: v.teacherId, until: v.until });
   st.coached.set(v.teacherId, { skill: "teaching", masterId: null, until: v.until });
 }
@@ -632,6 +663,9 @@ export function finishSession(ctx: SimContext, v: TeachingSession, now: number):
   const learner = ctx.agents.get(v.learnerId);
   if (!teacher || !learner) return;
   const what = skillLabel(ctx, v.skill);
+  // La n-ésima de hoy entre los dos: cada repetición deja menos (rendimientos decrecientes).
+  const repeat = Math.max(1, sessionsToday(ctx, v.teacherId, v.learnerId, v.skill, v.until));
+  const gain = cfg.sessionAffinity * cfg.sessionRepeatDamping ** (repeat - 1);
   for (const [me, other] of [
     [teacher, learner],
     [learner, teacher],
@@ -640,8 +674,8 @@ export function finishSession(ctx: SimContext, v: TeachingSession, now: number):
       applySocialUpdate(ctx.deps.social, {
         ownerId: me.id,
         aboutId: other.id,
-        affinityDelta: cfg.sessionAffinity,
-        familiarityDelta: cfg.sessionAffinity,
+        affinityDelta: gain,
+        familiarityDelta: gain,
         now,
         reason: me === teacher ? `le enseñé ${what}` : `me enseñó ${what}`,
         config: ctx.deps.memory.config.social,
@@ -656,7 +690,7 @@ export function finishSession(ctx: SimContext, v: TeachingSession, now: number):
     `🧑‍🏫 ${teacher.seed.name} termina de enseñarle ${what} a ${learner.seed.name} (${labelOfAgent(ctx, learner.id, v.skill)})`,
     [teacher.id, learner.id],
     undefined,
-    { action: "teach", ok: true },
+    { action: "teach", ok: true, ...(repeat > 1 ? { repeat } : {}) },
   );
 }
 
@@ -687,6 +721,11 @@ export function sessionsTick(ctx: SimContext, now: number): void {
       finishSession(ctx, v, now);
     }
   }
+  // Las cuentas de días anteriores ya no hacen falta.
+  const today = `${Math.floor(now / 1440)}|`;
+  for (const k of skillsState(ctx).pairDay.keys()) {
+    if (!k.startsWith(today)) skillsState(ctx).pairDay.delete(k);
+  }
   // Lo acabado hace más de un día ya no hace falta.
   for (const [id, v] of skillsState(ctx).sessions) {
     if (v.status !== "proposed" && v.status !== "active" && now - v.until > 1440) {
@@ -695,14 +734,22 @@ export function sessionsTick(ctx: SimContext, now: number): void {
   }
 }
 
-/** Quién de los presentes sabe claramente más que él de algo (para pedirle que le enseñe). */
-export function mastersHere(ctx: SimContext, agent: Agent): { id: string; skill: string }[] {
+/**
+ * Quién de los presentes sabe claramente más que él de algo (para pedirle que le enseñe); no
+ * si hoy ya han tenido las sesiones que tocan de eso (`maxSessionsPerPairDay`).
+ */
+export function mastersHere(
+  ctx: SimContext,
+  agent: Agent,
+  now = ctx.clock.now(),
+): { id: string; skill: string }[] {
   const cfg = skillsCfg(ctx);
   const out: { id: string; skill: string }[] = [];
   for (const o of presentWith(ctx, agent)) {
     for (const s of skillsOf(ctx, o.id)) {
       if (s.level < cfg.promptMinLevel + cfg.masterGap) continue;
       if (s.level - levelOf(ctx, agent.id, s.skill) < cfg.masterGap * 2) continue;
+      if (!mayRepeatSession(ctx, agent.id, o.id, s.skill, now)) continue;
       out.push({ id: o.id, skill: s.skill });
     }
   }
