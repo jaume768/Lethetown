@@ -24,6 +24,7 @@ const skill: SkillState = {
   practiceMinutes: 0,
   lastUsedAt: 400,
   learnedFrom: null,
+  tier: 1,
   history: [{ at: 400, level: 0.35, reason: "de partida" }],
   updatedAt: 400,
 };

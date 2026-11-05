@@ -4,12 +4,12 @@
  * LLM: lo variable va compacto al plan y, como mucho cada 3 h, a la decisión. Ver
  * docs/decisiones/skills.md.
  */
-import { levelLabel } from "@lethetown/agent-core";
 import { formalAction } from "../agreements";
 import { SkillState } from "@lethetown/shared";
 import { z } from "zod";
 import {
   decideSkillsLine,
+  labelOf,
   maybeResult,
   sessionsTick,
   teachingLines,
@@ -186,7 +186,7 @@ registerSystem({
       results: skillsState(ctx).results.size,
     };
     for (const s of all) {
-      const label = `level.${levelLabel(s.level)}`;
+      const label = `level.${labelOf(s)}`;
       out[label] = (out[label] ?? 0) + 1;
       out[`mean.${s.skill}`] = (out[`mean.${s.skill}`] ?? 0) + s.level;
       out[`n.${s.skill}`] = (out[`n.${s.skill}`] ?? 0) + 1;

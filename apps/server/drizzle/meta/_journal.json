@@ -134,6 +134,13 @@
       "when": 1793626373624,
       "tag": "0018_skills_lore",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1793890397667,
+      "tag": "0019_skill_tier",
+      "breakpoints": true
     }
   ]
 }

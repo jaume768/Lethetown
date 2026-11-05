@@ -10,7 +10,7 @@
  */
 import { readFileSync, writeFileSync } from "node:fs";
 // Ruta relativa: la raíz no depende de agent-core (solo del catálogo, que es lógica pura).
-import { DEFAULT_SKILLS } from "../packages/agent-core/src/skills/skills";
+import { DEFAULT_SKILLS, LEVEL_THRESHOLDS } from "../packages/agent-core/src/skills/skills";
 import { AgentSeed, type SeedSkills } from "@lethetown/shared";
 
 const FILE = new URL("../seeds/agents.json", import.meta.url);
@@ -42,6 +42,16 @@ function languages(seed: AgentSeed): number {
 
 const round = (x: number) => Math.round(x * 20) / 20;
 
+/**
+ * Ningún nivel de partida en un umbral de etiqueta (± 0,01): unas milésimas de olvido lo
+ * bajarían de etiqueta a la vez que a otros (8 por mundo el día 4 de la partida de una semana).
+ * Se queda 0,03 por encima, con la etiqueta que se quería.
+ */
+export function offThreshold(x: number): number {
+  const near = LEVEL_THRESHOLDS.some((t) => Math.abs(x - t) <= 0.01 + 1e-9);
+  return near ? Math.round((x + 0.03) * 100) / 100 : x;
+}
+
 export function derive(seed: AgentSeed): SeedSkills {
   const k = seed.knowledge;
   const job = `${k?.occupation ?? ""}`;
@@ -60,7 +70,7 @@ export function derive(seed: AgentSeed): SeedSkills {
   if (langs) out.languages = langs;
   // Un menor no es experto en nada todavía.
   for (const [skill, v] of Object.entries(out)) {
-    out[skill] = round(minor ? Math.min(v, 0.4) : v);
+    out[skill] = offThreshold(round(minor ? Math.min(v, 0.4) : v));
   }
   const known = new Set(DEFAULT_SKILLS.map((s) => s.id));
   return Object.fromEntries(Object.entries(out).filter(([id, v]) => known.has(id) && v > 0));

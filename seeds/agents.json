@@ -206,7 +206,7 @@
       "hospitality": 0.75,
       "trade": 0.35,
       "cooking": 0.4,
-      "repair": 0.2,
+      "repair": 0.23,
       "languages": 0.15
     },
     "lore": [
@@ -362,7 +362,7 @@
     "skills": {
       "teaching": 0.8,
       "cooking": 0.55,
-      "gardening": 0.45,
+      "gardening": 0.48,
       "storytelling": 0.4,
       "repair": 0.15,
       "languages": 0.1
@@ -675,7 +675,7 @@
     },
     "skills": {
       "photography": 0.35,
-      "music": 0.2,
+      "music": 0.23,
       "baking": 0.15,
       "cooking": 0.1,
       "languages": 0.1
@@ -841,7 +841,7 @@
       "trade": 0.6,
       "cooking": 0.3,
       "repair": 0.15,
-      "languages": 0.2
+      "languages": 0.23
     },
     "lore": [
       {
@@ -969,7 +969,7 @@
     },
     "skills": {
       "fishing": 0.9,
-      "storytelling": 0.7,
+      "storytelling": 0.73,
       "repair": 0.4,
       "cooking": 0.4
     },
@@ -1127,7 +1127,7 @@
       "gardening": 0.85,
       "cooking": 0.75,
       "care": 0.35,
-      "repair": 0.2
+      "repair": 0.23
     },
     "lore": [
       {
@@ -1287,7 +1287,7 @@
     },
     "skills": {
       "storytelling": 0.4,
-      "languages": 0.45,
+      "languages": 0.48,
       "teaching": 0.25,
       "cooking": 0.3,
       "repair": 0.15
@@ -1411,11 +1411,11 @@
     },
     "skills": {
       "teaching": 0.75,
-      "storytelling": 0.45,
+      "storytelling": 0.48,
       "gardening": 0.35,
       "cooking": 0.3,
       "repair": 0.15,
-      "languages": 0.2
+      "languages": 0.23
     },
     "lore": [
       {
@@ -1558,8 +1558,8 @@
     "skills": {
       "hospitality": 0.75,
       "storytelling": 0.5,
-      "cooking": 0.45,
-      "music": 0.2,
+      "cooking": 0.48,
+      "music": 0.23,
       "repair": 0.25,
       "languages": 0.1
     },
@@ -1715,9 +1715,9 @@
       "culture": "medio"
     },
     "skills": {
-      "trade": 0.7,
+      "trade": 0.73,
       "cooking": 0.4,
-      "repair": 0.2
+      "repair": 0.23
     },
     "lore": [
       {
@@ -1866,7 +1866,7 @@
       "culture": "básico"
     },
     "skills": {
-      "drawing": 0.2,
+      "drawing": 0.23,
       "fishing": 0.1,
       "cooking": 0.05
     },
@@ -2011,7 +2011,7 @@
     "skills": {
       "gardening": 0.8,
       "cooking": 0.3,
-      "repair": 0.2,
+      "repair": 0.23,
       "languages": 0.1
     },
     "lore": [
@@ -2447,9 +2447,9 @@
     },
     "skills": {
       "storytelling": 0.3,
-      "care": 0.2,
+      "care": 0.23,
       "cooking": 0.3,
-      "repair": 0.2
+      "repair": 0.23
     },
     "lore": [
       {
@@ -2587,11 +2587,11 @@
       "culture": "básico"
     },
     "skills": {
-      "cooking": 0.7,
+      "cooking": 0.73,
       "storytelling": 0.6,
       "gardening": 0.6,
-      "music": 0.45,
-      "repair": 0.2
+      "music": 0.48,
+      "repair": 0.23
     },
     "lore": [
       {
@@ -2914,7 +2914,7 @@
     },
     "skills": {
       "care": 0.85,
-      "languages": 0.7,
+      "languages": 0.73,
       "music": 0.25,
       "cooking": 0.3,
       "repair": 0.15

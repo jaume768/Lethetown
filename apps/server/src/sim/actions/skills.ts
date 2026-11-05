@@ -3,7 +3,7 @@
  * Enseñar a un menor o ayudarle: solo en un sitio público (la escuela incluida) o en su casa con
  * su familia (`teachingRule`).
  */
-import { applySocialUpdate, levelLabel, skillDef } from "@lethetown/agent-core";
+import { applySocialUpdate, skillDef } from "@lethetown/agent-core";
 import {
   seedIsMinor,
   type AcceptTeachingAction,
@@ -20,6 +20,7 @@ import { itemsState, saveItem } from "../items";
 import { mayEnter } from "../norms";
 import { goOrDo, setAction } from "../routines";
 import {
+  labelOf,
   levelOf,
   mastersHere,
   pendingSession,
@@ -28,6 +29,7 @@ import {
   resultsOf,
   sessionsAwaiting,
   skillLabel,
+  skillState,
   skillsCfg,
   skillsState,
   startSession,
@@ -105,7 +107,7 @@ registerAction<z.infer<typeof PracticeAction>>({
     ctx.emit(
       "action",
       agent.id,
-      `🎯 ${agent.seed.name} se pone a practicar ${def.label} (${levelLabel(levelOf(ctx, agent.id, a.skill))})`,
+      `🎯 ${agent.seed.name} se pone a practicar ${def.label} (${labelOf(skillState(ctx, agent.id, a.skill, now))})`,
       [agent.id],
       undefined,
       { action: "practice", ok: true },

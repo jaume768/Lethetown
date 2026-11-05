@@ -63,9 +63,11 @@ describe("sistema skills", () => {
 
   it("sin práctica se oxida despacio, con su hito en la auditoría", async () => {
     const s = skillState(ctx, "hugo", "music", 0);
-    s.lastUsedAt = ctx.clock.now() - 70 * 1440;
+    s.lastUsedAt = ctx.clock.now() - 100 * 1440;
     const before = s.level;
-    decayAll(ctx, ctx.clock.now(), 60);
+    // 60 días la dejaban en 0,69: con la histéresis (baja de «con maestría» por debajo de 0,68)
+    // aún no es un hito; 90 días, sí.
+    decayAll(ctx, ctx.clock.now(), 90);
     expect(s.level).toBeLessThan(before);
     expect(s.level).toBeGreaterThan(0.5);
     const audit = await ctx.deps.memory.store.audit("hugo", 50);

@@ -8,7 +8,9 @@
  */
 import {
   applySocialUpdate,
-  levelLabel,
+  levelTier,
+  nextTier,
+  tierLabel,
   makeMood,
   practiceGain,
   qualityEffect,
@@ -138,6 +140,27 @@ export const skillLabel = (ctx: SimContext, id: string) =>
 const firstName = (ctx: SimContext, id: string) =>
   ctx.agents.get(id)?.seed.name.split(" ")[0] ?? id;
 
+/** Su etiqueta («bien»…), con la histéresis de su escalón. */
+export function labelOf(s: SkillState): string {
+  return tierLabel(s.tier ?? levelTier(s.level));
+}
+
+/**
+ * Recalcula el escalón tras cambiar el nivel (con histéresis: sube al cruzar el umbral y baja
+ * solo por debajo de umbral − `labelHysteresis`). Devuelve si cambió (un hito).
+ */
+function retier(ctx: SimContext, s: SkillState, before: number): boolean {
+  const prev = s.tier ?? levelTier(before);
+  s.tier = nextTier(s.level, prev, skillsCfg(ctx));
+  return s.tier !== prev;
+}
+
+/** La etiqueta de alguien en una habilidad (con histéresis). */
+function labelOfAgent(ctx: SimContext, agentId: string, skill: string): string {
+  const s = skillsState(ctx).skills.get(key(agentId, skill));
+  return s ? labelOf(s) : tierLabel(0);
+}
+
 /** Nivel de alguien en una habilidad (0 si nunca la ha practicado). */
 export function levelOf(ctx: SimContext, agentId: string, skill: string): number {
   return skillsState(ctx).skills.get(key(agentId, skill))?.level ?? 0;
@@ -196,6 +219,7 @@ export function skillState(ctx: SimContext, agentId: string, skill: string, now:
       practiceMinutes: 0,
       lastUsedAt: null,
       learnedFrom: null,
+      tier: null,
       history: [],
       updatedAt: now,
     };
@@ -250,15 +274,15 @@ export function addPractice(
   skillsState(ctx).practiceMinutes += minutes;
   const helped = masterLevel !== null && masterLevel - before >= cfg.masterGap;
   if (helped && masterId && !s.learnedFrom) s.learnedFrom = masterId;
-  if (levelLabel(s.level) !== levelLabel(before)) {
+  if (retier(ctx, s, before)) {
     const who = helped && masterId ? ` (con ${firstName(ctx, masterId)})` : "";
-    const why = `practicando${who}: ahora «${levelLabel(s.level)}» (${s.level.toFixed(2)})`;
+    const why = `practicando${who}: ahora «${labelOf(s)}» (${s.level.toFixed(2)})`;
     historyEntry(s, now, why);
     audit(ctx, s, `${skillLabel(ctx, skill)}: ${why}`, now);
     ctx.emit(
       "action",
       agent.id,
-      `🎓 ${agent.seed.name}, en ${skillLabel(ctx, skill)}: ahora «${levelLabel(s.level)}»${who}`,
+      `🎓 ${agent.seed.name}, en ${skillLabel(ctx, skill)}: ahora «${labelOf(s)}»${who}`,
       [agent.id, ...(helped && masterId ? [masterId] : [])],
       undefined,
       { action: "skill", ok: true },
@@ -340,8 +364,8 @@ export function decayAll(ctx: SimContext, now: number, days: number): void {
     if (before - after < 0.0005) continue;
     s.level = after;
     s.updatedAt = now;
-    if (levelLabel(after) !== levelLabel(before)) {
-      const why = `${Math.floor(idle)} días sin practicar: ahora «${levelLabel(after)}» (${after.toFixed(2)})`;
+    if (retier(ctx, s, before)) {
+      const why = `${Math.floor(idle)} días sin practicar: ahora «${labelOf(s)}» (${after.toFixed(2)})`;
       historyEntry(s, now, why);
       audit(ctx, s, `${skillLabel(ctx, s.skill)}: ${why}`, now);
       const agent = ctx.agents.get(s.agentId);
@@ -382,7 +406,7 @@ export function skillsLine(ctx: SimContext, agent: Agent, now: number): string |
   const parts = [
     ...(good.length
       ? [
-          `Se te da bien: ${good.map((s) => `${skillLabel(ctx, s.skill)} [${s.skill}] (${levelLabel(s.level)})`).join(", ")}`,
+          `Se te da bien: ${good.map((s) => `${skillLabel(ctx, s.skill)} [${s.skill}] (${labelOf(s)})`).join(", ")}`,
         ]
       : []),
     ...(learning.length
@@ -622,7 +646,7 @@ export function finishSession(ctx: SimContext, v: TeachingSession, now: number):
   ctx.emit(
     "action",
     teacher.id,
-    `🧑‍🏫 ${teacher.seed.name} termina de enseñarle ${what} a ${learner.seed.name} (${levelLabel(levelOf(ctx, learner.id, v.skill))})`,
+    `🧑‍🏫 ${teacher.seed.name} termina de enseñarle ${what} a ${learner.seed.name} (${labelOfAgent(ctx, learner.id, v.skill)})`,
     [teacher.id, learner.id],
     undefined,
     { action: "teach", ok: true },

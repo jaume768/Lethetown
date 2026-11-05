@@ -3,6 +3,10 @@ import { readFileSync } from "node:fs";
 import { AgentSeed } from "@lethetown/shared";
 import { describe, expect, it } from "vitest";
 import {
+  LEVEL_THRESHOLDS,
+  levelTier,
+  nextTier,
+  tierLabel,
   SkillsConfig,
   practiceGain,
   qualityEffect,
@@ -118,6 +122,34 @@ describe("qué se practica", () => {
   });
 });
 
+describe("histéresis de las etiquetas (corrección 3.5)", () => {
+  const h = cfg.labelHysteresis;
+  it.each(LEVEL_THRESHOLDS.map((t, i) => [t, i] as const))(
+    "umbral %s: sube al cruzarlo y baja solo por debajo de umbral − 0,02",
+    (t, below) => {
+      // Subiendo: al cruzar el umbral, sube.
+      expect(nextTier(t - 0.001, below, cfg)).toBe(below);
+      expect(nextTier(t, below, cfg)).toBe(below + 1);
+      // Bajando: unas milésimas por debajo no lo bajan; por debajo de umbral − h, sí.
+      expect(nextTier(t - 0.001, below + 1, cfg)).toBe(below + 1);
+      expect(nextTier(t - h + 0.001, below + 1, cfg)).toBe(below + 1);
+      expect(nextTier(t - h - 0.001, below + 1, cfg)).toBe(below);
+      // Y para volver a subir hay que cruzar el umbral otra vez.
+      expect(nextTier(t - 0.005, below, cfg)).toBe(below);
+    },
+  );
+  it("sin escalón anterior, el de su nivel; las etiquetas no cambian", () => {
+    expect(nextTier(0.5, null, cfg)).toBe(2);
+    expect(levelTier(0.69)).toBe(2);
+    expect(tierLabel(levelTier(0.1))).toBe("principiante");
+    expect(tierLabel(3)).toBe("con maestría");
+  });
+  it("bajar varios escalones de golpe solo si se pasa del margen en cada uno", () => {
+    expect(nextTier(0.1, 3, cfg)).toBe(0);
+    expect(nextTier(0.44, 3, cfg)).toBe(2);
+  });
+});
+
 describe("habilidades de partida (semillas revisadas a mano)", () => {
   const seeds = AgentSeed.array().parse(
     JSON.parse(readFileSync(new URL("../../../../seeds/agents.json", import.meta.url), "utf8")),
@@ -147,6 +179,16 @@ describe("habilidades de partida (semillas revisadas a mano)", () => {
       for (const id of Object.keys(s.skills)) expect(ids.has(id), `${s.id}: ${id}`).toBe(true);
       const best = Object.entries(s.skills).sort((a, b) => b[1] - a[1])[0]![0];
       if (TRADE[s.id]) expect(best, s.id).toBe(TRADE[s.id]);
+    }
+  });
+
+  it("ningún nivel de partida está en un umbral de etiqueta (± 0,01)", () => {
+    for (const s of seeds) {
+      for (const [id, v] of Object.entries(s.skills)) {
+        for (const t of LEVEL_THRESHOLDS) {
+          expect(Math.abs(v - t), `${s.id}: ${id} = ${v}`).toBeGreaterThan(0.01);
+        }
+      }
     }
   });
 

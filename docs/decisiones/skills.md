@@ -30,6 +30,13 @@ y que eso se note en el mundo, sin que el LLM se invente el nivel de nadie. Sist
 - **Niveles sin género**: «principiante» (< 0,2), «se defiende» (< 0,45), «bien» (< 0,7) y «con
   maestría». Los hitos (cambiar de etiqueta, arriba o abajo) van a la auditoría (`skill`), como
   evento (🎓 / 🕸) y como drama («aprende algo»).
+- **Histéresis en las etiquetas** (corrección 3.5, `SkillsConfig.labelHysteresis`, 0,02): se
+  sube al cruzar el umbral y se baja solo por debajo de umbral − 0,02. El escalón se guarda
+  (`tier` en la tabla `skills` y en la instantánea; null = el de su nivel). En la partida de una
+  semana, el día 4 a las 00:00 bajaban de etiqueta 8 habilidades por mundo a la vez: valores de
+  las semillas justo en 0,20, 0,45 o 0,70 que perdían milésimas al oxidarse. Además, ningún
+  nivel de partida está en un umbral (± 0,01): las semillas se subieron 0,03 (con la etiqueta
+  que se quería) y `skills:derive` hace lo mismo (`offThreshold`); un test lo comprueba.
 - **Semillas** (`skills` en `seeds/agents.json`): `pnpm skills:derive` propone por oficio,
   intereses, idiomas y edad; están revisadas a mano (el script daba «café y barra» a Lucía porque
   dibuja en el café). Un test comprueba que cada oficio es su mejor habilidad, que los menores no

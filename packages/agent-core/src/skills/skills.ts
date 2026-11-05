@@ -232,6 +232,12 @@ export const SkillsConfig = z.object({
   /** Afinidad y familiaridad que deja una sesión de enseñanza (a los dos) o una ayuda. */
   sessionAffinity: unit(0.05),
   helpAffinity: unit(0.03),
+  /**
+   * Histéresis de las etiquetas: se sube al cruzar el umbral y se baja solo por debajo de
+   * umbral − esto. En la partida de una semana, 8 habilidades por mundo bajaban de etiqueta a
+   * la vez el día 4 (valores de partida justo en 0,20, 0,45 o 0,70 que perdían milésimas).
+   */
+  labelHysteresis: unit(0.02),
   /** En el prompt: habilidades destacadas desde este nivel, como mucho `maxInPrompt`. */
   promptMinLevel: unit(0.35),
   maxInPrompt: z.number().int().positive().default(3),
@@ -316,15 +322,38 @@ export function qualityEffect(q: number, cfg: SkillsConfig): { mood: number; aff
   return { mood: cfg.qualityMood / 4, affinity: cfg.qualityAffinity / 3 };
 }
 
-/** «principiante», «se defiende», «bien», «con maestría» (sin género: describen el nivel). */
+/** Umbrales de las etiquetas (de «principiante» a «se defiende», a «bien», a «con maestría»). */
+export const LEVEL_THRESHOLDS = [0.2, 0.45, 0.7] as const;
+/** Sin género: describen el nivel. */
+export const LEVEL_LABELS = ["principiante", "se defiende", "bien", "con maestría"] as const;
+
+/** El escalón (0..3) de un nivel, sin histéresis. */
+export function levelTier(level: number): number {
+  return LEVEL_THRESHOLDS.filter((t) => level >= t).length;
+}
+
+/** «principiante», «se defiende», «bien», «con maestría» (sin histéresis). */
 export function levelLabel(level: number): string {
-  return level < 0.2
-    ? "principiante"
-    : level < 0.45
-      ? "se defiende"
-      : level < 0.7
-        ? "bien"
-        : "con maestría";
+  return LEVEL_LABELS[levelTier(level)]!;
+}
+
+/** La etiqueta de un escalón. */
+export function tierLabel(tier: number): string {
+  return LEVEL_LABELS[Math.max(0, Math.min(3, tier))]!;
+}
+
+/**
+ * El escalón con histéresis: sube al cruzar el umbral y baja solo por debajo de umbral −
+ * `labelHysteresis`. Sin escalón anterior, el de su nivel.
+ */
+export function nextTier(
+  level: number,
+  prev: number | null | undefined,
+  cfg: SkillsConfig,
+): number {
+  const plain = levelTier(level);
+  if (prev === null || prev === undefined || plain >= prev) return plain;
+  return Math.min(prev, levelTier(level + cfg.labelHysteresis));
 }
 
 /** La habilidad del catálogo por su id. */

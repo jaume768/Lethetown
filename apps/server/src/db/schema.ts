@@ -506,6 +506,8 @@ export const skills = pgTable(
     practiceMinutes: doublePrecision("practice_minutes").notNull().default(0),
     lastUsedAt: doublePrecision("last_used_at"),
     learnedFrom: text("learned_from"),
+    /** Escalón de la etiqueta con histéresis (0..3; null = el de su nivel). */
+    tier: integer("tier"),
     /** Cambios con su motivo (SkillHistoryEntry[], acotado). */
     history: jsonb("history").notNull().default([]),
     updatedAt: doublePrecision("updated_at").notNull(),
