@@ -17,6 +17,13 @@ personas inventadas. Sistema `lore` (`apps/server/src/sim/systems/lore.ts`, lóg
   (0,04 + 0,25·(1 − fidelidad)). El cambio sale de las variantes del saber o de un número
   («cuatro huevos» → «cinco»); nunca se inventa texto. Quien escucha no pasa de la fidelidad de
   quien lo cuenta × 0,95. Contarlo también es usarlo.
+- **Deformación suficiente** (corrección 3.5): en la partida de una semana solo se deformó 1
+  de 37 transmisiones, porque casi ningún elemento tenía variantes y sin variante (ni número) no
+  hay cambio posible. Ahora cada elemento de las semillas tiene al menos una, escrita a mano
+  (sin personas ni texto del LLM: «de claro a oscuro» → «de oscuro a claro», «sale cuando
+  llueve» → «sale cuando hace sol»), y `alterBase` pasa de 0,04 a 0,05. Contados por quien los
+  sabe de partida, un 16 % de las transmisiones llega con algún cambio (test con las semillas:
+  10–20 %).
 - **Uso y olvido**: practicar su habilidad o estar en su sitio lo refuerza (+0,05, como mucho cada
   hora). Sin usarlo, tras 5 días de gracia la fidelidad baja 0,012 al día (la mitad con mucha
   habilidad en eso) y, cuando ya no sostiene todos los elementos, se le olvida uno (auditado).

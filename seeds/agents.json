@@ -76,15 +76,15 @@
         "elements": [
           {
             "text": "mojar el papel antes de poner el color",
-            "variants": []
+            "variants": ["mojar el papel después de poner el color"]
           },
           {
             "text": "de claro a oscuro, nunca al revés",
-            "variants": []
+            "variants": ["de oscuro a claro"]
           },
           {
             "text": "dejar sin pintar los blancos de la luz",
-            "variants": []
+            "variants": ["pintar los blancos con blanco al final"]
           },
           {
             "text": "esperar a que seque antes de cada capa",
@@ -223,15 +223,15 @@
           },
           {
             "text": "un poco de torrefacto para que tenga crema",
-            "variants": []
+            "variants": ["mitad de torrefacto para que tenga crema"]
           },
           {
             "text": "molerlo cada mañana, nunca la víspera",
-            "variants": []
+            "variants": ["molerlo la víspera por la noche"]
           },
           {
             "text": "la cafetera bien caliente antes del primer café",
-            "variants": []
+            "variants": ["la cafetera recién encendida para el primer café"]
           }
         ]
       }
@@ -377,7 +377,7 @@
         "elements": [
           {
             "text": "primero las vocales, cantadas",
-            "variants": []
+            "variants": ["primero las consonantes, cantadas"]
           },
           {
             "text": "una letra nueva al día, no más",
@@ -385,11 +385,11 @@
           },
           {
             "text": "leer en voz alta cada tarde un rato",
-            "variants": []
+            "variants": ["leer en voz alta cada mañana un rato"]
           },
           {
             "text": "premiar con un cuento, no con caramelos",
-            "variants": []
+            "variants": ["premiar con caramelos"]
           }
         ]
       }
@@ -526,7 +526,7 @@
           },
           {
             "text": "batir los huevos con el azúcar hasta que blanqueen",
-            "variants": []
+            "variants": ["batir los huevos con el azúcar un minuto"]
           },
           {
             "text": "dejar reposar la masa una hora en la nevera",
@@ -534,7 +534,7 @@
           },
           {
             "text": "horno fuerte, 220 grados, doce minutos",
-            "variants": []
+            "variants": ["horno flojo, 180 grados, veinte minutos"]
           }
         ]
       },
@@ -547,7 +547,7 @@
         "elements": [
           {
             "text": "la masa madre del día anterior, alimentada por la noche",
-            "variants": []
+            "variants": ["levadura de panadería del mismo día"]
           },
           {
             "text": "sin sal, como el de antes",
@@ -555,7 +555,7 @@
           },
           {
             "text": "amasar veinte minutos hasta que la masa no se pegue",
-            "variants": []
+            "variants": ["amasar diez minutos hasta que la masa no se pegue"]
           },
           {
             "text": "leña de almendro para el horno",
@@ -694,11 +694,11 @@
           },
           {
             "text": "el lago al amanecer, con la niebla",
-            "variants": []
+            "variants": ["el lago al atardecer, con la niebla"]
           },
           {
             "text": "de espaldas al sol, siempre",
-            "variants": []
+            "variants": ["de cara al sol, siempre"]
           }
         ]
       }
@@ -857,7 +857,7 @@
           },
           {
             "text": "prometer poco y cumplirlo",
-            "variants": []
+            "variants": ["prometer mucho, aunque no se cumpla"]
           },
           {
             "text": "dejarse ver en el mercadillo los sábados",
@@ -995,7 +995,7 @@
           },
           {
             "text": "en silencio: los peces del Leteo oyen",
-            "variants": []
+            "variants": ["cantando bajito: a los peces del Leteo les gusta"]
           }
         ]
       },
@@ -1016,11 +1016,11 @@
           },
           {
             "text": "tenía una cicatriz blanca en el lomo",
-            "variants": []
+            "variants": ["tenía una mancha negra en el lomo"]
           },
           {
             "text": "nadie más lo vio, pero yo sí",
-            "variants": []
+            "variants": ["lo vio medio pueblo aquel verano"]
           }
         ]
       }
@@ -1139,7 +1139,7 @@
         "elements": [
           {
             "text": "en luna creciente, lo que da fruto arriba (tomates, judías)",
-            "variants": []
+            "variants": ["en luna llena, lo que da fruto arriba (tomates, judías)"]
           },
           {
             "text": "en menguante, lo que crece bajo tierra (patatas, cebollas)",
@@ -1147,11 +1147,11 @@
           },
           {
             "text": "regar al atardecer, nunca a mediodía",
-            "variants": []
+            "variants": ["regar a mediodía, que es cuando más calor hace"]
           },
           {
             "text": "una ristra de ajos en la puerta para proteger la casa",
-            "variants": []
+            "variants": ["una ristra de ajos en la ventana para proteger la casa"]
           }
         ]
       },
@@ -1168,7 +1168,7 @@
           },
           {
             "text": "una cucharada de miel cuando ya está tibia",
-            "variants": []
+            "variants": ["una cucharada de miel con el agua hirviendo"]
           },
           {
             "text": "tres veces al día, la última antes de dormir",
@@ -1306,11 +1306,11 @@
           },
           {
             "text": "hablaba de un incendio en la colina",
-            "variants": []
+            "variants": ["hablaba de una inundación en la colina"]
           },
           {
             "text": "falta desde antes de que yo llegara",
-            "variants": []
+            "variants": ["falta desde hace un par de años"]
           }
         ]
       }
@@ -1427,15 +1427,15 @@
         "elements": [
           {
             "text": "cada niño con su puñado de semillas",
-            "variants": []
+            "variants": ["cada niño con un plato de semillas"]
           },
           {
             "text": "contarlas de diez en diez",
-            "variants": []
+            "variants": ["contarlas de cinco en cinco"]
           },
           {
             "text": "plantar las que sobran y apuntar cuántas salen",
-            "variants": []
+            "variants": ["plantarlas todas y apuntar cuántas salen"]
           }
         ]
       }
@@ -1577,15 +1577,15 @@
           },
           {
             "text": "patata frita en dados pequeños",
-            "variants": []
+            "variants": ["patata cocida en dados pequeños"]
           },
           {
             "text": "pimiento rojo y cebolla, bien pochados",
-            "variants": []
+            "variants": ["pimiento verde y cebolla, bien pochados"]
           },
           {
             "text": "hinojo silvestre al final, y no mucho",
-            "variants": []
+            "variants": ["hinojo silvestre desde el principio, y mucho"]
           }
         ]
       }
@@ -1729,7 +1729,7 @@
         "elements": [
           {
             "text": "apuntar a lápiz, con la fecha",
-            "variants": []
+            "variants": ["apuntar a bolígrafo, sin la fecha"]
           },
           {
             "text": "nunca más de veinte euros por casa",
@@ -1740,7 +1740,7 @@
           },
           {
             "text": "lo que se paga se tacha delante del cliente",
-            "variants": []
+            "variants": ["lo que se paga se tacha al cerrar"]
           }
         ]
       }
@@ -1884,11 +1884,11 @@
           },
           {
             "text": "sale cuando llueve",
-            "variants": []
+            "variants": ["sale cuando hace sol"]
           },
           {
             "text": "le gusta el pan duro",
-            "variants": []
+            "variants": ["le gusta el queso"]
           }
         ]
       }
@@ -2028,15 +2028,15 @@
           },
           {
             "text": "removerlo cada semana",
-            "variants": []
+            "variants": ["removerlo cada mes"]
           },
           {
             "text": "nada de carne ni de aceite",
-            "variants": []
+            "variants": ["nada de cáscaras de naranja"]
           },
           {
             "text": "tapado con una lona si llueve mucho",
-            "variants": []
+            "variants": ["destapado aunque llueva"]
           }
         ]
       }
@@ -2181,15 +2181,15 @@
           },
           {
             "text": "el estribillo: «Leteo, llévate lo que pesa»",
-            "variants": []
+            "variants": ["el estribillo: «Leteo, llévate lo que duele»"]
           },
           {
             "text": "el puente en sol, subiendo la voz",
-            "variants": []
+            "variants": ["el puente en do, subiendo la voz"]
           },
           {
             "text": "se acaba en voz baja, casi hablando",
-            "variants": []
+            "variants": ["se acaba a toda voz"]
           }
         ]
       }
@@ -2314,7 +2314,7 @@
         "elements": [
           {
             "text": "a oscuras del todo para sacar la película del carrete",
-            "variants": []
+            "variants": ["con la luz roja para sacar la película del carrete"]
           },
           {
             "text": "revelador a 20 grados, ocho minutos",
@@ -2322,15 +2322,15 @@
           },
           {
             "text": "agitar suave el tanque cada minuto",
-            "variants": []
+            "variants": ["agitar fuerte el tanque cada minuto"]
           },
           {
             "text": "baño de paro, fijador y lavar bien con agua",
-            "variants": []
+            "variants": ["fijador y luego baño de paro, y lavar bien con agua"]
           },
           {
             "text": "colgarlo a secar con pinzas, lejos del polvo",
-            "variants": []
+            "variants": ["colgarlo a secar al sol, en la terraza"]
           }
         ]
       }
@@ -2465,11 +2465,11 @@
           },
           {
             "text": "llegan el primer lunes de cada mes",
-            "variants": []
+            "variants": ["llegan el último viernes de cada mes"]
           },
           {
             "text": "letra de mujer, muy redonda",
-            "variants": []
+            "variants": ["letra de hombre, muy apretada"]
           },
           {
             "text": "siempre en sobre azul",
@@ -2607,7 +2607,7 @@
           },
           {
             "text": "las segadoras van cantando",
-            "variants": []
+            "variants": ["las segadoras van llorando"]
           },
           {
             "text": "el agua del Leteo baja",
@@ -2615,7 +2615,7 @@
           },
           {
             "text": "quien la bebe va olvidando",
-            "variants": []
+            "variants": ["quien la bebe va soñando"]
           }
         ]
       },
@@ -2632,15 +2632,15 @@
           },
           {
             "text": "se fue en el autobús de Palma, de madrugada",
-            "variants": []
+            "variants": ["se fue en el tren de Palma, de noche"]
           },
           {
             "text": "llevaba una maleta de cartón atada con una cuerda",
-            "variants": []
+            "variants": ["llevaba una maleta de piel, nueva"]
           },
           {
             "text": "prometió escribir y nunca escribió",
-            "variants": []
+            "variants": ["prometió volver y nunca volvió"]
           }
         ]
       }
@@ -2782,11 +2782,11 @@
         "elements": [
           {
             "text": "el melón que suena a hueco al darle con los nudillos",
-            "variants": []
+            "variants": ["el melón que suena a macizo al darle con los nudillos"]
           },
           {
             "text": "la naranja que pesa más de lo que parece",
-            "variants": []
+            "variants": ["la naranja más grande del cajón"]
           },
           {
             "text": "el tomate de rama que huele a mata",
@@ -2929,7 +2929,7 @@
         "elements": [
           {
             "text": "un litro de agua hervida y fría",
-            "variants": []
+            "variants": ["medio litro de agua hervida y fría"]
           },
           {
             "text": "seis cucharaditas de azúcar",
@@ -2937,11 +2937,11 @@
           },
           {
             "text": "media cucharadita de sal",
-            "variants": []
+            "variants": ["una cucharadita de sal"]
           },
           {
             "text": "a sorbos pequeños, poco a poco",
-            "variants": []
+            "variants": ["de un trago, todo seguido"]
           }
         ]
       }

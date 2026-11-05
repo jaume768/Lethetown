@@ -19,8 +19,12 @@ export const LoreConfig = z.object({
    */
   loseBase: unit(0.03),
   loseFromFidelity: unit(0.3),
-  /** …y de que cambie (un número, un ingrediente, un sitio; de las variantes del saber). */
-  alterBase: unit(0.04),
+  /**
+   * …y de que cambie (un número, un ingrediente, un sitio; de las variantes del saber). 0,05
+   * (era 0,04) y cada elemento de las semillas con alguna variante: en la partida de una semana
+   * solo se deformó 1 de 37 transmisiones; con las semillas, un 16 % (test).
+   */
+  alterBase: unit(0.05),
   alterFromFidelity: unit(0.25),
   /** Cuánto protege la habilidad de quien lo cuenta (un panadero no se equivoca con el pan). */
   skillProtect: unit(0.6),
