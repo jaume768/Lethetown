@@ -229,7 +229,19 @@ describe("la noche: motivación, frustración y abandono", () => {
 });
 
 describe("marcharse del pueblo", () => {
-  it("un menor que lo consigue no se va: queda aplazado hasta que sea mayor de edad", () => {
+  /** La meta vital por proyectos queda candidata: la noche la confirma (como haría el LLM). */
+  async function confirmTonight(id: string, goalId: string) {
+    expect(goalsState(ctx).candidates.has(goalId)).toBe(true);
+    expect(consolidationPrompt(ctx, agent(id))).toContain(`- ${goalId} «`);
+    await applyProposals(
+      ctx,
+      agent(id),
+      [{ op: "confirm", id: goalId, achieved: true }],
+      ctx.clock.now(),
+    );
+  }
+
+  it("un menor que lo consigue no se va: queda aplazado hasta que sea mayor de edad", async () => {
     const ines = agent("ines");
     const life = goalsOf(ctx, "ines").find((g) => g.level === "life")!;
     // Para el test, basta con sus dos proyectos de partida.
@@ -239,6 +251,8 @@ describe("marcharse del pueblo", () => {
     ines.state.activityKind = "idle";
     measureTick(ctx, ctx.clock.now(), 8 * 60);
     for (let i = 0; i < 5; i++) speech("ines", "valentina", `c95${i}`);
+    expect(life.status).toBe("active");
+    await confirmTonight("ines", life.id);
     expect(life.status).toBe("postponed");
     expect(life.history.at(-1)!.reason).toMatch(/menor de edad/);
     expect(isAway(ctx, "ines")).toBe(false);
@@ -262,6 +276,8 @@ describe("marcharse del pueblo", () => {
     for (let i = 0; i < 5; i++)
       speech("clara", "samuel", `c96${i}`, "¿Y enfermería es muy difícil?");
     expect(projects.every((p) => p.status === "achieved")).toBe(true);
+    expect(life.status).toBe("active");
+    await confirmTonight("clara", life.id);
     expect(life.status).toBe("achieved");
     expect(isAway(ctx, "clara")).toBe(true);
     expect(systemsHold(ctx, "clara")).toBe(true);

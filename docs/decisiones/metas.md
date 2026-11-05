@@ -44,6 +44,16 @@ llegar y pasos concretos) sin que el LLM se invente el progreso. Sistema `goals`
   - En las semillas, «Hablar de verdad con Inés» es `confirmed`, y los proyectos de conversación
     llevan su tema (la deuda, la abuela, la casa, el pez, la juventud…).
 
+- **La meta vital tampoco se consigue contando** (corrección 3.5): en la partida de una semana
+  se cumplieron 7 y 5 metas vitales, todas por «4 proyectos»; Leo «encontró» el pez gigante y
+  al día siguiente seguía buscándolo, y Valentina «descubrió» qué pasó con su abuela y seguía
+  preguntando por Alma. Ahora una vital con criterio `projects`, al llegar a N proyectos, queda
+  **candidata** (0,95) como una `confirmed` (`GoalsConfig.lifeNeedsConfirmation`, por defecto
+  sí). La consolidación de esa noche recibe «¿Has logrado de verdad «…», no solo sus proyectos?
+  Lo que se hizo: «proyecto» (conseguido) | …» y solo confirma lo que el motor le presenta. Si
+  no, sigue activa, se audita con el motivo («sin confirmar: sus proyectos se cumplen, pero aún
+  no se ha logrado: …») y no se vuelve a presentar hasta que cumpla otro proyecto. Marcharse
+  (la vital con `departure`) pasa por lo mismo: se va la noche que se confirma.
 - **Niveles**: vital (una activa), proyectos (3 activos como mucho) y pasos (3 por proyecto).
   Una meta vital de partida pide **dos proyectos más** de los sembrados: es de largo recorrido y
   los irá proponiendo al repasar sus días (en mock, con todos los proyectos sembrados, la vital
