@@ -5,7 +5,7 @@
  * menor solos, solo en sitios públicos). Ver sim/actions/company.ts.
  */
 import type { Agent } from "@lethetown/agent-core";
-import type { Invitation } from "@lethetown/shared";
+import { lowerFirst, type Invitation } from "@lethetown/shared";
 import type { SimContext } from "./context";
 import { minorMeetingRule } from "./actions/meetings";
 import { travel } from "./routines";
@@ -99,7 +99,7 @@ export function companySections(
     .filter((v) => v.responses[agent.id] === "pending")
     .map((v) => {
       const place = ctx.world.places.find((p) => p.id === v.placeId)?.name ?? v.placeId;
-      return `Invitación ${v.id}: ${nameOf(ctx, v.fromId)} te invita a ir ahora a ${place} (${v.placeId}) a ${v.activity}. Responde con accept_invite o decline_invite.`;
+      return `Invitación ${v.id}: ${nameOf(ctx, v.fromId)} te invita a ir ahora a ${place} (${v.placeId}) a ${lowerFirst(v.activity)}. Responde con accept_invite o decline_invite.`;
     });
   const f = ctx.rt(agent.id).following;
   if (f) lines.push(`Estás acompañando a ${nameOf(ctx, f.who)}.`);

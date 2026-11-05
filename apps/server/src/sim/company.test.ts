@@ -73,6 +73,16 @@ describe("ir con otros", () => {
     expect(agent("lucia").state.action).toBe("pasear");
   });
 
+  it("la etiqueta de la actividad va en minúscula a media frase (corrección 3.5)", async () => {
+    at("cafe_ola", "mateo", "lucia");
+    await act("mateo", { type: "invite", with: ["lucia"], placeId: "plaza", activity: "Pasear" });
+    const [v] = [...companyState(ctx).invitations.values()];
+    expect(lastText("lucia")).toBe(
+      `Mateo Ruiz me invita a ir ahora a Plaza Mayor a pasear (invitación ${v!.id}).`,
+    );
+    expect(companySections(ctx, agent("lucia"))[0]!.lines[0]).toContain("(plaza) a pasear.");
+  });
+
   it("rechazar avisa a quien invitó; la invitación caduca", async () => {
     at("cafe_ola", "mateo", "lucia");
     await act("mateo", { type: "invite", with: ["lucia"], placeId: "plaza", activity: "pasear" });

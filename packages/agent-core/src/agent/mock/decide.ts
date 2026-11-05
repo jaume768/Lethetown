@@ -3,7 +3,7 @@
  * primera que responde gana; si ninguna lo hace, sigue con su plan. Una acción nueva registra su
  * regla con `registerDecideRule` (en su módulo), antes o después de las de aquí.
  */
-import type { Weather } from "@lethetown/shared";
+import { lowerFirst, type Weather } from "@lethetown/shared";
 import type { CompletionRequest } from "../../llm/types";
 import { decideContext, outingFor, type DecideCtx } from "./context";
 import { RAIN_TALK, FOLLOW_UPS, GREETINGS, REPLIES } from "./phrases";
@@ -152,7 +152,8 @@ function planClash(c: DecideCtx): DecideReply | null {
   const partner = /^CONVERSACIÓN: (\S+)$/m.exec(c.p)?.[1];
   const settled = /te dejo, que me toca|haciendo: seguir charlando/.test(c.p);
   if (!clash || !partner || !c.present.includes(partner) || settled) return null;
-  const [, activity, placeName, name] = clash;
+  const [, label, placeName, name] = clash;
+  const activity = lowerFirst(label!);
   // Si hoy ya se quedó charlando con esta persona, esta vez se despide.
   if (c.h % 3 === 0 && !c.did(`seguir charlando con ${name}`)) {
     return say(
