@@ -1,7 +1,14 @@
 /** Deriva lenta de la personalidad: unas centésimas por semana, con límites y su motivo. */
 import type { BigFive } from "@lethetown/shared";
 import { describe, expect, it } from "vitest";
-import { DriftConfig, applyDrift, driftText, weeklyDrift } from "../agent/personality-drift";
+import {
+  DriftConfig,
+  ageDrift,
+  applyDrift,
+  driftText,
+  townWeeklyDrift,
+  weeklyDrift,
+} from "../agent/personality-drift";
 
 const cfg = DriftConfig.parse({});
 const mid: BigFive = {
@@ -53,5 +60,51 @@ describe("deriva de la personalidad", () => {
   it("con su motivo, sin género", () => {
     const after = applyDrift(mid, mid, { conscientiousness: 0.01, neuroticism: -0.008 }, cfg);
     expect(driftText(mid, after)).toBe("con más constancia (+0.010), con más calma (-0.008)");
+  });
+});
+
+describe("deriva respecto a la media del pueblo y con lo malo (corrección 3.5)", () => {
+  it("lo malo también pesa: plantones, metas estancadas, soledad, préstamos sin devolver", () => {
+    const d = weeklyDrift({ stoodUp: 2, goalStalled: 2, lonely: 2, unpaidLoan: 2 }, 40, cfg);
+    expect(d.neuroticism).toBeGreaterThan(0);
+    expect(d.agreeableness).toBeLessThan(0);
+    expect(d.extraversion).toBeLessThan(0);
+  });
+
+  it("una semana con un vecino «bueno» y otro «malo»: deltas de signo distinto", () => {
+    const town = [
+      { id: "bueno", age: 40, lived: { goalAchieved: 3, learned: 3, support: 2 } },
+      { id: "malo", age: 40, lived: { stoodUp: 3, conflict: 3, goalStalled: 2, lonely: 2 } },
+      ...Array.from({ length: 18 }, (_, i) => ({ id: `v${i}`, age: 40, lived: { learned: 1 } })),
+    ];
+    const d = townWeeklyDrift(town, cfg);
+    expect(d.bueno!.neuroticism).toBeLessThan(0);
+    expect(d.malo!.neuroticism).toBeGreaterThan(0);
+    for (const delta of Object.values(d)) {
+      for (const v of Object.values(delta)) expect(Math.abs(v)).toBeLessThanOrEqual(0.02 + 1e-9);
+    }
+  });
+
+  it("si todo el pueblo vive lo mismo, solo queda la edad", () => {
+    const same = { learned: 3, goalAchieved: 2 };
+    const d = townWeeklyDrift(
+      [
+        { id: "a", age: 40, lived: same },
+        { id: "b", age: 20, lived: same },
+      ],
+      cfg,
+    );
+    const age40 = ageDrift(40, cfg);
+    expect(d.a!.openness ?? 0).toBeCloseTo(0, 9);
+    expect(d.a!.conscientiousness).toBeCloseTo(age40.conscientiousness!, 9);
+    expect(d.b!.conscientiousness).toBeGreaterThan(d.a!.conscientiousness!);
+  });
+
+  it("sin restar la media (relativeToTown 0), como antes", () => {
+    const abs = DriftConfig.parse({ relativeToTown: 0 });
+    const lived = { goalAchieved: 2 };
+    expect(townWeeklyDrift([{ id: "a", age: 40, lived }], abs).a).toEqual(
+      weeklyDrift(lived, 40, abs),
+    );
   });
 });

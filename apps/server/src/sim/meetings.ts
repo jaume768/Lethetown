@@ -271,7 +271,7 @@ async function finish(ctx: SimContext, c: Commitment, now: number): Promise<void
     `💔 Plantón en ${where}: ${noShow.map((p) => first(ctx, p)).join(" y ")} no ${noShow.length > 1 ? "fueron" : "fue"} a la cita${came.length ? ` con ${came.map((p) => first(ctx, p)).join(" y ")}` : ""}`,
     [...came, ...noShow],
     undefined,
-    { action: "meeting", ok: false },
+    { action: "meeting", ok: false, affected: came },
   );
   for (const w of came) {
     const agent = ctx.agents.get(w)!;

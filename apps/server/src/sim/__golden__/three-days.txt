@@ -4552,7 +4552,7 @@
 [día 2, 18:55] memory julian 📝 Julián Ortega se propone volver a quedar con Mateo
 [día 2, 18:55] memory julian 📝 Julián Ortega se propone volver a quedar con Samuel
 [día 2, 18:55] speech marta Marta Gil → Valentina Ríos: "Ya."
-[día 2, 18:56] memory elena 📝 Elena Sanz se propone volver a quedar con Samuel
+[día 2, 18:55] memory elena 📝 Elena Sanz se propone volver a quedar con Samuel
 [día 2, 18:56] memory elena 📝 Elena Sanz se propone volver a quedar con Mateo
 [día 2, 18:56] memory mateo 📝 Mateo Ruiz se propone volver a quedar con Elena
 [día 2, 18:56] speech valentina Valentina Ríos → Marta Gil: "Ay, no sé si debería contártelo, pero bueno..."

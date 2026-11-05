@@ -26,11 +26,11 @@ const event = (agentId: string, action: string, ok: boolean, participants = [age
 describe("deriva de la personalidad", () => {
   it("una semana con metas conseguidas y aprendiendo: algo más de constancia y apertura", async () => {
     const before = { ...agent("ines").seed.personality };
-    personalityTick(ctx, 0);
+    await personalityTick(ctx, 0);
     event("ines", "goal", true);
     event("ines", "goal", true);
     event("valentina", "teach", true, ["valentina", "ines"]);
-    personalityTick(ctx, WEEK + 5);
+    await personalityTick(ctx, WEEK + 5);
     const after = agent("ines").seed.personality;
     expect(after.conscientiousness).toBeGreaterThan(before.conscientiousness);
     expect(after.openness).toBeGreaterThan(before.openness);
@@ -42,6 +42,47 @@ describe("deriva de la personalidad", () => {
     );
     // Lo vivido se cuenta de nuevo cada semana.
     expect(personalityState(ctx).lived.size).toBe(0);
+  });
+
+  it("una semana buena y otra mala: deltas de signo distinto, respecto a la media del pueblo", async () => {
+    const good = { ...agent("ines").seed.personality };
+    const bad = { ...agent("rafael").seed.personality };
+    const profileBefore = ctx.deps.memory.profileOf("rafael");
+    // Inés: metas conseguidas y aprender. Rafael: plantones, un préstamo sin devolver, metas
+    // abandonadas y estancadas.
+    event("ines", "goal", true);
+    event("ines", "goal", true);
+    event("valentina", "teach", true, ["valentina", "ines"]);
+    for (let i = 0; i < 3; i++) {
+      ctx.emit(
+        "memory",
+        "rafael",
+        "💔 Plantón en la taberna: Hugo no fue a la cita con Rafael",
+        ["rafael", "hugo"],
+        undefined,
+        { action: "meeting", ok: false, affected: ["rafael"] },
+      );
+      event("hugo", "loan", false, ["hugo", "rafael"]);
+      event("rafael", "goal", false);
+    }
+    for (const g of (await import("../goals")).goalsOf(ctx, "rafael", "active"))
+      g.frustration = 0.8;
+    await personalityTick(ctx, 2 * WEEK + 5);
+    const dGood = agent("ines").seed.personality.neuroticism - good.neuroticism;
+    const dBad = agent("rafael").seed.personality.neuroticism - bad.neuroticism;
+    expect(dGood).toBeLessThan(0);
+    expect(dBad).toBeGreaterThan(0);
+    expect(Math.abs(dBad)).toBeLessThanOrEqual(0.02 + 1e-9);
+    expect(agent("rafael").seed.personality.agreeableness).toBeLessThan(bad.agreeableness);
+    // Hugo no fue a la cita: el plantón no es suyo.
+    const audit = await ctx.deps.memory.store.audit("rafael", 80);
+    expect(audit.find((a) => a.action === "personality")!.reason).toMatch(
+      /plantones \(3\).*préstamos sin devolver \(3\)|préstamos sin devolver \(3\).*plantones \(3\)/,
+    );
+    // El perfil de memoria sigue a la deriva (más neuroticismo, más congruencia con el ánimo).
+    expect(ctx.deps.memory.profileOf("rafael").moodCongruence).toBeGreaterThan(
+      profileBefore.moodCongruence,
+    );
   });
 
   it("si cambia cómo se describe, se rehace el prompt fijo (y solo entonces)", () => {

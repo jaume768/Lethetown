@@ -113,12 +113,18 @@ export class MemorySystem {
     this.newId = deps.idGenerator ?? randomUUID;
     this.rng = deps.rng ?? seededRng(Date.now());
     this.guard = deps.guard;
-    this.profiles = deps.profiles ?? {};
+    // Copia: la deriva de un mundo no cambia el perfil en otro que comparta las semillas.
+    this.profiles = { ...(deps.profiles ?? {}) };
   }
 
   /** Perfil de memoria del dueño (edad, personalidad, semilla). */
   profileOf(agentId: string): MemoryProfile {
     return this.profiles[agentId] ?? NEUTRAL_PROFILE;
+  }
+
+  /** Cambia el perfil de alguien (tras la deriva de su personalidad, con `resolveProfile`). */
+  setProfile(agentId: string, profile: MemoryProfile): void {
+    this.profiles[agentId] = profile;
   }
 
   /** Pesos y umbrales de recuperación ajustados al perfil del dueño. */

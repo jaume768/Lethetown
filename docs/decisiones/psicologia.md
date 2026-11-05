@@ -39,7 +39,21 @@ psicológica en los prompts si se puede calcular en código.
   no se aleja más de 0,15 de la semilla y queda en [0,05, 0,95]. Auditado con su motivo, sin
   género («con más constancia»). Si cambia cómo se describe en el prompt fijo
   (`personalityLine`), `Agent.refreshIdentity()` lo rehace: rompe la caché de ese agente una vez.
-  El perfil de memoria se calcula al arrancar (no sigue a la deriva todavía).
+  Corrección 3.5 (en la partida de una semana los 20 vecinos derivaban casi igual: más
+  apertura, más constancia y menos neuroticismo, porque solo pesaba lo bueno):
+  - **Lo malo también**: plantones sufridos (quien fue y esperó, `meta.affected`), préstamos
+    sin devolver (el dueño), conflictos en sus fichas al acabar la semana (pasar a rivalidad o
+    bajar ≥ 0,1 de afinidad entre dos entradas), metas estancadas (activas con frustración ≥
+    `stalledFrustration`, 0,6) y soledad sostenida (despierto con la necesidad social < 0,25;
+    una vez cada 12 h). Las abandonadas ya contaban.
+  - **Respecto a la media del pueblo** (`townWeeklyDrift`, `relativeToTown` 1): a lo vivido por
+    cada uno se le resta la media de esa semana; la edad, no. En una semana buena para todos
+    solo se mueve lo que diferencia a cada vecino. Siguen los topes (0,02 por rasgo y semana,
+    0,15 desde la semilla).
+  - Tras cambiar, el **perfil de memoria** se recalcula con `resolveProfile` (la misma función
+    que al arrancar; `MemorySystem.setProfile`) y el **ánimo base** ya sale de la personalidad
+    de ahora (`baselineMood`). `refreshIdentity()` solo si cambia el texto. El proceso api, que
+    tiene su propio `MemorySystem` para el inspector, ve el perfil nuevo al reiniciarse.
 - **Sin inflación de intenciones** (partida 2: 199 al día, 46 % cumplidas): cada una lleva
   importancia (la que da quien la crea: citas 8, préstamos 7; si no, con hora 7, con persona o
   lugar 6, sin pista 4). Con `prospective.maxOpen` (8) abiertas, sale la menos importante (o no
