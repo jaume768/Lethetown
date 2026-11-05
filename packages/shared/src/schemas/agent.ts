@@ -105,6 +105,27 @@ export const OffstagePerson = z.object({
 });
 export type OffstagePerson = z.infer<typeof OffstagePerson>;
 
+/**
+ * Parentesco de una relación de familia: lo que es la otra persona para quien la tiene («madre»
+ * en la ficha de Leo hacia Marta). Lo usa la protección de menores para saber que algo pasa en
+ * familia (y se lo cuenta a la moderación).
+ */
+export const Kin = z.enum([
+  "padre",
+  "madre",
+  "hijo",
+  "hija",
+  "abuelo",
+  "abuela",
+  "nieto",
+  "nieta",
+  "hermano",
+  "hermana",
+  "marido",
+  "mujer",
+]);
+export type Kin = z.infer<typeof Kin>;
+
 export const AgentSeed = z.object({
   id: z.string(),
   name: z.string(),
@@ -165,6 +186,8 @@ export const AgentSeed = z.object({
       z.object({
         with: z.string(),
         bond: z.enum(["family", "romantic", "work"]).optional(),
+        /** Con `bond: "family"`, qué es la otra persona para esta («madre», «hija»). */
+        kin: Kin.optional(),
         affinity: z.number().min(-1).max(1).default(0),
         trust: z.number().min(0).max(1).default(0.5),
         familiarity: z.number().min(0).max(1).default(0.5),

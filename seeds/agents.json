@@ -274,7 +274,8 @@
         "trust": 0.8,
         "familiarity": 1,
         "summary": "Mi madre: se preocupa demasiado por mí.",
-        "bond": "family"
+        "bond": "family",
+        "kin": "madre"
       },
       {
         "with": "lucia",
@@ -429,7 +430,8 @@
         "trust": 0.8,
         "familiarity": 1,
         "summary": "Mi hijo; trabaja demasiado desde que murió su padre.",
-        "bond": "family"
+        "bond": "family",
+        "kin": "hijo"
       },
       {
         "with": "sofia",
@@ -603,7 +605,8 @@
         "trust": 0.5,
         "familiarity": 1,
         "summary": "Mi hija; discutimos cada vez más y me da miedo que se vaya.",
-        "bond": "family"
+        "bond": "family",
+        "kin": "hija"
       },
       {
         "with": "aurora",
@@ -747,7 +750,8 @@
         "trust": 0.3,
         "familiarity": 1,
         "summary": "Mi padre: no entiende nada de lo que me importa.",
-        "bond": "family"
+        "bond": "family",
+        "kin": "padre"
       },
       {
         "with": "valentina",
@@ -1777,7 +1781,8 @@
         "trust": 0.7,
         "familiarity": 1,
         "summary": "Mi hijo; quiere un perro y yo no tengo tiempo ni para dormir.",
-        "bond": "family"
+        "bond": "family",
+        "kin": "hijo"
       },
       {
         "with": "rafael",
@@ -1925,7 +1930,8 @@
         "trust": 0.9,
         "familiarity": 1,
         "summary": "Mamá; dice «ya veremos», que significa que no.",
-        "bond": "family"
+        "bond": "family",
+        "kin": "madre"
       },
       {
         "with": "ines",
@@ -2682,7 +2688,8 @@
         "trust": 0.9,
         "familiarity": 1,
         "summary": "Mi nieta; a veces la confundo con mi hija.",
-        "bond": "family"
+        "bond": "family",
+        "kin": "nieta"
       },
       {
         "with": "julian",
@@ -2828,7 +2835,8 @@
         "trust": 0.7,
         "familiarity": 1,
         "summary": "Mi abuela; cada vez olvida más cosas y me da miedo.",
-        "bond": "family"
+        "bond": "family",
+        "kin": "abuela"
       },
       {
         "with": "samuel",

@@ -10,6 +10,18 @@
   atracción» de la feria, «desnudo» (el baño) o «amante de los libros» van a la moderación. En
   la partida 2, «ya es hora de acostarse» (Tomás con Leo) se bloqueó sin moderar. «Acostarse
   con» y «me atrae» siguen siendo descarte directo.
+- **Familia (corrección 3.5)**: los 4 bloqueos de la partida de una semana eran falsos
+  positivos de padres e hijos (Leo a su madre: «¿Me das un beso?»; dos reflexiones de Julián
+  sobre Inés). Las semillas dicen el parentesco (`kin` en la relación de familia: «madre»,
+  «hija»…; `kinOf`) y:
+  - la moderación lo recibe («Parentesco: Marta Gil es madre de Leo Gil») y su prompt fijo pide
+    tenerlo en cuenta (lo romántico o sexual se rechaza también en familia);
+  - lo que pasa **solo** entre un menor y su padre o madre no se manda a moderar si no hay
+    léxico claro: un único menor; quien escribe, los implicados y los vecinos nombrados son él o
+    su padre o madre; ninguna tercera persona («un chico», «alguien», «una amiga») ni otro nombre
+    propio a media frase (alguien de fuera o inventado). Si no, se modera como siempre.
+  - El léxico claro se descarta siempre, también en familia («Leo, ¿estás enamorado?»). Tests
+    con los 4 textos y con los que siguen moderándose.
 - **Conservador a propósito**: un menor tampoco guarda recuerdos con léxico romántico claro aunque
   hablen de adultos.
 - **Qué pasa con lo descartado**: frase o acción → sigue su plan; bloque de plan → fuera; recuerdo →
