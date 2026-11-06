@@ -27,3 +27,5 @@ export * from "./social/network";
 export * from "./actions/catalog";
 export * from "./actions/agreements";
 export * from "./text/case";
+export * from "./map/proximity";
+export * from "./cognition/config";
