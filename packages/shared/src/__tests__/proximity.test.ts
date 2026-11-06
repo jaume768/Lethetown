@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CellIndex, isNear, tileAt, tileDistance } from "../map/proximity";
+import { CellIndex, closestApproach, isNear, tileAt, tileDistance } from "../map/proximity";
 import { COGNITION_OFF, parseCognitionEnv, resolveCognition } from "../cognition/config";
 
 const still = { tile: { x: 3, y: 4 }, facing: "down" as const, movement: null };
@@ -42,6 +42,52 @@ describe("distancia", () => {
     expect(tileDistance({ x: 0, y: 0 }, { x: 3, y: 4 })).toBe(5);
     expect(isNear({ x: 0, y: 0 }, { x: 3, y: 4 }, 5)).toBe(true);
     expect(isNear({ x: 0, y: 0 }, { x: 3, y: 4 }, 4)).toBe(false);
+  });
+});
+
+describe("closestApproach", () => {
+  it("no pierde a dos que se cruzan entre dos revisiones", () => {
+    // Uno va de x=0 a x=20 y el otro de x=20 a x=0, en la misma fila, en 2 minutos.
+    const east = {
+      tile: { x: 0, y: 0 },
+      facing: "right" as const,
+      movement: {
+        waypoints: [
+          { x: 0, y: 0 },
+          { x: 20, y: 0 },
+        ],
+        startTime: 0,
+        endTime: 2,
+      },
+    };
+    const west = {
+      tile: { x: 20, y: 0 },
+      facing: "left" as const,
+      movement: {
+        waypoints: [
+          { x: 20, y: 0 },
+          { x: 0, y: 0 },
+        ],
+        startTime: 0,
+        endTime: 2,
+      },
+    };
+    // En los extremos están lejos (20 baldosas)…
+    expect(tileDistance(tileAt(east, 0), tileAt(west, 0))).toBe(20);
+    expect(tileDistance(tileAt(east, 2), tileAt(west, 2))).toBe(20);
+    // …pero a mitad se cruzan.
+    expect(closestApproach(east, west, 0, 2)).toEqual({ distance: 0, at: 1 });
+  });
+
+  it("solo cuentan los instantes en que se ven", () => {
+    const walls = (t: number) => t >= 105; // hasta el minuto 105, dentro de casa
+    expect(closestApproach(walking, still, 100, 120, 0.25, walls).at).toBeGreaterThanOrEqual(105);
+    expect(closestApproach(walking, still, 100, 104, 0.25, () => false).distance).toBe(Infinity);
+  });
+
+  it("con uno quieto, la distancia mínima a su paso", () => {
+    // Pasa por (3, 0): a 4 baldosas de quien está en (3, 4).
+    expect(closestApproach(walking, still, 100, 120)).toEqual({ distance: 4, at: 103 });
   });
 });
 

@@ -36,6 +36,37 @@ export function isNear(a: Point, b: Point, radius: number): boolean {
   return tileDistance(a, b) <= radius;
 }
 
+/**
+ * La distancia mínima entre dos agentes en el intervalo [from, to] (y cuándo), muestreando cada
+ * `step` minutos de juego y los extremos. Sirve para no perder a dos que se cruzan en sentidos
+ * opuestos entre dos revisiones (a 6 baldosas por minuto cada uno, atraviesan un radio de 4
+ * baldosas en menos de un minuto).
+ */
+export function closestApproach(
+  a: Pick<AgentState, "tile" | "facing" | "movement">,
+  b: Pick<AgentState, "tile" | "facing" | "movement">,
+  from: number,
+  to: number,
+  step = 0.25,
+  /** Solo cuentan los instantes en que se ven (p. ej. no a través de una pared). */
+  visible: (t: number) => boolean = () => true,
+): { distance: number; at: number } {
+  const at = (t: number) => {
+    const pa = positionAt(a, t);
+    const pb = positionAt(b, t);
+    return tileDistance(pa, pb);
+  };
+  let best = { distance: Infinity, at: to };
+  const times: number[] = [];
+  for (let t = from; t < to; t += Math.max(1e-3, step)) times.push(t);
+  times.push(to);
+  for (const t of times) {
+    const d = at(t);
+    if (d < best.distance && visible(t)) best = { distance: d, at: t };
+  }
+  return best;
+}
+
 /** Un vecino cercano: su id y a qué distancia está. */
 export interface Neighbour {
   id: string;

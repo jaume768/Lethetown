@@ -39,6 +39,8 @@ export interface Heard {
   eventId: string;
   /** En un grupo: a quién iba dirigido (si no era a quien lo oye). */
   toName?: string;
+  /** Un saludo al pasar (fase 3.6): no abre conversación ni pide respuesta. */
+  greeting?: boolean;
 }
 
 /** Llegada pendiente de un viaje (se reprograma al restaurar una instantánea). */
@@ -114,6 +116,11 @@ export interface Conversation {
   transcript: string[];
   /** Frases de cada uno a cada otro ("a>b" → n): con quién habló más (fichas sociales). */
   pairs: Record<string, number>;
+  /**
+   * En el camino o andando juntos (fase 3.6): quien está en ella cuenta como presente si está a
+   * `callRadius` baldosas o menos (no hace falta el mismo `locationId`). Ver presence.ts.
+   */
+  road?: boolean;
 }
 
 export interface SimulationDeps {

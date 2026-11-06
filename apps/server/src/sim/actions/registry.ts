@@ -7,6 +7,7 @@ import type { Agent } from "@lethetown/agent-core";
 import { ACTION_SPECS, type ActionType, type AgentAction } from "@lethetown/shared";
 import type { SimContext } from "../context";
 import { actionEnabled } from "../systems/registry";
+import { nearInRoadConversation } from "../presence";
 
 export interface ActionContext {
   ctx: SimContext;
@@ -19,16 +20,20 @@ export interface ActionContext {
   agreedWith?: readonly string[];
 }
 
-/** ¿Está aquí, despierto y quieto? (o, si es un acuerdo, estaba en la charla). */
+/**
+ * ¿Está aquí, despierto y quieto? (o, si es un acuerdo, estaba en la charla). En una charla en
+ * el camino (fase 3.6), también quien está en ella a «cerca» (presencia por proximidad).
+ */
 export function isHere(c: ActionContext, id: string): boolean {
   if (id === c.agent.id) return false;
   if (c.agreedWith?.includes(id)) return c.ctx.agents.has(id);
   const other = c.ctx.agents.get(id);
   return Boolean(
     other &&
-    other.state.locationId === c.agent.state.locationId &&
-    other.state.activityKind !== "sleep" &&
-    !c.ctx.rt(id).travelling,
+    ((other.state.locationId === c.agent.state.locationId &&
+      other.state.activityKind !== "sleep" &&
+      !c.ctx.rt(id).travelling) ||
+      nearInRoadConversation(c.ctx, c.agent.id, id)),
   );
 }
 

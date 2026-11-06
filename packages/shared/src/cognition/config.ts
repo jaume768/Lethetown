@@ -20,6 +20,17 @@ export type CognitionPart = (typeof COGNITION_PARTS)[number];
 export const CognitionParams = z.object({
   /** «Cerca»: radio en baldosas en que dos vecinos se ven por el camino. */
   nearRadius: z.number().positive().default(4),
+  /**
+   * «A voces»: hasta dónde se puede saludar o llamar a alguien para pararse a charlar, y radio
+   * de la presencia en una charla en el camino (quien se aleja más, sale de ella).
+   */
+  callRadius: z.number().positive().default(8),
+  /**
+   * Minutos de antelación con que se ve venir a alguien por su ruta: así la respuesta del LLM
+   * (1–2 min de juego a x10) llega cuando se cruzan. Lo decidido antes de tiempo se hace al
+   * cruzarse.
+   */
+  decisionLeadMinutes: z.number().nonnegative().default(1.5),
   /** Minutos de juego entre dos revisiones de quién tiene cerca a quién (sin LLM). */
   scanEveryMinutes: z.number().int().positive().default(2),
   /** Minutos de juego antes de que la misma pareja vuelva a generar un encuentro. */

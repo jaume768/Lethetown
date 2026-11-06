@@ -97,6 +97,10 @@ export async function decide(a: Agent, now: number, input: DecideInput): Promise
   }
 }
 
+/** Acciones cuyo texto es algo que se dice en voz alta (fase 3.6: saludar, pararse a charlar). */
+const SPOKEN = new Set(["say", "greet", "stop_to_chat"]);
+const spoken = (type: string): "speech" | "action" => (SPOKEN.has(type) ? "speech" : "action");
+
 /** Textos de una decisión que entran en el mundo, con su tipo (para los guardianes). */
 function decisionTexts(d: Decision): { text: string; kind: "speech" | "action" }[] {
   const out: { text: string; kind: "speech" | "action" }[] = [];
@@ -104,8 +108,7 @@ function decisionTexts(d: Decision): { text: string; kind: "speech" | "action" }
     const fields = d.action as unknown as Record<string, unknown>;
     for (const f of TEXT_FIELDS) {
       const v = fields[f];
-      if (typeof v === "string" && v)
-        out.push({ text: v, kind: d.action.type === "say" ? "speech" : "action" });
+      if (typeof v === "string" && v) out.push({ text: v, kind: spoken(d.action.type) });
     }
   }
   if (d.reason) out.push({ text: d.reason, kind: "action" });
@@ -159,7 +162,7 @@ export async function checked(a: Agent, input: Decision): Promise<Decision> {
   if (!d) return { kind: "follow_plan" };
   const reason = d.reason ?? "";
   if (d.kind === "act") {
-    const kind = d.action.type === "say" ? "speech" : "action";
+    const kind = spoken(d.action.type);
     const text = `${actionText(d.action)} ${reason}`;
     if (!(await safe(a, text, kind, actionPeople(d.action)))) return { kind: "follow_plan" };
   }
@@ -178,7 +181,7 @@ function rewritten(a: Agent, d: Decision): Decision | null {
     guard.rewrite(text, { kind, actors, agentId: a.id });
   let out: Decision = d;
   if (d.kind === "act") {
-    const kind = d.action.type === "say" ? "speech" : "action";
+    const kind = spoken(d.action.type);
     const action = { ...d.action } as Record<string, unknown>;
     for (const f of TEXT_FIELDS) {
       const v = action[f];
@@ -195,6 +198,9 @@ function rewritten(a: Agent, d: Decision): Decision | null {
   }
   return out;
 }
+
+/** Un saludo al pasar es muy corto (caracteres). */
+const GREET_MAX = 60;
 
 /**
  * Respuesta → decisión. Solo se comprueba la forma (el catálogo); si la acción es posible
@@ -217,8 +223,10 @@ export function toDecision(
     return { kind: "invalid", error, ...reason };
   }
   const action =
-    parsed.data.type === "say"
+    parsed.data.type === "say" || parsed.data.type === "stop_to_chat"
       ? { ...parsed.data, text: clipText(parsed.data.text, max.say) }
-      : parsed.data;
+      : parsed.data.type === "greet"
+        ? { ...parsed.data, text: clipText(parsed.data.text, Math.min(max.say, GREET_MAX)) }
+        : parsed.data;
   return { kind: "act", action, ...reason };
 }

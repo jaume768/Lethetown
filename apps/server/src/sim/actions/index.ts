@@ -8,6 +8,7 @@ import "./company";
 import "./notes";
 import "./skills";
 import "./lore";
+import "./walking";
 
 export * from "./registry";
 export { REPLAN_MINUTES } from "./core";

@@ -30,7 +30,14 @@ export type Perception =
       eventId?: string;
     }
   | { kind: "thought"; text: string }
-  | { kind: "world"; text: string; placeId: string | null; eventId?: string };
+  | {
+      kind: "world";
+      text: string;
+      placeId: string | null;
+      eventId?: string;
+      /** Quién sale en ello (p. ej. con quién se cruzó por el camino), para el recuerdo. */
+      people?: string[];
+    };
 
 /** Decisión del agente; `reason` es su razonamiento (si lo dio). */
 export type Decision = (
@@ -57,6 +64,8 @@ export interface AgentDeps {
   gossips?: ReadonlySet<string>;
   /** Reglas fijas del mundo que aportan los sistemas del servidor (van en el prompt fijo). */
   worldRules?: string[];
+  /** Acciones de sistemas desactivados en este mundo: no se describen en el prompt fijo. */
+  hiddenActions?: readonly string[];
   onError?: (agentId: string, task: string, error: unknown) => void;
 }
 

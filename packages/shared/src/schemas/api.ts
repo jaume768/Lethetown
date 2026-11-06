@@ -68,6 +68,16 @@ export const SimEvent = z.object({
       affected: z.array(z.string()).optional(),
       /** La n-ésima vez que se repite ese día (la misma pareja y lo mismo): el drama vale menos. */
       repeat: z.number().int().positive().optional(),
+      /** Por el camino (fase 3.6): el encuentro le hizo pensar (saliencia ≥ umbral). */
+      salient: z.boolean().optional(),
+      /** Saliencia del encuentro (0–1), p. ej. al pasar de largo. */
+      score: z.number().optional(),
+      /** Reencuentro tras días sin verse. */
+      reunion: z.boolean().optional(),
+      /** La decisión llegó tarde (la otra persona ya se había alejado) y se descartó. */
+      late: z.boolean().optional(),
+      /** Devuelve un saludo (no lo empieza). */
+      reply: z.boolean().optional(),
     })
     .optional(),
 });

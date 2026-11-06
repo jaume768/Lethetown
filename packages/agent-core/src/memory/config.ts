@@ -8,6 +8,7 @@ import { GoalsConfig } from "../goals/psychology";
 import { SkillsConfig } from "../skills/skills";
 import { LoreConfig } from "../lore/lore";
 import { DriftConfig } from "../agent/personality-drift";
+import { EncounterConfig } from "../cognition/salience";
 
 /**
  * Parámetros de la memoria humana. Todos tienen valor por defecto; el servidor puede
@@ -309,6 +310,8 @@ export const MemoryConfig = z.object({
   skills: SkillsConfig.prefault({}),
   /** Saberes: deformación al contarse, refuerzo con el uso y olvido (ver lore/lore.ts). */
   lore: LoreConfig.prefault({}),
+  /** Saliencia de los encuentros por el camino (fase 3.6; ver cognition/salience.ts). */
+  encounter: EncounterConfig.prefault({}),
   /** Deriva lenta de la personalidad con la experiencia y la edad (agent/personality-drift.ts). */
   drift: DriftConfig.prefault({}),
   /** Rutinas repetidas → recuerdos semánticos de hábito ("suelo desayunar en el café…"). */

@@ -1,5 +1,5 @@
 import { inferActivityKind, type Agent } from "@lethetown/agent-core";
-import { facingOf, pathLength, type ActivityKind } from "@lethetown/shared";
+import { facingOf, pathLength, tileAt, type ActivityKind } from "@lethetown/shared";
 import type { Arrival, SimContext } from "./context";
 import { discoverAlong } from "./places";
 import { tileKey } from "./world";
@@ -36,6 +36,8 @@ export function travel(
   const now = ctx.clock.now();
   const world = ctx.world;
   const spot = spotId ? world.spot(spotId) : undefined;
+  // Cambiar de rumbo a mitad de camino (fase 3.6): se sale de donde está ahora, no de donde salió.
+  if (rt.travelling && ctx.cognition.enabled) agent.state.tile = tileAt(agent.state, now);
   const goal = world.restingTile(destId, spot?.tile ?? null, occupiedTiles(ctx, agent.id));
   const waypoints = world.route(agent.state.tile, goal) ?? [agent.state.tile, goal];
   const minutes = Math.max(1, Math.round(pathLength(waypoints) / ctx.deps.walkSpeed));
@@ -104,7 +106,7 @@ export function scheduleArrival(ctx: SimContext, agent: Agent, arrival: Arrival)
 }
 
 /** Baldosas ocupadas por agentes quietos o reservadas como destino de un viaje. */
-function occupiedTiles(ctx: SimContext, exceptId: string): Set<string> {
+export function occupiedTiles(ctx: SimContext, exceptId: string): Set<string> {
   const occupied = new Set<string>();
   for (const a of ctx.agents.values()) {
     if (a.id === exceptId) continue;

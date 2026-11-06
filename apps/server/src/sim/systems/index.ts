@@ -17,6 +17,7 @@ import "./intentions";
 import "./skills";
 import "./lore";
 import "./personality";
+import "./encounters";
 
 export * from "./registry";
 export * from "./types";

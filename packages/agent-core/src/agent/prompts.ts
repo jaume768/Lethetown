@@ -187,11 +187,16 @@ export function sharedSystemPrompt(
   language: PromptLanguage = "es",
   minors: MinorInfo[] = [],
   worldRules: string[] = [],
+  /** Acciones que no existen en este mundo (las de sistemas desactivados): no se describen. */
+  hiddenActions: readonly string[] = [],
 ): string {
+  const actions = (Object.keys(ACTION_SPECS) as ActionType[]).filter(
+    (t) => !hiddenActions.includes(t),
+  );
   return `Vives en un pequeño pueblo; tu identidad, lo que sabes y los lugares que conoces van al final.
 
 ## Acciones (type {parámetros}: para qué); en cada momento se te dice cuáles son posibles
-${(Object.keys(ACTION_SPECS) as ActionType[]).map(actionLine).join("\n")}
+${actions.map(actionLine).join("\n")}
 
 ## Reglas
 ${RULES}${worldRules.map((r) => `\n- ${r}`).join("")}${minorsListRule(minors)}${languageRule(language)}`;
@@ -205,8 +210,10 @@ export function identityPrompt(
   minors: MinorInfo[] = [],
   /** Reglas fijas que añaden los sistemas del mundo (sin nada variable, para la caché). */
   worldRules: string[] = [],
+  /** Acciones de sistemas desactivados en este mundo (no se describen). */
+  hiddenActions: readonly string[] = [],
 ): string {
-  return `${sharedSystemPrompt(language, minors, worldRules)}
+  return `${sharedSystemPrompt(language, minors, worldRules, hiddenActions)}
 
 ${IDENTITY_HEADING}
 Eres ${seed.name}, ${seed.age} años, habitante de un pequeño pueblo.

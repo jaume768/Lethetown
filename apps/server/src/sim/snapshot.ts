@@ -38,6 +38,7 @@ const Perception = z.discriminatedUnion("kind", [
     text: z.string(),
     placeId: z.string().nullable(),
     eventId: z.string().optional(),
+    people: z.array(z.string()).optional(),
   }),
 ]);
 
@@ -47,6 +48,7 @@ const Heard = z.object({
   text: z.string(),
   eventId: z.string(),
   toName: z.string().optional(),
+  greeting: z.boolean().optional(),
 });
 
 export const SimSnapshot = z.object({
@@ -101,6 +103,8 @@ export const SimSnapshot = z.object({
       lastAt: z.number(),
       transcript: z.array(z.string()),
       pairs: z.record(z.string(), z.number()).default({}),
+      /** En el camino o andando (fase 3.6): la presencia es por proximidad. */
+      road: z.boolean().optional(),
     }),
   ),
   /**

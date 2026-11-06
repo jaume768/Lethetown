@@ -6,13 +6,25 @@ import {
   usedCatchphrases,
   type Agent,
 } from "@lethetown/agent-core";
-import { facingOf } from "@lethetown/shared";
+import { facingOf, type ActivityKind } from "@lethetown/shared";
 import { errorMessage, type Conversation, type SimContext } from "./context";
 import { setAction } from "./routines";
 import { learnFromSpeech } from "./places";
 import { applyAgreements, coveredBy, noteLinkedIntention } from "./agreements";
 import { itemsState } from "./items";
 import type { ResolvedAgreement } from "./systems/types";
+import { awake, inCallRange, nearNow, reachable, tileNow } from "./presence";
+
+/**
+ * Actividades que no se dejan al ponerse a hablar (fase 3.6, `talkWhileActivity`): todo lo que
+ * no es estar sin hacer nada, caminar, dormir o ya estar hablando.
+ */
+const KEEPS_ACTIVITY: ReadonlySet<ActivityKind> = new Set(["work", "eat", "cook", "read", "sit"]);
+
+/** ¿Sigue con lo que hacía mientras habla? (fase 3.6) */
+export function keepsActivity(ctx: SimContext, agent: Agent): boolean {
+  return ctx.cognition.talkWhileActivity && KEEPS_ACTIVITY.has(agent.state.activityKind);
+}
 
 /**
  * Conversaciones de dos o más (grupos): turnos, unirse y marcharse, rumores oídos a escondidas
@@ -116,17 +128,25 @@ function join(ctx: SimContext, conv: Conversation, agent: Agent): void {
   );
 }
 
-export function talk(ctx: SimContext, agent: Agent, toId: string, said: string): void {
+export function talk(
+  ctx: SimContext,
+  agent: Agent,
+  toId: string,
+  said: string,
+  /** `road`: abre (o sigue) una conversación en el camino (pararse a charlar, fase 3.6). */
+  opts: { road?: boolean } = {},
+): void {
   const target = ctx.agents.get(toId);
   const targetRt = ctx.runtime.get(toId);
-  if (
-    !target ||
-    !targetRt ||
-    target.state.locationId !== agent.state.locationId ||
-    targetRt.travelling
-  ) {
-    return;
-  }
+  if (!target || !targetRt) return;
+  const classic = target.state.locationId === agent.state.locationId && !targetRt.travelling;
+  // Fase 3.6: en el camino, por proximidad (y quien se para a charlar, si está cerca).
+  const road =
+    !classic &&
+    ctx.cognition.enabled &&
+    (reachable(ctx, agent, target) ||
+      (opts.road === true && awake(ctx, target) && inCallRange(ctx, agent, target)));
+  if (!classic && !road) return;
   const now = ctx.clock.now();
   const mine = activeConversationOf(ctx, agent.id)?.conv;
   const theirs = activeConversationOf(ctx, toId)?.conv;
@@ -156,9 +176,12 @@ export function talk(ctx: SimContext, agent: Agent, toId: string, said: string):
       lastAt: now,
       transcript: [],
       pairs: {},
+      ...(road || opts.road ? { road: true } : {}),
     };
     ctx.conversations.set(conv.id, conv);
   }
+  // Una charla que sigue por el camino (se fueron juntos hablando) pasa a ir por proximidad.
+  if (road && !conv.road) conv.road = true;
   // Cada muletilla de la semilla, una vez por charla: si la repite, se quita de la frase.
   const used = usedCatchphrases(
     saidBy(conv, agent.seed.name),
@@ -194,18 +217,27 @@ export function talk(ctx: SimContext, agent: Agent, toId: string, said: string):
   rt.utteredAt = now;
   agent.state.lastUtterance = utterance;
   agent.state.needs.social = Math.min(1, agent.state.needs.social + 0.08);
-  setAction(
-    ctx,
-    agent,
-    group
-      ? `hablando con ${names(
-          ctx,
-          conv.members.filter((m) => m !== agent.id),
-        )}`
-      : `hablando con ${target.seed.name}`,
-    "talk",
-  );
-  agent.state.facing = facingOf(agent.state.tile, target.state.tile);
+  // Fase 3.6: andando se sigue caminando, y haciendo algo (cocinar, atender) no se deja.
+  const walking = ctx.cognition.enabled && rt.travelling && agent.state.movement !== null;
+  if (!walking && !keepsActivity(ctx, agent)) {
+    setAction(
+      ctx,
+      agent,
+      group
+        ? `hablando con ${names(
+            ctx,
+            conv.members.filter((m) => m !== agent.id),
+          )}`
+        : `hablando con ${target.seed.name}`,
+      "talk",
+    );
+  }
+  if (!walking) {
+    agent.state.facing = facingOf(
+      ctx.cognition.enabled ? tileNow(ctx, agent) : agent.state.tile,
+      ctx.cognition.enabled ? tileNow(ctx, target) : target.state.tile,
+    );
+  }
   targetRt.inbox.push({
     fromId: agent.id,
     fromName: agent.seed.name,
@@ -253,10 +285,15 @@ function eavesdrop(
   const cfg = ctx.deps.memory.config.eavesdrop;
   const rng = ctx.deps.rng;
   const out: string[] = [];
+  const radius = ctx.cognition.params.eavesdropRadius;
   for (const other of ctx.agents.values()) {
     if (conv.members.includes(other.id)) continue;
     const rt = ctx.rt(other.id);
-    if (rt.travelling || other.state.locationId !== speaker.state.locationId) continue;
+    // En el camino (fase 3.6), solo quien pasa muy cerca (`eavesdropRadius`), ande o no.
+    const near = conv.road
+      ? ctx.cognition.enabled && awake(ctx, other) && nearNow(ctx, speaker, other, radius)
+      : !rt.travelling && other.state.locationId === speaker.state.locationId;
+    if (!near) continue;
     if (other.state.activityKind === "sleep" || rng() >= cfg.probability) continue;
     const words = utterance.split(/\s+/);
     const keep = Math.max(1, Math.round(words.length * cfg.fragmentRatio));

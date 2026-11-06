@@ -13,7 +13,7 @@ import type {
   Weather,
   WorldRunStatus,
 } from "@lethetown/shared";
-import { exposedTo } from "@lethetown/shared";
+import { ACTION_SPECS, exposedTo, type ActionType } from "@lethetown/shared";
 import type { GameClock } from "./clock";
 import {
   SimContext,
@@ -37,10 +37,14 @@ import { consolidate, maintain, scheduleChronicle, writeChronicle } from "./memo
 import { everyoneAsleep } from "./night";
 import { availableActions, failAction, runAction } from "./actions";
 import { gatherPerceptions, presentWith } from "./perception";
+import { reportIntentions } from "./intention-report";
+import { revalidate, walkingTurn, type WalkingTurn } from "./walking";
+import { noteWalkedPast, unstick } from "./encounters";
 import { mayEnter } from "./norms";
 import { goOrDo, scheduleArrival, setAction, travel } from "./routines";
 import { SIM_SNAPSHOT_VERSION, type SimSnapshot } from "./snapshot";
 import {
+  actionEnabled,
   loadSystems,
   restoreSystems,
   scheduleSystemTicks,
@@ -97,6 +101,10 @@ export class Simulation {
     );
     // Lo fijo que aportan los sistemas activos (va en el prompt de identidad, cacheable).
     const worldRules = systemIdentityLines(deps, (id) => ctx.enabled(id));
+    // Las acciones de sistemas desactivados no se describen en el prompt fijo (no existen aquí).
+    const hiddenActions = (Object.keys(ACTION_SPECS) as ActionType[]).filter(
+      (t) => !actionEnabled(ctx, t),
+    );
     for (const raw of deps.seeds) {
       // Sin lista en la semilla: lo de quien vive aquí de siempre.
       const seed = {
@@ -112,6 +120,7 @@ export class Simulation {
         minors,
         gossips,
         worldRules,
+        hiddenActions,
         language: deps.language,
         onError: (agentId, task, error) =>
           ctx.emit("system", agentId, `⚠ Error en "${task}": ${errorMessage(error)}`),
@@ -392,8 +401,15 @@ export class Simulation {
   private async step(agent: Agent): Promise<void> {
     const ctx = this.ctx;
     const rt = ctx.rt(agent.id);
-    // De viaje, o fuera del pueblo (se fue a vivir a otro sitio): no vive ni piensa aquí.
-    if (rt.travelling || systemsHold(ctx, agent.id)) return;
+    // Fuera del pueblo (se fue a vivir a otro sitio): no vive ni piensa aquí.
+    if (systemsHold(ctx, agent.id)) return;
+    // De camino: solo piensa si algo se lo pide (fase 3.6; apagada, nunca).
+    if (rt.travelling && !rt.arrival) unstick(ctx, agent.id);
+    if (rt.travelling) {
+      const turn = walkingTurn(ctx, agent, this.clock.now());
+      if (turn) await this.walkingStep(agent, turn);
+      return;
+    }
     const now = this.clock.now();
     // Necesidades y ánimo (solo: un introvertido recarga pilas en algo tranquilo).
     const around = presentWith(ctx, agent).map((p) => p.id);
@@ -447,25 +463,7 @@ export class Simulation {
     // Un recuerdo malo que vuelve sin querer (más con el ánimo bajo o si algo se lo recuerda).
     const intrusive = await agent.ruminate(now, this.tickMinutes, around);
     // Memoria prospectiva: lo que tenía pensado hacer, si aparece la pista.
-    for (const o of await agent.checkIntentions(now, this.tickMinutes, around)) {
-      const who = o.intention.personId ? ctx.agents.get(o.intention.personId)?.seed.name : null;
-      const name = agent.seed.name;
-      if (o.kind === "kept") {
-        rt.pending.push({ kind: "world", text: o.reminder!, placeId: null });
-        ctx.emit("memory", agent.id, `✅ ${name} se acuerda de ${o.intention.text}`, [agent.id]);
-      } else if (o.kind === "missed") {
-        ctx.emit(
-          "memory",
-          agent.id,
-          `🫥 A ${name} se le pasa ${o.intention.text}${who ? ` (y eso que estaba con ${who})` : ""}`,
-          [agent.id],
-        );
-      } else if (o.kind === "late") {
-        ctx.emit("memory", agent.id, `😳 ¡Vaya! A ${name} se le olvidó ${o.intention.text}`, [
-          agent.id,
-        ]);
-      }
-    }
+    reportIntentions(ctx, agent, await agent.checkIntentions(now, this.tickMinutes, around));
     if (intrusive) {
       ctx.emit(
         "memory",
@@ -519,6 +517,56 @@ export class Simulation {
     const answered = decision.kind === "act" && decision.action.type === "say";
     if (speaker && !answered) {
       await leaveConversation(ctx, agent.id, "decidió no seguir");
+    }
+    await this.apply(agent, decision);
+  }
+
+  /**
+   * Pensar andando (fase 3.6): lo que le dicen va a la memoria como siempre, decide con lo que
+   * tiene cerca y un contexto breve (DE CAMINO) y sigue andando mientras tanto. Lo que decide se
+   * revalida al llegar la respuesta (si la otra persona ya no está cerca, se descarta).
+   */
+  private async walkingStep(agent: Agent, turn: WalkingTurn): Promise<void> {
+    const ctx = this.ctx;
+    const now = this.clock.now();
+    const conv = activeConversationOf(ctx, agent.id)?.conv;
+    await agent.perceive(turn.perceptions, now, { inConversation: !!conv && conv.turns > 1 });
+    const speaker = turn.heard.find((h) => !h.toName && !h.greeting)?.fromId ?? null;
+    const raw = await agent.decide(this.clock.now(), {
+      present: turn.present,
+      heard: turn.heard,
+      conversationWith: speaker ?? activeConversationOf(ctx, agent.id)?.other ?? null,
+      conversationLines: recentLines(ctx, agent.id),
+      usedCatchphrases: catchphrasesSaid(ctx, agent.id),
+      objectStates: [],
+      weather: ctx.world.weather,
+      socialNotes: await agent.socialNotes(turn.present.map((p) => p.id)),
+      salient: true,
+      actions: turn.actions,
+      sections: [...turn.sections, ...systemSections(ctx, agent, this.clock.now())],
+    });
+    const checked = turn.revalidate(raw);
+    const decision = checked.decision;
+    if (raw.reason) {
+      agent.state.reasoning = { text: raw.reason, at: this.clock.now(), innerVoice: false };
+    }
+    const talked =
+      decision?.kind === "act" &&
+      (decision.action.type === "say" || decision.action.type === "stop_to_chat");
+    if (speaker && !talked) await leaveConversation(ctx, agent.id, "siguió su camino");
+    // Siguió andando: alguien que le importa y al que no dijo nada (para los dramas).
+    if (turn.cue && !turn.cue.together && (!decision || decision.kind === "follow_plan")) {
+      noteWalkedPast(ctx, agent, turn.cue);
+    }
+    if (!decision || decision.kind === "follow_plan") return;
+    // Decidido antes de cruzarse (le vio venir): se hace al cruzarse, si sigue valiendo.
+    if (checked.at !== undefined) {
+      const at = checked.at;
+      this.clock.schedule(at, async () => {
+        const again = revalidate(ctx, agent, decision, true).decision;
+        if (again) await this.apply(agent, again);
+      });
+      return;
     }
     await this.apply(agent, decision);
   }
