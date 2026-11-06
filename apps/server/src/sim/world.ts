@@ -92,6 +92,47 @@ export class WorldMap {
     return place.anchor;
   }
 
+  /**
+   * Baldosa transitable y libre más cercana a `start` (ella misma si lo está), en cualquier
+   * lugar o fuera de todos (la calle). BFS determinista; como mucho `maxSteps` baldosas.
+   */
+  freeTileNear(start: TilePoint, occupied: Set<string>, maxSteps = 200): TilePoint {
+    if (!occupied.has(key(start)) && isWalkable(this.world, start)) return start;
+    const seen = new Set([key(start)]);
+    const queue: TilePoint[] = [start];
+    while (queue.length && seen.size < maxSteps) {
+      const cur = queue.shift()!;
+      for (const d of [
+        { x: 0, y: 1 },
+        { x: 1, y: 0 },
+        { x: -1, y: 0 },
+        { x: 0, y: -1 },
+      ]) {
+        const n = { x: cur.x + d.x, y: cur.y + d.y };
+        if (seen.has(key(n)) || !isWalkable(this.world, n)) continue;
+        if (!occupied.has(key(n))) return n;
+        seen.add(key(n));
+        queue.push(n);
+      }
+    }
+    return start;
+  }
+
+  /**
+   * El sitio «de» una baldosa para quien se para en el camino (fase 3.6): el lugar que la
+   * contiene si es público; si no (la calle, una casa), el lugar público al aire libre más
+   * cercano por su ancla (o, si no hay, cualquier público).
+   */
+  publicPlaceNear(tile: TilePoint): Place {
+    const inside = this.placeAt(tile);
+    if (inside && !inside.private) return inside;
+    const dist = (p: Place) => Math.hypot(p.anchor.x - tile.x, p.anchor.y - tile.y);
+    const pick = (list: Place[]) =>
+      [...list].sort((a, b) => dist(a) - dist(b) || a.id.localeCompare(b.id))[0];
+    const open = this.places.filter((p) => !p.private);
+    return pick(open.filter((p) => !p.indoor)) ?? pick(open) ?? this.places[0]!;
+  }
+
   /** Ruta en waypoints entre dos baldosas, o null si no hay camino. */
   route(from: TilePoint, to: TilePoint): TilePoint[] | null {
     const path = findPath(this.world, from, to);

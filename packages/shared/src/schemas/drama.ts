@@ -50,6 +50,12 @@ export const DramaKind = z.enum([
   "lore_lost",
   /** Alguien ya no recuerda cómo se hacía algo que sabía. */
   "lore_forgotten",
+  /** Fase 3.6: se cruzan por el camino tras días sin verse. */
+  "reunion",
+  /** Fase 3.6: una conversación que nace en mitad del camino (alguien se para a charlar). */
+  "road_chat",
+  /** Fase 3.6: alguien pasa de largo ante alguien que le importa. */
+  "walked_past",
 ]);
 export type DramaKind = z.infer<typeof DramaKind>;
 
@@ -105,6 +111,10 @@ export const dramaScore = {
   teaching: () => 0.55,
   loreLost: () => 0.9,
   loreForgotten: () => 0.6,
+  reunion: () => 0.6,
+  roadChat: () => 0.5,
+  /** Pasar de largo: más cuanto más le importaba (saliencia 0–1). */
+  walkedPast: (salience: number) => Math.min(1, 0.3 + salience * 0.5),
 };
 
 /** ¿Parece que alguien cuenta algo que oyó? (rumor que se propaga). */

@@ -80,6 +80,29 @@ export const DayMetrics = z.object({
       personality: z.number(),
     })
     .optional(),
+  /**
+   * Cognición en movimiento (fase 3.6, de los eventos y de las llamadas `decide_walking`):
+   * encuentros por el camino (y los que hacen pensar), reencuentros, decisiones andando (y las
+   * descartadas por llegar tarde), saludos, paradas a charlar, charlas nacidas en el camino
+   * (paradas o andando), parejas que hablaron por primera vez en el camino, pasar de largo y
+   * asociaciones. Todo a 0 en un mundo de control.
+   */
+  cognition: z
+    .object({
+      encounters: z.number(),
+      salient: z.number(),
+      reunions: z.number(),
+      walkDecisions: z.number(),
+      lateDiscarded: z.number(),
+      greetings: z.number(),
+      stops: z.number(),
+      roadConversations: z.number(),
+      walkingConversations: z.number(),
+      firstTalksOnRoad: z.number(),
+      passedBy: z.number(),
+      associations: z.number(),
+    })
+    .optional(),
 });
 export type DayMetrics = z.infer<typeof DayMetrics>;
 

@@ -2,6 +2,7 @@ import { untrusted, type Agent, type Perception } from "@lethetown/agent-core";
 import type { Place } from "@lethetown/shared";
 import type { Heard, SimContext } from "./context";
 import { readNotes } from "./notes";
+import { nearInRoadConversation, roadConversationOf } from "./presence";
 
 export interface Present {
   id: string;
@@ -9,15 +10,24 @@ export interface Present {
   action: string;
 }
 
-/** Quién está en el mismo lugar, quieto y despierto. */
+/**
+ * Quién está en el mismo lugar, quieto y despierto. En una charla en el camino (fase 3.6),
+ * también quien está en ella a «cerca» (presencia por proximidad; ver presence.ts).
+ */
 export function presentWith(ctx: SimContext, agent: Agent): Present[] {
-  return [...ctx.agents.values()]
+  const here = [...ctx.agents.values()]
     .filter((o) => o.id !== agent.id)
     .filter((o) => !ctx.rt(o.id).travelling)
     .filter(
       (o) => o.state.locationId === agent.state.locationId && o.state.activityKind !== "sleep",
-    )
-    .map((o) => ({ id: o.id, name: o.seed.name, action: o.state.action }));
+    );
+  const road = roadConversationOf(ctx, agent.id);
+  const near = road
+    ? road.members
+        .filter((m) => !here.some((o) => o.id === m) && nearInRoadConversation(ctx, agent.id, m))
+        .map((m) => ctx.agents.get(m)!)
+    : [];
+  return [...here, ...near].map((o) => ({ id: o.id, name: o.seed.name, action: o.state.action }));
 }
 
 /**

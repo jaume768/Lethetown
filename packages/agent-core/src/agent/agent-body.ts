@@ -128,3 +128,64 @@ export function live(a: Agent, minutes: number, alone: boolean): void {
     cfg.mood,
   );
 }
+
+/** Lo que trae una asociación (fase 3.6). */
+export interface Association {
+  text: string;
+  memoryId: string;
+  /** Importante y negativo: se comportó como un recuerdo intrusivo (tiñe el ánimo). */
+  intrusive: boolean;
+}
+
+/**
+ * Pensamiento por asociación (fase 3.6, sin LLM): pasar por un sitio, ver a alguien o un objeto
+ * con carga trae a la cabeza uno o dos recuerdos (`MemorySystem.recallByCue`). Entran en la
+ * memoria de trabajo como «te viene a la cabeza…» (los verá en la siguiente decisión). Si es
+ * importante y negativo, se porta como un recuerdo intrusivo: tiñe el ánimo igual que rumiar.
+ */
+export async function associate(
+  a: Agent,
+  now: number,
+  cue: { query: string; placeId?: string; personId?: string },
+  k = 1,
+  filter: { minImportance?: number; minAgeMinutes?: number } = {},
+): Promise<Association[]> {
+  const memory = a.deps.memory;
+  const hits = await memory.recallByCue({
+    agentId: a.id,
+    now,
+    moodValence: a.state.mood.valence,
+    ...cue,
+    ...filter,
+    k,
+    exclude: a.workingMemory.contents.flatMap((w) => (w.memoryId ? [w.memoryId] : [])),
+  });
+  const cfg = memory.config.intrusive;
+  return hits.map((hit) => {
+    const text = recallText(hit);
+    const intrusive =
+      cfg.enabled &&
+      hit.memory.importance >= cfg.minImportance &&
+      hit.memory.emotionalValence <= cfg.maxValence;
+    a.workingMemory.push({
+      text: `(te viene a la cabeza${intrusive ? ", sin querer" : ""}) ${text}`,
+      memoryId: hit.memory.id,
+      addedAt: now,
+    });
+    if (intrusive) {
+      const pull = cfg.moodPull;
+      a.state.mood = makeMood(
+        a.state.mood.valence + (hit.memory.emotionalValence - a.state.mood.valence) * pull,
+        a.state.mood.arousal + (1 - a.state.mood.arousal) * pull,
+      );
+      memory.emitEffect({
+        kind: "intrusive",
+        agentId: a.id,
+        memoryId: hit.memory.id,
+        text,
+        importance: hit.memory.importance,
+      });
+    }
+    return { text, memoryId: hit.memory.id, intrusive };
+  });
+}

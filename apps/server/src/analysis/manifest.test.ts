@@ -29,8 +29,24 @@ describe("manifiesto de una partida", () => {
       nightSpeed: 360,
       models: { fast: "claude-haiku-5-5", reflection: "claude-sonnet-5-5" },
       ablation: ["noForgetting", "noVagueness"],
+      cognition: "on",
       createdAt: "2026-11-05T10:00:00.000Z",
     });
+  });
+
+  it("apunta la cognición en movimiento (el mundo de control de la 3.6, con SIM_COGNITION=off)", () => {
+    const off = buildManifest({
+      env: { SIM_COGNITION: "off" },
+      git: { sha: null, dirty: null },
+      routing: null,
+      pricing: null,
+      now: new Date(0),
+    });
+    expect(off.cognition).toBe("off");
+    expect(manifestMarkdown(off)).toContain("apagada (mundo de control)");
+    // Un manifiesto de antes de la 3.6 (sin el campo) sigue valiendo.
+    const { cognition: _c, ...old } = off;
+    expect(StudyManifest.parse(old).cognition).toBe("on");
   });
 
   it("nunca guarda secretos", () => {

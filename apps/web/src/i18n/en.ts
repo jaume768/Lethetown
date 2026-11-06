@@ -75,6 +75,9 @@ const en: Record<MessageKey, string> = {
   "dramas.kind.teaching": "Teacher and pupil",
   "dramas.kind.lore_lost": "Lore that is lost",
   "dramas.kind.lore_forgotten": "No longer remembers how",
+  "dramas.kind.reunion": "Reunion",
+  "dramas.kind.road_chat": "Chat on the way",
+  "dramas.kind.walked_past": "Walks past",
 
   "agent.pick": "Tap or click an agent on the map to see what they remember.",
   "agent.thinking": "thinking… ({task})",
@@ -211,6 +214,8 @@ const en: Record<MessageKey, string> = {
   "places.source.told": "someone told them",
   "places.toldBy": "{name} told them",
   "agent.with": "with {name}",
+  "agent.talkingWhile": "talking while busy",
+  "agent.cameToMind": "Came to mind…",
   "action.label": "action: {action}",
   "action.failed": "{action} (failed)",
   "action.agreed": "agreed while talking: {action}",
@@ -383,6 +388,10 @@ const en: Record<MessageKey, string> = {
   "evolution.systems": "Systems (now)",
   "evolution.learningRow":
     "Learning: milestones / teaching sessions / lore told / lore lost / personality changes",
+  "evolution.encountersRow":
+    "On the way: encounters / that make them think / decisions while walking / discarded as late / associations",
+  "evolution.roadTalkRow":
+    "Talking on the way: greetings / stops to chat / chats standing / chats walking / new pairs",
   "evolution.knowledgeRow": "Knowledge: anachronisms / outside references / invented people",
   "evolution.knowledge": "Outside knowledge (logged only)",
   "evolution.knowledgeAgent":

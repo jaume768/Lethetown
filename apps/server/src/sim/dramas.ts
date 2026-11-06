@@ -13,6 +13,8 @@ import {
 
 /** Cada repetición del mismo drama el mismo día (`meta.repeat`) vale esto de la anterior. */
 const REPEAT_DAMPING = 0.5;
+/** Saliencia a partir de la cual pasar de largo ante alguien es un drama (fase 3.6). */
+const WALKED_PAST_MIN = 0.6;
 /** Dos dramas del mismo tipo con los mismos agentes en menos de esto (min de juego) son uno. */
 const DEDUPE_MINUTES = 30;
 
@@ -61,6 +63,17 @@ export class DramaDetector {
     this.listeners.push(listener);
   }
 
+  /** Dramas del camino (fase 3.6), o null. Pasar de largo solo si le importaba mucho. */
+  private roadDrama(e: SimEvent): [DramaKind, number] | null {
+    const m = e.meta;
+    if (m?.action === "encounter" && m.reunion) return ["reunion", dramaScore.reunion()];
+    if (m?.action === "stop_to_chat" && m.ok) return ["road_chat", dramaScore.roadChat()];
+    if (m?.action === "walk_past" && (m.score ?? 0) >= WALKED_PAST_MIN) {
+      return ["walked_past", dramaScore.walkedPast(m.score ?? 0)];
+    }
+    return null;
+  }
+
   /** Frases con oyentes de más: alguien escuchaba; si además cuenta algo oído, es un rumor. */
   onEvent(e: SimEvent): void {
     // Plantón en una cita.
@@ -93,6 +106,20 @@ export class DramaDetector {
         "loan_unreturned",
         dramaScore.loanUnreturned(),
         e.text.replace(/^📕 /, ""),
+        e.participants,
+        e.agentId ? this.ctx.placeOf(e.agentId) : null,
+        e.id,
+      );
+      return;
+    }
+    // Por el camino (fase 3.6): reencuentros, charlas que nacen en el camino y pasar de largo.
+    const road = this.roadDrama(e);
+    if (road) {
+      const [kind, score] = road;
+      this.publish(
+        kind,
+        score,
+        e.text.replace(/^\S+ /u, ""),
         e.participants,
         e.agentId ? this.ctx.placeOf(e.agentId) : null,
         e.id,

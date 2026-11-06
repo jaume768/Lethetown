@@ -48,6 +48,8 @@ describe("registro de sistemas", () => {
       "skills",
       "lore",
       "personality",
+      "encounters",
+      "associations",
     ]);
   });
 
@@ -119,6 +121,8 @@ describe("instantánea por sistema", () => {
       "skills",
       "lore",
       "personality",
+      "encounters",
+      "associations",
     ]);
     expect(snap.items!.version).toBe(1);
   });

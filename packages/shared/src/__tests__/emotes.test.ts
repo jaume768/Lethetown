@@ -45,5 +45,10 @@ describe("indicador del mapa", () => {
     expect(agentBadge({ plan, companionId: "lucia" }, 1440 + 620)).toBe("meeting");
     expect(agentBadge({ plan, companionId: "lucia" }, 1440 + 690)).toBe("companion");
     expect(agentBadge({ plan, companionId: null }, 1440 + 690)).toBeNull();
+    // Fase 3.6: hablando sin dejar lo que hace (o andando); la cita manda.
+    const talking = { plan, companionId: "lucia", talking: true, activityKind: "work" as const };
+    expect(agentBadge(talking, 1440 + 690)).toBe("talking");
+    expect(agentBadge(talking, 1440 + 620)).toBe("meeting");
+    expect(agentBadge({ ...talking, activityKind: "talk" }, 1440 + 690)).toBe("companion");
   });
 });

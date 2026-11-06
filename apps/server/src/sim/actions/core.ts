@@ -3,6 +3,7 @@ import { inferActivityKind } from "@lethetown/agent-core";
 import type { DoActivityAction, SayAction } from "@lethetown/shared";
 import type { z } from "zod";
 import { joinBlocked, talk } from "../conversations";
+import { reachable } from "../presence";
 import { mayEnter } from "../norms";
 import { goOrDo } from "../routines";
 import { registerAction } from "./registry";
@@ -48,18 +49,13 @@ registerAction<z.infer<typeof DoActivityAction>>({
 
 registerAction<z.infer<typeof SayAction>>({
   type: "say",
-  available: ({ ctx, agent }) =>
-    [...ctx.agents.values()].some(
-      (o) =>
-        o.id !== agent.id &&
-        o.state.locationId === agent.state.locationId &&
-        o.state.activityKind !== "sleep" &&
-        !ctx.rt(o.id).travelling,
-    ),
+  // Aquí, o (fase 3.6) en la charla del camino y cerca, o yendo juntos: ver presence.ts.
+  available: ({ ctx, agent }) => [...ctx.agents.values()].some((o) => reachable(ctx, agent, o)),
   check: ({ ctx, agent }, a) => {
     const target = ctx.agents.get(a.to);
     if (!target) return `no conozco a "${a.to}"`;
-    if (target.state.locationId !== agent.state.locationId || ctx.rt(a.to).travelling) {
+    const here = target.state.locationId === agent.state.locationId && !ctx.rt(a.to).travelling;
+    if (!here && !reachable(ctx, agent, target)) {
       return `${target.seed.name} no está aquí`;
     }
     if (target.state.activityKind === "sleep") return `${target.seed.name} está durmiendo`;

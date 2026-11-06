@@ -33,6 +33,7 @@ export * from "./goals/psychology";
 export * from "./goals/criteria";
 export * from "./skills/skills";
 export * from "./lore/lore";
+export * from "./cognition/salience";
 
 export * from "./agent/agent";
 export { DAY_START, SLEEP_START } from "./agent/agent-planning";

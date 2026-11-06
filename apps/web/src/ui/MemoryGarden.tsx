@@ -159,6 +159,11 @@ export function MemoryGarden(props: Props) {
             {t("agent.with", { name: agents.find((a) => a.id === agent.companionId)?.name ?? "" })}
           </span>
         )}{" "}
+        {agent.talking && agent.activityKind !== "talk" && (
+          <span className="tag" aria-label={t("agent.talkingWhile")}>
+            💬 {t("agent.talkingWhile")}
+          </span>
+        )}{" "}
         <span className="tag">{agent.activityKind}</span>
       </div>
       <Tabs
@@ -219,6 +224,17 @@ export function MemoryGarden(props: Props) {
                   <span className="muted small num">{formatGameTime(agent.reasoning.at)}</span>
                 </h4>
                 <p className="readable">💭 {agent.reasoning.text}</p>
+              </section>
+            )}
+            {agent.cameToMind && (
+              <section className="reasoning" aria-label={t("agent.cameToMind")}>
+                <h4>
+                  {t("agent.cameToMind")}{" "}
+                  <span className="muted small num">{formatGameTime(agent.cameToMind.at)}</span>
+                </h4>
+                <p className="readable">
+                  <span className="muted">({agent.cameToMind.cue})</span> «{agent.cameToMind.text}»
+                </p>
               </section>
             )}
 

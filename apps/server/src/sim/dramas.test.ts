@@ -46,6 +46,34 @@ describe("DramaDetector", () => {
     expect(out.every((x) => x.score >= 0.5)).toBe(true);
   });
 
+  it("por el camino (fase 3.6): reencuentro, charla en el camino y pasar de largo", () => {
+    const d = new DramaDetector(ctx);
+    const out: Drama[] = [];
+    d.onDrama((x) => out.push(x));
+    const ev = (id: string, text: string, meta: Record<string, unknown>) =>
+      d.onEvent({
+        id,
+        time: 100,
+        agentId: "a",
+        kind: "action",
+        text,
+        participants: ["a", "b"],
+        meta,
+      });
+    ev("e1", "👀 A se cruza con B", { action: "encounter", ok: true, salient: true });
+    ev("e2", "👀 A se cruza con B", {
+      action: "encounter",
+      ok: true,
+      salient: true,
+      reunion: true,
+    });
+    ev("e3", "🛑 A se para a charlar con B en el camino", { action: "stop_to_chat", ok: true });
+    ev("e4", "🚶 A pasa de largo ante B", { action: "walk_past", ok: true, score: 0.55 });
+    ev("e5", "🚶 A pasa de largo ante B", { action: "walk_past", ok: true, score: 0.9 });
+    expect(out.map((x) => x.kind)).toEqual(["reunion", "road_chat", "walked_past"]);
+    expect(out[0]!.title).toBe("A se cruza con B");
+  });
+
   it("en una simulación de 3 días en mock aparecen dramas", async () => {
     const services = await createServices(
       loadConfig({ LLM_PROVIDER: "mock", EMBEDDINGS: "hash", DATABASE_URL: "", SIM_SEED: "7" }),

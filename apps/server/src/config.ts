@@ -1,3 +1,4 @@
+import { parseCognitionEnv } from "@lethetown/shared";
 import { config as loadDotenv } from "dotenv";
 import { z } from "zod";
 import { fromRoot } from "./paths";
@@ -80,6 +81,21 @@ const Env = z.object({
       )
       .pipe(z.array(z.enum(["noForgetting", "noVagueness"]))),
   ),
+  /**
+   * Cognición en movimiento (fase 3.6) por defecto para los mundos: on | off | lista de partes
+   * («encounters=off,walkingTalk=off»). Lo que guarde cada mundo (`worlds.cognition`) manda.
+   */
+  SIM_COGNITION: z
+    .string()
+    .default("on")
+    .transform((v, ctx) => {
+      try {
+        return parseCognitionEnv(v);
+      } catch (error) {
+        ctx.addIssue({ code: "custom", message: (error as Error).message });
+        return z.NEVER;
+      }
+    }),
   /** Modo demostración: el pueblo genera solo lluvia, averías e ideas (sim/demo.ts). */
   SIM_DEMO: z.enum(["on", "off"]).default("off"),
   /** Minutos de juego (de media) entre dos sucesos del modo demostración. */

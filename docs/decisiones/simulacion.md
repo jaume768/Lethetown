@@ -3,12 +3,19 @@
 - **Tiempo en minutos de juego** desde el día 0; nada de `Date` en la lógica de agentes.
 - **Rutinas sin LLM** (dormir, desplazarse, seguir el plan sin novedades). El LLM solo decide si
   hay algo saliente (percepciones).
+- **De camino** (fase 3.6, ver [cognición](cognicion.md)): quien camina no tiene turno normal;
+  solo piensa (turno andando, tarea `decide_walking`) si un encuentro saliente o que le hablen se
+  lo pide, y sigue andando mientras espera al LLM; lo que decide se revalida al llegar (tarde,
+  se descarta sin «No pude…»). Quien se para a charlar sigue «de camino» para el resto
+  (`travelling` sin llegada) hasta retomar el viaje. Con la cognición apagada, como antes.
+- **Presencia**: el mismo `locationId`, quieto y despierto; en una charla en el camino o
+  andando (`Conversation.road`), por proximidad (≤ `callRadius`). Ver `sim/presence.ts`.
 - **Conversaciones** con id propio, que es el `eventId` de los recuerdos (vista Rashomon); las
   frases tienen id `<conversación>:<turno>`. Terminan cuando quien recibe una frase no contesta,
   por inactividad, si se repiten o, pasados 12 turnos, si ya no aportan (máximo absoluto 30; ver
   [ritmo](ritmo.md)); al terminar se actualiza la ficha social.
 - **Escuchar a escondidas**: un fragmento contiguo (60 %), reconociendo o no a quien habla; se
-  guarda con el mismo `eventId`.
+  guarda con el mismo `eventId`. En una charla en el camino, solo quien pasa a ≤ 2 baldosas.
 - **Mantenimiento** de memoria cada hora de juego por agente; **consolidación** en el primer tick
   dormido; **crónica** a las 23:00. `lastConsolidation = now + 1` para que lo creado al consolidar
   no vuelva a entrar la noche siguiente.
@@ -24,7 +31,9 @@
   interno del agente que no viaja al cliente va en `AgentMind`.
 - **Test dorado** (`sim/golden.test.ts`): 3 días en mock con `SIM_SEED=7`. Un refactor no lo
   cambia; un cambio de comportamiento lo regenera a propósito y lo dice en el commit. Ojo con
-  añadir `await`: reordenan las tareas asíncronas del mock.
+  añadir `await`: reordenan las tareas asíncronas del mock. Hay dos: `three-days.txt` (todo
+  encendido) y `three-days-off.txt` (`SIM_COGNITION=off`: la línea de tiempo de antes de la 3.6,
+  el mundo de control de los estudios), que nada de la 3.6 debe cambiar.
 - **Azar** siempre por el `Rng` inyectado (`seededRng`), nunca `Math.random()`.
 - **Modo demostración** (`SIM_DEMO`): lluvia, averías e ideas de la voz interior para ver
   reaccionar a los agentes sin director.

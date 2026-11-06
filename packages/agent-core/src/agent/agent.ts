@@ -52,6 +52,7 @@ export class Agent {
       this.deps.language,
       this.deps.minors,
       this.deps.worldRules,
+      this.deps.hiddenActions,
     );
     if (next === this.system) return false;
     this.system = next;
@@ -75,7 +76,14 @@ export class Agent {
     this.id = seed.id;
     const known = seedKnownPlaces(seed, deps.places);
     this.seedPlaces = known;
-    this.system = identityPrompt(seed, known, deps.language, deps.minors, deps.worldRules);
+    this.system = identityPrompt(
+      seed,
+      known,
+      deps.language,
+      deps.minors,
+      deps.worldRules,
+      deps.hiddenActions,
+    );
     for (const p of known) this.mind.knownPlaces[p.id] = { source: "seed", at: 0, toldBy: null };
     this.spots = new Map(deps.places.flatMap((p) => p.objects.map((o) => [o.id, o] as const)));
     const home = deps.places.find((p) => p.id === seed.homeId);
@@ -246,7 +254,7 @@ export class Agent {
   perceive(
     perceptions: Perception[],
     now: number,
-    opts?: { inConversation?: boolean },
+    opts?: { inConversation?: boolean; talking?: boolean },
   ): Promise<void> {
     return _perception.perceive(this, perceptions, now, opts);
   }
@@ -262,6 +270,19 @@ export class Agent {
    */
   ruminate(now: number, minutes: number, present: string[]): Promise<string | null> {
     return _body.ruminate(this, now, minutes, present);
+  }
+
+  /**
+   * Pensamiento por asociación (fase 3.6, sin LLM): un lugar, una persona o un objeto le trae a
+   * la cabeza uno o dos recuerdos (memoria de trabajo; si es malo e importante, como intrusivo).
+   */
+  associate(
+    now: number,
+    cue: { query: string; placeId?: string; personId?: string },
+    k = 1,
+    filter: { minImportance?: number; minAgeMinutes?: number } = {},
+  ): Promise<_body.Association[]> {
+    return _body.associate(this, now, cue, k, filter);
   }
 
   /** Al acostarse: lo tenso o preocupado que esté decide cómo dormirá esta noche. */

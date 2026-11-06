@@ -47,6 +47,13 @@ export const ACTION_ICONS: Record<string, string> = {
   lore: "📜",
   lore_lost: "🕯",
   personality: "🌱",
+  // Por el camino (fase 3.6).
+  greet: "👋",
+  stop_to_chat: "🛑",
+  encounter: "👀",
+  walk_past: "🚶",
+  resume_trip: "🚶",
+  association: "💭",
 };
 
 /** Lo acordado hablando (puente de la conversación a la acción), sea cual sea la acción. */

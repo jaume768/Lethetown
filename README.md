@@ -275,6 +275,18 @@ Todos los parámetros (pesos, umbrales, probabilidades, presupuesto) están en `
 
 Detalle y mediciones en [docs/decisiones/ritmo.md](docs/decisiones/ritmo.md).
 
+### Cognición en movimiento
+
+Quien camina ya no va a ciegas. Cada 2 minutos de juego, sin LLM, el motor mira quién se cruza
+con quién (también a quien ve venir por su ruta). Lo que le importa ese encuentro lo calcula el
+código (afinidad, familia, rivalidad, algo pendiente como el libro de Carmen, una deuda o una
+cita, el ánimo que se le ve, días sin verse); solo si importa de verdad se para a pensar, sin
+dejar de andar: seguir, saludar al pasar, pararse a charlar o cambiar de destino. Quien se para
+retoma luego su camino (y su plan). Los que van juntos hablan andando, nadie deja de cocinar o
+de atender el café por hablar, y pasar por un sitio o ver a alguien trae recuerdos («le viene a
+la cabeza…»), sin LLM. Se apaga por mundo (`worlds.cognition`, `SIM_COGNITION=off`) para un mundo
+de control. Ver [docs/decisiones/cognicion.md](docs/decisiones/cognicion.md).
+
 ### Agentes y coste
 
 - **Sin llamadas extra por acción**: todas van en la misma decisión. Cómo se usa cada acción va en el prompt fijo (cacheado); en cada decisión solo «Posibles ahora: …».
@@ -395,6 +407,9 @@ Producción en un VPS (Caddy con HTTPS, api, workers y Postgres): **[docs/despli
 partidas de 7 días con el LLM real: x10, Batch activa, sin pausar cuando nadie mira y una
 semilla por base de datos. Lleva los comandos para dos semillas (7 y 13): crear la base, migrar,
 `pnpm dev`, `record --hours 168`, `world:export` y `pnpm study:analyze` para compararlas.
+Para medir la fase 3.6, un mundo de control con `SIM_COGNITION=off` (`COGNITION_CONTROL=on` en
+`scripts/estudio-semana.sh`): `study:analyze` compara los dos (encuentros, saludos, charlas en
+el camino, asociaciones, red y coste).
 
 Todas las variables, con su explicación, están en [`.env.example`](.env.example).
 
@@ -646,4 +661,5 @@ El cliente elige automáticamente el pack con el que se generó el mapa (propied
    - **Desarrollo y aprendizaje** ✅ habilidades que se practican, se enseñan y se oxidan; saberes del pueblo que se cuentan, se deforman y se pierden; deriva lenta de la personalidad; pestaña «Habilidades y saberes» y «Saberes del pueblo».
    - **Corrección 2.5** ✅ (de la segunda partida de estudio): pasos que no se pierden y siguiente proyecto, metas cualitativas comprobadas de noche, frustración que lleva a abandonos en una semana, intenciones sin inflación, nadie inventa vecinos (`PersonGuard`) y menos ruido en los registros.
    - **Corrección 3.5** ✅ (de la tercera partida de estudio): menos ruido en el `PersonGuard` (apodos, siglas, listas, conocidos por otros) y en familia para la protección de menores, efecto de espaciado en la memoria, metas vitales confirmadas de noche, habilidades con histéresis y práctica rutinaria, enseñanza sin encadenar, deriva de la personalidad con lo malo y respecto al pueblo, saberes que no se repiten y se deforman, comer lo hecho, caché del prefijo común, rangos en la base de datos y partidas de estudio con desfase, control en ablación y manifiesto.
+   - **Cognición en movimiento (3.6)** ✅ encuentros por el camino con saliencia calculada, saludar y pararse a charlar (y retomar el camino), hablar andando y sin dejar la actividad, asociaciones sin LLM, presencia por proximidad, dramas y métricas; con interruptores por mundo para el mundo de control.
 9. **Siguiente**: economía (`buy_item` / `sell_item`, ya preparada con `Item.value`; en euros), mensajes a distancia (teléfonos fijos y cabinas, cartas), ciclo vital (las metas aplazadas de los menores), la evaluación comparativa con modelos reales, OAuth, editor de mundos y agentes desde la web, traducción de los prompts (hoy se pide al modelo que responda en el idioma del mundo).

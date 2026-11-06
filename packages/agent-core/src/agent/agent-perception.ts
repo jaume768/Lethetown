@@ -51,6 +51,8 @@ function peopleOf(p: Perception): string[] {
       return [p.fromId];
     case "overheard":
       return p.fromId ? [p.fromId] : [];
+    case "world":
+      return p.people ?? [];
     default:
       return [];
   }
@@ -69,7 +71,14 @@ export async function perceive(
   a: Agent,
   perceptions: Perception[],
   now: number,
-  opts: { inConversation?: boolean } = {},
+  opts: {
+    inConversation?: boolean;
+    /**
+     * Está hablando con alguien sin haber dejado lo que hacía (fase 3.6, `talkWhileActivity`):
+     * lo que llega de fuera se graba peor, como si su actividad fuera «hablar».
+     */
+    talking?: boolean;
+  } = {},
 ): Promise<void> {
   if (!perceptions.length) return;
   const texts = perceptions.map(describePerception);
@@ -90,7 +99,8 @@ export async function perceive(
     // Atención: lo que llega de fuera mientras habla con alguien se graba peor.
     const arousal = Math.max(a.state.mood.arousal, eventArousal(rating.importance, rating.valence));
     const distracted =
-      a.state.activityKind === "talk" && (p.kind === "arrived" || p.kind === "overheard");
+      (a.state.activityKind === "talk" || opts.talking === true) &&
+      (p.kind === "arrived" || p.kind === "overheard");
     // Rumores: según lo que se fía de quien lo cuenta, lo graba con menos fuerza e
     // importancia, y si se fía poco, con duda.
     const cred = await credibilityOf(a, p);

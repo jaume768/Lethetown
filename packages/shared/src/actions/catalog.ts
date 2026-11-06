@@ -215,6 +215,34 @@ export const ShareLoreAction = z.object({
   loreId: z.string().min(1),
 });
 
+/**
+ * Saludar al pasar (fase 3.6, por el camino): una frase corta, sin abrir conversación; la otra
+ * persona puede devolver el saludo si quiere.
+ */
+export const GreetAction = z.object({
+  type: z.literal("greet"),
+  to: z.string().min(1),
+  text: z
+    .string()
+    .trim()
+    .min(1)
+    .transform((t) => t.slice(0, 120)),
+});
+
+/**
+ * Pararse a charlar en mitad del camino (fase 3.6): se detiene donde está y empieza una
+ * conversación con quien tiene cerca; luego retoma el camino.
+ */
+export const StopToChatAction = z.object({
+  type: z.literal("stop_to_chat"),
+  to: z.string().min(1),
+  text: z
+    .string()
+    .trim()
+    .min(1)
+    .transform((t) => t.slice(0, 400)),
+});
+
 export const AgentAction = z.discriminatedUnion("type", [
   DoActivityAction,
   SayAction,
@@ -243,6 +271,8 @@ export const AgentAction = z.discriminatedUnion("type", [
   HelpAction,
   ShowResultAction,
   ShareLoreAction,
+  GreetAction,
+  StopToChatAction,
 ]);
 export type AgentAction = z.infer<typeof AgentAction>;
 export type ActionType = AgentAction["type"];
@@ -394,6 +424,18 @@ export const ACTION_SPECS: Record<ActionType, ActionSpec> = {
     params: '{"who":"id de alguien presente","loreId":"…"}',
     description:
       "le cuentas a alguien de aquí un saber tuyo: una receta, una técnica, un sitio, una historia o una canción (ver SABERES QUE PUEDES CONTAR)",
+  },
+  greet: {
+    type: "greet",
+    params: '{"to":"id de alguien que tienes cerca","text":"…"}',
+    description:
+      "yendo de camino, saludas al pasar sin pararte (una frase muy corta: «¡Buenas, Carmen!»); no abre conversación",
+  },
+  stop_to_chat: {
+    type: "stop_to_chat",
+    params: '{"to":"id de alguien que tienes cerca","text":"…"}',
+    description:
+      "yendo de camino, te paras a charlar con alguien que tienes cerca (text: lo primero que le dices); luego sigues tu camino",
   },
 };
 

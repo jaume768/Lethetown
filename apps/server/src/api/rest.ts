@@ -21,6 +21,7 @@ import type {
   WorldSnapshot,
 } from "@lethetown/shared";
 import {
+  CognitionSettings,
   RelationshipsQuery,
   SetSpeedRequest,
   SpotStateRequest,
@@ -61,6 +62,11 @@ export const NewWorld = z.object({
   language: z.enum(["es", "en"]).default("es"),
   /** Sistemas que se desactivan en este mundo (`{ "notes": false }`); por defecto, todos. */
   systems: z.record(z.string().max(40), z.boolean()).default({}),
+  /**
+   * Cognición en movimiento (fase 3.6), solo lo que cambia: `{ "enabled": false }` es el mundo
+   * de control de un estudio (como antes de la 3.6). Ver docs/decisiones/cognicion.md.
+   */
+  cognition: CognitionSettings.strict().default({}),
 });
 export type NewWorld = z.infer<typeof NewWorld>;
 

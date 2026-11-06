@@ -341,3 +341,5 @@ export function mockDecide(req: CompletionRequest): string {
 }
 
 registerMockHandler("decide", mockDecide);
+// Pensar andando (fase 3.6): el mismo prompt, con la sección DE CAMINO.
+registerMockHandler("decide_walking", mockDecide);
