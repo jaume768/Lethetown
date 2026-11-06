@@ -23,3 +23,4 @@ márcala como sustituida) en el mismo commit.
 | Personas: ni vecinos ni conocidos inventados                  | [personas.md](personas.md)     |
 | Habilidades: práctica, maestros, olvido y lo que cambian      | [skills.md](skills.md)         |
 | Saberes del pueblo: transmisión, deformación y pérdida        | [lore.md](lore.md)             |
+| Cognición en movimiento: encuentros, asociaciones, en camino  | [cognicion.md](cognicion.md)   |

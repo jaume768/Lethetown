@@ -19,6 +19,7 @@ export const MANIFEST_ENV = [
   "LLM_BATCH_MAX_SPEED",
   "LLM_CONCURRENCY",
   "MEMORY_ABLATION",
+  "SIM_COGNITION",
 ] as const;
 
 export const StudyManifest = z.object({
@@ -37,6 +38,11 @@ export const StudyManifest = z.object({
   pricing: z.unknown().nullable(),
   /** Flags de `MemoryConfig.ablation` activos. */
   ablation: z.array(z.string()),
+  /**
+   * Cognición en movimiento (fase 3.6): `SIM_COGNITION` («on», «off» = mundo de control, o la
+   * lista de partes apagadas). Los manifiestos de antes de la 3.6 no lo tienen.
+   */
+  cognition: z.string().default("on"),
   /** El resto de lo apuntado del entorno (lista blanca). */
   env: z.record(z.string(), z.string()),
   /** ISO, hora real. */
@@ -74,6 +80,7 @@ export function buildManifest(input: {
       .split(",")
       .map((x) => x.trim())
       .filter(Boolean),
+    cognition: env.SIM_COGNITION?.trim() || "on",
     env,
     createdAt: input.now.toISOString(),
   };
@@ -91,6 +98,7 @@ export function manifestMarkdown(m: StudyManifest): string {
     `- Semilla ${m.seed ?? "?"}, velocidad x${m.speed ?? "?"}${m.nightSpeed ? `, noche x${m.nightSpeed}` : ""}`,
     `- Proveedor: ${m.provider ?? "?"}${models ? ` (${models})` : ""}`,
     `- Ablación de la memoria: ${m.ablation.length ? m.ablation.join(", ") : "ninguna"}`,
+    `- Cognición en movimiento (fase 3.6): ${m.cognition === "off" ? "apagada (mundo de control)" : m.cognition}`,
     `- Enrutado y precios: en manifest.json`,
     `- Fecha: ${m.createdAt}`,
     "",

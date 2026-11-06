@@ -9,7 +9,8 @@ import { bootstrap, type App } from "../bootstrap";
 import { loadConfig } from "../config";
 import { availableActions, isHere, runAction } from "./actions";
 import type { SimContext } from "./context";
-import { activeConversationOf, endConversation } from "./conversations";
+import { startFollowing } from "./company";
+import { activeConversationOf, endConversation, talk } from "./conversations";
 import {
   encountersState,
   encountersTick,
@@ -19,9 +20,9 @@ import {
   walkTurnAvailable,
 } from "./encounters";
 import { presentWith } from "./perception";
-import { travel } from "./routines";
+import { travel, travelTogether } from "./routines";
 import { registeredSystems } from "./systems";
-import { revalidate } from "./walking";
+import { revalidate, walkingTurn } from "./walking";
 
 const ENV = { LLM_PROVIDER: "mock", EMBEDDINGS: "hash", DATABASE_URL: "", SIM_SEED: "7" };
 
@@ -267,5 +268,99 @@ describe("instantánea del sistema", () => {
     sys.snapshot!.restore(ctx, parsed);
     expect(encountersState(ctx).trips.get("lucia")?.destId).toBe("plaza");
     expect(encountersState(ctx).totals.stops).toBe(1);
+  });
+});
+
+describe("hablar andando con quien acompaña (walkingTalk)", () => {
+  it("van juntos: se hablan andando, por proximidad, sin pararse ni saludarse", () => {
+    travelTogether(ctx, agent("clara"), [agent("aurora")], "cafe_ola", "tomar algo", "eat");
+    startFollowing(ctx, agent("aurora"), "clara", now());
+    talk(ctx, agent("clara"), "aurora", "¿Y la abuela de Valentina, qué?");
+    const conv = activeConversationOf(ctx, "clara")?.conv;
+    expect(conv?.road).toBe(true);
+    // Siguen andando (no se ponen «hablando con…»).
+    expect(agent("clara").state.activityKind).toBe("walk");
+    expect(agent("clara").state.lastUtterance).toContain("abuela");
+    // Quien recibe la frase piensa andando: puede contestar (say), no pararse ni saludar.
+    const turn = walkingTurn(ctx, agent("aurora"), now())!;
+    expect(turn.heard.map((h) => h.fromId)).toEqual(["clara"]);
+    expect(turn.actions).toContain("say");
+    expect(turn.actions).not.toContain("stop_to_chat");
+    expect(turn.actions).not.toContain("greet");
+    expect(turn.sections[0]!.lines[0]).toMatch(/^Vas de camino a /);
+  });
+
+  it("con walkingTalk apagado, quien camina no puede hablar con su acompañante", async () => {
+    const off = await bootstrap(loadConfig({ ...ENV, SIM_COGNITION: "walkingTalk=off" }), () => {});
+    const c = (off.defaultWorld.sim as unknown as { ctx: SimContext }).ctx;
+    for (const id of ["clara", "aurora"]) c.agents.get(id)!.state.activityKind = "idle";
+    travelTogether(
+      c,
+      c.agents.get("clara")!,
+      [c.agents.get("aurora")!],
+      "cafe_ola",
+      "tomar algo",
+      "eat",
+    );
+    startFollowing(c, c.agents.get("aurora")!, "clara", c.clock.now());
+    talk(c, c.agents.get("clara")!, "aurora", "Hola");
+    expect(activeConversationOf(c, "clara")).toBeUndefined();
+    await off.close();
+  });
+});
+
+describe("escuchar a escondidas en el camino", () => {
+  it("solo quien pasa a ≤ 2 baldosas, con la fidelidad parcial de siempre", async () => {
+    crossing("lucia", "carmen", "plaza", 0);
+    await runAction(
+      { ctx, agent: agent("lucia"), now: now() },
+      {
+        type: "stop_to_chat",
+        to: "carmen",
+        text: "¿Sabes lo de la casa en venta?",
+      },
+    );
+    const here = agent("lucia").state.tile;
+    const near = agent("hugo");
+    near.state.tile = { x: here.x + 1, y: here.y };
+    const far = agent("samuel");
+    far.state.tile = { x: here.x + 4, y: here.y };
+    for (let i = 0; i < 12; i++) {
+      talk(
+        ctx,
+        agent(i % 2 ? "carmen" : "lucia"),
+        i % 2 ? "lucia" : "carmen",
+        `Una cosa más, ${i}`,
+      );
+    }
+    const heard = (id: string) => ctx.rt(id).pending.filter((p) => p.kind === "overheard");
+    expect(heard("hugo").length).toBeGreaterThan(0);
+    expect(heard("samuel")).toEqual([]);
+    const frag = heard("hugo")[0]!;
+    expect(frag.kind === "overheard" && frag.fragment.startsWith("…")).toBe(true);
+  });
+});
+
+describe("memoria prospectiva al cruzarse", () => {
+  it("cruzarse con Carmen le puede recordar a Lucía lo que tenía pendiente con ella", async () => {
+    const lucia = agent("lucia");
+    await lucia.intend(now(), {
+      text: "devolverle el libro a Carmen",
+      personId: "carmen",
+      importance: 7,
+    });
+    // Varias ocasiones (cada una con su enfriamiento): con su perfil, alguna se acuerda.
+    let reminded = false;
+    for (let i = 0; i < 8 && !reminded; i++) {
+      reset();
+      // Entre una ocasión y otra no se ven (la pista vuelve a «aparecer»).
+      await lucia.checkIntentions(now(), 1, []);
+      if (!lucia.mind.intentions.some((x) => x.status === "pending")) break;
+      crossing("lucia", "carmen", "plaza");
+      await encountersTick(ctx, now());
+      reminded = Boolean(encountersState(ctx).cues.get("lucia")?.reminder);
+    }
+    expect(reminded).toBe(true);
+    expect(encountersState(ctx).cues.get("lucia")?.reasons).toContain("intention");
   });
 });

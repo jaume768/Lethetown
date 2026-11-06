@@ -80,6 +80,12 @@ TypeScript estricto. El porqué de cada decisión está en [docs/decisiones/](do
 - **Intenciones**: por `agent.intend` (importancia, tope con la menos importante fuera,
   fusión de parecidas y caducidad de las poco importantes, todo auditado); un compromiso con
   hora o persona, con su `importance`.
+- **Cognición en movimiento** (sistemas `encounters`, `associations`; fase 3.6): la presencia en
+  el camino es por proximidad (`presence.ts`: `callRadius` en una charla en el camino o
+  andando), no por `locationId`; nada piensa en camino sin saliencia calculada en código
+  (`encounterSalience`) o sin que le hablen, con tope por hora, y lo que llega tarde se revalida
+  (sin «No pude…»). Todo detrás de `ctx.cognition` (interruptores por mundo y `SIM_COGNITION`):
+  apagada, el dorado `three-days-off.txt` no cambia. Ver [cognición](docs/decisiones/cognicion.md).
 - **Ritmo y habla**: quien recibe una frase piensa al minuto (`ctx.wake`, un solo tick pendiente
   por agente); lo que se oye en una charla en curso se valora por reglas (`rateHeard`); lo que se
   dice se recorta en código (`clipText`); tareas urgentes en `URGENT_TASKS` de la cola LLM. Ver
@@ -116,7 +122,8 @@ TypeScript estricto. El porqué de cada decisión está en [docs/decisiones/](do
   `pnpm assets:check` · `pnpm portraits:compose` · `pnpm user:create <usuario> [rol]`.
 - Postgres de docker-compose en el puerto **5433**. Retención de datos: `config/retention.json`.
 - Partidas de estudio largas: `.env.study.example` (capa sobre `.env`; la Batch API solo a ≤ x10);
-  `scripts/estudio-semana.sh` con `OFFSET_MINUTES` y `ABLATION=on`; `record` deja `manifest.json`.
+  `scripts/estudio-semana.sh` con `OFFSET_MINUTES`, `ABLATION=on` y `COGNITION_CONTROL=on` (mundo
+  de control de la 3.6, `SIM_COGNITION=off`); `record` deja `manifest.json`.
   Mundos a la vez comparten caché: el coste que vale es la suma (`study:analyze` con varias carpetas).
 
 ## Estilo

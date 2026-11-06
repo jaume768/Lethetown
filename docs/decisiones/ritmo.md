@@ -103,6 +103,17 @@ Lo que vio la partida y se corrigió, o queda por estudiar:
   reconsolidación, las necesidades extremas que no hacían pensar al agente, las cenas que no
   quitaban el hambre, el plan de reserva sin comidas y la crónica que solo veía la noche.
 
+## Por el camino (fase 3.6)
+
+- **El mismo ritmo andando**: en una charla en el camino o yendo juntos, quien recibe una frase
+  piensa al minuto (`ctx.wake`) y lo que dice se recorta igual (`clipText`). Pensar andando es
+  `decide_walking`, en la cola urgente (`URGENT_TASKS`).
+- **La latencia del LLM y los cruces**: un cruce dura ~1 min de juego y la respuesta real ~1,7
+  (a x10). Por eso se ve venir a la gente por su ruta (`decisionLeadMinutes`, 1,5), lo decidido
+  antes de cruzarse se hace al cruzarse y saludar o llamar vale hasta `callRadius` (8). Lo que
+  llega tarde se descarta sin «No pude…» (cifra `lateDiscarded`). Ver [cognición](cognicion.md).
+- **Saludar al pasar** no abre conversación; devolver el saludo no despierta al primero.
+
 ## Pendiente (diseñado, no implementado)
 
 - **Charlas en lote** (`CONVERSATION_BATCH=off|trivial|all`): generar varios turnos de una charla

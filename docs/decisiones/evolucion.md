@@ -29,22 +29,23 @@ pestaña de admin y en el estudio de una partida grabada, sin llamadas nuevas al
 
 ## Métricas (por día y total)
 
-| Métrica                                                                                | De dónde sale                              |
-| -------------------------------------------------------------------------------------- | ------------------------------------------ |
-| Frases, parejas que han hablado (y % de las posibles), parejas acumuladas              | eventos `speech` (hablante y destinatario) |
-| Concentración: parte de las 4 parejas que más hablan; Gini de las frases por agente    | eventos `speech`                           |
-| Interlocutores distintos por agente (media y mínimo)                                   | eventos `speech`                           |
-| Conversaciones (de grupo / de dos), turnos de media, motivo de fin                     | «terminan de hablar (N turnos; motivo)»    |
-| Intenciones: propuestas, cumplidas, se le pasan, tarde                                 | eventos de memoria 📝 ✅ 🫥 😳             |
-| Acciones por tipo: formales, acordadas hablando, que no salieron                       | `meta.action`, `meta.agreed`, `meta.ok`    |
-| Cambios de tipo de relación (y cuáles: vecino → amistad…)                              | `social_profile_history`                   |
-| Memoria: reconsolidaciones, olvidos, archivados, borrados                              | `memory_audit`                             |
-| Errores del LLM por tarea                                                              | eventos de sistema «⚠ Error en "tarea"»    |
-| Coste por tarea (llamadas, $, % de caché) y por sistema                                | `llm_calls` o el `CostTracker`             |
-| Espera de respuesta (min de juego; s reales si se grabó)                               | `ReplyLatencyMeter` con `wallMs`           |
-| Longitud de las frases por estilo (corta, media, larga, menores)                       | eventos `speech` y las semillas            |
-| Metas: activas, conseguidas, abandonadas, progreso y frustración medios (y por agente) | `goals` (historial de cada meta)           |
-| Conocimiento externo: anacronismos y referencias por tipo, agente y día, con ejemplos  | `knowledge_log`                            |
+| Métrica                                                                                | De dónde sale                                |
+| -------------------------------------------------------------------------------------- | -------------------------------------------- |
+| Frases, parejas que han hablado (y % de las posibles), parejas acumuladas              | eventos `speech` (hablante y destinatario)   |
+| Concentración: parte de las 4 parejas que más hablan; Gini de las frases por agente    | eventos `speech`                             |
+| Interlocutores distintos por agente (media y mínimo)                                   | eventos `speech`                             |
+| Conversaciones (de grupo / de dos), turnos de media, motivo de fin                     | «terminan de hablar (N turnos; motivo)»      |
+| Intenciones: propuestas, cumplidas, se le pasan, tarde                                 | eventos de memoria 📝 ✅ 🫥 😳               |
+| Acciones por tipo: formales, acordadas hablando, que no salieron                       | `meta.action`, `meta.agreed`, `meta.ok`      |
+| Cambios de tipo de relación (y cuáles: vecino → amistad…)                              | `social_profile_history`                     |
+| Memoria: reconsolidaciones, olvidos, archivados, borrados                              | `memory_audit`                               |
+| Errores del LLM por tarea                                                              | eventos de sistema «⚠ Error en "tarea"»      |
+| Coste por tarea (llamadas, $, % de caché) y por sistema                                | `llm_calls` o el `CostTracker`               |
+| Espera de respuesta (min de juego; s reales si se grabó)                               | `ReplyLatencyMeter` con `wallMs`             |
+| Longitud de las frases por estilo (corta, media, larga, menores)                       | eventos `speech` y las semillas              |
+| Metas: activas, conseguidas, abandonadas, progreso y frustración medios (y por agente) | `goals` (historial de cada meta)             |
+| Conocimiento externo: anacronismos y referencias por tipo, agente y día, con ejemplos  | `knowledge_log`                              |
+| Por el camino (3.6): encuentros, saludos, paradas, charlas en el camino, asociaciones  | `meta.action`, `meta.road`, `decide_walking` |
 
 ## `pnpm study:analyze <carpeta> [<otra> …]`
 

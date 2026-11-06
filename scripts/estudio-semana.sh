@@ -21,6 +21,8 @@
 #                                 comparar mejor; aun así, súmalo: ver study:analyze)
 #   ABLATION=on                   un tercer mundo, s7a: la semilla 7 con MEMORY_ABLATION (sin
 #                                 olvido ni vaguedad, en .env.study.s7a) como control
+#   COGNITION_CONTROL=on          otro mundo, s7c: la semilla 7 con SIM_COGNITION=off (como antes
+#                                 de la fase 3.6, en .env.study.s7c) como control de la 3.6
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -32,6 +34,7 @@ HOURS="${HOURS:-168}"
 UNTIL="${UNTIL:-$((410 + HOURS * 60))}"
 SEEDS=(s7 s13)
 if [[ "${ABLATION:-off}" == "on" ]]; then SEEDS+=(s7a); fi
+if [[ "${COGNITION_CONTROL:-off}" == "on" ]]; then SEEDS+=(s7c); fi
 cd "$ROOT"
 
 seeds_of() { if [[ -n "${1:-}" ]]; then echo "$1"; else echo "${SEEDS[@]}"; fi; }
@@ -167,7 +170,7 @@ case "$cmd" in
   stop) stop "$@" ;;
   export) export_bd "$@" ;;
   *)
-    sed -n '2,24p' "$0"
+    sed -n '2,26p' "$0"
     exit 1
     ;;
 esac

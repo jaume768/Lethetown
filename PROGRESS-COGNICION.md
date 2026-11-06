@@ -21,7 +21,7 @@ Al retomar: leer este fichero, `docs/decisiones/cognicion.md` y `git log --oneli
 - [x] 6. Asociaciones sin LLM (sistema `associations`)
 - [x] 7. Instantáneas e interfaz (log, iconos, dramas, i18n)
 - [x] 8. Métricas («Evolución», `study:analyze`) y coste
-- [ ] Final: tests, entrevistas, docs, PR
+- [x] Final: tests, entrevistas, docs, PR
 
 ## Coste (`cost:report 48`, mock, SIM_SEED=7)
 
@@ -87,4 +87,38 @@ con menos de 10 semillas, las diferencias de unos pocos puntos son ruido.
   hacerle pensar si le importa quien saluda (saliencia ≥ umbral); devolverlo no despierta al
   primero (sin ping-pong).
 
+## Entrevistas (`pnpm interview --advance 48`, mock)
+
+Antes (`main`) y después, Lucía, Carmen y Hugo. En mock la respuesta es una plantilla sobre el
+recuerdo más fuerte, así que solo dice cuál domina: Lucía (Rafael → Aurora: «¿has probado el
+café nuevo?»), Carmen (Mateo en casa → Mateo «quiero volver a quedar con Ernesto»), Hugo (la
+canción a Lucía de la semilla → Elena saludando). Ningún recuerdo del camino («Me crucé con…»,
+«me saludó al pasar») entre los que se recuperan: los encuentros no inflan la memoria. La
+comparación que vale es con el LLM real.
+
+## Tests de la fase
+
+`encounters.test.ts` (encuentros entre revisiones, saliencia, enfriamiento, «se acababan de
+ver», tope por hora, interruptores apagados, revalidación tarde y diferida, pararse y retomar con
+y sin replanificar, presencia por proximidad, salir por distancia, menores, charla andando con
+`walkingTalk` y sin él, escuchar a ≤ 2 baldosas, memoria prospectiva al cruzarse, instantánea),
+`associations.test.ts` (servidor y agent-core), `salience.test.ts`, `proximity.test.ts`,
+`factories/cognition.test.ts` (mundo de control por la API), dramas, análisis, manifiesto,
+instantánea completa y el dorado apagado (`three-days-off.txt`, sin cambios en toda la fase).
+
 ## A revisar con una partida real
+
+- La latencia real frente a `decisionLeadMinutes` (1,5): cuántas decisiones andando llegan
+  tarde (`lateDiscarded`) y cuántas se hacen al cruzarse.
+- El umbral de saliencia (0,5) y el tope (2 decisiones por hora): ¿piensa lo bastante por el
+  camino o demasiado? ¿Los saludos al pasar son cortos y naturales con el LLM?
+- Cuánto duran las paradas a charlar y si alguien llega tarde a sus citas o a trabajar por ellas
+  (el viaje se retoma, pero la charla no tiene tope propio).
+- Si las asociaciones (≈ 2 por agente y día en mock, casi todas al ver a alguien) cambian las
+  decisiones o son ruido en la memoria de trabajo; si las de lugares y objetos son pocas.
+- El coste real: en mock +5 % ± 5 % de llamadas (10 semillas); con el LLM, las charlas del camino
+  cuestan `social` e `importance` como cualquier otra.
+- El efecto frente al mundo de control (`study:analyze s7 s7c`): red (parejas nuevas en el
+  camino), intenciones cumplidas al cruzarse, reencuentros.
+- Quien está quieto no piensa por ver pasar a alguien (decisión de coste): ¿se echa de menos que
+  quien está en la terraza llame a quien pasa?

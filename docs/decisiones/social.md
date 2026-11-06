@@ -19,3 +19,10 @@
 - **Estilo de habla propio** (`speechStyle`) y personalidad en el prompt fijo; pueden discrepar,
   negarse o no tener ganas de hablar.
 - **Dramas** al cambiar el tipo de relación (amistad, rivalidad, romance).
+- **Por el camino** (fase 3.6, ver [cognición](cognicion.md)): lo que importa al cruzarse con
+  alguien lo calcula el código (`encounterSalience`): la ficha (afinidad, también negativa, y
+  familiaridad), familia, rivalidad, algo pendiente (intención, cita, préstamo o deuda), metas
+  que chocan, el ánimo que se le ve y cuánto hace que no se ven. Los encuentros, saludos y
+  charlas en el camino alimentan la red como cualquier charla (fichas al cerrarlas, mera
+  exposición, «parejas que hablaron por primera vez en el camino» en «Evolución»). Dramas:
+  reencuentro, charla nacida en el camino y pasar de largo ante alguien que importa.
