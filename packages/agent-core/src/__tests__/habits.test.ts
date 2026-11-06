@@ -96,6 +96,23 @@ describe("hábitos (lógica pura)", () => {
   });
 });
 
+describe("hábitos y diario: la actividad en minúscula a media frase (corrección 3.5)", () => {
+  it("«Suelo desayunar…», no «Suelo Desayunar…»", () => {
+    expect(habitText({ activity: "Desayunar en casa", slot: "mañana" }, cafe.name)).toBe(
+      `Suelo desayunar en casa en ${cafe.name} por las mañanas.`,
+    );
+    expect(habitText({ activity: "Jugar al fútbol", slot: "tarde" }, "Plaza Mayor")).toBe(
+      "Suelo jugar al fútbol en Plaza Mayor por las tardes.",
+    );
+  });
+  it("el diario del día", () => {
+    const e = (activity: string): DiaryEntry => ({ minute: 0, activity, placeId: "cafe_ola" });
+    expect(dayDiaryText(2, [e("Abrir el café"), e("Pasear")], () => "Café La Ola")).toBe(
+      "El día 2: abrir el café en Café La Ola, pasear en Café La Ola.",
+    );
+  });
+});
+
 describe("diario sujeto a la memoria", () => {
   it("anotar una actividad ya no crea un recuerdo episódico", async () => {
     const { agent, store } = setup();

@@ -20,6 +20,7 @@ import {
   socialProfileHistory,
   socialProfiles,
 } from "./schema";
+import { bounded, RANGES } from "./ranges";
 
 /** Línea de tiempo de eventos. */
 export interface EventStore {
@@ -176,7 +177,8 @@ export class PgSocialProfileStore implements SocialProfileStore {
     return row && toProfile(row);
   }
 
-  async upsert(p: SocialProfile): Promise<void> {
+  async upsert(profile: SocialProfile): Promise<void> {
+    const p = bounded(profile, RANGES.social);
     const { ownerId: _o, aboutId: _a, ...set } = p;
     await this.db
       .insert(socialProfiles)
@@ -204,7 +206,9 @@ export class PgSocialProfileStore implements SocialProfileStore {
   }
 
   async addHistory(c: SocialProfileChange): Promise<void> {
-    await this.db.insert(socialProfileHistory).values({ ...c, worldId: this.worldId });
+    await this.db
+      .insert(socialProfileHistory)
+      .values({ ...bounded(c, RANGES.socialHistory), worldId: this.worldId });
   }
 
   async history(
@@ -306,7 +310,7 @@ export class PgDramaStore implements DramaStore {
   async add(d: Drama) {
     await this.db
       .insert(dramas)
-      .values({ ...d, worldId: this.worldId })
+      .values({ ...bounded(d, RANGES.drama), worldId: this.worldId })
       .onConflictDoNothing();
   }
   async recent(limit = 50) {

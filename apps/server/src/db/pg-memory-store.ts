@@ -4,6 +4,7 @@ import { MemoryAuditAction } from "@lethetown/shared";
 import { and, cosineDistance, desc, eq, getTableColumns, sql } from "drizzle-orm";
 import type { Db } from "./client";
 import { memories, memoryAudit, memoryVersions } from "./schema";
+import { bounded, RANGES } from "./ranges";
 
 type Row = typeof memories.$inferSelect;
 
@@ -44,6 +45,7 @@ export class PgMemoryStore implements MemoryStore {
    */
   async updateMany(updates: { id: string; patch: MemoryPatch }[]): Promise<void> {
     if (updates.length === 0) return;
+    updates = updates.map((u) => ({ id: u.id, patch: bounded(u.patch, RANGES.memory) }));
     if (updates.length === 1) return this.update(updates[0]!.id, updates[0]!.patch);
     const keys = Object.keys(updates[0]!.patch).sort() as BatchKey[];
     const sameShape = updates.every(
@@ -79,13 +81,13 @@ export class PgMemoryStore implements MemoryStore {
   }
 
   async add(m: MemoryRecord): Promise<void> {
-    await this.db.insert(memories).values({ ...m, worldId: this.worldId });
+    await this.db.insert(memories).values({ ...bounded(m, RANGES.memory), worldId: this.worldId });
   }
 
   async update(id: string, patch: MemoryPatch): Promise<void> {
     await this.db
       .update(memories)
-      .set(patch)
+      .set(bounded(patch, RANGES.memory))
       .where(and(this.inWorld(), eq(memories.id, id)));
   }
 
@@ -180,7 +182,9 @@ export class PgMemoryStore implements MemoryStore {
   }
 
   async addVersion(v: MemoryVersion): Promise<void> {
-    await this.db.insert(memoryVersions).values({ ...v, worldId: this.worldId });
+    await this.db
+      .insert(memoryVersions)
+      .values({ ...bounded(v, RANGES.memoryVersion), worldId: this.worldId });
   }
 
   async versions(memoryId: string): Promise<MemoryVersion[]> {

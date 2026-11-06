@@ -19,8 +19,12 @@ export const LoreConfig = z.object({
    */
   loseBase: unit(0.03),
   loseFromFidelity: unit(0.3),
-  /** …y de que cambie (un número, un ingrediente, un sitio; de las variantes del saber). */
-  alterBase: unit(0.04),
+  /**
+   * …y de que cambie (un número, un ingrediente, un sitio; de las variantes del saber). 0,05
+   * (era 0,04) y cada elemento de las semillas con alguna variante: en la partida de una semana
+   * solo se deformó 1 de 37 transmisiones; con las semillas, un 16 % (test).
+   */
+  alterBase: unit(0.05),
   alterFromFidelity: unit(0.25),
   /** Cuánto protege la habilidad de quien lo cuenta (un panadero no se equivoca con el pan). */
   skillProtect: unit(0.6),
@@ -32,6 +36,11 @@ export const LoreConfig = z.object({
   unusedGraceDays: z.number().nonnegative().default(5),
   /** Fidelidad que se pierde por día sin usarlo (más despacio con la habilidad en eso). */
   decayPerDay: unit(0.012),
+  /**
+   * No se le vuelve a contar a quien ya lo sabe con todos sus elementos y lo oyó o usó hace
+   * menos de estos días (corrección 3.5: Aurora le contó a Clara lo de Alma 6 y 11 veces).
+   */
+  retellCooldownDays: z.number().nonnegative().default(3),
   /** Por debajo de esto ya no recuerda cómo era; si nadie llega, se pierde para el pueblo. */
   minFidelity: unit(0.25),
 });
@@ -125,6 +134,17 @@ export function transmit(
   const kept = out.filter((e) => !e.altered).length + 0.5 * out.filter((e) => e.altered).length;
   const fidelity = clamp01(Math.min(teller.fidelity * cfg.retellCeiling, kept / total));
   return { elements: out, fidelity, lost, altered };
+}
+
+/**
+ * ¿Lo sigue sabiendo el pueblo? Sí mientras algún portador que no lo ha olvidado llegue a
+ * `minFidelity`; si no, se pierde para el pueblo.
+ */
+export function knownByTown(
+  holders: { fidelity: number; forgotten: boolean }[],
+  cfg: LoreConfig,
+): boolean {
+  return holders.some((h) => !h.forgotten && h.fidelity >= cfg.minFidelity);
 }
 
 /** Usarlo lo refuerza (sin recuperar lo que ya se perdió). */

@@ -7,6 +7,7 @@ import {
   MinorGuard,
   hasSoftRomance,
   hasStrongRomance,
+  kinOf,
   minorsOf,
   minorsRule,
   type SafetyBlock,
@@ -160,6 +161,124 @@ describe("MinorGuard", () => {
     expect(await guard.allows("Leo, estás guapísimo hoy, mi amor", { kind: "speech" })).toBe(false);
     expect(blocks[0]!.cause).toBe("content");
     expect(guard.stats()).toEqual({ blockedContent: 1, blockedError: 0, retries: 1 });
+  });
+});
+
+describe("MinorGuard en familia (corrección 3.5: los 4 bloqueos de la partida eran de familia)", () => {
+  const seeds = AgentSeed.array().parse(
+    JSON.parse(readFileSync(new URL("../../../../seeds/agents.json", import.meta.url), "utf8")),
+  );
+  /** Un guardián con las semillas reales; `verdict` es la moderación (por defecto, la del mock). */
+  function familyGuard(verdict?: MockResponder) {
+    const provider = new MockProvider((req) => verdict?.(req) ?? agentMockResponder(req));
+    const llm = new LLMClient(
+      provider,
+      new ModelRouter({ fast: "mock-fast", reflection: "mock-reflection" }),
+      new CostTracker({}),
+    );
+    const blocks: SafetyBlock[] = [];
+    const guard = new MinorGuard({
+      minors: minorsOf(seeds),
+      kin: kinOf(seeds),
+      people: seeds.map((x) => ({ id: x.id, name: x.name })),
+      llm,
+      onBlock: (b) => blocks.push(b),
+      sleep: async () => {},
+    });
+    return { guard, provider, blocks };
+  }
+  /** Una moderación que rechaza todo: así se ve qué no llega a moderarse. */
+  const rejectAll: MockResponder = () =>
+    JSON.stringify({ allowed: false, reason: "interés romántico de un adulto hacia un menor" });
+
+  it("el parentesco sale de las semillas", () => {
+    const kin = kinOf(seeds);
+    expect(kin).toContainEqual({ id: "marta", of: "leo", kin: "madre" });
+    expect(kin).toContainEqual({ id: "julian", of: "ines", kin: "padre" });
+    expect(kin).toContainEqual({ id: "ines", of: "julian", kin: "hija" });
+  });
+
+  it("los 4 textos de la partida: entre un menor y su padre o madre, sin léxico claro, no se moderan", async () => {
+    const { guard, provider, blocks } = familyGuard(rejectAll);
+    const leoSays = "¡Vale, vale! Ya voy. ¿Me das un beso?";
+    // 1 y 2: la frase de Leo a su madre y el recuerdo de cada uno.
+    expect(
+      await guard.allows(leoSays, { kind: "speech", agentId: "leo", actors: ["leo", "marta"] }),
+    ).toBe(true);
+    expect(
+      await guard.allows(`Leo Gil me dijo: "${leoSays}"`, {
+        kind: "memory",
+        agentId: "marta",
+        actors: ["marta", "leo"],
+      }),
+    ).toBe(true);
+    expect(
+      await guard.allows(`Le dije a Marta Gil: "${leoSays}"`, {
+        kind: "memory",
+        agentId: "leo",
+        actors: ["leo", "marta"],
+      }),
+    ).toBe(true);
+    // 3 y 4: las reflexiones de Julián sobre su hija.
+    for (const t of [
+      "Se lo dije a medias a Inés: que me cuesta estar solo en esta casa… y ella me dio un abrazo.",
+      "Inés es lo que más quiero; cariño no le falta, aunque no sé decírselo.",
+    ]) {
+      expect(
+        await guard.allows(t, { kind: "reflection", agentId: "julian", actors: ["julian"] }),
+        t,
+      ).toBe(true);
+    }
+    expect(provider.calls).toHaveLength(0);
+    expect(blocks).toHaveLength(0);
+  });
+
+  it("si hay alguien más (un vecino, una tercera persona, un nombre de fuera), se modera con el parentesco", async () => {
+    const { guard, provider } = familyGuard(rejectAll);
+    const cases: [string, string[]][] = [
+      ["Inés le dio un beso a Hugo", ["julian"]],
+      ["Inés le dio un beso a un chico del instituto", ["julian"]],
+      ["Inés le dio un beso a Pepa", ["julian"]],
+      ["Leo, cariño, ven aquí", ["hugo", "leo"]],
+    ];
+    for (const [t, actors] of cases) {
+      expect(await guard.allows(t, { kind: "memory", agentId: actors[0], actors }), t).toBe(false);
+    }
+    expect(provider.calls).toHaveLength(4);
+    expect(provider.calls[0]!.prompt).toContain("Julián Ortega es padre de Inés Ortega");
+  });
+
+  it("el léxico claro se descarta siempre, también en familia", async () => {
+    const { guard, provider } = familyGuard();
+    expect(
+      await guard.allows("Leo, ¿estás enamorado de alguien?", {
+        kind: "speech",
+        agentId: "marta",
+        actors: ["marta", "leo"],
+      }),
+    ).toBe(false);
+    expect(
+      await guard.allows("Inés tiene novio y me da miedo", {
+        kind: "reflection",
+        agentId: "julian",
+        actors: ["julian"],
+      }),
+    ).toBe(false);
+    expect(provider.calls).toHaveLength(0);
+  });
+
+  it("un adulto que no es su padre ni su madre pasa por la moderación (fail-closed si falla)", async () => {
+    const { guard, provider } = familyGuard(() => {
+      throw new Error("sin red");
+    });
+    expect(
+      await guard.allows("¡Qué guapa estás hoy, Inés!", {
+        kind: "speech",
+        agentId: "rafael",
+        actors: ["rafael", "ines"],
+      }),
+    ).toBe(false);
+    expect(provider.calls.length).toBeGreaterThan(0);
   });
 });
 

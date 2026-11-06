@@ -2,6 +2,7 @@
 import type { LLMClient } from "@lethetown/agent-core";
 import {
   MinorGuard,
+  kinOf,
   minorsOf,
   moderateUserText,
   hasStrongRomance,
@@ -42,6 +43,8 @@ export function createMinorGuard(
 ): MinorGuard {
   return new MinorGuard({
     minors: minorsOf(services.seeds),
+    kin: kinOf(services.seeds),
+    people: services.seeds.map((s) => ({ id: s.id, name: s.name })),
     llm,
     onBlock: (b) => {
       // Se distingue lo bloqueado por no poder moderar (fail-closed) de lo rechazado por contenido.

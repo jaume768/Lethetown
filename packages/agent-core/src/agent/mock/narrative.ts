@@ -44,7 +44,9 @@ const COUPLE =
 /** Moderación de contenido con menores: rechaza lo romántico; acepta el cariño de familia. */
 function mockModerateMinor(req: CompletionRequest): string {
   const text = /Texto: ⟦([\s\S]*)⟧/.exec(req.prompt)?.[1] ?? "";
-  if (hasStrongRomance(text) || (COUPLE.test(text) && !FAMILY.test(text))) {
+  // Con el parentesco de quienes aparecen (padre, madre, abuela…), el cariño es de familia.
+  const family = FAMILY.test(text) || /\nParentesco: /.test(req.prompt);
+  if (hasStrongRomance(text) || (COUPLE.test(text) && !family)) {
     return JSON.stringify({ allowed: false, reason: "afecto romántico hacia un menor" });
   }
   return JSON.stringify({ allowed: true, reason: "" });

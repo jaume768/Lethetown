@@ -63,6 +63,23 @@ const Env = z.object({
   SIM_WALK_TILES_PER_MINUTE: z.coerce.number().positive().default(6),
   /** Radio (en baldosas) en que un agente ve los lugares que tiene cerca al pasar. */
   SIM_DISCOVERY_RADIUS: z.coerce.number().nonnegative().default(4),
+  /**
+   * Ablación de la memoria para un mundo de control en una partida de estudio (lista separada
+   * por comas de `MemoryConfig.ablation`: noForgetting, noVagueness). Vacía = ninguna.
+   */
+  MEMORY_ABLATION: z.preprocess(
+    emptyToUndefined,
+    z
+      .string()
+      .optional()
+      .transform((v) =>
+        (v ?? "")
+          .split(",")
+          .map((x) => x.trim())
+          .filter(Boolean),
+      )
+      .pipe(z.array(z.enum(["noForgetting", "noVagueness"]))),
+  ),
   /** Modo demostración: el pueblo genera solo lluvia, averías e ideas (sim/demo.ts). */
   SIM_DEMO: z.enum(["on", "off"]).default("off"),
   /** Minutos de juego (de media) entre dos sucesos del modo demostración. */

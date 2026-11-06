@@ -8,7 +8,9 @@
  */
 import {
   applySocialUpdate,
-  levelLabel,
+  levelTier,
+  nextTier,
+  tierLabel,
   makeMood,
   practiceGain,
   qualityEffect,
@@ -16,13 +18,14 @@ import {
   resultQuality,
   skillAfterIdle,
   skillDef,
+  isRoutinePractice,
   skillForActivity,
   type Agent,
   type SkillsConfig,
 } from "@lethetown/agent-core";
 import type { SkillState } from "@lethetown/shared";
 import { InMemorySkillStore, type SkillStore } from "../db/skills";
-import { itemsState, newItemId, saveItem } from "./items";
+import { itemsState, newItemId, removeItem, saveItem } from "./items";
 import { errorMessage, type SimContext } from "./context";
 import { presentWith } from "./perception";
 import { systemsHold } from "./systems/registry";
@@ -73,7 +76,11 @@ export interface SkillsState {
   sessions: Map<string, TeachingSession>;
   seq: number;
   /** Para «Evolución». */
-  counts: { sessions: number; helps: number; shown: number };
+  counts: { sessions: number; helps: number; shown: number; eaten: number };
+  /** Cuándo comió algo de su inventario por última vez (para no comerse todo de golpe). */
+  lastAte: Map<string, number>;
+  /** Sesiones empezadas hoy por pareja y habilidad ("día|a|b|skill" → n). */
+  pairDay: Map<string, number>;
 }
 
 export type SessionStatus = "proposed" | "active" | "declined" | "done" | "expired";
@@ -126,7 +133,9 @@ export const skillsState = (ctx: SimContext) =>
     results: new Map(),
     sessions: new Map(),
     seq: 0,
-    counts: { sessions: 0, helps: 0, shown: 0 },
+    counts: { sessions: 0, helps: 0, shown: 0, eaten: 0 },
+    lastAte: new Map(),
+    pairDay: new Map(),
   }));
 
 export const skillsCfg = (ctx: SimContext): SkillsConfig => ctx.deps.memory.config.skills;
@@ -137,6 +146,27 @@ export const skillLabel = (ctx: SimContext, id: string) =>
 
 const firstName = (ctx: SimContext, id: string) =>
   ctx.agents.get(id)?.seed.name.split(" ")[0] ?? id;
+
+/** Su etiqueta («bien»…), con la histéresis de su escalón. */
+export function labelOf(s: SkillState): string {
+  return tierLabel(s.tier ?? levelTier(s.level));
+}
+
+/**
+ * Recalcula el escalón tras cambiar el nivel (con histéresis: sube al cruzar el umbral y baja
+ * solo por debajo de umbral − `labelHysteresis`). Devuelve si cambió (un hito).
+ */
+function retier(ctx: SimContext, s: SkillState, before: number): boolean {
+  const prev = s.tier ?? levelTier(before);
+  s.tier = nextTier(s.level, prev, skillsCfg(ctx));
+  return s.tier !== prev;
+}
+
+/** La etiqueta de alguien en una habilidad (con histéresis). */
+function labelOfAgent(ctx: SimContext, agentId: string, skill: string): string {
+  const s = skillsState(ctx).skills.get(key(agentId, skill));
+  return s ? labelOf(s) : tierLabel(0);
+}
 
 /** Nivel de alguien en una habilidad (0 si nunca la ha practicado). */
 export function levelOf(ctx: SimContext, agentId: string, skill: string): number {
@@ -196,6 +226,7 @@ export function skillState(ctx: SimContext, agentId: string, skill: string, now:
       practiceMinutes: 0,
       lastUsedAt: null,
       learnedFrom: null,
+      tier: null,
       history: [],
       updatedAt: now,
     };
@@ -231,6 +262,8 @@ export function addPractice(
   minutes: number,
   now: number,
   masterId: string | null = null,
+  /** Peso de esta práctica (las comidas de cada día, `routinePracticeWeight`). */
+  weight = 1,
 ): number {
   const cfg = skillsCfg(ctx);
   const s = skillState(ctx, agent.id, skill, now);
@@ -238,7 +271,7 @@ export function addPractice(
   const masterLevel = masterId ? levelOf(ctx, masterId, skill) : null;
   const gain = practiceGain(
     before,
-    minutes,
+    minutes * weight,
     { age: agent.seed.age, openness: agent.seed.personality.openness, masterLevel },
     cfg,
   );
@@ -250,15 +283,15 @@ export function addPractice(
   skillsState(ctx).practiceMinutes += minutes;
   const helped = masterLevel !== null && masterLevel - before >= cfg.masterGap;
   if (helped && masterId && !s.learnedFrom) s.learnedFrom = masterId;
-  if (levelLabel(s.level) !== levelLabel(before)) {
+  if (retier(ctx, s, before)) {
     const who = helped && masterId ? ` (con ${firstName(ctx, masterId)})` : "";
-    const why = `practicando${who}: ahora «${levelLabel(s.level)}» (${s.level.toFixed(2)})`;
+    const why = `practicando${who}: ahora «${labelOf(s)}» (${s.level.toFixed(2)})`;
     historyEntry(s, now, why);
     audit(ctx, s, `${skillLabel(ctx, skill)}: ${why}`, now);
     ctx.emit(
       "action",
       agent.id,
-      `🎓 ${agent.seed.name}, en ${skillLabel(ctx, skill)}: ahora «${levelLabel(s.level)}»${who}`,
+      `🎓 ${agent.seed.name}, en ${skillLabel(ctx, skill)}: ahora «${labelOf(s)}»${who}`,
       [agent.id, ...(helped && masterId ? [masterId] : [])],
       undefined,
       { action: "skill", ok: true },
@@ -278,17 +311,18 @@ export function practiceNow(
   ctx: SimContext,
   agent: Agent,
   now: number,
-): { skill: string; masterId: string | null } | null {
+): { skill: string; masterId: string | null; routine?: boolean } | null {
   const st = skillsState(ctx);
   const coached = st.coached.get(agent.id);
   if (coached && coached.until > now) return { skill: coached.skill, masterId: coached.masterId };
   const planned = st.practicing.get(agent.id);
   if (planned && planned.until > now) return { skill: planned.skill, masterId: null };
-  const skill = skillForActivity(
-    { action: agent.state.action, spotId: agent.state.spotId },
-    skillsCfg(ctx),
-  );
-  return skill ? { skill, masterId: null } : null;
+  const cfg = skillsCfg(ctx);
+  const skill = skillForActivity({ action: agent.state.action, spotId: agent.state.spotId }, cfg);
+  // Las comidas de cada día cuentan con peso reducido (lo que se propuso practicar, entero).
+  return skill
+    ? { skill, masterId: null, routine: isRoutinePractice(agent.state.action, skill, cfg) }
+    : null;
 }
 
 /**
@@ -303,11 +337,13 @@ export function skillsTick(ctx: SimContext, now: number, minutes: number): void 
   for (const [id, p] of st.practicing) if (p.until <= now) st.practicing.delete(id);
   for (const [id, c] of st.coached) if (c.until <= now) st.coached.delete(id);
   const doing = new Map<string, string>();
+  const routine = new Set<string>();
   for (const agent of ctx.agents.values()) {
     if (systemsHold(ctx, agent.id) || ctx.rt(agent.id).travelling) continue;
     if (agent.state.activityKind === "sleep") continue;
     const p = practiceNow(ctx, agent, now);
     if (p) doing.set(agent.id, p.skill);
+    if (p?.routine) routine.add(agent.id);
   }
   for (const [id, skill] of doing) {
     const agent = ctx.agents.get(id)!;
@@ -320,7 +356,12 @@ export function skillsTick(ctx: SimContext, now: number, minutes: number): void 
         .map((o) => o.id)
         .sort((a, b) => levelOf(ctx, b, skill) - levelOf(ctx, a, skill))[0] ??
       null;
-    addPractice(ctx, agent, skill, minutes, now, master);
+    const weight = routine.has(id) ? cfg.routinePracticeWeight : 1;
+    addPractice(ctx, agent, skill, minutes, now, master, weight);
+  }
+  for (const agent of ctx.agents.values()) {
+    if (systemsHold(ctx, agent.id) || agent.state.activityKind === "sleep") continue;
+    eatFromInventory(ctx, agent, now);
   }
   const day = Math.floor(now / 1440);
   if (st.lastDecayDay < 0) st.lastDecayDay = day;
@@ -340,8 +381,8 @@ export function decayAll(ctx: SimContext, now: number, days: number): void {
     if (before - after < 0.0005) continue;
     s.level = after;
     s.updatedAt = now;
-    if (levelLabel(after) !== levelLabel(before)) {
-      const why = `${Math.floor(idle)} días sin practicar: ahora «${levelLabel(after)}» (${after.toFixed(2)})`;
+    if (retier(ctx, s, before)) {
+      const why = `${Math.floor(idle)} días sin practicar: ahora «${labelOf(s)}» (${after.toFixed(2)})`;
       historyEntry(s, now, why);
       audit(ctx, s, `${skillLabel(ctx, s.skill)}: ${why}`, now);
       const agent = ctx.agents.get(s.agentId);
@@ -382,7 +423,7 @@ export function skillsLine(ctx: SimContext, agent: Agent, now: number): string |
   const parts = [
     ...(good.length
       ? [
-          `Se te da bien: ${good.map((s) => `${skillLabel(ctx, s.skill)} [${s.skill}] (${levelLabel(s.level)})`).join(", ")}`,
+          `Se te da bien: ${good.map((s) => `${skillLabel(ctx, s.skill)} [${s.skill}] (${labelOf(s)})`).join(", ")}`,
         ]
       : []),
     ...(learning.length
@@ -492,6 +533,42 @@ export function resultsOf(ctx: SimContext, agentId: string): string[] {
 }
 
 /**
+ * Con hambre, se come algo de comer que lleva (pan, verduras: de lo que salió de practicar o
+ * le regalaron): el objeto desaparece y el hambre baja. Si lo hizo otro, nota la calidad. Sin
+ * LLM ni acción nueva (corrección 3.5). Devuelve el objeto que se comió.
+ */
+export function eatFromInventory(ctx: SimContext, agent: Agent, now: number): string | null {
+  const cfg = skillsCfg(ctx);
+  const st = skillsState(ctx);
+  if (agent.state.needs.hunger < cfg.eatMinHunger) return null;
+  const last = st.lastAte.get(agent.id);
+  if (last !== undefined && now - last < cfg.eatEveryMinutes) return null;
+  const food = [...itemsState(ctx).items.values()]
+    .filter((i) => i.holderId === agent.id && !i.loan && cfg.edibleKinds.includes(i.kind))
+    .sort((a, b) => a.createdAt - b.createdAt)[0];
+  if (!food) return null;
+  st.lastAte.set(agent.id, now);
+  st.counts.eaten++;
+  agent.state.needs = {
+    ...agent.state.needs,
+    hunger: Math.max(0, agent.state.needs.hunger - cfg.eatHungerRelief),
+  };
+  const made = st.results.get(food.id);
+  removeItem(ctx, food.id);
+  st.results.delete(food.id);
+  if (made) tasteResult(ctx, agent.id, made.makerId, food.kind, made.quality, now);
+  ctx.emit(
+    "action",
+    agent.id,
+    `🍞 ${agent.seed.name} se come ${food.name}`,
+    [agent.id, ...(made && made.makerId !== agent.id ? [made.makerId] : [])],
+    undefined,
+    { action: "eat_result", ok: true },
+  );
+  return food.id;
+}
+
+/**
  * Practicar un rato seguido algo que deja resultado (fotos, dibujos, pan, verduras) da un objeto
  * con su calidad, que se puede enseñar o regalar (`show_result`). Como mucho `maxResults` a la vez.
  */
@@ -564,6 +641,32 @@ export function sessionsAwaiting(ctx: SimContext, agentId: string, now: number) 
   );
 }
 
+/** Clave de una pareja (sin orden) con una habilidad, un día. */
+const pairKey = (day: number, a: string, b: string, skill: string) =>
+  `${day}|${[a, b].sort().join("|")}|${skill}`;
+
+/** Sesiones de esa habilidad que ya han empezado hoy esa pareja. */
+export function sessionsToday(
+  ctx: SimContext,
+  a: string,
+  b: string,
+  skill: string,
+  now: number,
+): number {
+  return skillsState(ctx).pairDay.get(pairKey(Math.floor(now / 1440), a, b, skill)) ?? 0;
+}
+
+/** ¿Pueden tener hoy otra sesión de eso? (`maxSessionsPerPairDay`). */
+export function mayRepeatSession(
+  ctx: SimContext,
+  a: string,
+  b: string,
+  skill: string,
+  now: number,
+): boolean {
+  return sessionsToday(ctx, a, b, skill, now) < skillsCfg(ctx).maxSessionsPerPairDay;
+}
+
 /** Propone una sesión (pedir que te enseñen u ofrecerte a enseñar). */
 export function proposeSession(
   ctx: SimContext,
@@ -589,6 +692,8 @@ export function startSession(ctx: SimContext, v: TeachingSession, now: number): 
   v.status = "active";
   v.until = now + cfg.sessionMinutes;
   st.counts.sessions++;
+  const k = pairKey(Math.floor(now / 1440), v.teacherId, v.learnerId, v.skill);
+  st.pairDay.set(k, (st.pairDay.get(k) ?? 0) + 1);
   st.coached.set(v.learnerId, { skill: v.skill, masterId: v.teacherId, until: v.until });
   st.coached.set(v.teacherId, { skill: "teaching", masterId: null, until: v.until });
 }
@@ -601,6 +706,9 @@ export function finishSession(ctx: SimContext, v: TeachingSession, now: number):
   const learner = ctx.agents.get(v.learnerId);
   if (!teacher || !learner) return;
   const what = skillLabel(ctx, v.skill);
+  // La n-ésima de hoy entre los dos: cada repetición deja menos (rendimientos decrecientes).
+  const repeat = Math.max(1, sessionsToday(ctx, v.teacherId, v.learnerId, v.skill, v.until));
+  const gain = cfg.sessionAffinity * cfg.sessionRepeatDamping ** (repeat - 1);
   for (const [me, other] of [
     [teacher, learner],
     [learner, teacher],
@@ -609,8 +717,8 @@ export function finishSession(ctx: SimContext, v: TeachingSession, now: number):
       applySocialUpdate(ctx.deps.social, {
         ownerId: me.id,
         aboutId: other.id,
-        affinityDelta: cfg.sessionAffinity,
-        familiarityDelta: cfg.sessionAffinity,
+        affinityDelta: gain,
+        familiarityDelta: gain,
         now,
         reason: me === teacher ? `le enseñé ${what}` : `me enseñó ${what}`,
         config: ctx.deps.memory.config.social,
@@ -622,10 +730,10 @@ export function finishSession(ctx: SimContext, v: TeachingSession, now: number):
   ctx.emit(
     "action",
     teacher.id,
-    `🧑‍🏫 ${teacher.seed.name} termina de enseñarle ${what} a ${learner.seed.name} (${levelLabel(levelOf(ctx, learner.id, v.skill))})`,
+    `🧑‍🏫 ${teacher.seed.name} termina de enseñarle ${what} a ${learner.seed.name} (${labelOfAgent(ctx, learner.id, v.skill)})`,
     [teacher.id, learner.id],
     undefined,
-    { action: "teach", ok: true },
+    { action: "teach", ok: true, ...(repeat > 1 ? { repeat } : {}) },
   );
 }
 
@@ -656,6 +764,11 @@ export function sessionsTick(ctx: SimContext, now: number): void {
       finishSession(ctx, v, now);
     }
   }
+  // Las cuentas de días anteriores ya no hacen falta.
+  const today = `${Math.floor(now / 1440)}|`;
+  for (const k of skillsState(ctx).pairDay.keys()) {
+    if (!k.startsWith(today)) skillsState(ctx).pairDay.delete(k);
+  }
   // Lo acabado hace más de un día ya no hace falta.
   for (const [id, v] of skillsState(ctx).sessions) {
     if (v.status !== "proposed" && v.status !== "active" && now - v.until > 1440) {
@@ -664,14 +777,22 @@ export function sessionsTick(ctx: SimContext, now: number): void {
   }
 }
 
-/** Quién de los presentes sabe claramente más que él de algo (para pedirle que le enseñe). */
-export function mastersHere(ctx: SimContext, agent: Agent): { id: string; skill: string }[] {
+/**
+ * Quién de los presentes sabe claramente más que él de algo (para pedirle que le enseñe); no
+ * si hoy ya han tenido las sesiones que tocan de eso (`maxSessionsPerPairDay`).
+ */
+export function mastersHere(
+  ctx: SimContext,
+  agent: Agent,
+  now = ctx.clock.now(),
+): { id: string; skill: string }[] {
   const cfg = skillsCfg(ctx);
   const out: { id: string; skill: string }[] = [];
   for (const o of presentWith(ctx, agent)) {
     for (const s of skillsOf(ctx, o.id)) {
       if (s.level < cfg.promptMinLevel + cfg.masterGap) continue;
       if (s.level - levelOf(ctx, agent.id, s.skill) < cfg.masterGap * 2) continue;
+      if (!mayRepeatSession(ctx, agent.id, o.id, s.skill, now)) continue;
       out.push({ id: o.id, skill: s.skill });
     }
   }

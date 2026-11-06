@@ -18,6 +18,8 @@ TypeScript estricto. El porqué de cada decisión está en [docs/decisiones/](do
 
 - **Tiempo** en minutos de juego (`number`); nada de `Date` en la lógica de agentes.
 - **Prompt fijo** (`identityPrompt`) sin nada variable (caching); lo variable, en el prompt de usuario.
+  Primero lo común a todos los vecinos (`sharedSystemPrompt`), luego «## Quién eres» con lo de
+  cada uno: el proveedor de Anthropic lo parte ahí en dos bloques de caché (`splitSystem`).
 - **Modelo por tarea**: cada llamada pide `fast` o `reflection`; `config/llm-routing.json` lo
   cambia por tarea (y la caché de 1 h). Mide con `cost:report 48`, que da también el coste estimado.
 - **Respuesta del LLM**: un único JSON con `parseWith(schema, text)`; si falla, comportamiento por
@@ -27,10 +29,14 @@ TypeScript estricto. El porqué de cada decisión está en [docs/decisiones/](do
 - **Modelos**: no inventes IDs ni formas de llamada; compruébalos en la documentación oficial.
 - **Protección de menores (prioritaria)**: todo texto del LLM que entra en el mundo pasa por
   `MinorGuard` (`memory.tryRemember`, `guard.allows`); nada romántico con un menor; las citas e
-  invitaciones de adultos con menores, solo en lugares públicos. Ver [menores](docs/decisiones/menores.md).
+  invitaciones de adultos con menores, solo en lugares públicos. El parentesco va en la semilla
+  (`kin`): la moderación lo recibe y lo que pasa solo entre un menor y su padre o madre no se
+  modera sin léxico claro (el claro se descarta siempre). Ver [menores](docs/decisiones/menores.md).
 - **Psicología y memoria**: lógica pura en agent-core; todo parámetro en `MemoryConfig` con valor
   por defecto y unidades; nada de lógica psicológica en prompts si se puede calcular. Cada olvido o
   transformación, con `memory.audit(...)` y motivo legible. Fichas sociales con `applySocialUpdate`.
+  Solo refuerza la recuperación real (`retrieve`, `recallByIds`…), con efecto de espaciado; lo
+  que el sistema muestra en el prompt no toca la memoria.
 - **Mundo de 2002** (`config/world.json`, `WorldBible`): Mallorca, euros (recién llegados),
   móviles sencillos y SMS, internet de pocos, sin redes sociales; tecnología de la época;
   nada posterior en semillas, mock ni prompts. Lo fijo del mundo va al prompt de identidad
@@ -41,12 +47,15 @@ TypeScript estricto. El porqué de cada decisión está en [docs/decisiones/](do
   criterios (`GoalCriterion`); nunca progreso puesto por el modelo. Una meta que no se puede medir
   no se crea; lo que propone se coloca (`placeProposal`: un paso sin proyecto, donde encaje, o
   como proyecto). Lo cualitativo, `confirmed`: el motor la deja candidata y la consolidación
-  solo confirma lo que el motor le presenta. Psicología en agent-core (`GoalsConfig`), auditada.
+  solo confirma lo que el motor le presenta (también la vital medida por proyectos). Psicología
+  en agent-core (`GoalsConfig`), auditada.
   Ver [metas](docs/decisiones/metas.md).
 - **Personas** (`PersonGuard`, reescritor de `MinorGuard`): solo existen los vecinos, su gente de
-  fuera (`offstagePeople` en la semilla, o lo que les contaron) y los personajes públicos de la
-  biblia; nada de nombres inventados en semillas, mock ni prompts. Lo que guarde texto del LLM,
-  con `guard.rewrite` (síncrono) y luego `allows`, o `vet`. Ver [personas](docs/decisiones/personas.md).
+  fuera (`offstagePeople` en la semilla, o lo que les contaron, o lo que sale en un saber suyo, o
+  la de un vecino con trato) y los personajes públicos de la biblia; apodos en `nicknames`,
+  siglas e instituciones en `institutions`; nada de nombres inventados en semillas, mock ni
+  prompts. Lo que guarde texto del LLM, con `guard.rewrite` (síncrono) y luego `allows`, o `vet`.
+  Ver [personas](docs/decisiones/personas.md).
 - **Sistemas** (`SimSystem`, `sim/systems/`): todo lo nuevo del mundo (economía, oficios…)
   es un sistema registrado, con su estado (`ctx.state`), su parte de la instantánea con su
   versión, su revisión, sus secciones del prompt (decidir y plan), su parte de la consolidación
@@ -78,6 +87,8 @@ TypeScript estricto. El porqué de cada decisión está en [docs/decisiones/](do
 - **Azar** solo por el `Rng` inyectado (`seededRng`); nunca `Math.random()` (salvo efectos visuales).
 - **Datos**: Drizzle (`db/schema.ts`); tras cambiar el esquema, `pnpm db:generate` y commit de la
   migración. Todo dato persistente lleva `world_id` y funciona también en RAM. Embeddings de 384.
+  Todo número que calcula la simulación y va a una columna `real`/`double`, con su rango en
+  `db/ranges.ts` (`bounded`) antes de escribirlo.
 - **Instantáneas**: estado nuevo del runtime o del agente → `SimSnapshot` (o `AgentMind`) y subir
   `SIM_SNAPSHOT_VERSION`; el de un sistema, en su `snapshot` y subiendo su `version`.
 - **Test dorado** (`sim/golden.test.ts`, 3 días en mock): un refactor no lo cambia; un cambio de
@@ -99,12 +110,14 @@ TypeScript estricto. El porqué de cada decisión está en [docs/decisiones/](do
   ejecuta la CI). `pnpm -s typecheck` puede esconder errores de tsc: mira el código de salida.
 - `pnpm --filter @lethetown/server cost:report 48` (coste reproducible y espera de respuesta) ·
   `latency:probe [min] [x]` (prueba real corta) · `record <dir>` / `world:export <dir>` (grabar
-  una partida) · `pnpm study:analyze <dir> [<otro>]` (analizarla) · `sim:text <horas>` ·
+  una partida) · `pnpm study:analyze <dir> [<otro> …]` (analizarla) · `sim:text <horas>` ·
   `pnpm interview [--advance h]` · `pnpm personality:derive` · `pnpm knowledge:derive` ·
   `pnpm goals:derive` · `pnpm skills:derive` · `pnpm map:generate` ·
   `pnpm assets:check` · `pnpm portraits:compose` · `pnpm user:create <usuario> [rol]`.
 - Postgres de docker-compose en el puerto **5433**. Retención de datos: `config/retention.json`.
-- Partidas de estudio largas: `.env.study.example` (capa sobre `.env`; la Batch API solo a ≤ x10).
+- Partidas de estudio largas: `.env.study.example` (capa sobre `.env`; la Batch API solo a ≤ x10);
+  `scripts/estudio-semana.sh` con `OFFSET_MINUTES` y `ABLATION=on`; `record` deja `manifest.json`.
+  Mundos a la vez comparten caché: el coste que vale es la suma (`study:analyze` con varias carpetas).
 
 ## Estilo
 

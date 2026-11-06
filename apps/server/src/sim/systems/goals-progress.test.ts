@@ -278,3 +278,107 @@ describe("conseguir no es contar: Julián e Inés", () => {
     expect(other.status).toBe("active");
   });
 });
+
+describe("meta vital por proyectos: contar no es conseguir (corrección 3.5)", () => {
+  let seq = 0;
+  /** Le propone un proyecto de una nota a su vital y lo cumple (una nota en el tablón). */
+  async function finishProject(id: string, text: string) {
+    await applyProposals(
+      ctx,
+      agent(id),
+      [
+        {
+          op: "add",
+          level: "project",
+          parent: life(id).id,
+          text,
+          criterion: { type: "notes", count: 1 },
+        },
+      ],
+      ctx.clock.now(),
+    );
+    goalsOnEvent(ctx, {
+      id: `vital-${++seq}`,
+      time: ctx.clock.now(),
+      agentId: id,
+      kind: "action",
+      text: "📌",
+      participants: [id],
+      meta: { action: "post_note", ok: true },
+    });
+    expect(byText(id, text)?.status).toBe("achieved");
+  }
+  const lifeOf = (id: string, text: string) => goalsOf(ctx, id).find((g) => g.text === text)!;
+
+  it("Leo: con sus 4 proyectos el pez queda candidato; si la noche no lo confirma, sigue activo", async () => {
+    const pez = lifeOf("leo", "Encontrar el pez gigante del lago");
+    expect(pez.criterion).toMatchObject({ type: "projects", count: 4 });
+    for (const t of [
+      "Preguntar por el pez",
+      "Dibujar el pez",
+      "Mirar bajo las piedras",
+      "Buscar la red",
+    ]) {
+      await finishProject("leo", t);
+    }
+    expect(pez.status).toBe("active");
+    expect(pez.progress).toBe(0.95);
+    expect(goalsState(ctx).candidates.has(pez.id)).toBe(true);
+    const prompt = consolidationPrompt(ctx, agent("leo"));
+    expect(prompt).toContain(
+      `- ${pez.id} «Encontrar el pez gigante del lago»: ¿Has logrado de verdad`,
+    );
+    expect(prompt).toContain("Lo que se hizo: «Preguntar por el pez» (conseguido) | ");
+    await applyProposals(
+      ctx,
+      agent("leo"),
+      [{ op: "confirm", id: pez.id, achieved: false, reason: "aún no lo he visto" }],
+      ctx.clock.now(),
+    );
+    expect(pez.status).toBe("active");
+    const audit = await ctx.deps.memory.store.audit("leo", 80);
+    expect(
+      audit.some(
+        (a) =>
+          a.reason.includes("sin confirmar: sus proyectos se cumplen") &&
+          a.reason.includes("aún no lo he visto"),
+      ),
+    ).toBe(true);
+    // Sin nada nuevo hecho, no se vuelve a presentar; con otro proyecto cumplido, sí.
+    expect(consolidationPrompt(ctx, agent("leo"))).not.toMatch(/Para comprobar/);
+    await finishProject("leo", "Ir al lago con la red de Sofía");
+    expect(consolidationPrompt(ctx, agent("leo"))).toMatch(
+      /Lo que se hizo: «Ir al lago con la red de Sofía» \(conseguido\)/,
+    );
+  });
+
+  it("Valentina: no se consigue hasta que la noche confirma que sabe qué pasó con su abuela", async () => {
+    const abuela = lifeOf("valentina", "Descubrir qué pasó con mi abuela");
+    for (const t of [
+      "Hablar con Aurora",
+      "Leer las cartas",
+      "Ir a la plaza",
+      "Preguntar a Tomás",
+    ]) {
+      await finishProject("valentina", t);
+    }
+    expect(abuela.status).toBe("active");
+    consolidationPrompt(ctx, agent("valentina"));
+    await applyProposals(
+      ctx,
+      agent("valentina"),
+      [{ op: "confirm", id: abuela.id, achieved: false, reason: "sigo sin saber dónde acabó" }],
+      ctx.clock.now(),
+    );
+    expect(abuela.status).toBe("active");
+    await finishProject("valentina", "Que Aurora me cuente El verano en que Alma se fue");
+    expect(consolidationPrompt(ctx, agent("valentina"))).toMatch(/Para comprobar/);
+    await applyProposals(
+      ctx,
+      agent("valentina"),
+      [{ op: "confirm", id: abuela.id, achieved: true, reason: "Aurora me lo contó" }],
+      ctx.clock.now(),
+    );
+    expect(abuela.status).toBe("achieved");
+  });
+});

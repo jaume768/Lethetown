@@ -11,6 +11,8 @@ import {
   RandomSourceConfuser,
   seededRng,
   InMemoryStore,
+  withAblation,
+  type ABLATION_FLAGS,
   type MemoryStore,
 } from "@lethetown/agent-core";
 import { PgMemoryStore } from "../db/pg-memory-store";
@@ -21,12 +23,23 @@ import { createMinorGuard } from "./security";
 import type { Services } from "./types";
 import type { Rng, LLMClient } from "@lethetown/agent-core";
 
-/** Config de memoria: valores por defecto + config/memory.json si existe. */
-export async function loadMemoryConfig(log: (msg: string) => void): Promise<MemoryConfig> {
+/**
+ * Config de memoria: valores por defecto + config/memory.json si existe, y la ablación
+ * (`MEMORY_ABLATION`, para un mundo de control en una partida de estudio).
+ */
+export async function loadMemoryConfig(
+  log: (msg: string) => void,
+  ablation: (typeof ABLATION_FLAGS)[number][] = [],
+): Promise<MemoryConfig> {
   const file = "config/memory.json";
-  if (!existsSync(fromRoot(file))) return MemoryConfig.parse({});
-  log(`Config de memoria: ${file}`);
-  return readJson(MemoryConfig, file);
+  let cfg = MemoryConfig.parse({});
+  if (existsSync(fromRoot(file))) {
+    log(`Config de memoria: ${file}`);
+    cfg = await readJson(MemoryConfig, file);
+  }
+  for (const flag of ablation) cfg.ablation[flag] = true;
+  if (ablation.length) log(`⚗ Ablación de la memoria: ${ablation.join(", ")}`);
+  return withAblation(cfg);
 }
 
 /** Memoria de un mundo: almacén (Postgres o RAM), azar, protección de menores y perfiles. */

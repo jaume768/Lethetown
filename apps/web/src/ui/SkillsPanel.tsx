@@ -15,15 +15,20 @@ interface Props {
   agents: AgentState[];
 }
 
-/** «principiante», «se defiende», «bien», «con maestría» (como en el motor). */
-export function levelKey(level: number): MessageKey {
-  return level < 0.2
-    ? "skills.level.novice"
-    : level < 0.45
-      ? "skills.level.fair"
-      : level < 0.7
-        ? "skills.level.good"
-        : "skills.level.expert";
+const LEVEL_KEYS: MessageKey[] = [
+  "skills.level.novice",
+  "skills.level.fair",
+  "skills.level.good",
+  "skills.level.expert",
+];
+
+/**
+ * «principiante», «se defiende», «bien», «con maestría» (como en el motor): el escalón que da el
+ * motor (con histéresis) o, sin él, el de su nivel.
+ */
+export function levelKey(level: number, tier?: number | null): MessageKey {
+  const plain = level < 0.2 ? 0 : level < 0.45 ? 1 : level < 0.7 ? 2 : 3;
+  return LEVEL_KEYS[tier ?? plain]!;
 }
 
 const hours = (min: number) => Math.round((min / 60) * 10) / 10;
@@ -47,7 +52,7 @@ export function SkillsPanel({ agent, agents }: Props) {
       <li key={s.skill} className="card">
         <div className="row">
           <b>{label(s.skill)}</b>
-          <span className="tag">{t(levelKey(s.level))}</span>
+          <span className="tag">{t(levelKey(s.level, s.tier))}</span>
           {s.learnedFrom && (
             <span className="tag">{t("skills.learnedFrom", { name: name(s.learnedFrom) })}</span>
           )}

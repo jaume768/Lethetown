@@ -2,7 +2,7 @@
 import type { ShareLoreAction } from "@lethetown/shared";
 import type { z } from "zod";
 import type { SimContext } from "../context";
-import { heldBy, holderOf, loreState, shareLore } from "../lore";
+import { holderOf, knowsFreshly, loreState, shareLore, tellable } from "../lore";
 import { isHere, registerAction, type ActionContext } from "./registry";
 import { teachingRule } from "./skills";
 
@@ -12,12 +12,22 @@ const someoneHere = (c: ActionContext) => [...c.ctx.agents.keys()].some((id) => 
 
 registerAction<z.infer<typeof ShareLoreAction>>({
   type: "share_lore",
-  available: (c) => someoneHere(c) && heldBy(c.ctx, c.agent.id).length > 0,
+  available: (c) =>
+    someoneHere(c) &&
+    tellable(
+      c.ctx,
+      c.agent.id,
+      [...c.ctx.agents.keys()].filter((id) => isHere(c, id)),
+      c.now,
+    ).length > 0,
   check: (c, a) => {
     if (!isHere(c, a.who)) return `${nameOf(c.ctx, a.who)} no está aquí`;
     const l = loreState(c.ctx).lore.get(a.loreId);
     const mine = holderOf(c.ctx, a.loreId, c.agent.id);
     if (!l || !mine || mine.forgottenAt !== null) return `no sé nada de "${a.loreId}"`;
+    if (knowsFreshly(c.ctx, a.loreId, a.who, c.now)) {
+      return `${firstOf(c.ctx, a.who)} ya se sabe «${l.title}» entero y me lo oyó hace poco`;
+    }
     return teachingRule(c.ctx, [c.agent.id, a.who], c.agent.state.locationId);
   },
   describe: ({ ctx }, a) =>

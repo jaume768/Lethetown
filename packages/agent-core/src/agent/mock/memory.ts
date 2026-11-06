@@ -75,18 +75,21 @@ function mockGoals(prompt: string): unknown[] {
 }
 
 /**
- * Lo que el motor presenta para comprobar («- g12 «…»: ¿…? Lo que se dijo: A: «…» | B: «…»»):
- * el mock lo da por logrado con tres frases o más (una charla de verdad), y si no, aún no.
+ * Lo que el motor presenta para comprobar («- g12 «…»: ¿…? Lo que se dijo: A: «…» | B: «…»»,
+ * o «Lo que se hizo: «proyecto» (conseguido) | …» para una meta vital): el mock lo da por
+ * logrado con tres frases o proyectos o más, y si no, aún no.
  */
 function mockConfirms(prompt: string): unknown[] {
   const at = prompt.indexOf("Para comprobar (");
   if (at < 0) return [];
+  const marker = (l: string) =>
+    ["Lo que se dijo: ", "Lo que se hizo: "].find((m) => l.includes(m)) ?? "";
   return prompt
     .slice(at)
     .split("\n")
-    .filter((l) => l.startsWith("- g") && l.includes("Lo que se dijo: "))
+    .filter((l) => l.startsWith("- g") && marker(l))
     .map((l) => {
-      const said = l.slice(l.indexOf("Lo que se dijo: ") + 16);
+      const said = l.slice(l.indexOf(marker(l)) + 16);
       const lines = said.startsWith("(") ? 0 : said.split(" | ").length;
       return {
         op: "confirm",

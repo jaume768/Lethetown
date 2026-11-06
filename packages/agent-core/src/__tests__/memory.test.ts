@@ -188,7 +188,16 @@ describe("umbrales de olvido y vaguedad", () => {
 
     const updated = await store.get(fresh.id);
     expect(updated?.accessCount).toBe(1);
-    expect(updated?.stability).toBeGreaterThan(fresh.stability);
+    expect(updated?.strength).toBe(1);
+    // Recién guardado (Δt = 0): evocarlo no lo consolida más (efecto de espaciado).
+    expect(updated?.stability).toBe(fresh.stability);
+    await memory.retrieve({
+      agentId: "a",
+      query: "libro de Lucía",
+      now: now + 24 * HOUR,
+      moodValence: 0,
+    });
+    expect((await store.get(fresh.id))?.stability).toBeGreaterThan(fresh.stability);
   });
 });
 

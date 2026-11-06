@@ -72,7 +72,7 @@ export async function createServices(
     pricing,
     routing,
     embedder,
-    memoryConfig: await loadMemoryConfig(log),
+    memoryConfig: await loadMemoryConfig(log, config.MEMORY_ABLATION),
     retention: await loadRetentionConfig(log),
     seeds,
     bible: await loadWorldBible(log),

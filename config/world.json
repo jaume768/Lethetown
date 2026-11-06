@@ -475,7 +475,43 @@
     { "term": "Mega Drive", "kind": "other", "year": 1990, "source": "Sega, en España desde 1990" },
     { "term": "Seat Ibiza", "kind": "other", "year": 1984, "source": "Seat, desde 1984" },
     { "term": "Opel Corsa", "kind": "other", "year": 1982, "source": "desde 1982" },
-    { "term": "Mercedes", "kind": "other", "year": 1926, "source": "la marca de coches" }
+    { "term": "Mercedes", "kind": "other", "year": 1926, "source": "la marca de coches" },
+    {
+      "term": "Fela Kuti",
+      "kind": "music",
+      "year": 1970,
+      "source": "el afrobeat de Lagos, desde los setenta; murió en 1997 (lo nombran Hugo y Samuel)"
+    },
+    { "term": "Bob Dylan", "kind": "music", "year": 1962, "source": "primer álbum, 1962" }
+  ],
+  "institutions": [
+    "BUP",
+    "COU",
+    "EGB",
+    "ESO",
+    "FP",
+    "PAU",
+    "Selectividad",
+    "UIB",
+    "Universitat",
+    "Instituto",
+    "Ajuntament",
+    "Ayuntamiento",
+    "Govern",
+    "Govern Balear",
+    "Consell",
+    "Consell de Mallorca",
+    "Conselleria",
+    "Parlament",
+    "Insalud",
+    "Seguridad Social",
+    "INEM",
+    "Hacienda",
+    "Guardia Civil",
+    "Policía Local",
+    "Correos",
+    "Renfe",
+    "SFM"
   ],
   "anachronisms": [
     { "term": "móvil con internet", "label": "teléfonos con internet (posteriores)" },
@@ -513,6 +549,7 @@
   "personGuard": {
     "mode": "enforce",
     "publicFigures": [
+      "Fela",
       "José Luis Rodríguez Zapatero",
       "Zapatero",
       "Mariano Rajoy",

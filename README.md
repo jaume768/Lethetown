@@ -533,6 +533,13 @@ la consolidación y el plan, igual. Las metas conseguidas en 48 h bajan de 9 a 3
 mock ya no cumple proyectos con cualquier charla. Detalle en
 [PROGRESS-CORRECCION-2-5.md](PROGRESS-CORRECCION-2-5.md).
 
+Corrección 3.5 (de la tercera partida de estudio; mismo método): de 4.028 llamadas y ≈ 0,85 $ a
+3.632 y ≈ 0,80 $. El efecto de espaciado deja estabilidades menores (más esencias, muchos menos
+resúmenes por presupuesto: 77 → 3) y la enseñanza repetida deja menos vínculo, así que hay algo
+menos de charla (533 → 434 respuestas). El prefijo común del prompt fijo, con su propio punto de
+caché, no se ve en el mock: hay que medirlo con el LLM real. Detalle en
+[PROGRESS-CORRECCION-3-5.md](PROGRESS-CORRECCION-3-5.md).
+
 ### Limitaciones
 
 - No reproduce la memoria humana: son analogías computacionales con parámetros de diseño
@@ -638,4 +645,5 @@ El cliente elige automáticamente el pack con el que se generó el mapa (propied
 8. **Mundo y metas** ✅ Mallorca en 2002 (al principio, 1996) (biblia, calendario, clima, perfil de conocimiento, registro de anacronismos) y metas medibles con psicología, conflictos y marcharse del pueblo.
    - **Desarrollo y aprendizaje** ✅ habilidades que se practican, se enseñan y se oxidan; saberes del pueblo que se cuentan, se deforman y se pierden; deriva lenta de la personalidad; pestaña «Habilidades y saberes» y «Saberes del pueblo».
    - **Corrección 2.5** ✅ (de la segunda partida de estudio): pasos que no se pierden y siguiente proyecto, metas cualitativas comprobadas de noche, frustración que lleva a abandonos en una semana, intenciones sin inflación, nadie inventa vecinos (`PersonGuard`) y menos ruido en los registros.
+   - **Corrección 3.5** ✅ (de la tercera partida de estudio): menos ruido en el `PersonGuard` (apodos, siglas, listas, conocidos por otros) y en familia para la protección de menores, efecto de espaciado en la memoria, metas vitales confirmadas de noche, habilidades con histéresis y práctica rutinaria, enseñanza sin encadenar, deriva de la personalidad con lo malo y respecto al pueblo, saberes que no se repiten y se deforman, comer lo hecho, caché del prefijo común, rangos en la base de datos y partidas de estudio con desfase, control en ablación y manifiesto.
 9. **Siguiente**: economía (`buy_item` / `sell_item`, ya preparada con `Item.value`; en euros), mensajes a distancia (teléfonos fijos y cabinas, cartas), ciclo vital (las metas aplazadas de los menores), la evaluación comparativa con modelos reales, OAuth, editor de mundos y agentes desde la web, traducción de los prompts (hoy se pide al modelo que responda en el idioma del mundo).

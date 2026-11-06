@@ -1,5 +1,6 @@
 import { WEATHER_SHELTER } from "@lethetown/shared";
 import type { CompletionRequest } from "../../llm/types";
+import { IDENTITY_HEADING } from "../../llm/types";
 import {
   NOT_FOR_OUTINGS,
   WORK_BY_ID,
@@ -41,7 +42,11 @@ function mockPlan(req: CompletionRequest): string {
   const age = Number(/^Eres .+?, (\d+) años/m.exec(req.system)?.[1] ?? 99);
   const student = age < 18;
   // Sitios que su descripción menciona (sus favoritos), aunque no sean de paseo.
-  const description = req.system.slice(0, req.system.indexOf("## Lugares"));
+  // Solo su identidad (lo común a todos, las reglas y la biblia, va antes).
+  const description = req.system.slice(
+    Math.max(0, req.system.indexOf(`\n${IDENTITY_HEADING}\n`)),
+    req.system.indexOf("## Lugares"),
+  );
   const favorites = places.filter(
     (p) => p.kind !== "home" && (description.includes(p.name) || description.includes(p.id)),
   );

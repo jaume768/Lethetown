@@ -28,3 +28,9 @@
 - **tsx en producción** (los paquetes se consumen como TypeScript); Docker multi-stage con Caddy.
 - **Tablas de las acciones** (`commitments`, `known_places`, `inventory_items`, `notes`), todas con
   `world_id`; la retención borra notas caducadas (7 días) y citas cerradas (30 días de juego).
+- **Rangos antes de guardar** (corrección 3.5; una estabilidad de 3,8·10³⁸ h se salió del `real`
+  de Postgres y se perdieron ticks): cada almacén de Postgres pasa los números que calcula la
+  simulación por `db/ranges.ts` (`bounded`): fuerza, confianza, familiaridad, progreso, nivel,
+  fidelidad… en [0, 1]; valencia y afinidad en [−1, 1]; la estabilidad, en [10⁻⁶, 10⁹] h; NaN y
+  ±∞ a un valor seguro. Un test fuerza valores extremos y comprueba que toda columna `real` del
+  esquema tiene su rango.

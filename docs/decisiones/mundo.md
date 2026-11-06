@@ -69,6 +69,12 @@
   Linkin Park, el Mundial de Corea y Japón, Movistar y Amena, PlayStation 2…). No cuentan como de
   fuera ni como personas inventadas. Lo que es de después de abril (la novena del Real Madrid, de
   mayo) queda anotado en `source`.
+- **Siglas e instituciones** (`institutions` en la biblia, corrección 3.5): BUP, PAU, el
+  Ajuntament, el Govern… no son referencias de fuera ni personas. Fela Kuti y Bob Dylan pasan a
+  `culturalReferences` (85 detecciones de «Fela» en una semana, de Hugo y Samuel).
+- **Etiquetas en minúscula** (corrección 3.5): lo que compone el código con la etiqueta de una
+  actividad («Suelo …», «me invita a ir ahora a …», «Según tu plan ahora toca …», el diario) le
+  baja la primera letra (`lowerFirst`, shared): «Suelo Desayunar…» salía como nombre propio.
 - **Personas inventadas**: el `PersonGuard` (ver [personas](personas.md)) registra en la misma
   tabla, con el tipo `person`, y corrige el texto en modo `enforce`.
 - **Heurística de nombres**: la mayúscula de inicio de frase engaña (lo que revisa la decisión

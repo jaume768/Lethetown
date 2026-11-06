@@ -52,5 +52,16 @@ for (const [task, x] of Object.entries(waits).sort((a, b) => b[1].calls - a[1].c
     `  cola ${task}: ${x.calls} llamadas, espera media ${(x.totalMs / x.calls / 1000).toFixed(2)} s, máx ${(x.maxMs / 1000).toFixed(1)} s`,
   );
 }
+// Caché de prompts por tarea (corrección 3.5: el prefijo común a todos los vecinos se lee de la
+// caché entre agentes; con el mock no se mide).
+for (const [task, b] of Object.entries(w.costs.summary().byTask).sort(
+  (x, y) => y[1].calls - x[1].calls,
+)) {
+  const total = b.inputTokens + b.cacheReadTokens;
+  const pct = total ? Math.round((100 * b.cacheReadTokens) / total) : 0;
+  console.log(
+    `  caché ${task}: ${b.calls} llamadas, ${b.cacheReadTokens} tokens leídos de la caché (${pct} % de la entrada), ${Math.round(b.cacheReadTokens / Math.max(1, b.calls))} por llamada`,
+  );
+}
 await app.close();
 process.exit(0);

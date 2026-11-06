@@ -28,6 +28,11 @@ export const SkillState = z.object({
   lastUsedAt: z.number().nullable(),
   /** De quién aprendió (un vecino), si alguien le enseñó. */
   learnedFrom: z.string().nullable(),
+  /**
+   * Escalón de su etiqueta (0 principiante … 3 con maestría), con histéresis: baja solo por
+   * debajo del umbral − `labelHysteresis`. Null: el de su nivel.
+   */
+  tier: z.number().int().min(0).max(3).nullable().default(null),
   /** Una entrada al día que cambia y en cada hito (acotado). */
   history: z.array(SkillHistoryEntry).default([]),
   updatedAt: z.number(),

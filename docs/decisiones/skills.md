@@ -18,6 +18,16 @@ y que eso se note en el mundo, sin que el LLM se invente el nivel de nadie. Sist
   palabras de su actividad, o por lo que se propuso (`practice`), una sesión de enseñanza o una
   ayuda. Las palabras son de **hacer, no de consumir**: «tomar un café» no practica la barra ni
   «ir al médico» los cuidados (en el primer dorado, Clara y Marta subían en «café y barra»).
+- **Práctica rutinaria** (corrección 3.5): las comidas de cada día cuentan con peso reducido
+  (`SkillsConfig.routinePracticeWeight`, 0,3). «Rutinario» lo decide el motor con lo que hace:
+  una actividad con palabras de las comidas del día (`routineActivities`: desayuno, comida,
+  cena, merienda…, al principio de palabra) en una habilidad que no deja resultado. Lo que se
+  propone practicar (`practice`), una sesión, una ayuda, algo que deja resultado (el pan, las
+  fotos) o cocinar algo que no es la comida del día («un tumbet para la fiesta») cuenta entero.
+  En la partida de una semana casi todo el pueblo subía en cocina de 0,30 a 0,55–0,60 con
+  unos 1.300 min de desayunos, comidas y cenas; ahora un adulto que solo hace sus tres comidas
+  se queda en «se defiende» (0,39 en una semana, test). Las horas de práctica se apuntan
+  enteras; solo cuenta menos lo que sube.
 - **Rendimientos decrecientes**: por hora, el nivel sube `practiceRate` (0,02) × lo que le falta;
   la curva es exacta (1 − e^(−r·h)), así que no depende de cada cuánto se mida. De 0 a 0,5, unas
   35 h; de 0,5 a 0,75, otras tantas. × 2 con un maestro delante que le saque 0,2 (en una sesión o,
@@ -30,6 +40,13 @@ y que eso se note en el mundo, sin que el LLM se invente el nivel de nadie. Sist
 - **Niveles sin género**: «principiante» (< 0,2), «se defiende» (< 0,45), «bien» (< 0,7) y «con
   maestría». Los hitos (cambiar de etiqueta, arriba o abajo) van a la auditoría (`skill`), como
   evento (🎓 / 🕸) y como drama («aprende algo»).
+- **Histéresis en las etiquetas** (corrección 3.5, `SkillsConfig.labelHysteresis`, 0,02): se
+  sube al cruzar el umbral y se baja solo por debajo de umbral − 0,02. El escalón se guarda
+  (`tier` en la tabla `skills` y en la instantánea; null = el de su nivel). En la partida de una
+  semana, el día 4 a las 00:00 bajaban de etiqueta 8 habilidades por mundo a la vez: valores de
+  las semillas justo en 0,20, 0,45 o 0,70 que perdían milésimas al oxidarse. Además, ningún
+  nivel de partida está en un umbral (± 0,01): las semillas se subieron 0,03 (con la etiqueta
+  que se quería) y `skills:derive` hace lo mismo (`offThreshold`); un test lo comprueba.
 - **Semillas** (`skills` en `seeds/agents.json`): `pnpm skills:derive` propone por oficio,
   intereses, idiomas y edad; están revisadas a mano (el script daba «café y barra» a Lucía porque
   dibuja en el café). Un test comprueba que cada oficio es su mejor habilidad, que los menores no
@@ -47,8 +64,14 @@ y que eso se note en el mundo, sin que el LLM se invente el nivel de nadie. Sist
   de ánimo y de afinidad hacia quien lo hizo (algo en contra si sale mal).
 - **Resultados**: 45 minutos seguidos practicando algo que deja resultado (fotos, dibujos, pan,
   verduras) dan un objeto del inventario con su calidad, como mucho 3 a la vez por persona; se
-  regalan con `show_result` (quien lo recibe nota la calidad). No hay economía todavía: el pan se
-  acumula hasta 3.
+  regalan con `show_result` (quien lo recibe nota la calidad). No hay economía todavía.
+- **Consumir lo hecho** (corrección 3.5; en la partida de una semana se acumularon 49 cestas de
+  verdura y 14 panes sin comer): con hambre ≥ `SkillsConfig.eatMinHunger` (0,5), quien lleva pan
+  o verduras (`edibleKinds`) se come uno, como mucho cada `eatEveryMinutes` (120): el objeto
+  desaparece (`ItemStore.remove`), el hambre baja `eatHungerRelief` (0,3) y, si lo hizo otro,
+  nota su calidad. Lo hace el motor en la revisión de habilidades, sin acción nueva ni LLM (no
+  cambia el catálogo) y sin comprar ni vender. En 7 días de mock (`SIM_SEED=7`): 34 cosas
+  comidas, 29 objetos en el pueblo y nadie lleva más de 4 (métrica `carriedMax`).
 - **Metas** `skill_level` {skill, level}: aprender o mejorar en algo, desde el nivel al crearla
   (lo que ya se sabe no es una meta). Inés empieza con «Aprender a hacer buenas fotos con
   Valentina» (0,5).
@@ -64,6 +87,13 @@ Ver las acciones en [acciones](acciones.md#aprender-y-enseñar).
   en 30 minutos. Juntas 60 minutos (`sessionMinutes`): el alumno practica con maestro y el maestro
   practica «enseñar». Si se separan, acaba antes. Al acabar, afinidad y familiaridad para los dos
   (0,05), un recuerdo para cada uno y el drama «maestro y alumno».
+- **Sin encadenar sesiones** (corrección 3.5; en la partida de una semana, Mateo y Hugo
+  encadenaron 17 eventos de enseñanza de café y barra): la misma pareja y habilidad no tiene más
+  de `SkillsConfig.maxSessionsPerPairDay` (2) sesiones al día. Pasado el tope no se ofrece (ni
+  «Aquí sabe más que tú», ni `teach`, ni `ask_to_learn`) y, si el LLM lo pide, el motor lo
+  rechaza con el motivo. Cada repetición del día deja afinidad y familiaridad ×
+  `sessionRepeatDamping`^(n − 1) (0,5) y el evento lleva `meta.repeat`: su drama vale la mitad
+  (la segunda ya no llega al mínimo). Las cuentas del día van en la instantánea del sistema.
 - **Solo se ofrecen cuando tienen sentido** (cada acción ofrecida cuesta tokens): pedir si alguien
   de aquí sabe claramente más; enseñar si se le saca ventaja a alguien de aquí; ayudar si alguien
   practica algo; practicar con tiempo libre.

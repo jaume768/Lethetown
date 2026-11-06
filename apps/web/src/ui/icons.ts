@@ -43,6 +43,7 @@ export const ACTION_ICONS: Record<string, string> = {
   share_lore: "📜",
   skill: "🎓",
   skill_result: "🖼",
+  eat_result: "🍞",
   lore: "📜",
   lore_lost: "🕯",
   personality: "🌱",

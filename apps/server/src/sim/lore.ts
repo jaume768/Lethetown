@@ -5,10 +5,18 @@
  * habilidad, ir a su sitio) lo refuerza; sin uso se olvida y, si nadie lo sabe ya con fidelidad
  * suficiente, se pierde para el pueblo. Ver docs/decisiones/lore.md.
  */
-import { forgetLore, transmit, useLore, type Agent, type LoreConfig } from "@lethetown/agent-core";
+import {
+  forgetLore,
+  knownByTown,
+  transmit,
+  useLore,
+  type Agent,
+  type LoreConfig,
+} from "@lethetown/agent-core";
 import type { HeldElement, Lore, LoreHolder } from "@lethetown/shared";
 import { InMemoryLoreStore, type LoreStore } from "../db/skills";
 import { errorMessage, type SimContext } from "./context";
+import { presentWith } from "./perception";
 import { levelOf, skillsState, type PracticeTick } from "./skills";
 
 /** Usar un saber cuenta, como mucho, una vez cada este rato (min de juego). */
@@ -26,6 +34,8 @@ export interface LoreState {
   listening: boolean;
   /** Cuándo se le ofrecieron sus saberes en una decisión. */
   shownAt: Map<string, number>;
+  /** Quien escucha cuándo alguien aprende un saber (el sistema `knowledge`: a quién conoce). */
+  onLearned: ((agentId: string, l: Lore) => void)[];
 }
 
 const hkey = (loreId: string, agentId: string) => `${loreId}:${agentId}`;
@@ -40,6 +50,7 @@ export const loreState = (ctx: SimContext) =>
     counts: { transmissions: 0, forgotten: 0, lost: 0, altered: 0 },
     listening: false,
     shownAt: new Map(),
+    onLearned: [],
   }));
 
 export const loreCfg = (ctx: SimContext): LoreConfig => ctx.deps.memory.config.lore;
@@ -91,6 +102,25 @@ export function heldBy(ctx: SimContext, agentId: string): { lore: Lore; holder: 
 
 export function holderOf(ctx: SimContext, loreId: string, agentId: string) {
   return loreState(ctx).holders.get(hkey(loreId, agentId));
+}
+
+/**
+ * ¿Ya lo sabe entero y lo oyó o usó hace poco (`retellCooldownDays`)? Entonces no tiene sentido
+ * contárselo otra vez (ni se ofrece ni se acepta).
+ */
+export function knowsFreshly(ctx: SimContext, loreId: string, agentId: string, now: number) {
+  const l = loreState(ctx).lore.get(loreId);
+  const h = holderOf(ctx, loreId, agentId);
+  if (!l || !h || h.forgottenAt !== null || h.elements.length < l.elements.length) return false;
+  const last = h.lastUsedAt ?? h.learnedAt;
+  return now - last < loreCfg(ctx).retellCooldownDays * 1440;
+}
+
+/** Saberes suyos que tiene sentido contar a alguno de estos (que no lo sepa ya, o no hace poco). */
+export function tellable(ctx: SimContext, agentId: string, listeners: string[], now: number) {
+  return heldBy(ctx, agentId).filter(({ lore: l }) =>
+    listeners.some((id) => !knowsFreshly(ctx, l.id, id, now)),
+  );
 }
 
 /**
@@ -190,6 +220,8 @@ export function shareLore(
     saveHolder(ctx, prev);
     return { kept: r.elements.length, lost: r.lost, altered: r.altered };
   }
+  // Antes de que lo recuerde: ya conoce a la gente que sale en el saber (Francisca, Alma).
+  for (const f of s.onLearned) f(listenerId, l);
   saveHolder(ctx, {
     loreId,
     agentId: listenerId,
@@ -300,10 +332,10 @@ export function loreTick(ctx: SimContext, now: number): void {
   }
   for (const l of s.lore.values()) {
     if (l.lostAt !== null) continue;
-    const alive = [...s.holders.values()].some(
-      (h) => h.loreId === l.id && h.forgottenAt === null && h.fidelity >= cfg.minFidelity,
-    );
-    if (alive) continue;
+    const holders = [...s.holders.values()]
+      .filter((h) => h.loreId === l.id)
+      .map((h) => ({ fidelity: h.fidelity, forgotten: h.forgottenAt !== null }));
+    if (knownByTown(holders, cfg)) continue;
     l.lostAt = now;
     s.counts.lost++;
     saveLore(ctx, l);
@@ -326,8 +358,12 @@ export function loreLines(ctx: SimContext, agent: Agent, now: number): string[] 
   const s = loreState(ctx);
   const last = s.shownAt.get(agent.id);
   if (last !== undefined && now - last < DECIDE_COOLDOWN) return [];
+  // Solo lo que alguno de los presentes no sabe ya (o no oyó hace poco).
+  const present = presentWith(ctx, agent).map((p) => p.id);
+  const items = tellable(ctx, agent.id, present, now);
+  if (!items.length) return [];
   s.shownAt.set(agent.id, now);
-  return heldBy(ctx, agent.id)
+  return items
     .sort((a, b) => b.holder.fidelity - a.holder.fidelity)
     .slice(0, 3)
     .map(

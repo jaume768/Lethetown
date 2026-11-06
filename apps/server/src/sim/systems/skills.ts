@@ -4,12 +4,13 @@
  * LLM: lo variable va compacto al plan y, como mucho cada 3 h, a la decisión. Ver
  * docs/decisiones/skills.md.
  */
-import { levelLabel } from "@lethetown/agent-core";
 import { formalAction } from "../agreements";
 import { SkillState } from "@lethetown/shared";
 import { z } from "zod";
+import { itemsState } from "../items";
 import {
   decideSkillsLine,
+  labelOf,
   maybeResult,
   sessionsTick,
   teachingLines,
@@ -111,6 +112,8 @@ registerSystem({
         z.string(),
         z.object({ quality: z.number(), makerId: z.string(), skill: z.string() }),
       ),
+      /** Sesiones de hoy por pareja y habilidad (corrección 3.5; sin ella, vacías). */
+      pairDay: z.record(z.string(), z.number()).default({}),
     }),
     save: (ctx) => {
       const s = skillsState(ctx);
@@ -124,6 +127,7 @@ registerSystem({
         practiceMinutes: s.practiceMinutes,
         streak: Object.fromEntries(s.streak),
         results: Object.fromEntries(s.results),
+        pairDay: Object.fromEntries(s.pairDay),
       };
     },
     restore: (ctx, d) => {
@@ -137,6 +141,7 @@ registerSystem({
       s.practiceMinutes = d.practiceMinutes;
       s.streak = new Map(Object.entries(d.streak));
       s.results = new Map(Object.entries(d.results));
+      s.pairDay = new Map(Object.entries(d.pairDay));
     },
   },
   load: async (ctx, { restored, now }) => {
@@ -182,11 +187,19 @@ registerSystem({
       tracked: all.length,
       sessions: skillsState(ctx).counts.sessions,
       helps: skillsState(ctx).counts.helps,
+      eaten: skillsState(ctx).counts.eaten,
+      // Lo que lleva encima el que más lleva (los inventarios no deben crecer sin límite).
+      carriedMax: Math.max(
+        0,
+        ...[...ctx.agents.keys()].map(
+          (id) => [...itemsState(ctx).items.values()].filter((i) => i.holderId === id).length,
+        ),
+      ),
       shown: skillsState(ctx).counts.shown,
       results: skillsState(ctx).results.size,
     };
     for (const s of all) {
-      const label = `level.${levelLabel(s.level)}`;
+      const label = `level.${labelOf(s)}`;
       out[label] = (out[label] ?? 0) + 1;
       out[`mean.${s.skill}`] = (out[`mean.${s.skill}`] ?? 0) + s.level;
       out[`n.${s.skill}`] = (out[`n.${s.skill}`] ?? 0) + 1;

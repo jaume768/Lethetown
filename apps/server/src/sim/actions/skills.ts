@@ -3,7 +3,7 @@
  * Enseñar a un menor o ayudarle: solo en un sitio público (la escuela incluida) o en su casa con
  * su familia (`teachingRule`).
  */
-import { applySocialUpdate, levelLabel, skillDef } from "@lethetown/agent-core";
+import { applySocialUpdate, skillDef } from "@lethetown/agent-core";
 import {
   seedIsMinor,
   type AcceptTeachingAction,
@@ -20,14 +20,17 @@ import { itemsState, saveItem } from "../items";
 import { mayEnter } from "../norms";
 import { goOrDo, setAction } from "../routines";
 import {
+  labelOf,
   levelOf,
   mastersHere,
+  mayRepeatSession,
   pendingSession,
   practiceNow,
   proposeSession,
   resultsOf,
   sessionsAwaiting,
   skillLabel,
+  skillState,
   skillsCfg,
   skillsState,
   startSession,
@@ -105,7 +108,7 @@ registerAction<z.infer<typeof PracticeAction>>({
     ctx.emit(
       "action",
       agent.id,
-      `🎯 ${agent.seed.name} se pone a practicar ${def.label} (${levelLabel(levelOf(ctx, agent.id, a.skill))})`,
+      `🎯 ${agent.seed.name} se pone a practicar ${def.label} (${labelOf(skillState(ctx, agent.id, a.skill, now))})`,
       [agent.id],
       undefined,
       { action: "practice", ok: true },
@@ -137,6 +140,9 @@ function checkTeaching(
   }
   if (sessionsAwaiting(ctx, who, c.now).some((v) => v.proposedBy === agent.id)) {
     return `ya le he propuesto algo a ${firstOf(ctx, who)}`;
+  }
+  if (!mayRepeatSession(ctx, teacherId, learnerId, skill, c.now)) {
+    return `${firstOf(ctx, who)} y yo ya hemos tenido hoy bastantes sesiones de ${skillLabel(ctx, skill)}`;
   }
   return teachingRule(ctx, [teacherId, learnerId], agent.state.locationId);
 }
@@ -185,13 +191,18 @@ function canTeachHere(c: ActionContext): boolean {
   );
   return [...c.ctx.agents.keys()].some(
     (id) =>
-      isHere(c, id) && mine.some((s) => s.level - levelOf(c.ctx, id, s.skill) >= cfg.masterGap * 2),
+      isHere(c, id) &&
+      mine.some(
+        (s) =>
+          s.level - levelOf(c.ctx, id, s.skill) >= cfg.masterGap * 2 &&
+          mayRepeatSession(c.ctx, c.agent.id, id, s.skill, c.now),
+      ),
   );
 }
 
 registerAction<z.infer<typeof AskToLearnAction>>({
   type: "ask_to_learn",
-  available: (c) => mastersHere(c.ctx, c.agent).length > 0,
+  available: (c) => mastersHere(c.ctx, c.agent, c.now).length > 0,
   check: (c, a) => checkTeaching(c, a.who, a.skill, a.who, c.agent.id),
   describe: ({ ctx }, a) =>
     `pedirle a ${firstOf(ctx, a.who)} que me enseñe ${skillLabel(ctx, a.skill)}`,

@@ -224,6 +224,15 @@ export const SkillsConfig = z.object({
   qualityAffinity: unit(0.03),
   /** Resultados (fotos, dibujos, pan…) que puede guardar alguien a la vez. */
   maxResults: z.number().int().nonnegative().default(3),
+  /**
+   * Consumir lo hecho (corrección 3.5: en una semana se acumularon 49 cestas de verdura y 14
+   * panes sin comer). Con hambre ≥ `eatMinHunger`, quien lleva algo de comer de estos tipos se lo
+   * come (como mucho uno cada `eatEveryMinutes`): desaparece y el hambre baja `eatHungerRelief`.
+   */
+  edibleKinds: z.array(z.string()).default(["pan", "verdura"]),
+  eatMinHunger: unit(0.5),
+  eatHungerRelief: unit(0.3),
+  eatEveryMinutes: z.number().int().positive().default(120),
   /** Minutos de práctica seguidos para que salga un resultado. */
   resultMinutes: z.number().int().positive().default(45),
   /** Duración (min de juego) de una sesión de enseñanza y de una ayuda. */
@@ -232,6 +241,32 @@ export const SkillsConfig = z.object({
   /** Afinidad y familiaridad que deja una sesión de enseñanza (a los dos) o una ayuda. */
   sessionAffinity: unit(0.05),
   helpAffinity: unit(0.03),
+  /**
+   * Repetir la sesión (corrección 3.5): la misma pareja con la misma habilidad el mismo día no
+   * se ofrece más de `maxSessionsPerPairDay` veces, y cada repetición deja afinidad,
+   * familiaridad y drama × `sessionRepeatDamping`^(n − 1). En la partida de una semana, Mateo y
+   * Hugo encadenaron 17 eventos de enseñanza de café y barra.
+   */
+  maxSessionsPerPairDay: z.number().int().positive().default(2),
+  sessionRepeatDamping: unit(0.5),
+  /**
+   * Histéresis de las etiquetas: se sube al cruzar el umbral y se baja solo por debajo de
+   * umbral − esto. En la partida de una semana, 8 habilidades por mundo bajaban de etiqueta a
+   * la vez el día 4 (valores de partida justo en 0,20, 0,45 o 0,70 que perdían milésimas).
+   */
+  labelHysteresis: unit(0.02),
+  /**
+   * Práctica rutinaria (corrección 3.5): las comidas de cada día (lo que hace por su plan y su
+   * actividad lo dice: «preparar el desayuno», «hacer la cena») cuentan con este peso. En la
+   * partida de una semana todo el pueblo subía en cocina de 0,30 a 0,55–0,60 con unos 1.300 min
+   * de desayunos, comidas y cenas. Lo que se propone practicar (`practice`), una sesión, una
+   * ayuda o algo que deja resultado (pan, fotos…) cuenta entero.
+   */
+  routinePracticeWeight: unit(0.3),
+  /** Palabras de las comidas del día (normalizadas al comparar). */
+  routineActivities: z
+    .array(z.string())
+    .default(["desayun", "almuerz", "comida", "comer ", "merend", "merienda", "cena", "cenar"]),
   /** En el prompt: habilidades destacadas desde este nivel, como mucho `maxInPrompt`. */
   promptMinLevel: unit(0.35),
   maxInPrompt: z.number().int().positive().default(3),
@@ -316,15 +351,38 @@ export function qualityEffect(q: number, cfg: SkillsConfig): { mood: number; aff
   return { mood: cfg.qualityMood / 4, affinity: cfg.qualityAffinity / 3 };
 }
 
-/** «principiante», «se defiende», «bien», «con maestría» (sin género: describen el nivel). */
+/** Umbrales de las etiquetas (de «principiante» a «se defiende», a «bien», a «con maestría»). */
+export const LEVEL_THRESHOLDS = [0.2, 0.45, 0.7] as const;
+/** Sin género: describen el nivel. */
+export const LEVEL_LABELS = ["principiante", "se defiende", "bien", "con maestría"] as const;
+
+/** El escalón (0..3) de un nivel, sin histéresis. */
+export function levelTier(level: number): number {
+  return LEVEL_THRESHOLDS.filter((t) => level >= t).length;
+}
+
+/** «principiante», «se defiende», «bien», «con maestría» (sin histéresis). */
 export function levelLabel(level: number): string {
-  return level < 0.2
-    ? "principiante"
-    : level < 0.45
-      ? "se defiende"
-      : level < 0.7
-        ? "bien"
-        : "con maestría";
+  return LEVEL_LABELS[levelTier(level)]!;
+}
+
+/** La etiqueta de un escalón. */
+export function tierLabel(tier: number): string {
+  return LEVEL_LABELS[Math.max(0, Math.min(3, tier))]!;
+}
+
+/**
+ * El escalón con histéresis: sube al cruzar el umbral y baja solo por debajo de umbral −
+ * `labelHysteresis`. Sin escalón anterior, el de su nivel.
+ */
+export function nextTier(
+  level: number,
+  prev: number | null | undefined,
+  cfg: SkillsConfig,
+): number {
+  const plain = levelTier(level);
+  if (prev === null || prev === undefined || plain >= prev) return plain;
+  return Math.min(prev, levelTier(level + cfg.labelHysteresis));
 }
 
 /** La habilidad del catálogo por su id. */
@@ -336,6 +394,19 @@ export function skillDef(cfg: SkillsConfig, id: string): SkillDef | undefined {
  * Qué habilidad practica quien hace esto: el objeto que usa (la cafetera, el horno), si no las
  * palabras de la actividad. Null si no practica nada.
  */
+/**
+ * ¿Es práctica rutinaria? Una actividad de las comidas del día (`routineActivities`) con una
+ * habilidad que no deja resultado. Se decide con lo que hace (su actividad), nunca con el LLM.
+ */
+export function isRoutinePractice(action: string, skill: string, cfg: SkillsConfig): boolean {
+  if (skillDef(cfg, skill)?.result) return false;
+  const text = ` ${normalizeText(action)} `;
+  // Al principio de una palabra: «cena» no es «escena».
+  return cfg.routineActivities.some((k) =>
+    text.includes(` ${normalizeText(k)}${k.endsWith(" ") ? " " : ""}`),
+  );
+}
+
 export function skillForActivity(
   what: { action: string; spotId?: string | null },
   cfg: SkillsConfig,

@@ -7,7 +7,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { bootstrap, type App } from "../bootstrap";
 import { loadConfig } from "../config";
 import { analyzeEvolution, type EvolutionInput } from "./evolution";
-import { evolutionMarkdown } from "./markdown";
+import { evolutionMarkdown, jointCostMarkdown } from "./markdown";
 import { loadStudy } from "./study-files";
 
 let app: App;
@@ -117,5 +117,14 @@ describe("evolución", () => {
     expect(md).toContain("### En cifras");
     expect(md).toContain("### Por día de juego");
     expect(evolutionMarkdown(fromDisk, analyzeEvolution(input))).toContain("| A | B | Δ |");
+    // Varios mundos a la vez: el coste conjunto y el aviso de la caché compartida.
+    const joint = jointCostMarkdown([
+      { label: "s7", report: fromDisk },
+      { label: "s13", report: fromDisk },
+      { label: "s7a", report: fromDisk },
+    ]);
+    expect(joint).toContain("## Coste conjunto");
+    expect(joint).toContain("| **total** | 3 | **1.50** |");
+    expect(joint).toContain("comparten la caché de prompts");
   });
 });

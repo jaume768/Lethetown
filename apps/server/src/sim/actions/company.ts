@@ -1,10 +1,11 @@
 /** Invitar a ir juntos, aceptar o rechazar, y acompañar a alguien (ver sim/company.ts). */
-import type {
-  AcceptInviteAction,
-  DeclineInviteAction,
-  FollowAction,
-  Invitation,
-  InviteAction,
+import {
+  lowerFirst,
+  type AcceptInviteAction,
+  type DeclineInviteAction,
+  type FollowAction,
+  type Invitation,
+  type InviteAction,
 } from "@lethetown/shared";
 import type { z } from "zod";
 import type { SimContext } from "../context";
@@ -87,7 +88,7 @@ registerAction<z.infer<typeof InviteAction>>({
     for (const id of to) {
       ctx.rt(id).pending.push({
         kind: "world",
-        text: `${agent.seed.name} me invita a ir ahora a ${place} a ${a.activity} (invitación ${v.id}).`,
+        text: `${agent.seed.name} me invita a ir ahora a ${place} a ${lowerFirst(a.activity)} (invitación ${v.id}).`,
         placeId: agent.state.locationId,
       });
     }

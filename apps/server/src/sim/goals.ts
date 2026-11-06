@@ -108,6 +108,13 @@ export const goalsState = (ctx: SimContext) =>
 const cfgOf = (ctx: SimContext): GoalsConfig => ctx.deps.memory.config.goals;
 const clamp01 = (x: number) => Math.min(1, Math.max(0, x));
 const nameOf = (ctx: SimContext, id: string) => ctx.agents.get(id)?.seed.name ?? id;
+/**
+ * ¿Hay que comprobar de noche que se ha logrado? Lo cualitativo (`confirmed`) y la meta vital
+ * medida por proyectos (`lifeNeedsConfirmation`): contar proyectos no es conseguirla.
+ */
+const needsCheck = (ctx: SimContext, g: Goal) =>
+  g.criterion.type === "confirmed" ||
+  (g.level === "life" && g.criterion.type === "projects" && cfgOf(ctx).lifeNeedsConfirmation);
 const firstName = (ctx: SimContext, id: string) => nameOf(ctx, id).split(" ")[0]!;
 const placeName = (ctx: SimContext, id: string) =>
   ctx.world.has(id) ? ctx.world.place(id).name : id;
@@ -596,8 +603,9 @@ function refresh(ctx: SimContext, g: Goal, now: number): void {
 }
 
 function setProgress(ctx: SimContext, g: Goal, progress: number, now: number): void {
-  // Lo cualitativo no se da por hecho al contar: se queda a las puertas hasta comprobarlo.
-  const confirm = g.criterion.type === "confirmed";
+  // Lo cualitativo (y la vital por proyectos) no se da por hecho al contar: se queda a las
+  // puertas hasta comprobarlo.
+  const confirm = needsCheck(ctx, g);
   const p = confirm ? Math.min(CANDIDATE_PROGRESS, clamp01(progress)) : clamp01(progress);
   if (p > g.progress) g.lastProgressAt = now;
   g.progress = p;
@@ -616,8 +624,29 @@ function markCandidate(ctx: SimContext, g: Goal, now: number): void {
   const s = goalsState(ctx);
   if (s.candidates.has(g.id)) return;
   s.candidates.set(g.id, now);
+  // La vital se juzga con lo hecho: sus proyectos conseguidos.
+  if (g.criterion.type === "projects") {
+    s.evidence.set(
+      g.id,
+      [...s.goals.values()]
+        .filter((k) => k.parentId === g.id && k.status === "achieved")
+        .map((k) => `«${k.text}» (conseguido)`)
+        .slice(-MAX_EVIDENCE),
+    );
+  }
   historyEntry(g, now, "lo medido ya se cumple: queda para comprobarlo esta noche");
   audit(ctx, g, "candidata: lo medido se cumple, falta comprobar si de verdad se logró");
+}
+
+/**
+ * Un proyecto conseguido de una vital que ya es candidata: es algo nuevo hecho, y la vital se
+ * puede volver a presentar aunque una noche no se confirmara.
+ */
+function addLifeEvidence(ctx: SimContext, g: Goal): void {
+  const s = goalsState(ctx);
+  if (!g.parentId || !s.candidates.has(g.parentId)) return;
+  const lines = [...(s.evidence.get(g.parentId) ?? []), `«${g.text}» (conseguido)`];
+  s.evidence.set(g.parentId, lines.slice(-MAX_EVIDENCE));
 }
 
 /** Una meta vital avanza con sus proyectos (los conseguidos cuentan entero). */
@@ -662,6 +691,7 @@ function achieve(ctx: SimContext, g: Goal, now: number): void {
     return;
   }
   g.status = "achieved";
+  addLifeEvidence(ctx, g);
   g.motivation = clamp01(g.motivation + 0.2);
   g.frustration = 0;
   historyEntry(g, now, "conseguida (el motor midió el criterio)");
@@ -961,18 +991,21 @@ function confirmGoal(
   s.evidence.delete(g.id);
   historyEntry(g, now, `comprobado al repasar el día: aún no${why}`);
   persist(ctx, g);
-  audit(ctx, g, `sin confirmar: lo medido se cumple, pero aún no se ha logrado${why}`);
+  const what = g.criterion.type === "projects" ? "sus proyectos se cumplen" : "lo medido se cumple";
+  audit(ctx, g, `sin confirmar: ${what}, pero aún no se ha logrado${why}`);
 }
 
 /** Candidatas que se pueden comprobar esta noche: con frases nuevas (o sin charlas que mirar). */
 function checkable(ctx: SimContext, agentId: string): { goal: Goal; lines: string[] }[] {
   const s = goalsState(ctx);
   return goalsOf(ctx, agentId, "active")
-    .filter((g) => s.candidates.has(g.id) && g.criterion.type === "confirmed")
+    .filter((g) => s.candidates.has(g.id) && needsCheck(ctx, g))
     .map((goal) => ({ goal, lines: s.evidence.get(goal.id) ?? [] }))
     .filter(({ goal, lines }) => {
       const m = measureOf(goal.criterion);
-      return lines.length > 0 || (m.type !== "conversations" && m.type !== "meetings");
+      const needsLines =
+        m.type === "conversations" || m.type === "meetings" || m.type === "projects";
+      return lines.length > 0 || !needsLines;
     });
 }
 
@@ -983,11 +1016,16 @@ function checkSection(ctx: SimContext, agent: Agent): string {
   if (!items.length) return "";
   const lines = items.map(({ goal, lines }) => {
     s.presented.add(goal.id);
+    if (goal.criterion.type === "projects") {
+      // La vital: con lo hecho (sus proyectos), ¿se ha logrado de verdad lo que dice?
+      const q = `¿Has logrado de verdad «${goal.text}», no solo sus proyectos?`;
+      return `- ${goal.id} «${goal.text}»: ${q} Lo que se hizo: ${lines.join(" | ")}`;
+    }
     const q = goal.criterion.type === "confirmed" ? goal.criterion.question : "";
     const said = lines.length ? lines.join(" | ") : "(sin frases: júzgalo por tu día)";
     return `- ${goal.id} «${goal.text}»: ¿${q.replace(/^¿|\?$/g, "")}? Lo que se dijo: ${said}`;
   });
-  return `\nPara comprobar (solo esto, con lo que se dijo; no marques ningún otro progreso):
+  return `\nPara comprobar (solo esto, con lo que se dijo y se hizo; no marques ningún otro progreso):
 ${lines.join("\n")}
 Para cada una, en "goals": {"op":"confirm","id":"g…","achieved":true|false,"reason":"…"} (true solo si de verdad se ha logrado).`;
 }

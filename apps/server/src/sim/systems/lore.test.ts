@@ -7,7 +7,8 @@ import { localContext } from "../../worlds/local";
 import { runAction } from "../actions";
 import { applyAgreements } from "../agreements";
 import type { SimContext } from "../context";
-import { heldBy, holderOf, loreState, loreTick } from "../lore";
+import { heldBy, holderOf, loreLines, loreState, loreTick } from "../lore";
+import { knowledgeState } from "./knowledge";
 import { restoreSystems, snapshotSystems } from ".";
 
 let app: App;
@@ -124,6 +125,66 @@ describe("contarlo", () => {
       },
     ]);
     expect(holderOf(ctx, l.id, "samuel")).toBeDefined();
+  });
+});
+
+describe("no contarlo otra vez a quien ya lo sabe (corrección 3.5)", () => {
+  it("Aurora y Clara: lo de Alma, una vez; otra vez, pasados los días de enfriamiento", async () => {
+    const l = byTitle("El verano en que Alma se fue");
+    expect(holderOf(ctx, l.id, "aurora")).toBeDefined();
+    // Solo están ellas dos en la plaza.
+    for (const id of ctx.agents.keys())
+      at(id, id === "aurora" || id === "clara" ? "plaza" : "lago");
+    const t0 = now();
+    // Clara lo oye entero (sin deformar, para el test).
+    const told = await runAction(
+      { ctx, agent: agent("aurora"), now: t0 },
+      { type: "share_lore", who: "clara", loreId: l.id },
+    );
+    expect(told).toBe(true);
+    const h = holderOf(ctx, l.id, "clara")!;
+    h.elements = l.elements.map((e) => ({ id: e.id, text: e.text, altered: false }));
+    h.lastUsedAt = t0;
+    // Ya no se ofrece ni se acepta.
+    loreState(ctx).shownAt.delete("aurora");
+    const lines = loreLines(ctx, agent("aurora"), t0 + 60);
+    expect(lines.some((x) => x.startsWith(`${l.id} `))).toBe(false);
+    const again = await runAction(
+      { ctx, agent: agent("aurora"), now: t0 + 60 },
+      { type: "share_lore", who: "clara", loreId: l.id },
+    );
+    expect(again).toBe(false);
+    expect(ctx.rt("aurora").pending.at(-1)).toMatchObject({
+      text: expect.stringContaining("ya se sabe «El verano en que Alma se fue» entero"),
+    });
+    // Pasados los días de enfriamiento, sí.
+    const later = t0 + (ctx.deps.memory.config.lore.retellCooldownDays + 0.1) * 1440;
+    loreState(ctx).shownAt.delete("aurora");
+    expect(loreLines(ctx, agent("aurora"), later).some((x) => x.startsWith(`${l.id} `))).toBe(true);
+    // Y a alguien que no lo sabe, también.
+    h.elements = h.elements.slice(1);
+    loreState(ctx).shownAt.delete("aurora");
+    expect(loreLines(ctx, agent("aurora"), t0 + 60).some((x) => x.startsWith(`${l.id} `))).toBe(
+      true,
+    );
+  });
+});
+
+describe("la gente de un saber, conocida al aprenderlo (corrección 3.5)", () => {
+  it("Elena aprende Las magdalenas de Francisca: Francisca no es una persona inventada", async () => {
+    const l = byTitle("Las magdalenas de Francisca");
+    const people = knowledgeState(ctx).people!;
+    const said = "Julián Ortega me ha contado Las magdalenas de Francisca.";
+    const memory = { kind: "memory" as const, agentId: "elena", actors: ["elena"] };
+    expect(people.find(said, memory)).toEqual(["Francisca"]);
+    at("julian", "plaza");
+    at("elena", "plaza");
+    await runAction(
+      { ctx, agent: agent("julian"), now: now() },
+      { type: "share_lore", who: "elena", loreId: l.id },
+    );
+    expect(holderOf(ctx, l.id, "elena")).toBeDefined();
+    expect(people.find(said, memory)).toEqual([]);
   });
 });
 

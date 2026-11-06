@@ -8,6 +8,13 @@ export type Effort = "low" | "medium" | "high";
 /** Duración de la caché del prompt fijo (Anthropic: 5 min por defecto, o 1 h). */
 export type CacheTtl = "5m" | "1h";
 
+/**
+ * Encabezado que separa en el `system` lo común a todos los vecinos (catálogo, reglas, biblia
+ * del mundo) de la identidad de cada uno. El proveedor de Anthropic parte ahí el prompt en dos
+ * bloques de caché (corrección 3.5).
+ */
+export const IDENTITY_HEADING = "## Quién eres";
+
 export interface CompletionRequest {
   model: string;
   /**

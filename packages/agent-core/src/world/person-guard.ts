@@ -14,11 +14,18 @@
  *   persona mallorquín («na», «en» ante un nombre de pila), la palabra en mayúscula que sigue;
  * - «la X» / «el X» con X en mayúscula que no es palabra corriente ni algo conocido: se registra,
  *   pero no se cambia (podría ser un sitio: «la Seu»).
+ *
+ * Qué no cuenta (corrección 3.5, ruido de la partida de una semana): los apodos de la semilla
+ * («Rafa»), el principio (≥ 4 letras) de un nombre que existe salvo que sea otro nombre de pila
+ * («Valen…», pero no «Julia» por Julián), las siglas e instituciones de la biblia («el BUP»,
+ * «el Ajuntament»), la palabra tras una coma en una lista («mi madre, Abrir») y la gente que
+ * alguien conoce por un saber o por un vecino con quien tiene trato (`acquaint`).
  */
 import type { AgentSeed } from "@lethetown/shared";
 import type { SafetyContext, SafetyKind, TextRewriter } from "../agent/minor-safety";
 import { GIVEN_NAMES } from "./given-names";
 import { normalizeText } from "./knowledge";
+import { LIST_KINDS } from "./knowledge-guard";
 
 /** Cómo se trató una persona inventada (para el registro). */
 export type PersonOutcome = "retried" | "replaced" | "dropped" | "logged";
@@ -44,7 +51,8 @@ export interface PersonGuardStats {
 
 export interface PersonGuardOptions {
   /** Vecinos (nombre, id y gente de fuera que conocen). */
-  neighbors: Pick<AgentSeed, "id" | "name" | "offstagePeople">[];
+  neighbors: (Pick<AgentSeed, "id" | "name" | "offstagePeople"> &
+    Partial<Pick<AgentSeed, "nicknames">>)[];
   /** Personajes públicos de la época y referencias conocidas (palabras que no son inventos). */
   publicFigures?: string[];
   /** Otros nombres propios que existen: lugares, glosario, referencias comunes. */
@@ -87,6 +95,8 @@ const WORD_NAMES = new Set(
     "Rosa Gloria Luz Mar Sol Paz Victoria Esperanza Consuelo Dolores Amparo Remedios Rocío Estrella Dulce Alma Abril Nieves Ángeles Caridad Mercedes Concepción Asunción Encarnación Rosario Socorro Salvador Ángel Cruz Blanca Clemente Fina Pío Belén Lourdes Pilar Reyes Cinta",
   ).split(" "),
 );
+/** Letras mínimas para que el principio de un nombre que existe cuente como ese nombre. */
+const MIN_PREFIX = 4;
 /** Signos tras los que empieza una frase. */
 const STARTS = new Set([".", "!", "?", "¡", "¿", "«", '"', "“", ":", ";", "—", "…", "(", "\n"]);
 
@@ -100,7 +110,8 @@ interface Word {
   atStart: boolean;
 }
 
-function wordsOf(text: string): Word[] {
+/** Las palabras del texto; en una lista (`listCommas`), tras una coma empieza un elemento. */
+function wordsOf(text: string, listCommas = false): Word[] {
   const out: Word[] = [];
   let atStart = true;
   let i = 0;
@@ -122,7 +133,7 @@ function wordsOf(text: string): Word[] {
       i = j;
       continue;
     }
-    if (STARTS.has(ch)) atStart = true;
+    if (STARTS.has(ch) || (listCommas && ch === ",")) atStart = true;
     i++;
   }
   return out;
@@ -140,6 +151,8 @@ interface Hit {
 export class PersonGuard {
   private readonly given: Set<string>;
   private readonly known = new Set<string>();
+  /** Palabras de los nombres que existen (vecinos y gente de fuera), para los prefijos. */
+  private readonly nameWords = new Set<string>();
   /** Nombres de varias palabras que existen («Lola Flores», «Juan Carlos»), por su primera palabra. */
   private readonly phrases = new Map<string, string[][]>();
   /** Gente de fuera que conoce cada uno: la suya y la que le han contado (normalizada). */
@@ -167,11 +180,12 @@ export class PersonGuard {
     };
     for (const n of opts.neighbors) {
       add(n.name);
+      // Los apodos de la semilla («Rafa» por Rafael): los puede usar cualquiera.
+      for (const nick of n.nicknames ?? []) add(nick);
       this.known.add(n.id);
-      this.offstage.set(
-        n.id,
-        new Set((n.offstagePeople ?? []).flatMap((p) => normalizeText(p.name).split(" "))),
-      );
+      const offstage = (n.offstagePeople ?? []).flatMap((p) => normalizeText(p.name).split(" "));
+      this.offstage.set(n.id, new Set(offstage));
+      for (const w of [...normalizeText(n.name).split(" "), ...offstage]) this.nameWords.add(w);
     }
     for (const t of [...(opts.publicFigures ?? []), ...(opts.known ?? [])]) addPhrase(t);
   }
@@ -198,6 +212,17 @@ export class PersonGuard {
   }
 
   /**
+   * Gente de fuera que alguien conoce sin habérsela oído nombrar: la de un saber que tiene
+   * («El verano en que Alma se fue», para Clara) o la de un vecino con quien tiene trato
+   * (Francisca, la mujer de Julián, para Andrés). Se guarda como lo que le contaron.
+   */
+  acquaint(agentId: string, names: Iterable<string>): void {
+    const mine = this.offstage.get(agentId) ?? new Set<string>();
+    this.offstage.set(agentId, mine);
+    for (const n of names) for (const w of normalizeText(n).split(" ")) if (w) mine.add(w);
+  }
+
+  /**
    * Quien oye a alguien nombrar a una persona de fuera que ese alguien conoce, ahora también la
    * conoce (aprender de otros). Devuelve los nombres que aprendió. Una persona inventada no se
    * aprende nunca.
@@ -220,7 +245,20 @@ export class PersonGuard {
   /** ¿Existe para estas personas? (vecino, conocido de fuera de alguna, personaje público…). */
   private exists(norm: string, people: string[]): boolean {
     if (this.known.has(norm)) return true;
-    return people.some((id) => this.offstage.get(id)?.has(norm));
+    if (people.some((id) => this.offstage.get(id)?.has(norm))) return true;
+    return this.isPrefixOfName(norm, people);
+  }
+
+  /**
+   * ¿Es el principio (≥ 4 letras) de un vecino o de alguien de fuera de estas personas? Un texto
+   * recortado («Valen…») o un apodo que no está en la semilla. No si es otro nombre de pila
+   * («Julia» no es Julián): así no se cuela una persona inventada.
+   */
+  private isPrefixOfName(norm: string, people: string[]): boolean {
+    if (norm.length < MIN_PREFIX || this.given.has(norm)) return false;
+    const starts = (w: string) => w.length > norm.length && w.startsWith(norm);
+    for (const w of this.nameWords) if (starts(w)) return true;
+    return people.some((id) => [...(this.offstage.get(id) ?? [])].some(starts));
   }
 
   /** Personas inventadas del texto (lo que se cambiaría o se registraría). */
@@ -228,7 +266,7 @@ export class PersonGuard {
     // Sin nadie concreto (la crónica del pueblo), vale la gente de fuera de cualquiera.
     const named = [...(ctx.agentId ? [ctx.agentId] : []), ...(ctx.actors ?? [])];
     const people = named.length ? [...new Set(named)] : [...this.offstage.keys()];
-    const ws = wordsOf(text);
+    const ws = wordsOf(text, LIST_KINDS.has(ctx.kind));
     const out: Hit[] = [];
     const common = (n: string) => this.opts.isCommonWord?.(n) ?? false;
     for (let i = 0; i < ws.length; i++) {
@@ -305,7 +343,7 @@ export class PersonGuard {
       for (const h of sure) {
         this.record(h.name, text, ctx, "replaced");
         const capital = /\p{Lu}/u.test(text[h.start]!) && isStart(text, h.start);
-        out += text.slice(at, h.start) + (capital ? "Alguien" : SOMEONE);
+        out += withoutArticle(text.slice(at, h.start)) + (capital ? "Alguien" : SOMEONE);
         at = h.end;
       }
       return out + text.slice(at);
@@ -324,6 +362,17 @@ export class PersonGuard {
       source: ctx.kind,
     });
   }
+}
+
+/**
+ * Lo que va antes de «alguien» sin el artículo que acompañaba al nombre: «la señora Pepa» →
+ * «alguien», «al Pep» → «a alguien», «del Pep» → «de alguien».
+ */
+function withoutArticle(before: string): string {
+  const m = /(^|[^\p{L}])(la|el|al|del)(\s+)$/iu.exec(before);
+  if (!m) return before;
+  const keep = { al: "a", del: "de" }[m[2]!.toLowerCase()];
+  return before.slice(0, m.index + m[1]!.length) + (keep ? `${keep}${m[3]}` : "");
 }
 
 /** ¿Empieza frase en esta posición? (para «Alguien» con mayúscula). */

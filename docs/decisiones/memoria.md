@@ -3,6 +3,16 @@
 - **Base (Park et al. 2023)**: puntuación = media de recencia, importancia, relevancia y
   congruencia con el ánimo, × fuerza actual (decaimiento exponencial con estabilidad).
   Olvidado < 0.05 ≤ vago < 0.3. Recordar refuerza (repetición espaciada).
+- **Efecto de espaciado** (corrección 3.5): al evocar, la estabilidad se multiplica por
+  k(Δt) = 1 + (k_max − 1)·(1 − e^(−Δt/τ)), con Δt el tiempo de juego desde la evocación anterior
+  y τ la estabilidad actual (`spacingFactor`); k_max es la regla de antes
+  (`recallStabilityGrowth` × dificultad, ×1,8 a ×3,6). Evocar algo cada 10 minutos ya no
+  consolida como evocarlo cada día: en la partida de una semana las metas, recuperadas en cada
+  decisión, sumaban 142 evocaciones y llegaban a 3,8e38 h. Sigue el tope
+  `decay.maxStabilityHours` (10 años). Solo refuerza lo que se recupera de verdad:
+  `retrieve` (decidir, plan), `recallByIds` (el «ayer» del plan), los intrusivos, el repaso de
+  intenciones y hábitos y la consolidación; lo que el sistema muestra en el prompt (las metas,
+  el plan) no toca la memoria.
 - **Esencia** con el LLM al volverse vago, solo para importancia ≥ `gist.minImportance` (4): lo
   menos importante se desvanece con una esencia provisional. Subirlo de 3 a 4 bajó las esencias de
   847 a 346 en 48 h de mock.
@@ -23,3 +33,7 @@
   similitud).
 - **Retención** (ver [produccion.md](produccion.md)): solo se borran recuerdos olvidados o
   archivados; los activos nunca.
+- **Ablación para estudios** (`MemoryConfig.ablation`, corrección 3.5): `noForgetting` (nada se
+  olvida ni se borra o resume por presupuesto) y `noVagueness` (nada se vuelve vago ni se queda
+  en esencia), aplicados al cargar con `withAblation`; en el servidor, `MEMORY_ABLATION`. Sirven
+  para un mundo de control en una partida de estudio, no para jugar.

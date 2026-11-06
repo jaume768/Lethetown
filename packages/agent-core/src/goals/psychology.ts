@@ -71,6 +71,12 @@ export const GoalsConfig = z.object({
    */
   relationshipMinGain: unit(0.3),
   relationshipMinConversations: z.number().int().nonnegative().default(3),
+  /**
+   * Una meta vital medida por proyectos, al llegar a N proyectos, queda candidata y solo se
+   * consigue si la consolidación nocturna confirma su enunciado (como `confirmed`). En la
+   * partida de una semana, Leo «encontró» el pez gigante contando proyectos y siguió buscándolo.
+   */
+  lifeNeedsConfirmation: z.boolean().default(true),
   /** Proyectos activos como mucho por agente, y pasos por proyecto. */
   maxActiveProjects: z.number().int().positive().default(3),
   maxStepsPerProject: z.number().int().positive().default(3),

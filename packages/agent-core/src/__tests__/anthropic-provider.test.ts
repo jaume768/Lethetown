@@ -1,7 +1,10 @@
 /** Proveedor de Anthropic: el fallback del lado servidor va en la llamada directa, no en un lote. */
 import type Anthropic from "@anthropic-ai/sdk";
 import { describe, expect, it } from "vitest";
-import { AnthropicProvider } from "../llm/anthropic";
+import { readFileSync } from "node:fs";
+import { AgentSeed, parseTiledMap } from "@lethetown/shared";
+import { identityPrompt } from "../agent/prompts";
+import { AnthropicProvider, splitSystem } from "../llm/anthropic";
 import type { CompletionRequest } from "../llm/types";
 
 const message = {
@@ -73,5 +76,50 @@ describe("AnthropicProvider", () => {
     expect(body.betas).toBeUndefined();
     expect(body.requests[0]!.params).not.toHaveProperty("fallbacks");
     expect(r).toMatchObject({ text: "{}", priceMultiplier: 0.5 });
+  });
+});
+
+describe("caché del prefijo común (corrección 3.5)", () => {
+  const root = (f: string) => new URL(`../../../../${f}`, import.meta.url);
+  const seeds = AgentSeed.array().parse(
+    JSON.parse(readFileSync(root("seeds/agents.json"), "utf8")),
+  );
+  const places = parseTiledMap(JSON.parse(readFileSync(root("seeds/town.tmj"), "utf8"))).places;
+  const rules = ["Estás en Mallorca, en 2002 (regla fija de la biblia)."];
+  const systemOf = (id: string) => {
+    const seed = seeds.find((x) => x.id === id)!;
+    return identityPrompt(seed, places.slice(0, 3), "es", [], rules);
+  };
+
+  it("lo común a todos va primero y es idéntico byte a byte entre vecinos", () => {
+    const [sharedA, ownA] = splitSystem(systemOf("mateo"));
+    const [sharedB, ownB] = splitSystem(systemOf("ines"));
+    expect(sharedA).toBe(sharedB);
+    expect(sharedA).toContain("## Acciones");
+    expect(sharedA).toContain("## Reglas");
+    expect(sharedA).toContain(rules[0]);
+    expect(sharedA).not.toContain("Mateo");
+    expect(ownA).toMatch(/^## Quién eres\nEres Mateo Ruiz, 34 años/);
+    expect(ownA).toContain("## Lugares que conoces");
+    expect(ownB).not.toBe(ownA);
+    // Juntos son el texto de siempre.
+    expect(`${sharedA}${ownA}`).toBe(systemOf("mateo"));
+  });
+
+  it("la petición lleva dos bloques de system, cada uno con su cache_control y el mismo TTL", async () => {
+    const { client, calls } = fakeClient();
+    await new AnthropicProvider({ client }).complete({
+      ...req,
+      system: systemOf("mateo"),
+      cacheTtl: "1h",
+    });
+    const body = calls.create[0] as { system: { text: string; cache_control: unknown }[] };
+    expect(body.system).toHaveLength(2);
+    for (const b of body.system) {
+      expect(b.cache_control).toEqual({ type: "ephemeral", ttl: "1h" });
+    }
+    // Sin el encabezado de identidad (la crónica, la moderación), un solo bloque.
+    await new AnthropicProvider({ client }).complete(req);
+    expect((calls.create[1] as { system: unknown[] }).system).toHaveLength(1);
   });
 });

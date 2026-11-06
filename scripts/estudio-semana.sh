@@ -12,15 +12,26 @@
 # Si un servidor se cae, `start` lo reanuda desde su última instantánea (y la grabación
 # reconecta sola). Entorno: .env (secretos) + .env.study.<semilla> (sin secretos; su
 # DATABASE_URL usa ${POSTGRES_PASSWORD} de .env, por eso se carga después).
+#
+# Opciones (variables de entorno):
+#   STUDY_DIR=estudio/semana-e4   carpeta de la partida (por defecto, la de la fase 3)
+#   OFFSET_MINUTES=30             minutos REALES de desfase entre una semilla y la siguiente al
+#                                 arrancarlas juntas: así no planifican en el mismo segundo y no
+#                                 se reparten la caché de prompts (el coste de cada una se puede
+#                                 comparar mejor; aun así, súmalo: ver study:analyze)
+#   ABLATION=on                   un tercer mundo, s7a: la semilla 7 con MEMORY_ABLATION (sin
+#                                 olvido ni vaguedad, en .env.study.s7a) como control
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-OUT="$ROOT/estudio/semana-fase3"
+OUT="$ROOT/${STUDY_DIR:-estudio/semana-fase3}"
+OFFSET_MINUTES="${OFFSET_MINUTES:-0}"
 HOURS="${HOURS:-168}"
 # Minuto de juego en que acaba la grabación: el inicio (día 0, 06:50) más HOURS. Así, si hay que
 # relanzar `record`, termina donde debía.
 UNTIL="${UNTIL:-$((410 + HOURS * 60))}"
 SEEDS=(s7 s13)
+if [[ "${ABLATION:-off}" == "on" ]]; then SEEDS+=(s7a); fi
 cd "$ROOT"
 
 seeds_of() { if [[ -n "${1:-}" ]]; then echo "$1"; else echo "${SEEDS[@]}"; fi; }
@@ -70,8 +81,12 @@ prepare() {
 }
 
 start() {
+  local i=0
   for seed in $(seeds_of "${1:-}"); do
     local dir="$OUT/$seed"
+    # Desfase: la semilla i-ésima espera i × OFFSET_MINUTES minutos reales antes de arrancar.
+    local delay=$((i * OFFSET_MINUTES * 60))
+    i=$((i + 1))
     mkdir -p "$dir"
     if pid_alive "$dir/server.pid"; then
       echo "$seed: el servidor ya está en marcha (pid $(cat "$dir/server.pid"))."
@@ -79,12 +94,14 @@ start() {
     fi
     # Todo en uno sin watch (la API y la simulación en un proceso), como líder de su grupo:
     # el pid es el de node y `stop` le manda SIGTERM (guarda la instantánea al cerrar).
-    setsid bash -c "set -a; . '$ROOT/.env'; . '$ROOT/.env.study.$seed'; set +a
+    setsid bash -c "sleep $delay; set -a; . '$ROOT/.env'; . '$ROOT/.env.study.$seed'; set +a
       export NODE_OPTIONS=--max-old-space-size=4096
       cd '$ROOT/apps/server' && exec node --import tsx src/index.ts" \
       >>"$dir/server.log" 2>&1 </dev/null &
     echo $! >"$dir/server.pid"
-    echo "$seed: servidor arrancado (pid $!), log en $dir/server.log, puerto $(port_of "$seed")."
+    local when="ya"
+    if ((delay > 0)); then when="dentro de $((delay / 60)) min"; fi
+    echo "$seed: servidor arrancado $when (pid $!), log en $dir/server.log, puerto $(port_of "$seed")."
   done
 }
 
@@ -97,6 +114,7 @@ record() {
     fi
     RECORD_USER=grabador RECORD_PASSWORD="$(cat "$dir/.record-pass")" \
       setsid pnpm -s --filter @lethetown/server record "$dir" --hours "$HOURS" --until "$UNTIL" \
+      --env-file "$ROOT/.env.study.$seed" \
       --api "http://localhost:$(port_of "$seed")" --origin "$(origin_of "$seed")" \
       >>"$dir/record.log" 2>&1 </dev/null &
     echo $! >"$dir/record.pid"
@@ -149,7 +167,7 @@ case "$cmd" in
   stop) stop "$@" ;;
   export) export_bd "$@" ;;
   *)
-    sed -n '2,13p' "$0"
+    sed -n '2,24p' "$0"
     exit 1
     ;;
 esac

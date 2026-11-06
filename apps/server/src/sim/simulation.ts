@@ -22,6 +22,7 @@ import {
   type SimSignal,
   type SimulationDeps,
 } from "./context";
+import { outdoorPlanText, planClashText } from "./plan-texts";
 import {
   activeConversationOf,
   catchphrasesSaid,
@@ -595,7 +596,7 @@ function warnConversationPlan(ctx: SimContext, agent: Agent, now: number): void 
   const other = conv.others.map((id) => ctx.agents.get(id)?.seed.name ?? id).join(", ");
   rt.pending.push({
     kind: "world",
-    text: `Según tu plan ahora toca ${item.activity} en ${ctx.world.place(item.placeId).name}, pero estás hablando con ${other}.`,
+    text: planClashText(item.activity, ctx.world.place(item.placeId).name, other),
     placeId: null,
   });
 }
@@ -643,7 +644,7 @@ function warnOutdoorPlan(ctx: SimContext, agent: Agent, now: number): void {
   rt.weatherChecked = key;
   rt.pending.push({
     kind: "world",
-    text: `${say} y lo que tenías previsto (${item.activity}) es al aire libre, en ${dest.name}.`,
+    text: outdoorPlanText(say, item.activity, dest.name),
     placeId: null,
   });
 }

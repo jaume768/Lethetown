@@ -10,8 +10,11 @@
  *     [--hours 48] [--until <minuto>] [--every 10] [--api http://localhost:3001] \
  *     [--origin http://localhost:5173]
  * `--until`: minuto de juego absoluto en que termina (para reanudar una grabación cortada sin
- * volver a contar `--hours` desde el principio).
- * Ficheros: messages.jsonl (todo menos los deltas), states.jsonl (fotos), meta.json.
+ * volver a contar `--hours` desde el principio). `--env-file`: el entorno del servidor que se
+ * graba (p. ej. .env.study.s7), para el manifiesto (solo una lista blanca, sin secretos).
+ * Ficheros: messages.jsonl (todo menos los deltas), states.jsonl (fotos), meta.json y
+ * manifest.json (código, semilla, velocidad, modelos, precios, ablación y fecha; ver
+ * analysis/manifest.ts), que se escribe al empezar y no se pisa al reanudar.
  * Lo que guarda la BD (recuerdos, auditoría, fichas sociales, llm_calls…) lo exporta
  * `pnpm --filter @lethetown/server world:export <carpeta>`.
  *
@@ -19,9 +22,13 @@
  * rápida a x360) y los cortes del servidor (reconecta y sigue). Varios mundos a la vez: un
  * servidor por puerto, `--api http://localhost:3002 --origin <uno de su ALLOWED_ORIGINS>`.
  */
-import { createWriteStream, mkdirSync, writeFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { createWriteStream, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import type { AgentState, ServerMessage } from "@lethetown/shared";
+import { parse as parseDotenv } from "dotenv";
+import { buildManifest } from "../analysis/manifest";
+import { fromRoot } from "../paths";
 
 const args = process.argv.slice(2).filter((a) => a !== "--");
 const flag = (name: string, def: string) => {
@@ -38,9 +45,43 @@ const api = flag("api", "http://localhost:3001");
 const origin = flag("origin", "http://localhost:5173");
 
 mkdirSync(outDir, { recursive: true });
+writeManifest();
 const messages = createWriteStream(join(outDir, "messages.jsonl"), { flags: "a" });
 const states = createWriteStream(join(outDir, "states.jsonl"), { flags: "a" });
 const log = (msg: string) => console.log(`[${new Date().toISOString()}] ${msg}`);
+
+/** El manifiesto de la partida (una vez: al reanudar la grabación no se pisa). */
+function writeManifest(): void {
+  const file = join(outDir, "manifest.json");
+  if (existsSync(file)) return;
+  const envFile = flag("env-file", "");
+  // .env (los modelos) y encima el de la partida; de los dos, solo la lista blanca del manifiesto.
+  const dotenv = (f: string) => (f && existsSync(f) ? parseDotenv(readFileSync(f)) : {});
+  const fileEnv = { ...dotenv(fromRoot(".env")), ...dotenv(envFile) };
+  const git = (args: string[]) => {
+    try {
+      return execFileSync("git", args, { cwd: fromRoot("."), encoding: "utf8" }).trim();
+    } catch {
+      return null;
+    }
+  };
+  const status = git(["status", "--porcelain"]);
+  const json = (f: string) => {
+    try {
+      return JSON.parse(readFileSync(fromRoot(f), "utf8")) as unknown;
+    } catch {
+      return null;
+    }
+  };
+  const manifest = buildManifest({
+    env: { ...fileEnv, ...process.env, ...dotenv(envFile) },
+    git: { sha: git(["rev-parse", "HEAD"]), dirty: status === null ? null : status.length > 0 },
+    routing: json("config/llm-routing.json"),
+    pricing: json("config/pricing.json"),
+    now: new Date(),
+  });
+  writeFileSync(file, `${JSON.stringify(manifest, null, 2)}\n`);
+}
 
 /** Sesión de director (para pausar al acabar); sin credenciales, no pausa. */
 async function login(): Promise<string | null> {

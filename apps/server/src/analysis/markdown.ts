@@ -241,3 +241,34 @@ export function evolutionMarkdown(a: EvolutionReport, b?: EvolutionReport): stri
   }
   return out.join("\n");
 }
+
+/**
+ * Coste conjunto de varias partidas lanzadas a la vez (corrección 3.5): mundos con la misma
+ * cuenta y el mismo prompt fijo comparten la caché de prompts, así que uno escribe y otro lee y
+ * el reparto del coste entre ellos no es comparable. Lo honesto es la suma (y por mundo y día).
+ */
+export function jointCostMarkdown(worlds: { label: string; report: EvolutionReport }[]): string {
+  const money = (n: number) => n.toFixed(2);
+  const calls = (r: EvolutionReport) =>
+    Object.values(r.cost.byTask).reduce((a, t) => a + t.calls, 0);
+  const days = (r: EvolutionReport) => Math.max(1, r.days.length);
+  const rows = worlds.map(
+    (w) =>
+      `| ${w.label} | ${calls(w.report)} | ${money(w.report.cost.total)} | ${money(w.report.cost.total / days(w.report))} |`,
+  );
+  const total = worlds.reduce((a, w) => a + w.report.cost.total, 0);
+  const worldDays = worlds.reduce((a, w) => a + days(w.report), 0);
+  return [
+    "## Coste conjunto",
+    "",
+    "| Mundo | Llamadas | $ | $ por día |",
+    "| --- | ---: | ---: | ---: |",
+    ...rows,
+    `| **total** | ${worlds.reduce((a, w) => a + calls(w.report), 0)} | **${money(total)}** | ${money(total / worldDays)} por mundo y día |`,
+    "",
+    "> ⚠ Si estos mundos corrieron a la vez con la misma cuenta, comparten la caché de prompts: uno",
+    "> la escribe y otro la lee, y el reparto del coste entre ellos no es comparable. La cifra que",
+    "> vale es la suma (o el coste por mundo y día de la suma).",
+    "",
+  ].join("\n");
+}

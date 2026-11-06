@@ -6,6 +6,7 @@
  * ("Suelo tomar un café en el café por las mañanas"), que se refuerza cada vez que se repite.
  * Lógica pura: el agente decide cuándo llamarla y la memoria guarda el resultado.
  */
+import { lowerFirst } from "@lethetown/shared";
 import { z } from "zod";
 
 /** Franja del día de una actividad. */
@@ -88,7 +89,7 @@ const SLOT_PHRASE: Record<DaySlot, string> = {
 
 /** "Suelo tomar un café en Café La Ola por las mañanas." */
 export function habitText(h: Pick<HabitEntry, "activity" | "slot">, placeName: string): string {
-  return `Suelo ${h.activity} en ${placeName} ${SLOT_PHRASE[h.slot]}.`;
+  return `Suelo ${lowerFirst(h.activity)} en ${placeName} ${SLOT_PHRASE[h.slot]}.`;
 }
 
 /**
@@ -102,7 +103,7 @@ export function dayDiaryText(
 ): string {
   const parts: string[] = [];
   for (const e of entries) {
-    const part = `${e.activity} en ${placeName(e.placeId)}`;
+    const part = `${lowerFirst(e.activity)} en ${placeName(e.placeId)}`;
     if (parts.at(-1) !== part) parts.push(part);
   }
   return `El día ${day}: ${parts.join(", ")}.`;

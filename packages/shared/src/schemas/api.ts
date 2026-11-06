@@ -64,6 +64,10 @@ export const SimEvent = z.object({
       group: z.array(z.string()).optional(),
       /** Lo acordaron hablando (puente de la conversación a la acción), no con la acción formal. */
       agreed: z.boolean().optional(),
+      /** Quienes lo sufren (un plantón: quienes fueron a la cita y esperaron). */
+      affected: z.array(z.string()).optional(),
+      /** La n-ésima vez que se repite ese día (la misma pareja y lo mismo): el drama vale menos. */
+      repeat: z.number().int().positive().optional(),
     })
     .optional(),
 });
