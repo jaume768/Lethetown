@@ -28,6 +28,7 @@ import { InMemorySkillStore, type SkillStore } from "../db/skills";
 import { itemsState, newItemId, removeItem, saveItem } from "./items";
 import { errorMessage, type SimContext } from "./context";
 import { presentWith } from "./perception";
+import { activeConversationOf } from "./conversations";
 import { systemsHold } from "./systems/registry";
 
 /** Entradas de historial por habilidad (lo más antiguo se descarta). */
@@ -356,7 +357,11 @@ export function skillsTick(ctx: SimContext, now: number, minutes: number): void 
         .map((o) => o.id)
         .sort((a, b) => levelOf(ctx, b, skill) - levelOf(ctx, a, skill))[0] ??
       null;
-    const weight = routine.has(id) ? cfg.routinePracticeWeight : 1;
+    // Hablando sin dejar lo que hace (fase 3.6): sigue practicando, pero con menos atención.
+    const talking = ctx.cognition.talkWhileActivity && activeConversationOf(ctx, id) !== undefined;
+    const weight =
+      (routine.has(id) ? cfg.routinePracticeWeight : 1) *
+      (talking ? ctx.cognition.params.practiceWhileTalking : 1);
     addPractice(ctx, agent, skill, minutes, now, master, weight);
   }
   for (const agent of ctx.agents.values()) {

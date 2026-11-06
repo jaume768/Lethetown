@@ -47,6 +47,10 @@ export const CognitionParams = z.object({
   maxAssociationsPerHour: z.number().int().nonnegative().default(2),
   /** Recuerdos que trae cada asociación (1 o 2). */
   associationRecall: z.number().int().min(1).max(2).default(1),
+  /** Importancia mínima (1–10) de lo que trae una asociación (lo trivial no viene a la cabeza). */
+  associationMinImportance: z.number().int().min(1).max(10).default(3),
+  /** Lo de hace menos de estos minutos no se «asocia» (ya lo tiene presente). */
+  associationMinAgeMinutes: z.number().nonnegative().default(60),
   /** Minutos que tiene quien recibe un saludo al pasar para devolverlo. */
   greetReplyMinutes: z.number().positive().default(3),
 });

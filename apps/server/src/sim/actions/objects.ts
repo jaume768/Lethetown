@@ -8,6 +8,7 @@ import { verbsFor, type UseObjectAction } from "@lethetown/shared";
 import type { z } from "zod";
 import type { SimContext } from "../context";
 import { goOrDo } from "../routines";
+import { activeConversationOf, keepsActivity } from "../conversations";
 import { addPractice, levelOf, serveResult, skillsCfg } from "../skills";
 import { registerAction } from "./registry";
 
@@ -16,7 +17,26 @@ const REPAIR_PRACTICE = 20;
 
 /** Objetos del mapa en un estado que dura (la cafetera "en uso"): cuándo vuelven y a qué. */
 export interface ObjectsState {
-  timers: Map<string, { at: number; state: string; from: string }>;
+  /** `slowed`: ya se alargó por estar hablando quien lo usa (fase 3.6; una vez). */
+  timers: Map<string, { at: number; state: string; from: string; slowed?: boolean }>;
+}
+
+/**
+ * Hablar sin dejar la actividad (fase 3.6, `talkWhileActivity`): si lo que hace necesita
+ * atención (un objeto en marcha en su sitio: la cafetera, el horno), tarda más en terminarlo
+ * (`attentionSlowdown`, una vez por uso). Sencillo a propósito.
+ */
+export function slowDownWhileTalking(ctx: SimContext, agentId: string, now: number): void {
+  if (!ctx.cognition.talkWhileActivity) return;
+  const agent = ctx.agents.get(agentId);
+  const spotId = agent?.state.spotId;
+  const t = spotId ? objectsState(ctx).timers.get(spotId) : undefined;
+  if (!t || t.slowed || t.at <= now) return;
+  const k = ctx.cognition.params.attentionSlowdown;
+  t.at = now + (t.at - now) * k;
+  t.slowed = true;
+  const rt = ctx.rt(agentId);
+  rt.overrideUntil = Math.max(rt.overrideUntil, t.at);
 }
 
 export const objectsState = (ctx: SimContext) =>
@@ -85,6 +105,10 @@ registerAction<z.infer<typeof UseObjectAction>>({
     if (verb.minutes && verb.after) {
       const at = now + verb.minutes;
       objectsState(ctx).timers.set(spot.id, { at, state: verb.after, from: verb.to });
+      // Si lo pone en marcha a media charla, también tarda más.
+      if (activeConversationOf(ctx, agent.id) && keepsActivity(ctx, agent)) {
+        slowDownWhileTalking(ctx, agent.id, now);
+      }
     } else {
       objectsState(ctx).timers.delete(spot.id);
     }

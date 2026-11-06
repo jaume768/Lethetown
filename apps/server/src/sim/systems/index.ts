@@ -18,6 +18,7 @@ import "./skills";
 import "./lore";
 import "./personality";
 import "./encounters";
+import "./associations";
 
 export * from "./registry";
 export * from "./types";

@@ -27,6 +27,7 @@ import type { SimContext } from "./context";
 import { activeConversationOf, leaveConversation } from "./conversations";
 import { goalsState } from "./goals";
 import { reportIntentions } from "./intention-report";
+import { associateCue } from "./associations";
 import { itemsState } from "./items";
 import { openMeetingsOf } from "./meetings";
 import { mayEnter } from "./norms";
@@ -157,7 +158,7 @@ export function visibleOf(ctx: SimContext, other: Agent): string {
   const doing =
     ctx.rt(other.id).travelling && target && ctx.world.has(target)
       ? `va a ${ctx.world.place(target).name}`
-      : `está ${lowerFirst(other.state.action)}`;
+      : `está haciendo: ${lowerFirst(other.state.action)}`;
   const v = other.state.mood.valence;
   const marked = Math.abs(v) >= ctx.deps.memory.config.encounter.visibleMood;
   const face = marked ? (v < 0 ? "; se le ve con mala cara" : "; se le ve de muy buen humor") : "";
@@ -292,13 +293,15 @@ async function encounter(ctx: SimContext, agent: Agent, other: Agent, now: numbe
       },
     );
   }
+  // Ver a alguien también trae recuerdos (fase 3.6, sistema `associations`; sin LLM).
+  await associateCue(ctx, agent, { kind: "person", id: other.id, name: other.seed.name }, now);
   // Recuerdo: lo saliente, con algo más de importancia; lo demás, solo la primera vez del día
   // y si no es trivial (para no inflar la memoria con cada vecino que pasa).
   if (s.salient || (!s.trivial && !seenToday)) {
     await agent.deps.memory.tryRemember(
       {
         agentId: agent.id,
-        text: `Me crucé con ${other.seed.name} por el camino; ${visible.replace(/^va /, "iba ").replace(/^está /, "estaba ")}.`,
+        text: `Me crucé con ${other.seed.name} por el camino (${visible.replace(/^va /, "iba ").replace(/^está /, "estaba ")}).`,
         type: "observation",
         importance: s.salient ? cfg.lowImportance + Math.round(s.score * 4) : cfg.lowImportance,
         emotionalValence: 0,

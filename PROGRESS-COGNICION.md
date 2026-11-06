@@ -16,9 +16,9 @@ Al retomar: leer este fichero, `docs/decisiones/cognicion.md` y `git log --oneli
       revalidación, memoria prospectiva
 - [x] 3. Saludar, pararse a charlar o seguir; viaje pendiente y retomarlo; presencia por
       proximidad; escuchar a ≤ 2 baldosas; menores
-- [ ] 4. Hablar andando (`walkingTalk`)
-- [ ] 5. Hablar sin dejar la actividad (`talkWhileActivity`)
-- [ ] 6. Asociaciones sin LLM (sistema `associations`)
+- [x] 4. Hablar andando (`walkingTalk`) (falta la interfaz: paso 7)
+- [x] 5. Hablar sin dejar la actividad (`talkWhileActivity`): práctica × 0,5, objetos × 1,5
+- [x] 6. Asociaciones sin LLM (sistema `associations`)
 - [ ] 7. Instantáneas e interfaz (log, iconos, dramas, i18n)
 - [ ] 8. Métricas («Evolución», `study:analyze`) y coste
 - [ ] Final: tests, entrevistas, docs, PR
@@ -29,11 +29,15 @@ Al retomar: leer este fichero, `docs/decisiones/cognicion.md` y `git log --oneli
 | ---------------------- | -------: | -----: | ---------: | -----: | ----- |
 | Antes (`main` 382549d) |    3.632 |  1.299 |        824 |    573 | 0,804 |
 | Pasos 0–3              |    3.944 |  1.424 |        871 |    615 | 0,853 |
+| Pasos 0–6              |    4.171 |  1.474 |        873 |    689 | 0,884 |
 
 El mock es caótico: cualquier cambio de un prompt mueve el hash y la partida entera. Por eso,
 además de `cost:report 48` (semilla 7), se mide la media de 5 semillas (7, 8, 9, 11 y 13) con
 el script del banco (48 h cada una): apagado, 3.855 llamadas de media (3.632–4.013); pasos 0–3,
-3.889 (+0,9 %).
+3.889 (+0,9 %). Con 10 semillas (7, 8, 9, 11, 13, 17, 19, 23, 29, 31), pasos 0–6: apagado
+3.841, encendido 4.050: **+5,4 % ± 5,1 %** (error de la media; mediana por semilla +12,9 %,
+de −26 % a +30 %). Un cambio pequeño de texto mueve la media de 5 semillas entre −3 % y +13 %:
+con menos de 10 semillas, las diferencias de unos pocos puntos son ruido.
 
 ## Decisiones
 
@@ -59,6 +63,14 @@ el script del banco (48 h cada una): apagado, 3.855 llamadas de media (3.632–4
 - **Recuerdos de encuentros**: los salientes, con algo más de importancia; los demás, solo la
   primera vez del día y si no son triviales (con un recuerdo por encuentro, `summarize` pasó de 3
   a 136 llamadas en 48 h por el presupuesto de memoria).
+- **Asociaciones**: solo recuerdos de importancia ≥ 3 y de hace al menos 1 h
+  (`associationMinImportance`, `associationMinAgeMinutes`); sin eso, lo que más «venía a la
+  cabeza» al ver a alguien era el recuerdo del cruce que se acababa de guardar. Sin
+  reconsolidar (nunca el LLM); planes e intenciones, fuera (tienen su mecanismo). Si es
+  importante y negativo, como un intrusivo (tiñe el ánimo, efecto `intrusive`).
+- **Hablar sin dejar la actividad**: se mantiene lo que no es estar sin hacer nada (trabajar,
+  comer, cocinar, leer, sentarse); la práctica cuenta × `practiceWhileTalking` (0,5) en la misma
+  revisión (no dos veces) y un objeto en marcha tarda × `attentionSlowdown` (1,5, una vez).
 - **Quien está quieto no piensa por ver pasar a alguien** (solo quien camina tiene encuentros):
   así el coste no crece con cada vecino que pasa por delante. Un saludo, en cambio, sí puede
   hacerle pensar si le importa quien saluda (saliencia ≥ umbral); devolverlo no despierta al

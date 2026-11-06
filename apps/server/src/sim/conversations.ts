@@ -14,6 +14,7 @@ import { applyAgreements, coveredBy, noteLinkedIntention } from "./agreements";
 import { itemsState } from "./items";
 import type { ResolvedAgreement } from "./systems/types";
 import { awake, inCallRange, nearNow, reachable, tileNow } from "./presence";
+import { slowDownWhileTalking } from "./actions/objects";
 
 /**
  * Actividades que no se dejan al ponerse a hablar (fase 3.6, `talkWhileActivity`): todo lo que
@@ -217,9 +218,12 @@ export function talk(
   rt.utteredAt = now;
   agent.state.lastUtterance = utterance;
   agent.state.needs.social = Math.min(1, agent.state.needs.social + 0.08);
-  // Fase 3.6: andando se sigue caminando, y haciendo algo (cocinar, atender) no se deja.
+  // Fase 3.6: andando se sigue caminando, y haciendo algo (cocinar, atender) no se deja (pero
+  // si lo que hace necesita atención, tarda más).
   const walking = ctx.cognition.enabled && rt.travelling && agent.state.movement !== null;
-  if (!walking && !keepsActivity(ctx, agent)) {
+  const keeps = !walking && keepsActivity(ctx, agent);
+  if (keeps) slowDownWhileTalking(ctx, agent.id, now);
+  if (!walking && !keeps) {
     setAction(
       ctx,
       agent,

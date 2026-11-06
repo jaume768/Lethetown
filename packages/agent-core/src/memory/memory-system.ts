@@ -278,6 +278,60 @@ export class MemorySystem {
   }
 
   /**
+   * Asociación (fase 3.6): algo de fuera (un lugar por el que pasa, alguien a quien ve, un
+   * objeto) trae a la cabeza uno o dos recuerdos que tienen que ver con eso, sin buscarlos y sin
+   * LLM. La recuperación es la de siempre (relevancia por la pista, recencia, importancia,
+   * ánimo, fuerza), pero solo entra lo que de verdad sale de esa pista (el mismo lugar o esa
+   * persona; un objeto, por su nombre). Recordar refuerza (con el efecto de espaciado), sin
+   * reconsolidar: nada de reescribir con el LLM.
+   */
+  async recallByCue(opts: {
+    agentId: string;
+    now: number;
+    moodValence: number;
+    /** Lo que sirve de pista, en palabras («Café La Ola», «Carmen Vidal»). */
+    query: string;
+    placeId?: string;
+    personId?: string;
+    k?: number;
+    /** Lo que ya tiene en la cabeza (memoria de trabajo). */
+    exclude?: string[];
+    /** Solo recuerdos de al menos esta importancia (lo trivial no «viene a la cabeza»). */
+    minImportance?: number;
+    /** Solo recuerdos de hace al menos estos minutos (lo de hace un momento no es asociar). */
+    minAgeMinutes?: number;
+  }): Promise<ScoredMemory[]> {
+    const [embedding] = await this.embedder.embed([opts.query]);
+    const candidates = await this.store.candidates(
+      opts.agentId,
+      embedding ?? [],
+      this.candidateLimit,
+    );
+    const word = opts.query.toLowerCase();
+    const cued = (m: MemoryRecord) =>
+      (opts.placeId !== undefined && m.placeId === opts.placeId) ||
+      (opts.personId !== undefined && m.people.includes(opts.personId)) ||
+      (opts.placeId === undefined &&
+        opts.personId === undefined &&
+        m.text.toLowerCase().includes(word));
+    const picked = rankMemories(
+      candidates,
+      { embedding: embedding ?? [], now: opts.now, moodValence: opts.moodValence },
+      this.retrievalFor(opts.agentId),
+    )
+      .filter((s) => s.memory.status === "active" && s.scores.clarity !== "forgotten")
+      // Los planes y las intenciones tienen su propio mecanismo (plan del día, memoria prospectiva).
+      .filter((s) => s.memory.type !== "plan" && s.memory.type !== "intention")
+      .filter((s) => !opts.exclude?.includes(s.memory.id))
+      .filter((s) => s.memory.importance >= (opts.minImportance ?? 1))
+      .filter((s) => opts.now - s.memory.createdAt >= (opts.minAgeMinutes ?? 0))
+      .filter((s) => cued(s.memory))
+      .slice(0, opts.k ?? 1);
+    await this.strengthen(picked, opts.now);
+    return picked;
+  }
+
+  /**
    * Recuerda unos recuerdos concretos (p. ej. el diario de ayer y los hábitos) con las mismas
    * reglas que `retrieve`: lo olvidado no sale, lo vago sale como esencia y recordar refuerza.
    */

@@ -317,6 +317,10 @@ export class Simulation {
           waypoints: [...a.state.movement.waypoints],
         },
         lastUtterance: now - rt.utteredAt <= SPEECH_BUBBLE_MINUTES ? a.state.lastUtterance : null,
+        // Fase 3.6: hablando andando o sin dejar lo que hace (la interfaz lo muestra).
+        ...(this.ctx.cognition.enabled && activeConversationOf(this.ctx, a.id)
+          ? { talking: true }
+          : {}),
       };
     });
   }

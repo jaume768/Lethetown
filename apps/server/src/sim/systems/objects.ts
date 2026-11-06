@@ -4,7 +4,12 @@ import { objectsState, objectsTick } from "../actions/objects";
 import { registerSystem } from "./registry";
 import { REVIEW_MINUTES } from "./types";
 
-const Timer = z.object({ at: z.number(), state: z.string(), from: z.string() });
+const Timer = z.object({
+  at: z.number(),
+  state: z.string(),
+  from: z.string(),
+  slowed: z.boolean().optional(),
+});
 
 registerSystem({
   id: "objects",

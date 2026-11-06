@@ -311,6 +311,13 @@ export const AgentState = z.object({
     .optional(),
   /** Con quién va o a quién acompaña ahora (para el mapa). */
   companionId: z.string().nullable().optional(),
+  /**
+   * Fase 3.6: está en una conversación (andando, o sin haber dejado lo que hacía). Solo con la
+   * cognición en movimiento encendida.
+   */
+  talking: z.boolean().optional(),
+  /** Fase 3.6: lo último que le vino a la cabeza por asociación (para el inspector). */
+  cameToMind: z.object({ text: z.string(), at: z.number(), cue: z.string() }).nullable().optional(),
   /** Su último razonamiento al decidir (y si era sobre la voz interior), para el inspector. */
   reasoning: z
     .object({ text: z.string(), at: z.number(), innerVoice: z.boolean() })

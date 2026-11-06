@@ -272,6 +272,19 @@ export class Agent {
     return _body.ruminate(this, now, minutes, present);
   }
 
+  /**
+   * Pensamiento por asociación (fase 3.6, sin LLM): un lugar, una persona o un objeto le trae a
+   * la cabeza uno o dos recuerdos (memoria de trabajo; si es malo e importante, como intrusivo).
+   */
+  associate(
+    now: number,
+    cue: { query: string; placeId?: string; personId?: string },
+    k = 1,
+    filter: { minImportance?: number; minAgeMinutes?: number } = {},
+  ): Promise<_body.Association[]> {
+    return _body.associate(this, now, cue, k, filter);
+  }
+
   /** Al acostarse: lo tenso o preocupado que esté decide cómo dormirá esta noche. */
   fallAsleep(): number {
     return _body.fallAsleep(this);
