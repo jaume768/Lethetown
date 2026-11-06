@@ -78,6 +78,10 @@ export const SimEvent = z.object({
       late: z.boolean().optional(),
       /** Devuelve un saludo (no lo empieza). */
       reply: z.boolean().optional(),
+      /** Una frase de una charla en el camino (presencia por proximidad). */
+      road: z.boolean().optional(),
+      /** …dicha andando (no parada). */
+      walking: z.boolean().optional(),
     })
     .optional(),
 });

@@ -278,7 +278,7 @@ async function encounter(ctx: SimContext, agent: Agent, other: Agent, now: numbe
   const visible = visibleOf(ctx, other);
   const place = ctx.world.publicPlaceNear(tileNow(ctx, agent)).id;
   if (s.salient) countStat(ctx, "salient");
-  if (!s.trivial || s.salient) {
+  {
     ctx.emit(
       "action",
       agent.id,

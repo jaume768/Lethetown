@@ -169,6 +169,7 @@
 [día 0, 08:04] action hugo Hugo Peña: caminando a Plaza Mayor
 [día 0, 08:04] speech ines Inés Ortega → Julián Ortega: "¡Qué bien se está hoy en Casa amarilla!"
 [día 0, 08:04] action carmen Carmen Vidal: caminando a Mercadillo
+[día 0, 08:04] action lucia 👀 Lucía Ferrer se cruza con Hugo Peña (le tienes aprecio)
 [día 0, 08:05] action valentina Valentina Ríos: caminando a Plaza Mayor
 [día 0, 08:05] action elena Elena Sanz: caminando a Ayuntamiento
 [día 0, 08:05] speech julian Julián Ortega → Inés Ortega: "Bueno, te dejo, que me toca hornear y vender pan. ¡Luego seguimos!"
@@ -177,12 +178,17 @@
 [día 0, 08:07] action pilar Pilar Herrero: caminando a Huerto comunitario
 [día 0, 08:08] action andres Andrés Molina: caminando a Biblioteca Mnemósine
 [día 0, 08:08] action tomas Tomás Herrero: caminando a Lago Leteo
+[día 0, 08:08] action elena 👀 Elena Sanz se cruza con Pilar Herrero
+[día 0, 08:08] action elena 👀 Elena Sanz se cruza con Andrés Molina
+[día 0, 08:08] action pilar 👀 Pilar Herrero se cruza con Andrés Molina
 [día 0, 08:09] action samuel Samuel Okafor: caminando a Consultorio médico
 [día 0, 08:09] action sofia Sofía Navarro: caminando a Escuela del pueblo
 [día 0, 08:09] speech aurora Aurora Méndez → Clara Méndez: "Hola, ¿has probado el café nuevo?"
 [día 0, 08:10] action - Aurora y Clara terminan de hablar (1 turnos; decidió no seguir)
+[día 0, 08:10] action hugo 👀 Hugo Peña se cruza con Valentina Ríos
 [día 0, 08:12] action rafael Rafael Castro: tomar algo en la taberna
 [día 0, 08:12] action carmen Carmen Vidal: mirar los puestos del mercadillo
+[día 0, 08:12] action andres 👀 Andrés Molina se cruza con Hugo Peña
 [día 0, 08:13] action lucia Lucía Ferrer: pasear y sentarse en el banco
 [día 0, 08:13] action elena Elena Sanz: despachar en el ayuntamiento
 [día 0, 08:14] action ernesto Ernesto Blasco: pasear junto al lago
@@ -211,21 +217,25 @@
 [día 0, 08:27] action pilar Pilar Herrero: caminando a Huerto comunitario
 [día 0, 08:28] speech tomas Tomás Herrero → Ernesto Blasco: "¿Te cuento una cosa? Llevo cincuenta años pescando en el lago Leteo."
 [día 0, 08:28] action pilar Pilar Herrero: cuidar el huerto
+[día 0, 08:28] action marta 👀 Marta Gil se cruza con Hugo Peña
 [día 0, 08:29] action aurora Aurora Méndez: caminando a Escuela del pueblo
 [día 0, 08:29] action ernesto Ernesto Blasco: hablando con Tomás Herrero
 [día 0, 08:29] speech ernesto Ernesto Blasco → Tomás Herrero: "Ay, no sé si debería contártelo, pero bueno..."
 [día 0, 08:30] speech tomas Tomás Herrero → Ernesto Blasco: "Ay, no sé si debería contártelo, pero bueno..."
 [día 0, 08:31] action leo Leo Gil: ir a clase
 [día 0, 08:31] action - Tomás y Ernesto terminan de hablar (3 turnos; decidió no seguir)
+[día 0, 08:32] action aurora 👀 Aurora Méndez se cruza con Sofía Navarro
 [día 0, 08:33] speech nuria Nuria Campos → Pilar Herrero: "¿Te cuento una cosa? Me he propuesto: Convertir la casa en venta en un jardín para todos."
 [día 0, 08:33] action aurora Aurora Méndez: dar una vuelta
 [día 0, 08:34] action - Nuria y Pilar terminan de hablar (1 turnos; decidió no seguir)
 [día 0, 08:34] action pilar Pilar Herrero: caminando a Huerto comunitario
+[día 0, 08:34] action julian 👀 Julián Ortega se cruza con Valentina Ríos
 [día 0, 08:35] action pilar Pilar Herrero: cuidar el huerto
 [día 0, 08:36] action marta Marta Gil: atender el ultramarinos
 [día 0, 08:36] action julian Julián Ortega: hornear y vender pan
 [día 0, 08:37] memory marta ✅ Marta Gil se acuerda de llamar al almacén para hacer el pedido de la tienda antes de las doce
 [día 0, 08:38] speech leo Leo Gil → Sofía Navarro: "¿Te cuento una cosa? Me he propuesto: Encontrar el pez gigante del lago."
+[día 0, 08:38] action ines 👀 Inés Ortega se cruza con Aurora Méndez
 [día 0, 08:39] action - Leo y Sofía terminan de hablar (1 turnos; decidió no seguir)
 [día 0, 08:40] action ines Inés Ortega: ir a clase
 [día 0, 08:44] speech pilar Pilar Herrero → Nuria Campos: "Buenos días. ¿Vienes a menudo por aquí?"
@@ -288,6 +298,7 @@
 [día 0, 10:36] action carmen Carmen Vidal: caminando a Parque del Olvido
 [día 0, 10:39] action aurora Aurora Méndez: caminando a Ultramarinos Lete
 [día 0, 10:40] action valentina Valentina Ríos: hacer la compra
+[día 0, 10:40] action ernesto 👀 Ernesto Blasco se cruza con Aurora Méndez
 [día 0, 10:42] action lucia Lucía Ferrer: leer en la biblioteca
 [día 0, 10:42] action rafael 👀 Rafael Castro se cruza con Marta Gil (le tienes aprecio)
 [día 0, 10:43] action rafael Rafael Castro: hacer la compra
@@ -401,20 +412,29 @@
 [día 0, 12:36] action carmen Carmen Vidal: caminando a Casa roja
 [día 0, 12:36] action hugo Hugo Peña: caminando a Casa del río
 [día 0, 12:36] action rafael Rafael Castro: caminando a Casa granate
+[día 0, 12:36] action mateo 👀 Mateo Ruiz se cruza con Julián Ortega
 [día 0, 12:37] action valentina Valentina Ríos: caminando a Casa de la colina
 [día 0, 12:38] action leo Leo Gil: caminando a Casa naranja
+[día 0, 12:38] action elena 👀 Elena Sanz se cruza con Tomás Herrero
+[día 0, 12:38] action tomas 👀 Tomás Herrero se cruza con Andrés Molina
 [día 0, 12:39] action sofia Sofía Navarro: caminando a Casa celeste
 [día 0, 12:39] action nuria Nuria Campos: caminando a Casa del pinar
 [día 0, 12:39] action aurora Aurora Méndez: caminando a Casa del jardín
 [día 0, 12:39] action clara Clara Méndez: comer
+[día 0, 12:40] action mateo 👀 Mateo Ruiz se cruza con Aurora Méndez
+[día 0, 12:40] action leo 👀 Leo Gil se cruza con Ernesto Blasco
 [día 0, 12:42] action andres Andrés Molina: comer
 [día 0, 12:42] action samuel Samuel Okafor: comer
+[día 0, 12:42] action sofia 👀 Sofía Navarro se cruza con Ernesto Blasco
 [día 0, 12:43] action tomas Tomás Herrero: comer
 [día 0, 12:44] action lucia Lucía Ferrer: comer
 [día 0, 12:44] action elena Elena Sanz: comer
+[día 0, 12:44] action ernesto 👀 Ernesto Blasco se cruza con Aurora Méndez
 [día 0, 12:45] action ines Inés Ortega: comer
 [día 0, 12:46] action julian 👀 Julián Ortega se cruza con Inés Ortega (es de tu familia, le tienes aprecio)
 [día 0, 12:46] memory julian 💭 A Julián Ortega, al ver a Inés Ortega, le viene a la cabeza: «Le dije a Inés Ortega: "Bueno, te dejo, que me toca hornear y vender pan. ¡Luego seguimos!"»
+[día 0, 12:46] action pilar 👀 Pilar Herrero se cruza con Marta Gil
+[día 0, 12:46] action pilar 👀 Pilar Herrero se cruza con Rafael Castro
 [día 0, 12:46] action julian 🚶 Julián Ortega pasa de largo ante Inés Ortega
 [día 0, 12:47] action julian Julián Ortega: comer
 [día 0, 12:48] action hugo Hugo Peña: comer
@@ -492,15 +512,23 @@
 [día 0, 14:06] action hugo Hugo Peña: caminando a Plaza Mayor
 [día 0, 14:06] action rafael Rafael Castro: caminando a Café La Ola
 [día 0, 14:06] action carmen Carmen Vidal: caminando a Taberna El Faro
+[día 0, 14:06] action lucia 👀 Lucía Ferrer se cruza con Elena Sanz
+[día 0, 14:06] action mateo 👀 Mateo Ruiz se cruza con Pilar Herrero
+[día 0, 14:06] action carmen 👀 Carmen Vidal se cruza con Pilar Herrero
 [día 0, 14:06] action rafael 👀 Rafael Castro se cruza con Marta Gil (le tienes aprecio)
 [día 0, 14:06] memory rafael 💭 A Rafael Castro, al ver a Marta Gil, le viene a la cabeza: «Le dije a Marta Gil: "¿Te cuento una cosa? Quiero ir a la cita con Aurora en Café La Ola (volver juntos)"»
 [día 0, 14:07] action valentina Valentina Ríos: caminando a Café La Ola
 [día 0, 14:08] action aurora Aurora Méndez: caminando a Café La Ola
+[día 0, 14:08] action rafael 👀 Rafael Castro se cruza con Leo Gil
+[día 0, 14:08] action hugo 👀 Hugo Peña se cruza con Valentina Ríos (le tienes aprecio)
 [día 0, 14:08] memory hugo 💭 A Hugo Peña, al ver a Valentina Ríos, le viene a la cabeza: «Le dije a Valentina Ríos: "¿Te cuento una cosa? Me he propuesto: Vivir de la música."»
 [día 0, 14:09] action sofia Sofía Navarro: caminando a Escuela del pueblo
 [día 0, 14:09] action nuria Nuria Campos: caminando a Huerto comunitario
 [día 0, 14:09] action clara Clara Méndez: caminando a Mercadillo
+[día 0, 14:10] action mateo 👀 Mateo Ruiz se cruza con Clara Méndez
+[día 0, 14:10] action carmen 👀 Carmen Vidal se cruza con Clara Méndez (le tienes aprecio)
 [día 0, 14:10] memory carmen 💭 A Carmen Vidal, al ver a Clara Méndez, le viene a la cabeza: «Clara Méndez me dijo: "Ay, no sé si debería contártelo, pero bueno..."»
+[día 0, 14:10] action pilar 👀 Pilar Herrero se cruza con Clara Méndez
 [día 0, 14:12] action ernesto Ernesto Blasco: tomar un café
 [día 0, 14:12] action andres Andrés Molina: ordenar libros en la biblioteca
 [día 0, 14:12] action samuel Samuel Okafor: pasar consulta
@@ -509,11 +537,14 @@
 [día 0, 14:13] action julian Julián Ortega: hornear y vender pan
 [día 0, 14:13] action clara Clara Méndez: atender el puesto del mercadillo
 [día 0, 14:14] action elena Elena Sanz: despachar en el ayuntamiento
+[día 0, 14:14] action lucia 👀 Lucía Ferrer se cruza con Hugo Peña (le tienes aprecio)
 [día 0, 14:15] action ines Inés Ortega: ir a clase
 [día 0, 14:15] action valentina Valentina Ríos: tomar un café
+[día 0, 14:16] action mateo 👀 Mateo Ruiz se cruza con Aurora Méndez
 [día 0, 14:17] speech valentina Valentina Ríos → Ernesto Blasco: "¿Te cuento una cosa? Me he propuesto: Descubrir qué pasó con mi abuela. (y fue muy agradable)"
 [día 0, 14:18] action hugo Hugo Peña: tocar la guitarra en la plaza
 [día 0, 14:18] speech ernesto Ernesto Blasco → Valentina Ríos: "¡Sí! Me encantó. Deberíamos venir juntos."
+[día 0, 14:18] action marta 👀 Marta Gil se cruza con Hugo Peña
 [día 0, 14:19] action leo Leo Gil: ir a clase
 [día 0, 14:19] speech valentina Valentina Ríos → Ernesto Blasco: "¿Te has fijado en lo raro que está todo últimamente?"
 [día 0, 14:20] action sofia Sofía Navarro: dar clase
@@ -526,6 +557,7 @@
 [día 0, 14:22] memory nuria ✅ Nuria Campos se acuerda de volver a quedar con Pilar
 [día 0, 14:22] action nuria 👀 Nuria Campos se cruza con Pilar Herrero (tenías algo pendiente con esta persona, tenéis una cita pendiente, le tienes aprecio)
 [día 0, 14:22] memory nuria 💭 A Nuria Campos, al ver a Pilar Herrero, le viene a la cabeza: «Le dije a Pilar Herrero: "Pues no sé yo."»
+[día 0, 14:22] action aurora 👀 Aurora Méndez se cruza con Valentina Ríos
 [día 0, 14:22] action nuria 🛑 Nuria Campos se para a charlar con Pilar Herrero en el camino
 [día 0, 14:22] action nuria Nuria Campos: hablando con Pilar Herrero
 [día 0, 14:22] speech nuria Nuria Campos → Pilar Herrero: "¡Pilar! Justo quería verte."
@@ -534,6 +566,7 @@
 [día 0, 14:23] speech pilar Pilar Herrero → Nuria Campos: "¡Ay, por cierto! Tenía que volver a quedar con Nuria."
 [día 0, 14:24] action marta Marta Gil: atender el ultramarinos
 [día 0, 14:24] action aurora Aurora Méndez: tomar un café
+[día 0, 14:24] action mateo 👀 Mateo Ruiz se cruza con Valentina Ríos
 [día 0, 14:24] speech nuria Nuria Campos → Pilar Herrero: "Tienes razón, este pueblo nunca cambia."
 [día 0, 14:25] speech leo Leo Gil → Sofía Navarro: "¿Te cuento una cosa? Quiero ir a la cita con Marta en Café La Ola (volver juntos)"
 [día 0, 14:25] speech pilar Pilar Herrero → Nuria Campos: "¡Ay, por cierto! Tenía que volver a quedar con Nuria."
@@ -545,6 +578,7 @@
 [día 0, 14:28] action - Leo y Sofía terminan de hablar (3 turnos; decidió no seguir)
 [día 0, 14:28] action nuria 🚶 Nuria Campos sigue su camino a Huerto comunitario
 [día 0, 14:28] action nuria Nuria Campos: caminando a Huerto comunitario
+[día 0, 14:28] action rafael 👀 Rafael Castro se cruza con Valentina Ríos (le tienes aprecio)
 [día 0, 14:28] memory rafael 💭 A Rafael Castro, al ver a Valentina Ríos, le viene a la cabeza: «Le dije a Valentina Ríos: "Ay, no sé si debería contártelo, pero bueno..."»
 [día 0, 14:28] action rafael 👀 Rafael Castro se cruza con Aurora Méndez (tenéis una cita pendiente, le tienes aprecio)
 [día 0, 14:29] speech valentina Valentina Ríos → Ernesto Blasco: "¿Sabes? Oí a Aurora Méndez decir "…cosa? Me crucé con Clara Méndez por el camino (estaba haciendo:…"."
@@ -710,6 +744,7 @@
 [día 0, 16:16] speech hugo Hugo Peña → Inés Ortega: "¡qué arte! ¡Hola! ¿Qué tal te va el día?"
 [día 0, 16:16] action - Hugo y Inés terminan de hablar (1 turnos; decidió no seguir)
 [día 0, 16:16] action aurora Aurora Méndez: tomar un café
+[día 0, 16:16] action leo 👀 Leo Gil se cruza con Lucía Ferrer
 [día 0, 16:17] action leo Leo Gil: pasear junto al lago
 [día 0, 16:18] speech nuria Nuria Campos → Pilar Herrero: "Mira, ¿Te has enterado de lo que se cuenta por el pueblo?"
 [día 0, 16:18] action rafael Rafael Castro: caminando a Taberna El Faro
@@ -727,6 +762,7 @@
 [día 0, 16:26] speech mateo Mateo Ruiz → Aurora Méndez: "Bastante liado, la verdad. ¿Y tú?"
 [día 0, 16:27] action - Valentina, Aurora y Mateo terminan de hablar (13 turnos; se estaban repitiendo)
 [día 0, 16:34] speech ernesto Ernesto Blasco → Valentina Ríos: "Hola, ¿has probado el café nuevo?"
+[día 0, 16:34] action rafael 👀 Rafael Castro se cruza con Carmen Vidal
 [día 0, 16:35] action - Ernesto y Valentina terminan de hablar (1 turnos; decidió no seguir)
 [día 0, 16:36] action rafael Rafael Castro: atender la taberna
 [día 0, 16:36] action hugo Hugo Peña: tocar la guitarra en la plaza
@@ -782,12 +818,20 @@
 [día 0, 17:07] action julian 🛑 Julián Ortega se para a charlar con Inés Ortega en el camino
 [día 0, 17:07] action julian Julián Ortega: hablando con Inés Ortega
 [día 0, 17:07] speech julian Julián Ortega → Inés Ortega: "¡Inés! Justo quería verte."
+[día 0, 17:08] action mateo 👀 Mateo Ruiz se cruza con Andrés Molina
+[día 0, 17:08] action andres 👀 Andrés Molina se cruza con Valentina Ríos
 [día 0, 17:08] speech ines Inés Ortega → Julián Ortega: "Pues no estoy de acuerdo, la verdad."
 [día 0, 17:09] action clara Clara Méndez: caminando a Café La Ola
 [día 0, 17:09] action carmen Carmen Vidal: caminando a Huerto comunitario
 [día 0, 17:09] speech julian Julián Ortega → Inés Ortega: "Ay, no sé si debería contártelo, pero bueno..."
+[día 0, 17:10] action sofia 👀 Sofía Navarro se cruza con Clara Méndez
 [día 0, 17:10] speech ines Inés Ortega → Julián Ortega: "Pues no estoy de acuerdo, la verdad."
 [día 0, 17:11] speech julian Julián Ortega → Inés Ortega: "Ya."
+[día 0, 17:12] action carmen 👀 Carmen Vidal se cruza con Pilar Herrero
+[día 0, 17:12] action carmen 👀 Carmen Vidal se cruza con Nuria Campos
+[día 0, 17:12] action julian 👀 Julián Ortega se cruza con Clara Méndez
+[día 0, 17:12] action elena 👀 Elena Sanz se cruza con Inés Ortega
+[día 0, 17:12] action clara 👀 Clara Méndez se cruza con Inés Ortega
 [día 0, 17:12] speech ines Inés Ortega → Julián Ortega: "No me digas... cuéntamelo todo."
 [día 0, 17:13] action valentina Valentina Ríos: tomar algo y charlar
 [día 0, 17:13] action mateo Mateo Ruiz: tomar algo y charlar
@@ -797,6 +841,9 @@
 [día 0, 17:14] action elena Elena Sanz: charlar en la plaza
 [día 0, 17:14] action julian 🚶 Julián Ortega sigue su camino a Plaza Mayor
 [día 0, 17:14] action julian Julián Ortega: caminando a Plaza Mayor
+[día 0, 17:14] action julian 👀 Julián Ortega se cruza con Elena Sanz
+[día 0, 17:14] action julian 👀 Julián Ortega se cruza con Hugo Peña
+[día 0, 17:14] action clara 👀 Clara Méndez se cruza con Elena Sanz
 [día 0, 17:15] speech elena Elena Sanz → Hugo Peña: "¿Te cuento una cosa? Me he propuesto: Ganar las próximas municipales."
 [día 0, 17:15] action carmen Carmen Vidal: cuidar mi rincón del huerto
 [día 0, 17:15] speech andres Andrés Molina → Ernesto Blasco: "Tienes razón, este pueblo nunca cambia."
@@ -804,6 +851,10 @@
 [día 0, 17:16] speech hugo Hugo Peña → Elena Sanz: "Bastante liado, la verdad. ¿Y tú?"
 [día 0, 17:16] action julian Julián Ortega: charlar en la plaza
 [día 0, 17:16] speech ernesto Ernesto Blasco → Andrés Molina: "Ya."
+[día 0, 17:16] action samuel 👀 Samuel Okafor se cruza con Julián Ortega
+[día 0, 17:16] action samuel 👀 Samuel Okafor se cruza con Hugo Peña
+[día 0, 17:16] action samuel 👀 Samuel Okafor se cruza con Inés Ortega
+[día 0, 17:16] action samuel 👀 Samuel Okafor se cruza con Elena Sanz
 [día 0, 17:17] action samuel Samuel Okafor: charlar en la plaza
 [día 0, 17:17] action valentina Valentina Ríos: hablando con Mateo Ruiz
 [día 0, 17:17] speech valentina Valentina Ríos → Mateo Ruiz: "¿Sabes? Oí a Ernesto Blasco decir "…cosa? Quiero ir a la cita con Valentina en Café La Ola…"."
@@ -968,6 +1019,8 @@
 [día 0, 18:10] action samuel 👋 Samuel Okafor deja la conversación con Hugo y Julián (decidió no seguir)
 [día 0, 18:10] memory samuel 📝 Samuel Okafor se propone volver a quedar con Julián
 [día 0, 18:10] memory samuel 📝 Samuel Okafor se propone volver a quedar con Elena
+[día 0, 18:10] action andres 👀 Andrés Molina se cruza con Nuria Campos
+[día 0, 18:10] action aurora 👀 Aurora Méndez se cruza con Nuria Campos
 [día 0, 18:11] action samuel 👥 Samuel Okafor se une a la conversación de Hugo y Julián
 [día 0, 18:11] action hugo Hugo Peña: hablando con Julián y Samuel
 [día 0, 18:11] speech hugo Hugo Peña → Samuel Okafor: "¡qué arte! Pues ya ves, lo de siempre. Me alegro de verte."
@@ -1079,6 +1132,7 @@
 [día 0, 19:06] action carmen Carmen Vidal: caminando a Casa roja
 [día 0, 19:07] action sofia Sofía Navarro: caminando a Casa celeste
 [día 0, 19:07] action nuria Nuria Campos: caminando a Casa del pinar
+[día 0, 19:08] action carmen 👀 Carmen Vidal se cruza con Nuria Campos
 [día 0, 19:08] action pilar 👀 Pilar Herrero se cruza con Nuria Campos (tenéis una cita pendiente, le tienes aprecio)
 [día 0, 19:08] memory pilar 💭 A Pilar Herrero, al ver a Nuria Campos, le viene a la cabeza: «Nuria Campos me dijo: "Mira, ¿Te has enterado de lo que se cuenta por el pueblo?"»
 [día 0, 19:08] action pilar 🛑 Pilar Herrero se para a charlar con Nuria Campos en el camino
@@ -1094,6 +1148,7 @@
 [día 0, 19:10] speech aurora Aurora Méndez → Ernesto Blasco: "No me digas... cuéntamelo todo."
 [día 0, 19:10] action pilar 🚶 Pilar Herrero sigue su camino a Casa ocre
 [día 0, 19:10] action pilar Pilar Herrero: caminando a Casa ocre
+[día 0, 19:10] action pilar 👀 Pilar Herrero se cruza con Sofía Navarro
 [día 0, 19:10] action hugo Hugo Peña: caminando a Casa del río
 [día 0, 19:11] speech ernesto Ernesto Blasco → Aurora Méndez: "Tienes razón, este pueblo nunca cambia."
 [día 0, 19:12] speech mateo Mateo Ruiz → Valentina Ríos: "¿Sabes? Oí a Aurora Méndez decir "…Tenía que volver a quedar con…"."
@@ -1102,16 +1157,19 @@
 [día 0, 19:13] action valentina Valentina Ríos: caminando a Casa de la colina
 [día 0, 19:14] action carmen 👀 Carmen Vidal se cruza con Sofía Navarro (le tienes aprecio)
 [día 0, 19:16] action lucia Lucía Ferrer: cenar y descansar
+[día 0, 19:16] action pilar 👀 Pilar Herrero se cruza con Leo Gil
 [día 0, 19:16] action sofia 👀 Sofía Navarro se cruza con Leo Gil (le tienes aprecio)
 [día 0, 19:16] memory sofia 💭 A Sofía Navarro, al ver a Leo Gil, le viene a la cabeza: «Leo Gil me dijo: "Ya." (más o menos)»
 [día 0, 19:17] action tomas Tomás Herrero: cenar y descansar
 [día 0, 19:17] action samuel Samuel Okafor: cenar y descansar
 [día 0, 19:18] action andres Andrés Molina: caminando a Casa marrón
+[día 0, 19:18] action hugo 👀 Hugo Peña se cruza con Valentina Ríos (le tienes aprecio)
 [día 0, 19:18] memory hugo 💭 A Hugo Peña, al ver a Valentina Ríos, le viene a la cabeza: «Le dije a Valentina Ríos: "¿Te cuento una cosa? Me he propuesto: Vivir de la música."»
 [día 0, 19:19] action aurora 👥 Aurora Méndez se une a la conversación de Clara y Ernesto
 [día 0, 19:19] speech clara Clara Méndez → Aurora Méndez: "¡claro que sí! Pues ya ves, lo de siempre. Me alegro de verte."
 [día 0, 19:20] action samuel 🧑‍🏫 Samuel Okafor termina de enseñarle cuidados y primeros auxilios a Hugo Peña (principiante)
 [día 0, 19:20] speech aurora Aurora Méndez → Clara Méndez: "¿En serio?"
+[día 0, 19:20] action carmen 👀 Carmen Vidal se cruza con Leo Gil
 [día 0, 19:21] action nuria Nuria Campos: cenar y descansar
 [día 0, 19:21] speech ernesto Ernesto Blasco → Clara Méndez: "Buenos días. ¿Vienes a menudo por aquí?"
 [día 0, 19:21] action valentina Valentina Ríos: cenar y descansar
@@ -1189,6 +1247,7 @@
 [día 0, 20:16] action - Carmen y Mateo terminan de hablar (6 turnos; siguió su camino)
 [día 0, 20:16] memory carmen 📝 Carmen Vidal se propone volver a quedar con Mateo
 [día 0, 20:16] memory mateo 📝 Mateo Ruiz se propone volver a quedar con Carmen
+[día 0, 20:20] action carmen 👀 Carmen Vidal se cruza con Aurora Méndez
 [día 0, 20:27] action aurora Aurora Méndez: cenar y descansar
 [día 0, 20:30] action carmen Carmen Vidal: tomar algo y charlar
 [día 0, 20:30] action mateo Mateo Ruiz: tomar algo y charlar
@@ -1427,6 +1486,7 @@
 [día 1, 08:02] action - Tomás y Pilar terminan de hablar (4 turnos; decidió no seguir)
 [día 1, 08:03] action valentina Valentina Ríos: caminando a Panadería Miga
 [día 1, 08:04] action aurora Aurora Méndez: caminando a Jardín del Recuerdo
+[día 1, 08:04] action hugo 👀 Hugo Peña se cruza con Valentina Ríos (le tienes aprecio)
 [día 1, 08:04] memory hugo 💭 A Hugo Peña, al ver a Valentina Ríos, le viene a la cabeza: «Valentina Ríos me dijo: algo…»
 [día 1, 08:06] action elena Elena Sanz: caminando a Ayuntamiento
 [día 1, 08:07] action sofia Sofía Navarro: caminando a Escuela del pueblo
@@ -1437,6 +1497,7 @@
 [día 1, 08:09] action nuria Nuria Campos: caminando a Huerto comunitario
 [día 1, 08:09] action samuel Samuel Okafor: caminando a Consultorio médico
 [día 1, 08:10] action valentina Valentina Ríos: comprar pan
+[día 1, 08:10] action lucia 👀 Lucía Ferrer se cruza con Andrés Molina (le tienes aprecio)
 [día 1, 08:10] memory lucia 💭 A Lucía Ferrer, al ver a Andrés Molina, le viene a la cabeza: «Andrés Molina me dijo: "Tienes razón, este pueblo nunca cambia."»
 [día 1, 08:11] action julian Julián Ortega: hornear y vender pan
 [día 1, 08:12] action hugo Hugo Peña: tocar la guitarra en la plaza
@@ -1446,6 +1507,8 @@
 [día 1, 08:14] action aurora Aurora Méndez: pasear entre las flores del jardín
 [día 1, 08:14] action aurora Aurora Méndez: caminando a Jardín del Recuerdo
 [día 1, 08:14] speech julian Julián Ortega → Valentina Ríos: "Bastante liado, la verdad. ¿Y tú?"
+[día 1, 08:14] action mateo 👀 Mateo Ruiz se cruza con Hugo Peña
+[día 1, 08:14] action sofia 👀 Sofía Navarro se cruza con Clara Méndez
 [día 1, 08:14] memory mateo 💭 A Mateo Ruiz, al pasar por Plaza Mayor, le viene a la cabeza: «Me crucé con Carmen Vidal por el camino (estaba haciendo: cenar y descansar).»
 [día 1, 08:14] action elena Elena Sanz: despachar en el ayuntamiento
 [día 1, 08:15] action aurora Aurora Méndez: pasear entre las flores del jardín
@@ -1490,10 +1553,12 @@
 [día 1, 08:27] action mateo Mateo Ruiz: atender el café
 [día 1, 08:27] speech aurora Aurora Méndez → Rafael Castro: "No me digas... cuéntamelo todo."
 [día 1, 08:28] speech rafael Rafael Castro → Aurora Méndez: "Bastante liado, la verdad. ¿Y tú?"
+[día 1, 08:28] action marta 👀 Marta Gil se cruza con Hugo Peña
 [día 1, 08:29] action leo Leo Gil: ir a clase
 [día 1, 08:29] action - Rafael y Aurora terminan de hablar (9 turnos; decidió no seguir)
 [día 1, 08:29] memory rafael 📝 Rafael Castro se propone volver a quedar con Aurora
 [día 1, 08:29] memory aurora 📝 Aurora Méndez se propone volver a quedar con Rafael
+[día 1, 08:30] action tomas 👀 Tomás Herrero se cruza con Marta Gil
 [día 1, 08:31] speech sofia Sofía Navarro → Inés Ortega: "¡Ay, por cierto! Tenía que volver a quedar con Inés."
 [día 1, 08:32] speech lucia Lucía Ferrer → Aurora Méndez: "¿Te cuento una cosa? Me he propuesto: Terminar el cuento y vivir de la ilustración. (y fue muy agradable)"
 [día 1, 08:32] memory ines ✅ Inés Ortega se acuerda de volver a quedar con Leo
@@ -1659,6 +1724,7 @@
 [día 1, 10:48] action ines Inés Ortega: tiempo libre
 [día 1, 10:48] action julian Julián Ortega: hablando con Mateo Ruiz
 [día 1, 10:48] speech julian Julián Ortega → Mateo Ruiz: "¡Sí! Me encantó. Deberíamos venir juntos."
+[día 1, 10:48] action elena 👀 Elena Sanz se cruza con Valentina Ríos
 [día 1, 10:49] speech mateo Mateo Ruiz → Julián Ortega: "Tienes razón, este pueblo nunca cambia."
 [día 1, 10:50] action - Mateo y Julián terminan de hablar (3 turnos; decidió no seguir)
 [día 1, 10:50] memory mateo 📝 Mateo Ruiz se propone volver a quedar con Julián
@@ -1676,6 +1742,7 @@
 [día 1, 10:51] speech valentina Valentina Ríos → Ernesto Blasco: "No me digas... cuéntamelo todo."
 [día 1, 10:52] action hugo Hugo Peña: cita con Inés: volver juntos
 [día 1, 10:52] action pilar Pilar Herrero: caminando a Huerto comunitario
+[día 1, 10:52] action elena 👀 Elena Sanz se cruza con Ernesto Blasco
 [día 1, 10:52] memory samuel 💭 A Samuel Okafor, al pasar por Plaza Mayor, le viene a la cabeza: «Inés Ortega le dijo a Hugo Peña (yo estaba en la conversación): "¡Qué bien se está hoy en Plaza Mayor!"»
 [día 1, 10:52] speech ernesto Ernesto Blasco → Valentina Ríos: "¿En serio?"
 [día 1, 10:53] action lucia Lucía Ferrer: charlar en la plaza
@@ -1691,7 +1758,9 @@
 [día 1, 10:56] action ernesto Ernesto Blasco: caminando a Café La Ola
 [día 1, 10:56] action valentina 🚶 Valentina Ríos sigue su camino a Café La Ola
 [día 1, 10:56] action valentina Valentina Ríos: caminando a Café La Ola
+[día 1, 10:56] action elena 👀 Elena Sanz se cruza con Hugo Peña (le tienes aprecio)
 [día 1, 10:56] memory elena 💭 A Elena Sanz, al ver a Hugo Peña, le viene a la cabeza: «Hugo Peña me dijo: "Bastante liado, la verdad. ¿Y tú?" (más o menos)»
+[día 1, 10:56] action elena 👀 Elena Sanz se cruza con Julián Ortega (le tienes aprecio)
 [día 1, 10:56] memory elena 💭 A Elena Sanz, al ver a Julián Ortega, le viene a la cabeza: «Julián Ortega me dijo: "¿Te cuento una cosa?"»
 [día 1, 10:58] action elena Elena Sanz: cita con Samuel: volver juntos
 [día 1, 10:59] action mateo 📅 Mateo Ruiz propone a Julián quedar en Café La Ola mañana a las 17:30: tomar algo y charlar con calma
@@ -1704,12 +1773,16 @@
 [día 1, 11:01] speech julian Julián Ortega → Hugo Peña: "¡Ay, por cierto! Tenía que volver a quedar con Hugo."
 [día 1, 11:02] speech pilar Pilar Herrero → Nuria Campos: "Ya te lo dije, ¡Hola! ¿Qué tal te va el día?"
 [día 1, 11:02] action valentina Valentina Ríos: cita con Ernesto: volver juntos
+[día 1, 11:02] action ernesto 👀 Ernesto Blasco se cruza con Julián Ortega
+[día 1, 11:02] action ernesto 👀 Ernesto Blasco se cruza con Hugo Peña
+[día 1, 11:02] action samuel 👀 Samuel Okafor se cruza con Valentina Ríos
 [día 1, 11:02] memory samuel ✅ Samuel Okafor se acuerda de volver a quedar con Julián
 [día 1, 11:02] action samuel 👀 Samuel Okafor se cruza con Julián Ortega (tenías algo pendiente con esta persona, tenéis una cita pendiente, le tienes aprecio)
 [día 1, 11:02] memory samuel 💭 A Samuel Okafor, al ver a Julián Ortega, le viene a la cabeza: «Le enseñé cuidados y primeros auxilios a Julián Ortega.»
 [día 1, 11:02] memory samuel ✅ Samuel Okafor se acuerda de volver a quedar con Elena
 [día 1, 11:02] action samuel 👀 Samuel Okafor se cruza con Elena Sanz (tenías algo pendiente con esta persona, tenéis una cita pendiente, le tienes aprecio)
 [día 1, 11:02] memory samuel 💭 A Samuel Okafor, al ver a Elena Sanz, le viene a la cabeza: «Oí a Elena Sanz decirle a Julián Ortega algo como: "…Hola, ¿has probado el…"»
+[día 1, 11:02] action samuel 👀 Samuel Okafor se cruza con Hugo Peña (le tienes aprecio)
 [día 1, 11:02] action samuel 👋 Samuel Okafor saluda al pasar a Julián Ortega: «¡Buenas, Julián!»
 [día 1, 11:02] speech hugo Hugo Peña → Julián Ortega: "¡Sí! Me encantó. Deberíamos venir juntos."
 [día 1, 11:03] action samuel Samuel Okafor: cita con Elena: volver juntos
@@ -1910,13 +1983,18 @@
 [día 1, 12:21] action julian 🎁 Julián Ortega le enseña y le regala a Hugo una hogaza de pan de Julián (muy bueno)
 [día 1, 12:21] action - Samuel, Julián y Hugo terminan de hablar (19 turnos; ya no aportaba nada (19 turnos))
 [día 1, 12:22] action valentina Valentina Ríos: pasear junto al lago
+[día 1, 12:24] action mateo 👀 Mateo Ruiz se cruza con Aurora Méndez (le tienes aprecio)
 [día 1, 12:24] memory mateo 💭 A Mateo Ruiz, al ver a Aurora Méndez, le viene a la cabeza: «Aurora Méndez me dijo: "¿Te cuento una cosa? Nací en Lethetown hace ochenta y dos años, cuando el lago era más grande. (y fue muy agradable)"»
+[día 1, 12:24] action elena 👀 Elena Sanz se cruza con Rafael Castro (le tienes aprecio)
+[día 1, 12:24] action elena 👀 Elena Sanz se cruza con Aurora Méndez
 [día 1, 12:24] action ernesto 👀 Ernesto Blasco se cruza con Rafael Castro (le tienes aprecio)
 [día 1, 12:24] memory ernesto 💭 A Ernesto Blasco, al ver a Rafael Castro, le viene a la cabeza: «Oí a Rafael Castro decirle a Mateo Ruiz algo como: "…Hola, ¿has probado el…"»
+[día 1, 12:24] action ernesto 👀 Ernesto Blasco se cruza con Aurora Méndez (le tienes aprecio)
 [día 1, 12:24] memory ernesto 💭 A Ernesto Blasco, al ver a Aurora Méndez, le viene a la cabeza: «Aurora Méndez me dijo: "¿Te cuento una cosa? Nací en Lethetown hace ochenta y dos años, cuando el lago era más grande. (y fue muy agradable)"»
 [día 1, 12:26] action elena Elena Sanz: acompañando a Ernesto Blasco
 [día 1, 12:26] action mateo 👀 Mateo Ruiz se cruza con Rafael Castro (queréis lo mismo, le tienes aprecio)
 [día 1, 12:26] memory mateo 💭 A Mateo Ruiz, al ver a Rafael Castro, le viene a la cabeza: «Rafael Castro me dijo: "Hola, ¿has probado el café nuevo?"»
+[día 1, 12:26] action ernesto 👀 Ernesto Blasco se cruza con Lucía Ferrer
 [día 1, 12:26] action ernesto Ernesto Blasco: charlar en la plaza
 [día 1, 12:27] action mateo Mateo Ruiz: acompañando a Ernesto Blasco
 [día 1, 12:29] speech tomas Tomás Herrero → Carmen Vidal: "Hola, ¿has probado el café nuevo?"
@@ -1961,6 +2039,7 @@
 [día 1, 12:38] action andres Andrés Molina: caminando a Casa marrón
 [día 1, 12:38] action ines Inés Ortega: caminando a Casa amarilla
 [día 1, 12:39] action sofia Sofía Navarro: caminando a Casa celeste
+[día 1, 12:40] action ines 👀 Inés Ortega se cruza con Andrés Molina
 [día 1, 12:40] action samuel Samuel Okafor: caminando a Casa del faro
 [día 1, 12:41] speech lucia Lucía Ferrer → Mateo Ruiz: "¡Hola! ¿Qué tal te va el día?"
 [día 1, 12:41] action hugo Hugo Peña: caminando a Casa del río
@@ -1980,6 +2059,7 @@
 [día 1, 12:50] action sofia Sofía Navarro: comer
 [día 1, 12:50] action ines 👀 Inés Ortega se cruza con Julián Ortega (tenéis una cita pendiente, es de tu familia, le tienes aprecio)
 [día 1, 12:50] memory ines 💭 A Inés Ortega, al ver a Julián Ortega, le viene a la cabeza: «Julián Ortega me dijo: "¿En serio?"»
+[día 1, 12:50] action pilar 👀 Pilar Herrero se cruza con Marta Gil
 [día 1, 12:50] action ines 🚶 Inés Ortega pasa de largo ante Julián Ortega
 [día 1, 12:51] action nuria Nuria Campos: comer
 [día 1, 12:51] action carmen Carmen Vidal: seguir charlando con Tomás Herrero
@@ -1989,6 +2069,7 @@
 [día 1, 12:53] action aurora Aurora Méndez: caminando a Casa del jardín
 [día 1, 12:56] action marta 👀 Marta Gil se cruza con Leo Gil (tenéis una cita pendiente, le tienes aprecio, es de tu familia)
 [día 1, 12:56] memory marta 💭 A Marta Gil, al ver a Leo Gil, le viene a la cabeza: «Leo Gil me dijo: "¡Hola! ¿Qué tal te va el día?"»
+[día 1, 12:56] action valentina 👀 Valentina Ríos se cruza con Rafael Castro (le tienes aprecio)
 [día 1, 12:56] memory valentina 💭 A Valentina Ríos, al ver a Rafael Castro, le viene a la cabeza: «Rafael Castro me dijo: "¿Te has enterado de lo que se cuenta por el pueblo?" (más o menos)»
 [día 1, 12:56] action marta 🛑 Marta Gil se para a charlar con Leo Gil en el camino
 [día 1, 12:56] action marta Marta Gil: hablando con Leo Gil
@@ -2031,6 +2112,7 @@
 [día 1, 13:12] memory clara ✅ Clara Méndez se acuerda de volver a quedar con Ernesto
 [día 1, 13:12] action clara 👀 Clara Méndez se cruza con Ernesto Blasco (tenías algo pendiente con esta persona, le tienes aprecio)
 [día 1, 13:12] memory clara 💭 A Clara Méndez, al ver a Ernesto Blasco, le viene a la cabeza: «Le dije a Ernesto Blasco: "Hola, ¿has probado el café nuevo?"»
+[día 1, 13:12] action clara 👀 Clara Méndez se cruza con Mateo Ruiz (le tienes aprecio)
 [día 1, 13:12] memory clara 💭 A Clara Méndez, al ver a Mateo Ruiz, le viene a la cabeza: «(vagamente) Mateo Ruiz me dijo: "¿En serio?"»
 [día 1, 13:12] memory aurora 💭 A Aurora Méndez, al pasar por Plaza Mayor, le viene a la cabeza: «Lucía Ferrer me dijo: "¿Te cuento una cosa? Según tu plan ahora toca charlar en la plaza en Plaza Mayor, pero estás hablando con Rafael Castro."»
 [día 1, 13:12] action clara 🛑 Clara Méndez se para a charlar con Ernesto Blasco en el camino
@@ -2041,6 +2123,7 @@
 [día 1, 13:14] action - Marta y Leo terminan de hablar (2 turnos; decidió no seguir)
 [día 1, 13:14] action clara 🚶 Clara Méndez sigue su camino a Café La Ola
 [día 1, 13:14] action clara Clara Méndez: caminando a Café La Ola
+[día 1, 13:16] action clara 👀 Clara Méndez se cruza con Rafael Castro
 [día 1, 13:17] action elena Elena Sanz: comer
 [día 1, 13:18] action lucia Lucía Ferrer: comer
 [día 1, 13:25] action aurora Aurora Méndez: tomar algo y charlar
@@ -2050,6 +2133,7 @@
 [día 1, 13:31] action carmen Carmen Vidal: caminando a Casa roja
 [día 1, 13:32] action clara Clara Méndez: esperando a ver si Aurora quiere
 [día 1, 13:32] action clara 🙋 Clara Méndez le pide a Aurora que le enseñe contar historias
+[día 1, 13:38] action carmen 👀 Carmen Vidal se cruza con Rafael Castro (le tienes aprecio)
 [día 1, 13:38] memory carmen 💭 A Carmen Vidal, al ver a Rafael Castro, le viene a la cabeza: «Hoy he hablado bastante con la gente del pueblo; me sienta bien tener compañía.»
 [día 1, 13:39] action aurora Aurora Méndez: enseñándole contar historias a Clara
 [día 1, 13:39] action clara Clara Méndez: aprendiendo contar historias con Aurora
@@ -2078,34 +2162,47 @@
 [día 1, 14:04] action ernesto Ernesto Blasco: comer
 [día 1, 14:04] action elena Elena Sanz: caminando a Ayuntamiento
 [día 1, 14:04] action marta Marta Gil: caminando a Ultramarinos Lete
+[día 1, 14:04] action ines 👀 Inés Ortega se cruza con Elena Sanz (le tienes aprecio)
 [día 1, 14:04] memory ines 💭 A Inés Ortega, al ver a Elena Sanz, le viene a la cabeza: «Elena Sanz me dijo: "¿Te cuento una cosa? Samuel Okafor acepta la cita c11 en Café La Ola mañana a las 11:00."»
+[día 1, 14:04] action hugo 👀 Hugo Peña se cruza con Valentina Ríos (le tienes aprecio)
 [día 1, 14:04] memory hugo 💭 A Hugo Peña, al ver a Valentina Ríos, le viene a la cabeza: «Valentina Ríos me dijo: "Pues no sé yo."»
 [día 1, 14:05] action rafael Rafael Castro: caminando a Biblioteca Mnemósine
 [día 1, 14:06] action pilar Pilar Herrero: caminando a Huerto comunitario
+[día 1, 14:06] action elena 👀 Elena Sanz se cruza con Pilar Herrero
+[día 1, 14:06] action rafael 👀 Rafael Castro se cruza con Leo Gil
 [día 1, 14:06] action rafael 👀 Rafael Castro se cruza con Marta Gil (le tienes aprecio)
 [día 1, 14:06] memory rafael 💭 A Rafael Castro, al ver a Marta Gil, le viene a la cabeza: «Le dije a Marta Gil: "¿Te cuento una cosa? Quiero ir a la cita con Aurora en Café La Ola (volver juntos)"»
 [día 1, 14:07] action nuria Nuria Campos: caminando a Huerto comunitario
 [día 1, 14:08] action andres Andrés Molina: caminando a Biblioteca Mnemósine
+[día 1, 14:08] action pilar 👀 Pilar Herrero se cruza con Andrés Molina
 [día 1, 14:08] action samuel Samuel Okafor: pasar consulta
 [día 1, 14:09] action tomas Tomás Herrero: caminando a Lago Leteo
 [día 1, 14:09] action sofia Sofía Navarro: caminando a Escuela del pueblo
 [día 1, 14:10] action valentina Valentina Ríos: pasear y sentarse en el banco
+[día 1, 14:12] action tomas 👀 Tomás Herrero se cruza con Rafael Castro
+[día 1, 14:12] action pilar 👀 Pilar Herrero se cruza con Rafael Castro
+[día 1, 14:12] action pilar 👀 Pilar Herrero se cruza con Sofía Navarro
 [día 1, 14:12] action mateo Mateo Ruiz: caminando a Café La Ola
 [día 1, 14:13] action julian Julián Ortega: hornear y vender pan
 [día 1, 14:13] action ernesto Ernesto Blasco: caminando a Taberna El Faro
 [día 1, 14:13] action elena Elena Sanz: despachar en el ayuntamiento
 [día 1, 14:13] action hugo Hugo Peña: tocar la guitarra en la plaza
 [día 1, 14:13] action carmen Carmen Vidal: caminando a Escuela del pueblo
+[día 1, 14:14] action mateo 👀 Mateo Ruiz se cruza con Pilar Herrero
 [día 1, 14:15] action lucia Lucía Ferrer: pasear y sentarse en el banco
 [día 1, 14:16] action ines Inés Ortega: ir a clase
+[día 1, 14:16] action marta 👀 Marta Gil se cruza con Hugo Peña
 [día 1, 14:17] action leo Leo Gil: ir a clase
 [día 1, 14:17] action andres Andrés Molina: ordenar libros en la biblioteca
 [día 1, 14:18] action andres Andrés Molina: caminando a Biblioteca Mnemósine
+[día 1, 14:18] action andres 👀 Andrés Molina se cruza con Rafael Castro (le tienes aprecio)
 [día 1, 14:19] action aurora Aurora Méndez: caminando a Taberna El Faro
 [día 1, 14:19] action andres Andrés Molina: ordenar libros en la biblioteca
 [día 1, 14:20] action rafael Rafael Castro: leer en la biblioteca
 [día 1, 14:20] action sofia Sofía Navarro: dar clase
+[día 1, 14:20] action mateo 👀 Mateo Ruiz se cruza con Hugo Peña
 [día 1, 14:20] memory mateo 💭 A Mateo Ruiz, al ver a Hugo Peña, le viene a la cabeza: «Oí a Hugo Peña decirle a Valentina Ríos algo como: "…familia, bien?…"»
+[día 1, 14:20] action carmen 👀 Carmen Vidal se cruza con Ernesto Blasco
 [día 1, 14:20] memory mateo 💭 A Mateo Ruiz, al pasar por Plaza Mayor, le viene a la cabeza, sin querer: «Aurora Méndez le dijo a Elena Sanz (yo estaba en la conversación): "Hola, ¿has probado el café nuevo?"»
 [día 1, 14:21] action nuria Nuria Campos: cuidar el huerto
 [día 1, 14:21] action tomas Tomás Herrero: pescar en el lago
@@ -2118,6 +2215,7 @@
 [día 1, 14:22] action carmen Carmen Vidal: dar una vuelta
 [día 1, 14:23] action - Inés y Leo terminan de hablar (1 turnos; decidió no seguir)
 [día 1, 14:24] action marta Marta Gil: atender el ultramarinos
+[día 1, 14:24] action mateo 👀 Mateo Ruiz se cruza con Aurora Méndez (le tienes aprecio)
 [día 1, 14:25] speech rafael Rafael Castro → Andrés Molina: "Hola, ¿has probado el café nuevo?"
 [día 1, 14:26] speech andres Andrés Molina → Rafael Castro: "Bueno, te dejo, que me toca tomar un café. ¡Luego seguimos!"
 [día 1, 14:26] memory pilar ✅ Pilar Herrero se acuerda de volver a quedar con Nuria
@@ -2146,11 +2244,13 @@
 [día 1, 14:31] memory rafael 📝 Rafael Castro se propone volver a quedar con Andrés
 [día 1, 14:31] memory andres 📝 Andrés Molina se propone volver a quedar con Rafael
 [día 1, 14:32] speech pilar Pilar Herrero → Nuria Campos: "¡Sí! Me encantó. Deberíamos venir juntos."
+[día 1, 14:32] action mateo 👀 Mateo Ruiz se cruza con Clara Méndez (le tienes aprecio)
 [día 1, 14:33] speech nuria Nuria Campos → Pilar Herrero: "¡Ay, por cierto! Tenía que volver a quedar con Pilar."
 [día 1, 14:33] action mateo Mateo Ruiz: atender el café
 [día 1, 14:34] action - Nuria y Pilar terminan de hablar (7 turnos; decidió no seguir)
 [día 1, 14:34] memory nuria 📝 Nuria Campos se propone volver a quedar con Pilar
 [día 1, 14:34] memory pilar 📝 Pilar Herrero se propone volver a quedar con Nuria
+[día 1, 14:34] action aurora 👀 Aurora Méndez se cruza con Ernesto Blasco (le tienes aprecio)
 [día 1, 14:34] memory aurora 💭 A Aurora Méndez, al ver a Ernesto Blasco, le viene a la cabeza: «Ernesto Blasco le dijo a Mateo Ruiz (yo estaba en la conversación): "¿Te cuento una cosa? Quiero volver a quedar con Hugo"»
 [día 1, 14:37] action aurora Aurora Méndez: tomar algo en la taberna
 [día 1, 14:39] speech sofia Sofía Navarro → Inés Ortega: "¡Ay, por cierto! Tenía que volver a quedar con Inés."
@@ -2183,6 +2283,7 @@
 [día 1, 14:51] speech sofia Sofía Navarro → Inés Ortega: "No me digas... cuéntamelo todo."
 [día 1, 14:52] action ines 👋 Inés Ortega deja la conversación con Sofía y Carmen (decidió no seguir)
 [día 1, 14:52] memory ines 📝 Inés Ortega se propone volver a quedar con Leo
+[día 1, 14:52] action clara 👀 Clara Méndez se cruza con Hugo Peña (le tienes aprecio)
 [día 1, 14:53] action nuria Nuria Campos: caminando a Huerto comunitario
 [día 1, 14:53] action leo 👥 Leo Gil se une a la conversación de Sofía y Carmen
 [día 1, 14:53] action carmen Carmen Vidal: hablando con Sofía y Leo
@@ -2284,10 +2385,12 @@
 [día 1, 17:02] action mateo Mateo Ruiz: caminando a Taberna El Faro
 [día 1, 17:04] action elena Elena Sanz: caminando a Café La Ola
 [día 1, 17:04] action marta Marta Gil: tener la tienda bien atendida
+[día 1, 17:04] action lucia 👀 Lucía Ferrer se cruza con Julián Ortega
 [día 1, 17:04] memory mateo ✅ Mateo Ruiz se acuerda de volver a quedar con Julián
 [día 1, 17:04] action mateo 👀 Mateo Ruiz se cruza con Julián Ortega (tenías algo pendiente con esta persona, tenéis una cita pendiente, le tienes aprecio)
 [día 1, 17:04] memory mateo 💭 A Mateo Ruiz, al ver a Julián Ortega, le viene a la cabeza: «Julián Ortega me dijo: "¿Te cuento una cosa? Quiero volver a quedar con Samuel" (más o menos)»
 [día 1, 17:04] action mateo 🚶 Mateo Ruiz pasa de largo ante Julián Ortega
+[día 1, 17:06] action clara 👀 Clara Méndez se cruza con Ernesto Blasco (le tienes aprecio)
 [día 1, 17:06] memory clara 💭 A Clara Méndez, al ver a Ernesto Blasco, le viene a la cabeza: «Le dije a Ernesto Blasco: "¡Ernesto! Justo quería verte."»
 [día 1, 17:07] action julian Julián Ortega: tomar un café
 [día 1, 17:07] action sofia Sofía Navarro: leer en la biblioteca
@@ -2302,10 +2405,14 @@
 [día 1, 17:10] action julian 🕑 Julián Ortega se acuerda de su cita en Café La Ola
 [día 1, 17:10] action ines 🕑 Inés Ortega se acuerda de su cita en Café La Ola
 [día 1, 17:10] action ines Inés Ortega: caminando a Café La Ola
+[día 1, 17:10] action elena 👀 Elena Sanz se cruza con Andrés Molina
 [día 1, 17:11] action julian Julián Ortega: cita con Inés: tomar algo y charlar con calma
 [día 1, 17:12] speech clara Clara Méndez → Rafael Castro: "¿Te cuento una cosa? Aurora Méndez me enseñó contar historias."
 [día 1, 17:12] action valentina 🧭 Valentina Ríos sale a explorar
 [día 1, 17:12] action valentina Valentina Ríos: caminando a Jardín del Recuerdo
+[día 1, 17:12] action lucia 👀 Lucía Ferrer se cruza con Hugo Peña (le tienes aprecio)
+[día 1, 17:12] action lucia 👀 Lucía Ferrer se cruza con Samuel Okafor
+[día 1, 17:12] action andres 👀 Andrés Molina se cruza con Samuel Okafor
 [día 1, 17:12] memory samuel ✅ Samuel Okafor se acuerda de volver a quedar con Hugo
 [día 1, 17:12] action samuel 👀 Samuel Okafor se cruza con Hugo Peña (tenías algo pendiente con esta persona, le tienes aprecio)
 [día 1, 17:12] memory samuel 💭 A Samuel Okafor, al ver a Hugo Peña, le viene a la cabeza: «Hugo Peña me dijo: "¡qué arte! Pues ya ves, lo de siempre. Me alegro de verte."»
@@ -2325,7 +2432,10 @@
 [día 1, 17:15] speech hugo Hugo Peña → Samuel Okafor: "¡Ay, por cierto! Tenía que volver a quedar con Samuel."
 [día 1, 17:16] speech ernesto Ernesto Blasco → Aurora Méndez: "Pues yo he oído otra versión, ¿eh?"
 [día 1, 17:16] speech clara Clara Méndez → Rafael Castro: "¿Sabes si va a llover esta tarde?"
+[día 1, 17:16] action mateo 👀 Mateo Ruiz se cruza con Nuria Campos
 [día 1, 17:16] memory mateo 💭 A Mateo Ruiz, al ver a Nuria Campos, le viene a la cabeza: «Nuria Campos le dijo a…»
+[día 1, 17:16] action mateo 👀 Mateo Ruiz se cruza con Pilar Herrero
+[día 1, 17:16] action elena 👀 Elena Sanz se cruza con Valentina Ríos
 [día 1, 17:16] memory elena 💭 A Elena Sanz, al ver a Valentina Ríos, le viene a la cabeza: «Valentina Ríos le dijo a Ernesto Blasco (yo estaba en la conversación): "¿En serio?"»
 [día 1, 17:16] action - Samuel y Hugo terminan de hablar (4 turnos; siguió su camino)
 [día 1, 17:17] action - Aurora y Ernesto terminan de hablar (2 turnos; decidió no seguir)
@@ -2335,13 +2445,18 @@
 [día 1, 17:18] action samuel 🚶 Samuel Okafor sigue su camino a Café La Ola
 [día 1, 17:18] action samuel Samuel Okafor: caminando a Café La Ola
 [día 1, 17:18] action ines 👀 Inés Ortega se cruza con Valentina Ríos (le tienes aprecio)
+[día 1, 17:18] action pilar 👀 Pilar Herrero se cruza con Valentina Ríos
 [día 1, 17:19] speech hugo Hugo Peña → Andrés Molina: "Pues yo he oído otra versión, ¿eh?"
 [día 1, 17:19] action - Clara y Rafael terminan de hablar (7 turnos; se estaban repitiendo)
 [día 1, 17:20] action - Andrés y Hugo terminan de hablar (2 turnos; decidió no seguir)
+[día 1, 17:20] action mateo 👀 Mateo Ruiz se cruza con Ernesto Blasco (le tienes aprecio)
+[día 1, 17:20] action mateo 👀 Mateo Ruiz se cruza con Clara Méndez (le tienes aprecio)
+[día 1, 17:20] action mateo 👀 Mateo Ruiz se cruza con Aurora Méndez (le tienes aprecio)
 [día 1, 17:20] action nuria 👀 Nuria Campos se cruza con Valentina Ríos (le tienes aprecio)
 [día 1, 17:21] speech lucia Lucía Ferrer → Andrés Molina: "Buenos días. ¿Vienes a menudo por aquí?"
 [día 1, 17:21] action mateo Mateo Ruiz: tomar algo en la taberna
 [día 1, 17:22] speech andres Andrés Molina → Lucía Ferrer: "Ay, no sé si debería contártelo, pero bueno..."
+[día 1, 17:22] action elena 👀 Elena Sanz se cruza con Julián Ortega (le tienes aprecio)
 [día 1, 17:22] memory elena 💭 A Elena Sanz, al ver a Julián Ortega, le viene a la cabeza: «Julián Ortega le dijo a Ernesto Blasco (yo estaba en la conversación): "¡Qué bien se está hoy en Café La Ola!"»
 [día 1, 17:23] action elena Elena Sanz: tomar un café
 [día 1, 17:23] action - Lucía y Andrés terminan de hablar (2 turnos; decidió no seguir)
@@ -2349,6 +2464,7 @@
 [día 1, 17:24] speech mateo Mateo Ruiz → Aurora Méndez: "¡Hola! ¿Qué tal te va el día?"
 [día 1, 17:24] action ines 👀 Inés Ortega se cruza con Julián Ortega (tenéis una cita pendiente, es de tu familia, le tienes aprecio)
 [día 1, 17:24] memory ines 💭 A Inés Ortega, al ver a Julián Ortega, le viene a la cabeza: «Me crucé con Julián Ortega por el camino (estaba haciendo: comer). (más o menos)»
+[día 1, 17:24] action ines 👀 Inés Ortega se cruza con Elena Sanz (le tienes aprecio)
 [día 1, 17:24] memory ines 💭 A Inés Ortega, al ver a Elena Sanz, le viene a la cabeza: «Elena Sanz me dijo: "¿Te cuento una cosa? Samuel Okafor acepta la cita c11 en Café La Ola mañana a las 11:00."»
 [día 1, 17:24] action ines 🛑 Inés Ortega se para a charlar con Julián Ortega en el camino
 [día 1, 17:24] action ines Inés Ortega: hablando con Julián Ortega
@@ -2358,6 +2474,11 @@
 [día 1, 17:25] action julian Julián Ortega: hablando con Inés Ortega
 [día 1, 17:25] speech julian Julián Ortega → Inés Ortega: "¡Sí! Me encantó. Deberíamos venir juntos."
 [día 1, 17:26] memory ernesto 🧠 Ernesto Blasco olvida 17 recuerdos y resume 0 (presupuesto de memoria)
+[día 1, 17:26] action ines 👀 Inés Ortega se cruza con Pilar Herrero
+[día 1, 17:26] action ines 👀 Inés Ortega se cruza con Nuria Campos
+[día 1, 17:26] action pilar 👀 Pilar Herrero se cruza con Julián Ortega
+[día 1, 17:26] action pilar 👀 Pilar Herrero se cruza con Elena Sanz
+[día 1, 17:26] action nuria 👀 Nuria Campos se cruza con Julián Ortega
 [día 1, 17:26] action - Inés y Julián terminan de hablar (2 turnos; siguió su camino)
 [día 1, 17:26] memory ines 📝 Inés Ortega se propone volver a quedar con Julián
 [día 1, 17:26] memory julian 📝 Julián Ortega se propone volver a quedar con Inés
@@ -2369,8 +2490,12 @@
 [día 1, 17:28] action valentina Valentina Ríos: explorando Jardín del Recuerdo
 [día 1, 17:28] action ines 🚶 Inés Ortega sigue su camino a Café La Ola
 [día 1, 17:28] action ines Inés Ortega: caminando a Café La Ola
+[día 1, 17:28] action ines 👀 Inés Ortega se cruza con Samuel Okafor (le tienes aprecio)
+[día 1, 17:28] action samuel 👀 Samuel Okafor se cruza con Nuria Campos
+[día 1, 17:28] action samuel 👀 Samuel Okafor se cruza con Pilar Herrero
 [día 1, 17:28] memory samuel ✅ Samuel Okafor se acuerda de volver a quedar con Julián
 [día 1, 17:28] action samuel 👀 Samuel Okafor se cruza con Julián Ortega (tenías algo pendiente con esta persona, le tienes aprecio)
+[día 1, 17:28] action samuel 👀 Samuel Okafor se cruza con Elena Sanz (le tienes aprecio)
 [día 1, 17:28] action samuel 🚶 Samuel Okafor pasa de largo ante Julián Ortega
 [día 1, 17:29] speech hugo Hugo Peña → Andrés Molina: "¿Te cuento una cosa? Elena Sanz le dijo a Julián Ortega (yo estaba en la conversación): "Hola, ¿has probado el café nuevo?" (y fue muy agradable)"
 [día 1, 17:29] action ines Inés Ortega: cita con Julián: tomar algo y charlar con calma
@@ -2425,6 +2550,7 @@
 [día 1, 17:43] speech leo Leo Gil → Valentina Ríos: "Por cierto, ¿te acuerdas de lo que pasó la semana pasada?"
 [día 1, 17:44] speech elena Elena Sanz → Nuria Campos: "¡Ay, por cierto! Tenía que hablar con Nuria de la casa vacía."
 [día 1, 17:44] action pilar 🎁 Pilar Herrero le enseña y le regala a Samuel un cesto de verduras de Pilar (bueno)
+[día 1, 17:44] action carmen 👀 Carmen Vidal se cruza con Ernesto Blasco
 [día 1, 17:44] action - Leo y Valentina terminan de hablar (3 turnos; siguió su camino)
 [día 1, 17:45] action nuria Nuria Campos: hablando con Elena Sanz
 [día 1, 17:45] speech nuria Nuria Campos → Elena Sanz: "¿Y eso?"
@@ -2432,7 +2558,16 @@
 [día 1, 17:46] action ines Inés Ortega: hablando con Elena y Nuria
 [día 1, 17:46] speech ines Inés Ortega → Nuria Campos: "¿Sabes? Oí a Elena Sanz decir "…que hablar con Nuria de la casa…"."
 [día 1, 17:46] speech elena Elena Sanz → Nuria Campos: "Bastante liado, la verdad. ¿Y tú?"
+[día 1, 17:46] action carmen 👀 Carmen Vidal se cruza con Aurora Méndez
 [día 1, 17:47] action nuria 👋 Nuria Campos deja la conversación con Elena y Inés (decidió no seguir)
+[día 1, 17:48] action andres 👀 Andrés Molina se cruza con Marta Gil
+[día 1, 17:48] action andres 👀 Andrés Molina se cruza con Nuria Campos (le tienes aprecio)
+[día 1, 17:48] action marta 👀 Marta Gil se cruza con Nuria Campos
+[día 1, 17:48] action marta 👀 Marta Gil se cruza con Pilar Herrero
+[día 1, 17:48] action marta 👀 Marta Gil se cruza con Inés Ortega
+[día 1, 17:48] action marta 👀 Marta Gil se cruza con Julián Ortega
+[día 1, 17:48] action marta 👀 Marta Gil se cruza con Elena Sanz
+[día 1, 17:48] action marta 👀 Marta Gil se cruza con Samuel Okafor
 [día 1, 17:49] speech julian Julián Ortega → Samuel Okafor: "¡Ay, por cierto! Tenía que volver a quedar con Samuel."
 [día 1, 17:49] action marta Marta Gil: cita con Leo: volver juntos
 [día 1, 17:50] action andres Andrés Molina: cita con Ernesto: volver juntos
@@ -2444,13 +2579,23 @@
 [día 1, 17:51] speech julian Julián Ortega → Samuel Okafor: "¿Y eso?"
 [día 1, 17:52] action andres 👋 Andrés Molina deja la conversación con Elena y Inés (decidió no seguir)
 [día 1, 17:52] speech samuel Samuel Okafor → Julián Ortega: "Tienes razón, este pueblo nunca cambia."
+[día 1, 17:52] action leo 👀 Leo Gil se cruza con Andrés Molina
+[día 1, 17:52] action leo 👀 Leo Gil se cruza con Nuria Campos
 [día 1, 17:52] action leo 👀 Leo Gil se cruza con Marta Gil (tenéis una cita pendiente, le tienes aprecio, es de tu familia)
 [día 1, 17:52] memory leo 💭 A Leo Gil, al ver a Marta Gil, le viene a la cabeza: «Marta Gil me dijo: "A ver, ¡Hola! ¿Qué tal te va el día?"»
+[día 1, 17:52] action leo 👀 Leo Gil se cruza con Pilar Herrero
 [día 1, 17:52] memory leo ✅ Leo Gil se acuerda de volver a quedar con Inés
 [día 1, 17:52] action leo 👀 Leo Gil se cruza con Inés Ortega (tenías algo pendiente con esta persona, tenéis una cita pendiente, le tienes aprecio)
 [día 1, 17:52] memory leo 💭 A Leo Gil, al ver a Inés Ortega, le viene a la cabeza: «Inés Ortega me dijo: "Pues no estoy de acuerdo, la verdad."»
+[día 1, 17:52] action leo 👀 Leo Gil se cruza con Julián Ortega
+[día 1, 17:52] action leo 👀 Leo Gil se cruza con Elena Sanz
+[día 1, 17:52] action leo 👀 Leo Gil se cruza con Samuel Okafor
+[día 1, 17:52] action valentina 👀 Valentina Ríos se cruza con Andrés Molina (le tienes aprecio)
+[día 1, 17:52] action valentina 👀 Valentina Ríos se cruza con Marta Gil (le tienes aprecio)
 [día 1, 17:52] memory valentina 💭 A Valentina Ríos, al ver a Marta Gil, le viene a la cabeza: «(vagamente) Le dije a Marta Gil: "Hola,…»
+[día 1, 17:52] action valentina 👀 Valentina Ríos se cruza con Julián Ortega (no te cae nada bien)
 [día 1, 17:52] memory valentina 💭 A Valentina Ríos, al ver a Julián Ortega, le viene a la cabeza: «Julián Ortega me dijo: "Bastante liado, la verdad. ¿Y tú?"»
+[día 1, 17:52] action valentina 👀 Valentina Ríos se cruza con Samuel Okafor (le tienes aprecio)
 [día 1, 17:52] action leo ✗ Leo Gil no pudo pararme a charlar con Marta Gil: Marta Gil ya no está cerca
 [día 1, 17:53] action - Julián y Samuel terminan de hablar (4 turnos; decidió no seguir)
 [día 1, 17:53] action valentina Valentina Ríos: tomar algo y charlar
@@ -2459,7 +2604,10 @@
 [día 1, 17:54] speech marta Marta Gil → Pilar Herrero: "¿Te cuento una cosa? Lo conseguí: Pasar más rato con Leo."
 [día 1, 17:54] action pilar Pilar Herrero: hablando con Marta Gil
 [día 1, 17:54] speech pilar Pilar Herrero → Marta Gil: "¿Y eso?"
+[día 1, 17:54] action clara 👀 Clara Méndez se cruza con Andrés Molina (le tienes aprecio)
 [día 1, 17:54] memory clara 💭 A Clara Méndez, al ver a Andrés Molina, le viene a la cabeza: «Andrés Molina le dijo a Aurora Méndez (yo estaba en la conversación): "¡Qué bien se está hoy en Café La Ola!"»
+[día 1, 17:54] action clara 👀 Clara Méndez se cruza con Marta Gil
+[día 1, 17:54] action clara 👀 Clara Méndez se cruza con Nuria Campos (le tienes aprecio)
 [día 1, 17:54] action carmen Carmen Vidal: cuidar mi rincón del huerto
 [día 1, 17:55] action lucia 🖼 Lucía Ferrer: un dibujo (bueno)
 [día 1, 17:55] action - Marta y Pilar terminan de hablar (2 turnos; decidió no seguir)
@@ -2470,14 +2618,29 @@
 [día 1, 17:56] speech ines Inés Ortega → Leo Gil: "¡Ay, por cierto! Tenía que volver a quedar con Leo."
 [día 1, 17:56] action ernesto 👀 Ernesto Blasco se cruza con Andrés Molina (tenéis una cita pendiente, le tienes aprecio)
 [día 1, 17:56] memory ernesto 💭 A Ernesto Blasco, al ver a Andrés Molina, le viene a la cabeza: «Andrés Molina me dijo: "Hola, ¿has probado el café nuevo?"»
+[día 1, 17:56] action ernesto 👀 Ernesto Blasco se cruza con Nuria Campos
+[día 1, 17:56] action ernesto 👀 Ernesto Blasco se cruza con Marta Gil
 [día 1, 17:56] action ernesto 👀 Ernesto Blasco se cruza con Valentina Ríos (tenéis una cita pendiente, le tienes aprecio)
 [día 1, 17:56] memory ernesto 💭 A Ernesto Blasco, al ver a Valentina Ríos, le viene a la cabeza: «Valentina Ríos me dijo: "Pues no sé yo."»
+[día 1, 17:56] action ernesto 👀 Ernesto Blasco se cruza con Pilar Herrero
+[día 1, 17:56] action ernesto 👀 Ernesto Blasco se cruza con Inés Ortega
+[día 1, 17:56] action ernesto 👀 Ernesto Blasco se cruza con Julián Ortega (le tienes aprecio)
+[día 1, 17:56] action ernesto 👀 Ernesto Blasco se cruza con Elena Sanz (le tienes aprecio)
+[día 1, 17:56] action ernesto 👀 Ernesto Blasco se cruza con Leo Gil
 [día 1, 17:56] action ernesto 👀 Ernesto Blasco se cruza con Samuel Okafor (le tienes aprecio)
 [día 1, 17:56] memory aurora ✅ Aurora Méndez se acuerda de volver a quedar con Andrés
 [día 1, 17:56] action aurora 👀 Aurora Méndez se cruza con Andrés Molina (tenías algo pendiente con esta persona, tenéis una cita pendiente, le tienes aprecio)
 [día 1, 17:56] memory aurora 💭 A Aurora Méndez, al ver a Andrés Molina, le viene a la cabeza: «Andrés Molina me dijo: algo…»
+[día 1, 17:56] action aurora 👀 Aurora Méndez se cruza con Nuria Campos (no te cae nada bien)
+[día 1, 17:56] action aurora 👀 Aurora Méndez se cruza con Marta Gil (le tienes aprecio)
+[día 1, 17:56] action aurora 👀 Aurora Méndez se cruza con Pilar Herrero
+[día 1, 17:56] action aurora 👀 Aurora Méndez se cruza con Inés Ortega (le tienes aprecio)
 [día 1, 17:56] memory aurora 💭 A Aurora Méndez, al ver a Inés Ortega, le viene a la cabeza: «Hoy he hablado bastante con la gente del pueblo; me sienta bien tener compañía.»
+[día 1, 17:56] action aurora 👀 Aurora Méndez se cruza con Valentina Ríos (le tienes aprecio)
 [día 1, 17:56] action aurora 👀 Aurora Méndez se cruza con Julián Ortega (le tienes aprecio)
+[día 1, 17:56] action aurora 👀 Aurora Méndez se cruza con Leo Gil (le tienes aprecio)
+[día 1, 17:56] action aurora 👀 Aurora Méndez se cruza con Elena Sanz (le tienes aprecio)
+[día 1, 17:56] action aurora 👀 Aurora Méndez se cruza con Samuel Okafor (le tienes aprecio)
 [día 1, 17:56] action ernesto 👋 Ernesto Blasco saluda al pasar a Valentina Ríos: «¡Buenas, Valentina!»
 [día 1, 17:56] action aurora 🚶 Aurora Méndez pasa de largo ante Andrés Molina
 [día 1, 17:57] action ernesto Ernesto Blasco: cita con Valentina: volver juntos
@@ -2894,6 +3057,7 @@
 [día 1, 19:57] speech aurora Aurora Méndez → Ernesto Blasco: "Bueno, te dejo, que me toca cenar y descansar. ¡Luego seguimos!"
 [día 1, 19:57] action valentina 👋 Valentina Ríos deja la conversación con Nuria, Samuel, Inés y Julián (decidió no seguir)
 [día 1, 19:58] speech ernesto Ernesto Blasco → Aurora Méndez: "No me digas... cuéntamelo todo."
+[día 1, 19:58] action marta 👀 Marta Gil se cruza con Tomás Herrero
 [día 1, 19:59] action marta Marta Gil: acompañando a Pilar Herrero
 [día 1, 19:59] speech aurora Aurora Méndez → Ernesto Blasco: "Pues no sé yo."
 [día 1, 20:00] world - 🔒 Cierra Biblioteca Mnemósine
@@ -3353,13 +3517,17 @@
 [día 2, 08:05] action valentina Valentina Ríos: caminando a Jardín del Recuerdo
 [día 2, 08:06] action samuel Samuel Okafor: caminando a Consultorio médico
 [día 2, 08:06] action clara Clara Méndez: atender el puesto del mercadillo
+[día 2, 08:06] action tomas 👀 Tomás Herrero se cruza con Ernesto Blasco (le tienes aprecio)
 [día 2, 08:06] memory tomas 💭 A Tomás Herrero, al ver a Ernesto Blasco, le viene a la cabeza: «(vagamente) Ernesto Blasco me dijo: "Ay, no…»
 [día 2, 08:06] memory clara 💭 A Clara Méndez, con «puesto de fruta» delante, le viene a la cabeza: «(vagamente) Me he propuesto: Trabajar en el…»
 [día 2, 08:07] action mateo Mateo Ruiz: caminando a Café La Ola
 [día 2, 08:08] action andres Andrés Molina: caminando a Biblioteca Mnemósine
 [día 2, 08:08] action carmen Carmen Vidal: caminando a Jardín del Recuerdo
+[día 2, 08:08] action lucia 👀 Lucía Ferrer se cruza con Inés Ortega
+[día 2, 08:08] action sofia 👀 Sofía Navarro se cruza con Ernesto Blasco
 [día 2, 08:09] action hugo Hugo Peña: caminando a Plaza Mayor
 [día 2, 08:09] action rafael Rafael Castro: caminando a Huerto comunitario
+[día 2, 08:10] action pilar 👀 Pilar Herrero se cruza con Ernesto Blasco (le tienes aprecio)
 [día 2, 08:10] memory pilar 💭 A Pilar Herrero, al ver a Ernesto Blasco, le viene a la cabeza: «(vagamente) Oí a Ernesto Blasco decirle a…»
 [día 2, 08:11] action sofia Sofía Navarro: dar clase
 [día 2, 08:11] action elena Elena Sanz: despachar en el ayuntamiento
@@ -3368,6 +3536,7 @@
 [día 2, 08:13] action marta Marta Gil: caminando a Ultramarinos Lete
 [día 2, 08:13] action samuel Samuel Okafor: pasar consulta
 [día 2, 08:14] action julian Julián Ortega: hornear y vender pan
+[día 2, 08:14] action nuria 👀 Nuria Campos se cruza con Aurora Méndez (le tienes aprecio)
 [día 2, 08:14] memory nuria 💭 A Nuria Campos, al ver a Aurora Méndez, le viene a la cabeza: «Le dije a Aurora Méndez: "¿Te cuento una cosa? Quiero volver a quedar con Pilar (más o menos)"»
 [día 2, 08:14] memory mateo 💭 A Mateo Ruiz, al pasar por Plaza Mayor, le viene a la cabeza, sin querer: «Aurora Méndez le dijo a Elena Sanz (yo estaba en la conversación): "Hola, ¿has probado el café nuevo?"»
 [día 2, 08:16] action nuria Nuria Campos: cuidar el huerto
@@ -3376,6 +3545,7 @@
 [día 2, 08:16] action lucia 👀 Lucía Ferrer se cruza con Mateo Ruiz (le tienes aprecio)
 [día 2, 08:16] memory lucia 💭 A Lucía Ferrer, al ver a Mateo Ruiz, le viene a la cabeza: «Le dije a Mateo Ruiz: "¡Hola! ¿Qué tal te va el día?"»
 [día 2, 08:18] action ines Inés Ortega: ir a clase
+[día 2, 08:18] action pilar 👀 Pilar Herrero se cruza con Aurora Méndez (le tienes aprecio)
 [día 2, 08:18] memory pilar 💭 A Pilar Herrero, al ver a Aurora Méndez, le viene a la cabeza: «Oí a Aurora Méndez decirle a Valentina Ríos algo como: "…Hola, ¿has probado el…"»
 [día 2, 08:18] action pilar 👀 Pilar Herrero se cruza con Nuria Campos (le tienes aprecio)
 [día 2, 08:20] action pilar Pilar Herrero: cuidar el huerto
@@ -3400,7 +3570,10 @@
 [día 2, 08:24] speech ines Inés Ortega → Sofía Navarro: "¿En serio?"
 [día 2, 08:24] action rafael 👀 Rafael Castro se cruza con Aurora Méndez (le tienes aprecio)
 [día 2, 08:24] memory rafael 💭 A Rafael Castro, al ver a Aurora Méndez, le viene a la cabeza: «Mi día gira alrededor de mis rutinas: Oí a Aurora Méndez decirle a Elena Sanz algo como: "…¿has pr (y fue muy agradable)»
+[día 2, 08:24] action rafael 👀 Rafael Castro se cruza con Pilar Herrero
+[día 2, 08:24] action rafael 👀 Rafael Castro se cruza con Nuria Campos (le tienes aprecio)
 [día 2, 08:24] memory rafael 💭 A Rafael Castro, al ver a Nuria Campos, le viene a la cabeza: «Oí a Nuria Campos decirle…»
+[día 2, 08:24] action marta 👀 Marta Gil se cruza con Hugo Peña
 [día 2, 08:25] action rafael Rafael Castro: echar una mano en el huerto
 [día 2, 08:25] action leo Leo Gil: ir a clase
 [día 2, 08:25] speech valentina Valentina Ríos → Carmen Vidal: "¿Te cuento una cosa? Elena Sanz le dijo a Aurora Méndez (yo estaba en la conversación): "¿Te cuento una cosa?"
@@ -3531,6 +3704,8 @@
 [día 2, 10:35] action aurora 🖼 Aurora Méndez: un cesto de verduras (bueno)
 [día 2, 10:36] action carmen Carmen Vidal: caminando a Parque del Olvido
 [día 2, 10:36] action - Aurora y Pilar terminan de hablar (1 turnos; decidió no seguir)
+[día 2, 10:38] action carmen 👀 Carmen Vidal se cruza con Ernesto Blasco
+[día 2, 10:42] action valentina 👀 Valentina Ríos se cruza con Hugo Peña (le tienes aprecio)
 [día 2, 10:42] memory valentina 💭 A Valentina Ríos, al ver a Hugo Peña, le viene a la cabeza: «Hoy he hablado bastante con la gente del pueblo; me sienta bien tener compañía. (y fue muy agradable)»
 [día 2, 10:43] speech nuria Nuria Campos → Pilar Herrero: "Mira, buenos días. ¿Vienes a menudo por aquí?"
 [día 2, 10:44] action valentina Valentina Ríos: charlar en la plaza
@@ -3545,6 +3720,7 @@
 [día 2, 10:48] speech pilar Pilar Herrero → Nuria Campos: "Tienes razón, este pueblo nunca cambia."
 [día 2, 10:49] action - Nuria y Pilar terminan de hablar (6 turnos; decidió no seguir)
 [día 2, 10:50] memory ernesto 🫥 A Ernesto Blasco se le pasa volver a quedar con Andrés (y eso que estaba con Andrés Molina)
+[día 2, 10:50] action ernesto 👀 Ernesto Blasco se cruza con Andrés Molina (le tienes aprecio)
 [día 2, 10:50] memory ernesto 💭 A Ernesto Blasco, al ver a Andrés Molina, le viene a la cabeza: «Durante un tiempo pasaron cosas parecidas: Oí a Valentina Ríos decirle a Aurora Méndez algo c (y 9 más).»
 [día 2, 10:52] action ernesto Ernesto Blasco: leer en la biblioteca
 [día 2, 10:53] memory ernesto 🧠 Ernesto Blasco olvida 0 recuerdos y resume 11 (presupuesto de memoria)
@@ -3695,6 +3871,7 @@
 [día 2, 12:35] action aurora Aurora Méndez: caminando a Casa del jardín
 [día 2, 12:36] action samuel Samuel Okafor: caminando a Casa del faro
 [día 2, 12:36] action hugo Hugo Peña: caminando a Casa del río
+[día 2, 12:36] action pilar 👀 Pilar Herrero se cruza con Aurora Méndez (le tienes aprecio)
 [día 2, 12:36] memory pilar 💭 A Pilar Herrero, al ver a Aurora Méndez, le viene a la cabeza: «Aurora Méndez me dijo: "¿Te cuento una cosa? Nací en Lethetown hace ochenta y dos años, cuando el lago era más grande. (y fue muy agradable)"»
 [día 2, 12:37] action mateo Mateo Ruiz: caminando a Casa roja
 [día 2, 12:37] action sofia Sofía Navarro: caminando a Casa celeste
@@ -3703,9 +3880,12 @@
 [día 2, 12:37] action clara Clara Méndez: comer
 [día 2, 12:38] action lucia Lucía Ferrer: caminando a Casa azul
 [día 2, 12:38] action rafael Rafael Castro: caminando a Casa granate
+[día 2, 12:38] action marta 👀 Marta Gil se cruza con Hugo Peña
 [día 2, 12:40] action andres Andrés Molina: caminando a Casa marrón
 [día 2, 12:40] action mateo 👀 Mateo Ruiz se cruza con Carmen Vidal (es de tu familia, le tienes aprecio)
 [día 2, 12:40] memory mateo 💭 A Mateo Ruiz, al ver a Carmen Vidal, le viene a la cabeza: «Carmen Vidal me dijo: "¡Mateo! Justo quería verte." (más o menos)»
+[día 2, 12:40] action pilar 👀 Pilar Herrero se cruza con Sofía Navarro
+[día 2, 12:40] action andres 👀 Andrés Molina se cruza con Hugo Peña (le tienes aprecio)
 [día 2, 12:40] memory andres 💭 A Andrés Molina, al ver a Hugo Peña, le viene a la cabeza: «Mi día gira alrededor de mis rutinas: Hugo Peña me dijo: "¿Te cuento una cosa? Elena Sanz le dijo »
 [día 2, 12:40] action aurora 👀 Aurora Méndez se cruza con Clara Méndez (le tienes aprecio, es de tu familia)
 [día 2, 12:40] memory aurora 💭 A Aurora Méndez, al ver a Clara Méndez, le viene a la cabeza: «Durante un tiempo pasaron cosas parecidas: Oí a Clara Méndez decirle a Samuel Okafor algo com (y 10 más).»
@@ -3738,8 +3918,10 @@
 [día 2, 12:45] action julian Julián Ortega: comer
 [día 2, 12:45] action valentina Valentina Ríos: comer
 [día 2, 12:46] action ernesto Ernesto Blasco: comer
+[día 2, 12:46] action lucia 👀 Lucía Ferrer se cruza con Hugo Peña (le tienes aprecio)
 [día 2, 12:46] action ines 👀 Inés Ortega se cruza con Julián Ortega (es de tu familia, le tienes aprecio)
 [día 2, 12:46] memory ines 💭 A Inés Ortega, al ver a Julián Ortega, le viene a la cabeza: «Me crucé con Julián Ortega por el camino (estaba haciendo: preparar el desayuno).»
+[día 2, 12:46] action pilar 👀 Pilar Herrero se cruza con Andrés Molina (le tienes aprecio)
 [día 2, 12:46] action ines 👋 Inés Ortega saluda al pasar a Julián Ortega: «¡Buenas, Julián!»
 [día 2, 12:47] action ines Inés Ortega: comer
 [día 2, 12:47] action julian 👋 Julián Ortega devuelve el saludo a Inés Ortega: «¡Hola! ¿Qué tal?»
@@ -3801,6 +3983,7 @@
 [día 2, 14:06] action hugo Hugo Peña: caminando a Plaza Mayor
 [día 2, 14:06] action ines Inés Ortega: caminando a Escuela del pueblo
 [día 2, 14:06] action marta Marta Gil: caminando a Ultramarinos Lete
+[día 2, 14:06] action carmen 👀 Carmen Vidal se cruza con Pilar Herrero (le tienes aprecio)
 [día 2, 14:06] memory carmen 💭 A Carmen Vidal, al ver a Pilar Herrero, le viene a la cabeza: «Hoy he hablado bastante con la gente del pueblo; me sienta bien tener compañía. (más o menos)»
 [día 2, 14:07] action sofia Sofía Navarro: caminando a Escuela del pueblo
 [día 2, 14:07] action julian Julián Ortega: caminando a Panadería Miga
@@ -3813,6 +3996,7 @@
 [día 2, 14:09] action andres Andrés Molina: ordenar libros en la biblioteca
 [día 2, 14:10] action ernesto Ernesto Blasco: pasear junto al lago
 [día 2, 14:12] action elena Elena Sanz: despachar en el ayuntamiento
+[día 2, 14:12] action carmen 👀 Carmen Vidal se cruza con Clara Méndez (le tienes aprecio)
 [día 2, 14:12] memory carmen 💭 A Carmen Vidal, al ver a Clara Méndez, le viene a la cabeza: «(vagamente) Clara Méndez me dijo: "Ay, no…»
 [día 2, 14:12] memory mateo 💭 A Mateo Ruiz, al pasar por Plaza Mayor, le viene a la cabeza, sin querer: «Aurora Méndez le dijo a Elena Sanz (yo estaba en la conversación): "Hola, ¿has probado el café nuevo?"»
 [día 2, 14:13] action tomas Tomás Herrero: pescar en el lago
@@ -3827,6 +4011,8 @@
 [día 2, 14:16] speech aurora Aurora Méndez → Valentina Ríos: "Ay, no sé si debería contártelo, pero bueno..."
 [día 2, 14:16] action pilar 👀 Pilar Herrero se cruza con Rafael Castro (tenéis una cita pendiente, le tienes aprecio)
 [día 2, 14:16] memory pilar 💭 A Pilar Herrero, al ver a Rafael Castro, le viene a la cabeza: «Rafael Castro me dijo: "Hola, ¿has probado el café nuevo?" (más o menos)»
+[día 2, 14:16] action sofia 👀 Sofía Navarro se cruza con Valentina Ríos (le tienes aprecio)
+[día 2, 14:16] action sofia 👀 Sofía Navarro se cruza con Aurora Méndez (le tienes aprecio)
 [día 2, 14:16] memory sofia 💭 A Sofía Navarro, al ver a Aurora Méndez, le viene a la cabeza: «Oí a Aurora Méndez decirle…»
 [día 2, 14:17] speech valentina Valentina Ríos → Aurora Méndez: "Pues yo he oído otra versión, ¿eh?"
 [día 2, 14:18] action hugo Hugo Peña: tocar la guitarra en la plaza
@@ -3834,7 +4020,10 @@
 [día 2, 14:18] speech aurora Aurora Méndez → Valentina Ríos: "Pues no sé yo."
 [día 2, 14:18] action ines 👀 Inés Ortega se cruza con Valentina Ríos (le tienes aprecio)
 [día 2, 14:18] memory ines 💭 A Inés Ortega, al ver a Valentina Ríos, le viene a la cabeza: «Le dije a Valentina Ríos: "Ya."»
+[día 2, 14:18] action ines 👀 Inés Ortega se cruza con Aurora Méndez (le tienes aprecio)
 [día 2, 14:18] memory ines 💭 A Inés Ortega, al ver a Aurora Méndez, le viene a la cabeza: «Durante un tiempo pasaron cosas parecidas: Le dije a Aurora Méndez: "Bastante liado, la verda (y 5 más).»
+[día 2, 14:18] action marta 👀 Marta Gil se cruza con Hugo Peña
+[día 2, 14:18] action leo 👀 Leo Gil se cruza con Valentina Ríos (le tienes aprecio)
 [día 2, 14:18] memory leo 💭 A Leo Gil, al ver a Valentina Ríos, le viene a la cabeza: «Valentina Ríos me dijo: "¿Te has enterado de lo que se cuenta por el pueblo?"»
 [día 2, 14:18] action leo 👀 Leo Gil se cruza con Aurora Méndez (tenéis una cita pendiente, le tienes aprecio)
 [día 2, 14:18] memory leo 💭 A Leo Gil, al ver a Aurora Méndez, le viene a la cabeza: «Aurora Méndez me dijo: "Hola, ¿has probado el café nuevo?"»
@@ -3869,6 +4058,7 @@
 [día 2, 14:27] action pilar Pilar Herrero: cuidar el huerto
 [día 2, 14:28] memory rafael 🧠 Rafael Castro olvida 12 recuerdos y resume 0 (presupuesto de memoria)
 [día 2, 14:28] speech ines Inés Ortega → Sofía Navarro: "¡Ay, por cierto! Tenía que volver a quedar con Sofía."
+[día 2, 14:28] action lucia 👀 Lucía Ferrer se cruza con Ernesto Blasco (le tienes aprecio)
 [día 2, 14:29] action lucia Lucía Ferrer: pasear junto al lago
 [día 2, 14:29] action valentina 👥 Valentina Ríos se une a la conversación de Leo, Inés y Sofía
 [día 2, 14:29] action valentina Valentina Ríos: hablando con Leo, Inés y Sofía
@@ -3969,6 +4159,7 @@
 [día 2, 16:04] speech lucia Lucía Ferrer → Ernesto Blasco: "Pues yo he oído otra versión, ¿eh?"
 [día 2, 16:05] speech ernesto Ernesto Blasco → Lucía Ferrer: "¡Ay, por cierto! Tenía que volver a quedar con Lucía."
 [día 2, 16:06] speech lucia Lucía Ferrer → Ernesto Blasco: "Tienes razón, este pueblo nunca cambia."
+[día 2, 16:06] action ines 👀 Inés Ortega se cruza con Clara Méndez (le tienes aprecio)
 [día 2, 16:06] memory ines 💭 A Inés Ortega, al ver a Clara Méndez, le viene a la cabeza: «Le dije a Clara Méndez: "¿Te has enterado de lo que se cuenta por el pueblo?"»
 [día 2, 16:07] speech ernesto Ernesto Blasco → Lucía Ferrer: "Bastante liado, la verdad. ¿Y tú?"
 [día 2, 16:08] action rafael Rafael Castro: caminando a Taberna El Faro
@@ -4019,6 +4210,7 @@
 [día 2, 17:00] action valentina Valentina Ríos: caminando a Casa de la colina
 [día 2, 17:00] action aurora Aurora Méndez: caminando a Casa del jardín
 [día 2, 17:01] action sofia Sofía Navarro: caminando a Taberna El Faro
+[día 2, 17:02] action andres 👀 Andrés Molina se cruza con Valentina Ríos (le tienes aprecio)
 [día 2, 17:02] memory andres 💭 A Andrés Molina, al ver a Valentina Ríos, le viene a la cabeza: «Hoy he hablado bastante con la gente del pueblo; me sienta bien tener compañía.»
 [día 2, 17:03] action elena Elena Sanz: caminando a Taberna El Faro
 [día 2, 17:03] action clara Clara Méndez: mirar los puestos del mercadillo
@@ -4072,6 +4264,7 @@
 [día 2, 17:18] memory lucia 📝 Lucía Ferrer se propone volver a quedar con Mateo
 [día 2, 17:18] memory mateo 📝 Mateo Ruiz se propone volver a quedar con Lucía
 [día 2, 17:18] action tomas 👋 Tomás Herrero deja la conversación con Ernesto y Inés (decidió no seguir)
+[día 2, 17:18] action elena 👀 Elena Sanz se cruza con Andrés Molina (le tienes aprecio)
 [día 2, 17:18] memory elena 💭 A Elena Sanz, al ver a Andrés Molina, le viene a la cabeza: «Oí a Andrés Molina decirle a Marta Gil algo como: "…se está hoy en Café…"»
 [día 2, 17:18] action samuel 👀 Samuel Okafor se cruza con Hugo Peña (le tienes aprecio)
 [día 2, 17:18] memory samuel 💭 A Samuel Okafor, al ver a Hugo Peña, le viene a la cabeza: «Durante un tiempo pasaron cosas parecidas: Hugo Peña le dijo a Ernesto Blasco (yo estaba en l (y 20 más). (y fue muy agradable)»
@@ -4086,6 +4279,7 @@
 [día 2, 17:20] speech sofia Sofía Navarro → Andrés Molina: "No me digas... cuéntamelo todo."
 [día 2, 17:21] speech andres Andrés Molina → Sofía Navarro: "¡Ay, por cierto! Tenía que volver a quedar con Sofía."
 [día 2, 17:22] speech sofia Sofía Navarro → Andrés Molina: "Pues yo he oído otra versión, ¿eh?"
+[día 2, 17:22] action carmen 👀 Carmen Vidal se cruza con Pilar Herrero (le tienes aprecio)
 [día 2, 17:22] memory carmen 💭 A Carmen Vidal, al ver a Pilar Herrero, le viene a la cabeza: «Pilar Herrero me dijo: "Buenos días. ¿Vienes a menudo por aquí?"»
 [día 2, 17:23] action elena 👥 Elena Sanz se une a la conversación de Rafael, Andrés y Sofía
 [día 2, 17:23] speech elena Elena Sanz → Rafael Castro: "¡Qué bien se está hoy en Taberna El Faro!"
@@ -4138,6 +4332,7 @@
 [día 2, 17:38] action ines ✔ Inés Ortega acepta quedar con Ernesto en Café La Ola mañana a las 18:00
 [día 2, 17:38] action ernesto 🗣 Ernesto y Inés lo dejan acordado hablando: «Deberíamos venir juntos.»
 [día 2, 17:38] action mateo Mateo Ruiz: tiempo libre
+[día 2, 17:38] action aurora 👀 Aurora Méndez se cruza con Samuel Okafor (le tienes aprecio)
 [día 2, 17:40] action ernesto 📅 Ernesto Blasco propone a Tomás quedar en Café La Ola mañana a las 18:00: volver juntos
 [día 2, 17:40] action tomas ✔ Tomás Herrero acepta quedar con Ernesto en Café La Ola mañana a las 18:00
 [día 2, 17:40] action ernesto 🗣 Ernesto y Tomás lo dejan acordado hablando: «Deberíamos venir juntos.»
@@ -4157,6 +4352,7 @@
 [día 2, 17:40] memory valentina ✅ Valentina Ríos se acuerda de volver a quedar con Samuel
 [día 2, 17:40] action valentina 👀 Valentina Ríos se cruza con Samuel Okafor (tenías algo pendiente con esta persona, le tienes aprecio)
 [día 2, 17:40] memory valentina 💭 A Valentina Ríos, al ver a Samuel Okafor, le viene a la cabeza: «Samuel Okafor le dijo a Inés Ortega (yo estaba en la conversación): "Bastante liado, la verdad. ¿Y tú?"»
+[día 2, 17:40] action valentina 👀 Valentina Ríos se cruza con Julián Ortega (le tienes aprecio)
 [día 2, 17:40] memory valentina 💭 A Valentina Ríos, al ver a Julián Ortega, le viene a la cabeza: «Julián Ortega me dijo: "¿Sabes? Oí a Ernesto Blasco decir "…acepta la cita c24 en Café La Ola mañana a las…"."»
 [día 2, 17:41] action valentina 🛑 Valentina Ríos se para a charlar con Samuel Okafor en el camino
 [día 2, 17:41] action valentina 👥 Valentina Ríos se une a la conversación de Samuel y Julián
@@ -4164,7 +4360,9 @@
 [día 2, 17:41] speech valentina Valentina Ríos → Samuel Okafor: "¡Samuel! Justo quería verte."
 [día 2, 17:42] action valentina 👀 Valentina Ríos se cruza con Hugo Peña (le tienes aprecio)
 [día 2, 17:42] action samuel 👋 Samuel Okafor deja la conversación con Julián y Valentina (decidió no seguir)
+[día 2, 17:44] action leo 👀 Leo Gil se cruza con Lucía Ferrer (le tienes aprecio)
 [día 2, 17:44] memory leo 💭 A Leo Gil, al ver a Lucía Ferrer, le viene a la cabeza: «(vagamente) Lucía Ferrer le dijo a Tomás…»
+[día 2, 17:44] action leo 👀 Leo Gil se cruza con Mateo Ruiz
 [día 2, 17:45] action elena Elena Sanz: caminando a Taberna El Faro
 [día 2, 17:45] action leo Leo Gil: cita con Aurora: volver juntos
 [día 2, 17:46] action ernesto Ernesto Blasco: hablando con Inés Ortega
@@ -4181,9 +4379,11 @@
 [día 2, 17:48] action leo Leo Gil: tiempo libre
 [día 2, 17:48] action ernesto Ernesto Blasco: hablando con Inés y Tomás
 [día 2, 17:48] speech ernesto Ernesto Blasco → Inés Ortega: "¿En serio?"
+[día 2, 17:48] action marta 👀 Marta Gil se cruza con Lucía Ferrer
 [día 2, 17:48] memory marta ✅ Marta Gil se acuerda de volver a quedar con Leo
 [día 2, 17:48] action marta 👀 Marta Gil se cruza con Leo Gil (tenías algo pendiente con esta persona, le tienes aprecio, es de tu familia)
 [día 2, 17:48] memory marta 💭 A Marta Gil, al ver a Leo Gil, le viene a la cabeza: «Me crucé con Leo Gil por el camino (estaba haciendo: comer). (más o menos)»
+[día 2, 17:48] action marta 👀 Marta Gil se cruza con Mateo Ruiz
 [día 2, 17:48] action marta 🛑 Marta Gil se para a charlar con Leo Gil en el camino
 [día 2, 17:48] action marta Marta Gil: hablando con Leo Gil
 [día 2, 17:48] speech marta Marta Gil → Leo Gil: "¡Leo! Justo quería verte."
@@ -4211,9 +4411,12 @@
 [día 2, 17:56] speech andres Andrés Molina → Elena Sanz: "No me digas... cuéntamelo todo."
 [día 2, 17:56] action marta 🚶 Marta Gil sigue su camino a Café La Ola
 [día 2, 17:56] action marta Marta Gil: caminando a Café La Ola
+[día 2, 17:56] action pilar 👀 Pilar Herrero se cruza con Lucía Ferrer
 [día 2, 17:56] action pilar 👀 Pilar Herrero se cruza con Marta Gil (tenéis una cita pendiente, le tienes aprecio)
 [día 2, 17:56] memory pilar 💭 A Pilar Herrero, al ver a Marta Gil, le viene a la cabeza: «Marta Gil me dijo: "¿Te cuento una cosa? Lo conseguí: Pasar más rato con Leo."»
+[día 2, 17:56] action pilar 👀 Pilar Herrero se cruza con Leo Gil (le tienes aprecio)
 [día 2, 17:56] memory pilar 💭 A Pilar Herrero, al ver a Leo Gil, le viene a la cabeza: «Leo Gil me dijo: "¡Qué bien se está hoy en Café La Ola!"»
+[día 2, 17:56] action pilar 👀 Pilar Herrero se cruza con Mateo Ruiz
 [día 2, 17:57] action ines 👥 Inés Ortega se une a la conversación de Ernesto y Tomás
 [día 2, 17:57] speech tomas Tomás Herrero → Inés Ortega: "Buenos días. ¿Vienes a menudo por aquí?"
 [día 2, 17:57] speech elena Elena Sanz → Andrés Molina: "¿Y eso?"
@@ -4230,6 +4433,8 @@
 [día 2, 17:58] action carmen 👀 Carmen Vidal se cruza con Lucía Ferrer (le tienes aprecio)
 [día 2, 17:58] memory carmen 💭 A Carmen Vidal, al ver a Lucía Ferrer, le viene a la cabeza: «Lucía Ferrer me dijo: "¡Carmen! Justo quería verte." (más o menos)»
 [día 2, 17:58] action carmen 👀 Carmen Vidal se cruza con Leo Gil (tenéis una cita pendiente, le tienes aprecio)
+[día 2, 17:58] action carmen 👀 Carmen Vidal se cruza con Marta Gil
+[día 2, 17:58] action nuria 👀 Nuria Campos se cruza con Lucía Ferrer
 [día 2, 17:59] speech samuel Samuel Okafor → Hugo Peña: "Bastante liado, la verdad. ¿Y tú?"
 [día 2, 17:59] memory pilar 🧠 Pilar Herrero olvida 11 recuerdos y resume 0 (presupuesto de memoria)
 [día 2, 17:59] action pilar Pilar Herrero: hablando con Mateo Ruiz
@@ -4238,9 +4443,11 @@
 [día 2, 18:00] action carmen Carmen Vidal: cita con Leo: volver juntos
 [día 2, 18:00] action - Hugo y Samuel terminan de hablar (2 turnos; decidió no seguir)
 [día 2, 18:00] speech mateo Mateo Ruiz → Pilar Herrero: "¿Y eso?"
+[día 2, 18:00] action nuria 👀 Nuria Campos se cruza con Marta Gil (le tienes aprecio)
 [día 2, 18:00] memory nuria 💭 A Nuria Campos, al ver a Marta Gil, le viene a la cabeza: «Durante un tiempo pasaron cosas parecidas: Vi a Julián Ortega llegar a cafe_ola (hablando con (y 5 más).»
 [día 2, 18:00] action nuria 👀 Nuria Campos se cruza con Leo Gil (tenéis una cita pendiente, le tienes aprecio)
 [día 2, 18:00] memory nuria 💭 A Nuria Campos, al ver a Leo Gil, le viene a la cabeza: «Leo Gil me dijo: "¡Qué bien se está hoy en Café La Ola!"»
+[día 2, 18:00] action nuria 👀 Nuria Campos se cruza con Mateo Ruiz (le tienes aprecio)
 [día 2, 18:01] action nuria Nuria Campos: cita con Leo: volver juntos
 [día 2, 18:01] memory aurora ✅ Aurora Méndez se acuerda de devolverle a Nuria un cesto de verduras de Pilar (muy bueno)
 [día 2, 18:01] speech aurora Aurora Méndez → Nuria Campos: "¡Ay, por cierto! Tenía que devolverle a Nuria un cesto de verduras de Pilar (muy bueno)."
@@ -4353,6 +4560,7 @@
 [día 2, 18:38] action leo Leo Gil: tomar algo y charlar
 [día 2, 18:38] action mateo Mateo Ruiz: tomar algo y charlar
 [día 2, 18:40] action carmen Carmen Vidal: cita con Leo: volver juntos
+[día 2, 18:40] action valentina 👀 Valentina Ríos se cruza con Samuel Okafor (le tienes aprecio)
 [día 2, 18:40] memory valentina 💭 A Valentina Ríos, al ver a Samuel Okafor, le viene a la cabeza: «Me crucé con Samuel Okafor por el camino (estaba haciendo: charlar en la plaza).»
 [día 2, 18:41] speech julian Julián Ortega → Samuel Okafor: "¿Te cuento una cosa? Quiero volver a quedar con Inés (más o menos)"
 [día 2, 18:41] speech samuel Samuel Okafor → Julián Ortega: "Pues no sé yo."
@@ -4408,6 +4616,7 @@
 [día 2, 19:02] action nuria Nuria Campos: caminando a Casa del pinar
 [día 2, 19:02] action mateo Mateo Ruiz: hablando con Andrés Molina
 [día 2, 19:02] speech mateo Mateo Ruiz → Andrés Molina: "¿Te cuento una cosa?"
+[día 2, 19:02] action julian 👀 Julián Ortega se cruza con Valentina Ríos (le tienes aprecio)
 [día 2, 19:02] memory julian 💭 A Julián Ortega, al ver a Valentina Ríos, le viene a la cabeza: «Mi día gira alrededor de mis rutinas: Oí a Valentina Ríos decirle a Samuel Okafor algo como: "…Me »
 [día 2, 19:03] action clara Clara Méndez: caminando a Casa del jardín
 [día 2, 19:03] action leo 👥 Leo Gil se une a la conversación de Mateo y Andrés
@@ -4438,9 +4647,12 @@
 [día 2, 19:10] action ines Inés Ortega: caminando a Casa amarilla
 [día 2, 19:10] action valentina 🚶 Valentina Ríos sigue su camino a Plaza Mayor
 [día 2, 19:10] action valentina Valentina Ríos: caminando a Plaza Mayor
+[día 2, 19:10] action tomas 👀 Tomás Herrero se cruza con Nuria Campos
 [día 2, 19:10] action hugo 👀 Hugo Peña se cruza con Valentina Ríos (le tienes aprecio)
 [día 2, 19:10] memory hugo 💭 A Hugo Peña, al ver a Valentina Ríos, le viene a la cabeza: «Valentina Ríos me dijo: "¿Te cuento una cosa? Mateo Ruiz le dijo a Ernesto Blasco (yo estaba en la conversación): "Hola, ¿has probado el café nuevo?" (más o menos)"»
 [día 2, 19:11] action valentina Valentina Ríos: charlar en la plaza
+[día 2, 19:12] action tomas 👀 Tomás Herrero se cruza con Hugo Peña
+[día 2, 19:12] action nuria 👀 Nuria Campos se cruza con Hugo Peña
 [día 2, 19:13] action leo Leo Gil: hablando con Elena Sanz
 [día 2, 19:13] speech leo Leo Gil → Elena Sanz: "¿Te cuento una cosa? Quiero ir a la cita con Carmen en Café La Ola (volver juntos)"
 [día 2, 19:13] action andres Andrés Molina: caminando a Casa marrón
@@ -4456,7 +4668,9 @@
 [día 2, 19:15] speech leo Leo Gil → Elena Sanz: "Bastante liado, la verdad. ¿Y tú?"
 [día 2, 19:16] action lucia Lucía Ferrer: cenar y descansar
 [día 2, 19:16] speech elena Elena Sanz → Leo Gil: "No me digas... cuéntamelo todo."
+[día 2, 19:16] action ines 👀 Inés Ortega se cruza con Aurora Méndez (le tienes aprecio)
 [día 2, 19:16] memory ines 💭 A Inés Ortega, al ver a Aurora Méndez, le viene a la cabeza: «Durante un tiempo pasaron cosas parecidas: Le dije a Aurora Méndez: "Bastante liado, la verda (y 5 más).»
+[día 2, 19:16] action ines 👀 Inés Ortega se cruza con Marta Gil (le tienes aprecio)
 [día 2, 19:17] speech sofia Sofía Navarro → Rafael Castro: "¡Hola! ¿Qué tal te va el día?"
 [día 2, 19:17] action - Sofía y Rafael terminan de hablar (1 turnos; decidió no seguir)
 [día 2, 19:17] action leo 👋 Leo Gil deja la conversación con Elena y Mateo (decidió no seguir)

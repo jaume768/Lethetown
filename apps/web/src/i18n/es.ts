@@ -73,6 +73,9 @@ const es = {
   "dramas.kind.teaching": "Maestro y alumno",
   "dramas.kind.lore_lost": "Un saber que se pierde",
   "dramas.kind.lore_forgotten": "Ya no recuerda cómo se hacía",
+  "dramas.kind.reunion": "Reencuentro",
+  "dramas.kind.road_chat": "Charla en el camino",
+  "dramas.kind.walked_past": "Pasa de largo",
 
   "agent.pick": "Toca o haz clic en un agente del mapa para ver qué recuerda.",
   "agent.thinking": "pensando… ({task})",
@@ -209,6 +212,8 @@ const es = {
   "places.source.told": "se lo contaron",
   "places.toldBy": "se lo contó {name}",
   "agent.with": "con {name}",
+  "agent.talkingWhile": "hablando sin dejar lo que hace",
+  "agent.cameToMind": "Le vino a la cabeza…",
   "action.label": "acción: {action}",
   "action.failed": "{action} (no salió)",
   "action.agreed": "acordado hablando: {action}",
@@ -381,6 +386,10 @@ const es = {
   "evolution.systems": "Sistemas (ahora)",
   "evolution.learningRow":
     "Aprender: hitos / sesiones de enseñanza / saberes contados / saberes perdidos / cambios de personalidad",
+  "evolution.encountersRow":
+    "Por el camino: encuentros / que hacen pensar / decisiones andando / descartadas por tarde / asociaciones",
+  "evolution.roadTalkRow":
+    "Hablar en el camino: saludos / paradas a charlar / charlas paradas / charlas andando / parejas nuevas",
   "evolution.knowledgeRow":
     "Conocimiento: anacronismos / referencias externas / personas inventadas",
   "evolution.knowledge": "Conocimiento externo (solo se registra)",

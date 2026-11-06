@@ -39,6 +39,9 @@ const ICON: Record<Drama["kind"], string> = {
   teaching: "🧑‍🏫",
   lore_lost: "🕯",
   lore_forgotten: "🕸",
+  reunion: "🫂",
+  road_chat: "🛑",
+  walked_past: "🚶",
 };
 
 /** Feed de dramas: lo más interesante que ha pasado, con "Ir a verlo". */

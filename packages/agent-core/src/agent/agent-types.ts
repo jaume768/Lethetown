@@ -97,6 +97,11 @@ export type DecideInput = Omit<
   actions?: ActionType[];
   /** Agenda (citas propuestas y aceptadas), ya escrita por el motor. */
   agenda?: string[];
+  /**
+   * Tarea del LLM (para el coste y la cola): `decide_walking` es pensar andando (fase 3.6, el
+   * mismo prompt y la misma respuesta). Por defecto, `decide`.
+   */
+  task?: "decide" | "decide_walking";
 };
 
 /** Qué ha pasado con una intención en este tick. */

@@ -44,7 +44,7 @@ export async function decide(a: Agent, now: number, input: DecideInput): Promise
   }
 
   try {
-    const { salient: _salient, actions, agenda, ...context } = input;
+    const { salient: _salient, actions, agenda, task = "decide", ...context } = input;
     const prompt = decidePrompt({
       ...context,
       weather: a.weatherHere(input.weather),
@@ -65,7 +65,7 @@ export async function decide(a: Agent, now: number, input: DecideInput): Promise
     const ask = (extra = "") =>
       a.deps.llm.run({
         kind: "fast",
-        task: "decide",
+        task,
         agentId: a.id,
         system: a.system,
         prompt: prompt + extra,

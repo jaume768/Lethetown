@@ -69,15 +69,19 @@ export function emoteForMemoryEffect(kind: string): Emote | null {
   }
 }
 
-/** Indicador pequeño junto al nombre en el mapa: va a una cita o acompaña a alguien. */
-export type AgentBadge = "meeting" | "companion" | null;
+/**
+ * Indicador pequeño junto al nombre en el mapa: va a una cita, habla sin dejar lo que hace o
+ * andando (fase 3.6) o acompaña a alguien.
+ */
+export type AgentBadge = "meeting" | "talking" | "companion" | null;
 
 /**
  * Qué indicador lleva un agente ahora: 📅 si le toca una cita (el bloque del plan "cita con…"
  * que reserva el motor) y 👣 si va con alguien. La cita manda.
  */
 export function agentBadge(
-  state: Pick<AgentState, "plan" | "companionId">,
+  state: Pick<AgentState, "plan" | "companionId"> &
+    Partial<Pick<AgentState, "talking" | "activityKind">>,
   now: number,
 ): AgentBadge {
   const minute = ((now % 1440) + 1440) % 1440;
@@ -85,10 +89,13 @@ export function agentBadge(
     (p) => p.startMinute <= minute && minute < p.startMinute + p.durationMin,
   );
   if (item?.activity.startsWith("cita con")) return "meeting";
+  // Hablando sin dejar lo que hace, o andando (si su actividad es «hablar», ya se ve).
+  if (state.talking && state.activityKind !== "talk") return "talking";
   return state.companionId ? "companion" : null;
 }
 
 export const BADGE_ICON: Record<Exclude<AgentBadge, null>, string> = {
   meeting: "📅",
+  talking: "💬",
   companion: "👣",
 };

@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { createServices, openWorld } from "../bootstrap";
 import { loadConfig } from "../config";
+import { tileAt } from "@lethetown/shared";
+import { runAction } from "./actions";
+import type { SimContext } from "./context";
+import { activeConversationOf, endConversation } from "./conversations";
+import { encountersState, moving, resumeTrips, stopped } from "./encounters";
+import { travel } from "./routines";
 import { parseSnapshot } from "./snapshot";
 
 const ENV = {
@@ -58,5 +64,40 @@ describe("instantáneas de simulación", () => {
     await wb.clock.runUntil(walker.runtime.arrival!.at + 0.5);
     const after = wb.sim.snapshot().agents.find((s) => s.id === walker.id)!;
     expect(after.state.locationId).toBe(walker.runtime.arrival!.destId);
+  }, 30_000);
+});
+
+describe("instantáneas: cognición en movimiento (fase 3.6)", () => {
+  it("una charla en el camino y el viaje a medias sobreviven y luego se retoma", async () => {
+    const ctxOf = (w: { sim: unknown }) => (w.sim as { ctx: SimContext }).ctx;
+
+    const a = await freshWorld();
+    const wa = await openWorld(a.services, a.row);
+    const ca = ctxOf(wa);
+    for (const id of ["lucia", "carmen"]) ca.agents.get(id)!.state.activityKind = "idle";
+    const lucia = ca.agents.get("lucia")!;
+    travel(ca, lucia, "plaza", null, "dar una vuelta", "idle");
+    const carmen = ca.agents.get("carmen")!;
+    carmen.state.tile = tileAt(lucia.state, ca.clock.now());
+    carmen.state.locationId = ca.world.publicPlaceNear(carmen.state.tile).id;
+    expect(
+      await runAction(
+        { ctx: ca, agent: lucia, now: ca.clock.now() },
+        { type: "stop_to_chat", to: "carmen", text: "¡Carmen! ¿Qué tal?" },
+      ),
+    ).toBe(true);
+    const saved = JSON.parse(JSON.stringify(wa.sim.snapshot()));
+
+    const b = await freshWorld();
+    await b.services.snapshots.save(b.row.id, saved.time, "test", saved);
+    const wb = await openWorld(b.services, b.row);
+    const cb = ctxOf(wb);
+    expect(stopped(cb, "lucia")).toBe(true);
+    expect(encountersState(cb).trips.get("lucia")?.destId).toBe("plaza");
+    const conv = activeConversationOf(cb, "lucia")!.conv;
+    expect(conv.road).toBe(true);
+    await endConversation(cb, conv.id, "fin");
+    resumeTrips(cb, cb.clock.now());
+    expect(moving(cb, "lucia")).toBe(true);
   }, 30_000);
 });

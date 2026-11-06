@@ -35,6 +35,7 @@ registerSystem({
   description:
     "Encuentros por el camino: quién se cruza con quién, saludar, pararse a charlar y retomar el camino.",
   actions: ["greet", "stop_to_chat"],
+  llmTasks: ["decide_walking"],
   snapshot: {
     version: 1,
     schema: z.object({

@@ -19,8 +19,8 @@ Al retomar: leer este fichero, `docs/decisiones/cognicion.md` y `git log --oneli
 - [x] 4. Hablar andando (`walkingTalk`) (falta la interfaz: paso 7)
 - [x] 5. Hablar sin dejar la actividad (`talkWhileActivity`): práctica × 0,5, objetos × 1,5
 - [x] 6. Asociaciones sin LLM (sistema `associations`)
-- [ ] 7. Instantáneas e interfaz (log, iconos, dramas, i18n)
-- [ ] 8. Métricas («Evolución», `study:analyze`) y coste
+- [x] 7. Instantáneas e interfaz (log, iconos, dramas, i18n)
+- [x] 8. Métricas («Evolución», `study:analyze`) y coste
 - [ ] Final: tests, entrevistas, docs, PR
 
 ## Coste (`cost:report 48`, mock, SIM_SEED=7)
@@ -30,6 +30,11 @@ Al retomar: leer este fichero, `docs/decisiones/cognicion.md` y `git log --oneli
 | Antes (`main` 382549d) |    3.632 |  1.299 |        824 |    573 | 0,804 |
 | Pasos 0–3              |    3.944 |  1.424 |        871 |    615 | 0,853 |
 | Pasos 0–6              |    4.171 |  1.474 |        873 |    689 | 0,884 |
+| Pasos 0–8              |    4.171 |  1.398 |        873 |    689 | 0,883 |
+
+En los pasos 0–8, `decide` se parte en `decide` (1.398) y `decide_walking` (76: pensar andando,
+0,009 $). Lo demás que añade la 3.6 son charlas: `social` al cerrarlas, `importance` de lo
+oído y `decide` de quien está quieto y contesta.
 
 El mock es caótico: cualquier cambio de un prompt mueve el hash y la partida entera. Por eso,
 además de `cost:report 48` (semilla 7), se mide la media de 5 semillas (7, 8, 9, 11 y 13) con
@@ -71,6 +76,12 @@ con menos de 10 semillas, las diferencias de unos pocos puntos son ruido.
 - **Hablar sin dejar la actividad**: se mantiene lo que no es estar sin hacer nada (trabajar,
   comer, cocinar, leer, sentarse); la práctica cuenta × `practiceWhileTalking` (0,5) en la misma
   revisión (no dos veces) y un objeto en marcha tarda × `attentionSlowdown` (1,5, una vez).
+- **`decide_walking`**: pensar andando es otra tarea del LLM (mismo prompt y respuesta, en la
+  cola urgente): su coste sale aparte en `cost:report`, en «Evolución» (sistema `encounters`)
+  y en `study:analyze` (decisiones andando por día).
+- **Todo encuentro deja su evento** (👀, con `meta.salient` y `meta.reunion`) y las frases de
+  una charla en el camino llevan `meta.road` (y `meta.walking`): así `study:analyze` mide la 3.6
+  de lo grabado, sin el estado en vivo.
 - **Quien está quieto no piensa por ver pasar a alguien** (solo quien camina tiene encuentros):
   así el coste no crece con cada vecino que pasa por delante. Un saludo, en cambio, sí puede
   hacerle pensar si le importa quien saluda (saliencia ≥ umbral); devolverlo no despierta al

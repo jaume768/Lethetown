@@ -271,6 +271,44 @@ function learningOf(
   };
 }
 
+/**
+ * Cognición en movimiento (fase 3.6) de un conjunto de eventos: lo marcan `meta.action` (los
+ * encuentros, saludos, paradas, pasar de largo, asociaciones y lo que llegó tarde) y
+ * `meta.road` / `meta.walking` en las frases. `talked`: parejas que ya habían hablado antes
+ * (se va llenando; así se ve quién habló por primera vez en el camino).
+ */
+function cognitionOf(
+  events: EvolutionInput["events"],
+  llmCalls: EvolutionInput["llmCalls"],
+  talked: Set<string>,
+): NonNullable<DayMetrics["cognition"]> {
+  const n = (f: (e: EvolutionInput["events"][number]) => boolean) => events.filter(f).length;
+  let firstTalksOnRoad = 0;
+  for (const e of events) {
+    if (e.kind !== "speech" || !e.agentId || !e.participants[1]) continue;
+    const key = pairKey(e.agentId, e.participants[1]);
+    if (talked.has(key)) continue;
+    talked.add(key);
+    if (e.meta?.road) firstTalksOnRoad++;
+  }
+  const firstTurn = (e: EvolutionInput["events"][number]) =>
+    e.kind === "speech" && e.meta?.road === true && e.id.endsWith(":1");
+  return {
+    encounters: n((e) => e.meta?.action === "encounter"),
+    salient: n((e) => e.meta?.action === "encounter" && e.meta.salient === true),
+    reunions: n((e) => e.meta?.action === "encounter" && e.meta.reunion === true),
+    walkDecisions: llmCalls.filter((c) => c.task === "decide_walking").length,
+    lateDiscarded: n((e) => e.meta?.late === true),
+    greetings: n((e) => e.meta?.action === "greet" && e.meta.ok === true),
+    stops: n((e) => e.meta?.action === "stop_to_chat" && e.meta.ok === true),
+    roadConversations: n((e) => firstTurn(e) && !e.meta?.walking),
+    walkingConversations: n((e) => firstTurn(e) && e.meta?.walking === true),
+    firstTalksOnRoad,
+    passedBy: n((e) => e.meta?.action === "walk_past"),
+    associations: n((e) => e.meta?.action === "association"),
+  };
+}
+
 export function analyzeEvolution(input: EvolutionInput): EvolutionReport {
   const events = [...input.events].sort((a, b) => a.time - b.time);
   const changes = relationshipChanges(input.socialHistory);
@@ -294,6 +332,15 @@ export function analyzeEvolution(input: EvolutionInput): EvolutionReport {
       input.audits.filter((a) => dayOf(a.at) === d.day),
     );
   }
+  // Cognición en movimiento por día (fase 3.6).
+  const talked = new Set<string>();
+  for (const d of perDay) {
+    d.cognition = cognitionOf(
+      events.filter((e) => dayOf(e.time) === d.day),
+      input.llmCalls.filter((c) => c.time !== null && dayOf(c.time) === d.day),
+      talked,
+    );
+  }
   // Conocimiento externo por día (anacronismos y referencias).
   for (const d of perDay) {
     const rows = input.knowledge?.filter((r) => dayOf(r.at) === d.day);
@@ -310,6 +357,11 @@ export function analyzeEvolution(input: EvolutionInput): EvolutionReport {
   );
   if (input.knowledge) total.knowledge = knowledgeReport(input.knowledge).byKind;
   total.learning = learningOf(events, input.audits);
+  total.cognition = cognitionOf(events, input.llmCalls, new Set());
+  // En vivo no hay llamadas sueltas: las decisiones andando del total salen del coste por tarea.
+  if (!input.llmCalls.length && input.costByTask?.decide_walking) {
+    total.cognition.walkDecisions = input.costByTask.decide_walking.calls;
+  }
   if (input.goals) {
     for (const d of perDay) d.goals = goalsAt(input.goals, d.day * 1440, (d.day + 1) * 1440);
     total.goals = goalsAt(input.goals, -Infinity, Infinity);

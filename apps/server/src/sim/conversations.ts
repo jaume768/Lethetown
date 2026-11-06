@@ -273,9 +273,18 @@ export function talk(
     `${agent.seed.name} → ${target.seed.name}: "${utterance}"`,
     [agent.id, toId, ...rest, ...overhearers],
     `${conv.id}:${conv.turns}`,
-    rest.length ? { group: rest } : undefined,
+    speechMeta(rest, conv.road === true, walking),
   );
   void agent.rememberOwnSpeech(toId, target.seed.name, utterance, now, conv.id);
+}
+
+/** Datos de la frase: el resto del grupo y (fase 3.6) si es en el camino y andando. */
+function speechMeta(rest: string[], road: boolean, walking: boolean) {
+  const meta = {
+    ...(rest.length ? { group: rest } : {}),
+    ...(road ? { road: true, ...(walking ? { walking: true } : {}) } : {}),
+  };
+  return Object.keys(meta).length ? meta : undefined;
 }
 
 /** Quien esté cerca (y no en la conversación) puede captar fragmentos: así se propagan rumores. */

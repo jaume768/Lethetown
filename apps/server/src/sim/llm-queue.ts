@@ -7,6 +7,7 @@ import type { CompletionRequest, CompletionResult, LLMProvider } from "@lethetow
  */
 export const URGENT_TASKS: ReadonlySet<string> = new Set([
   "decide",
+  "decide_walking",
   "importance",
   "plan",
   "interview",

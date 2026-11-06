@@ -69,6 +69,59 @@ describe("evolución", () => {
     expect(r.days.reduce((s, d) => s + d.utterances, 0)).toBe(r.total.utterances);
   });
 
+  it("cognición en movimiento: de los eventos de una partida y de su coste", () => {
+    const r = analyzeEvolution(input);
+    expect(r.total.cognition?.encounters).toBeGreaterThan(0);
+    expect(r.total.cognition?.walkDecisions).toBe(input.costByTask?.decide_walking?.calls ?? 0);
+    expect(evolutionMarkdown(r)).toContain("Encuentros por el camino");
+  });
+
+  it("cognición en movimiento: charlas en el camino y parejas que hablan por primera vez", () => {
+    const ev = (id: string, kind: SimEvent["kind"], meta: SimEvent["meta"], p = ["a", "b"]) =>
+      ({ id, time: 600, agentId: p[0]!, kind, text: "x", participants: p, meta }) as SimEvent;
+    const r = analyzeEvolution({
+      seeds: app.seeds,
+      events: [
+        ev("e1", "action", { action: "encounter", ok: true, salient: true, reunion: true }),
+        ev("e2", "action", { action: "stop_to_chat", ok: true }),
+        ev("c1:1", "speech", { road: true }),
+        ev("c1:2", "speech", { road: true }, ["b", "a"]),
+        ev("c2:1", "speech", { road: true, walking: true }, ["c", "d"]),
+        ev("c3:1", "speech", undefined, ["a", "c"]),
+        ev("e3", "action", { action: "greet", ok: false, late: true }),
+        ev("e4", "memory", { action: "association", ok: true }),
+      ],
+      audits: [],
+      socialHistory: [],
+      llmCalls: [
+        {
+          task: "decide_walking",
+          model: "m",
+          usd: 0,
+          inputTokens: 0,
+          outputTokens: 0,
+          cacheReadTokens: 0,
+          cacheWriteTokens: 0,
+          time: 600,
+        },
+      ],
+    });
+    expect(r.total.cognition).toEqual({
+      encounters: 1,
+      salient: 1,
+      reunions: 1,
+      walkDecisions: 1,
+      lateDiscarded: 1,
+      greetings: 0,
+      stops: 1,
+      roadConversations: 1,
+      walkingConversations: 1,
+      firstTalksOnRoad: 2,
+      passedBy: 0,
+      associations: 1,
+    });
+  });
+
   it("desde lo que graban record y world:export (y dos partidas se comparan)", () => {
     // world:export: columnas en snake_case.
     const jsonl = (rows: unknown[]) => rows.map((r) => JSON.stringify(r)).join("\n");

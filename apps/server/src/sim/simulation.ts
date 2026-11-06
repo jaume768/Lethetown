@@ -546,6 +546,7 @@ export class Simulation {
       weather: ctx.world.weather,
       socialNotes: await agent.socialNotes(turn.present.map((p) => p.id)),
       salient: true,
+      task: "decide_walking",
       actions: turn.actions,
       sections: [...turn.sections, ...systemSections(ctx, agent, this.clock.now())],
     });

@@ -51,6 +51,20 @@ const ROWS: [MessageKey, (d: DayMetrics) => number | string][] = [
         : "—",
   ],
   [
+    "evolution.encountersRow",
+    (d) =>
+      d.cognition
+        ? `${d.cognition.encounters} / ${d.cognition.salient} / ${d.cognition.walkDecisions} / ${d.cognition.lateDiscarded} / ${d.cognition.associations}`
+        : "—",
+  ],
+  [
+    "evolution.roadTalkRow",
+    (d) =>
+      d.cognition
+        ? `${d.cognition.greetings} / ${d.cognition.stops} / ${d.cognition.roadConversations} / ${d.cognition.walkingConversations} / ${d.cognition.firstTalksOnRoad}`
+        : "—",
+  ],
+  [
     "evolution.knowledgeRow",
     (d) =>
       `${d.knowledge?.anachronism ?? 0} / ${d.knowledge?.external ?? 0} / ${d.knowledge?.person ?? 0}`,
