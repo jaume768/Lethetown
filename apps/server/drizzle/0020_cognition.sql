@@ -1,0 +1,1 @@
+ALTER TABLE "worlds" ADD COLUMN "cognition" jsonb DEFAULT '{}'::jsonb NOT NULL;

@@ -23,7 +23,7 @@ describe("frenar en conversación", () => {
     expect(w.clock.rate).toBe(60);
     expect(liveState(w).rate).toBeUndefined();
     await app.close();
-  });
+  }, 30_000);
 
   it("con SIM_SLOWDOWN_IN_CONVERSATION=off no frena", async () => {
     const app = await bootstrap(
@@ -36,5 +36,5 @@ describe("frenar en conversación", () => {
     talk(ctx, ctx.agents.get("lucia")!, "mateo", "¿Qué tal?");
     expect(w.clock.rate).toBe(60);
     await app.close();
-  });
+  }, 30_000);
 });

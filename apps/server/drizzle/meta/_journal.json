@@ -141,6 +141,13 @@
       "when": 1793890397667,
       "tag": "0019_skill_tier",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1793959638803,
+      "tag": "0020_cognition",
+      "breakpoints": true
     }
   ]
 }

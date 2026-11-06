@@ -1,4 +1,5 @@
 import { and, desc, eq, notInArray } from "drizzle-orm";
+import { CognitionSettings } from "@lethetown/shared";
 import { z } from "zod";
 import type { Db } from "./client";
 import { DEFAULT_WORLD_ID, worlds, worldSnapshots } from "./schema";
@@ -16,6 +17,8 @@ export interface WorldRow {
   language: "es" | "en";
   /** Sistemas desactivados (`{ notes: false }`); por defecto, todos activos. */
   systems: Record<string, boolean>;
+  /** Cognición en movimiento: lo que cambia respecto a lo de por defecto (todo encendido). */
+  cognition: CognitionSettings;
   createdAt: Date;
 }
 
@@ -24,10 +27,14 @@ export const WorldId = z
   .string()
   .regex(/^[a-z0-9][a-z0-9-]{0,39}$/, "id: minúsculas, números y guiones (máx. 40)");
 
-export type NewWorldRow = Omit<WorldRow, "createdAt" | "status" | "language" | "systems"> & {
+export type NewWorldRow = Omit<
+  WorldRow,
+  "createdAt" | "status" | "language" | "systems" | "cognition"
+> & {
   status?: WorldStatus;
   language?: "es" | "en";
   systems?: Record<string, boolean>;
+  cognition?: CognitionSettings;
 };
 
 export interface WorldRepo {
@@ -52,6 +59,7 @@ const toRow = (r: typeof worlds.$inferSelect): WorldRow => ({
   status: WorldStatus.catch("running").parse(r.status),
   language: r.language === "en" ? "en" : "es",
   systems: z.record(z.string(), z.boolean()).catch({}).parse(r.systems),
+  cognition: CognitionSettings.catch({}).parse(r.cognition),
 });
 
 export class PgWorldRepo implements WorldRepo {
@@ -99,6 +107,7 @@ export class InMemoryWorldRepo implements WorldRepo {
       status: "running",
       language: "es",
       systems: {},
+      cognition: {},
       ...w,
       createdAt: new Date(),
     };

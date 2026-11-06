@@ -1,4 +1,4 @@
-import type { MemoryMeta } from "@lethetown/shared";
+import type { CognitionSettings, MemoryMeta } from "@lethetown/shared";
 import {
   boolean,
   doublePrecision,
@@ -32,6 +32,11 @@ export const worlds = pgTable("worlds", {
   language: text("language").notNull().default("es"),
   /** Sistemas desactivados en este mundo (`{ "notes": false }`); los que no aparecen, activos. */
   systems: jsonb("systems").$type<Record<string, boolean>>().notNull().default({}),
+  /**
+   * Cognición en movimiento (fase 3.6): lo que cambia respecto a lo de por defecto
+   * (`{ "enabled": false }` = mundo de control, como antes de la 3.6). Ver cognicion.md.
+   */
+  cognition: jsonb("cognition").$type<CognitionSettings>().notNull().default({}),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

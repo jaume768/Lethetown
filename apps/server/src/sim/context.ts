@@ -11,9 +11,11 @@ import type {
   SocialProfileStore,
   WorldBible,
 } from "@lethetown/agent-core";
+import { resolveCognition } from "@lethetown/shared";
 import type {
   ActivityKind,
   AgentSeed,
+  CognitionConfig,
   ServerMessage,
   SimEvent,
   SimEventKind,
@@ -152,6 +154,11 @@ export interface SimulationDeps {
   replyDelayMinutes?: number;
   /** Sistemas desactivados en este mundo (`{ notes: false }`); los que no aparecen, activos. */
   systems?: Record<string, boolean>;
+  /**
+   * Cognición en movimiento (fase 3.6), ya resuelta (`resolveCognition`). Sin definir, todo
+   * encendido. Apagada, el mundo se comporta como antes de la 3.6 (ver cognicion.md).
+   */
+  cognition?: CognitionConfig;
   /** Biblia del mundo (config/world.json): época, lugar, glosario, clima. Sin ella, nada de eso. */
   bible?: WorldBible;
   /** Registro de conocimiento externo (si no se pasa, en RAM). */
@@ -183,6 +190,8 @@ export class SimContext {
   readonly itemStore: ItemStore;
   readonly commitments: CommitmentStore;
   readonly knownPlaces: KnownPlaceStore;
+  /** Cognición en movimiento de este mundo (interruptores y parámetros). */
+  readonly cognition: CognitionConfig;
   /** Adelanta el siguiente tick de un agente (lo pone la simulación; ver `Simulation.wake`). */
   wake: (agentId: string, at: number) => void = () => {};
   /** Estado en memoria de cada sistema (ver `state`). */
@@ -195,6 +204,7 @@ export class SimContext {
     this.knownPlaces = deps.knownPlaces ?? new InMemoryKnownPlaceStore();
     this.itemStore = deps.items ?? new InMemoryItemStore();
     this.noteStore = deps.notes ?? new InMemoryNoteStore();
+    this.cognition = deps.cognition ?? resolveCognition();
   }
 
   get clock(): GameClock {
@@ -215,8 +225,13 @@ export class SimContext {
     return this.systemStates.get(systemId) as T;
   }
 
-  /** ¿Está activo el sistema en este mundo? (por defecto, sí). */
+  /**
+   * ¿Está activo el sistema en este mundo? (por defecto, sí). Los sistemas de la cognición en
+   * movimiento (`encounters`, `associations`) siguen además a su interruptor de `cognition`.
+   */
   enabled(systemId: string): boolean {
+    if (systemId === "encounters" && !this.cognition.encounters) return false;
+    if (systemId === "associations" && !this.cognition.associations) return false;
     return this.deps.systems?.[systemId] !== false;
   }
 

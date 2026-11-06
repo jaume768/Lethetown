@@ -9,7 +9,9 @@ import {
 import {
   RUNNING,
   SIM_SPEEDS,
+  cognitionOffParts,
   parseTiledMap,
+  resolveCognition,
   type SimSpeed,
   type WorldRunStatus,
 } from "@lethetown/shared";
@@ -169,6 +171,8 @@ export async function openWorld(services: Services, row: WorldRow): Promise<Worl
     notes,
     discoveryRadius: config.SIM_DISCOVERY_RADIUS,
     systems: row.systems,
+    // El mundo manda sobre SIM_COGNITION (lo de por defecto del proceso).
+    cognition: resolveCognition(config.SIM_COGNITION, row.cognition),
     bible: services.bible,
     knowledgeLog,
     goals,
@@ -223,6 +227,8 @@ export async function openWorld(services: Services, row: WorldRow): Promise<Worl
   await sim.loadSystems();
   const off = Object.entries(row.systems).filter(([, on]) => !on);
   if (off.length) worldLog(`Sistemas desactivados: ${off.map(([id]) => id).join(", ")}`);
+  const cognitionOff = cognitionOffParts(resolveCognition(config.SIM_COGNITION, row.cognition));
+  if (cognitionOff) worldLog(`Cognición en movimiento: ${cognitionOff}`);
 
   const saveSnapshot = (reason: string) =>
     services.snapshots.save(row.id, clock.now(), reason, sim.snapshot());
