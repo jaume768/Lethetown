@@ -42,7 +42,11 @@
       "format": "9:16",
       "speed": 10,
       "shots": [
-        { "from": 4999, "to": 5003, "note": "Valentina pregunta (4999,7); Aurora responde (5001)" }
+        {
+          "from": 4999,
+          "to": 5003,
+          "note": "Valentina pregunta (4999,7); Aurora responde (5001)"
+        }
       ],
       "quote": "Alma era pura risa, ay, criatura. Se marchó del pueblo un día y nunca más supe de ella… ¿dónde estaba yo?"
     },
@@ -56,10 +60,14 @@
       "shots": [
         {
           "from": 6757.5,
-          "to": 6766.5,
+          "to": 6766,
           "note": "«¿Las fotos son de Alma…?» (6758,1), «Curiosidad, nada más» (6762,4), la foto (6765,9)"
         },
-        { "from": 6794, "to": 6796, "note": "«De Alma ya no me acuerdo de eso» (6794,9)" }
+        {
+          "from": 6794.6,
+          "to": 6796,
+          "note": "«De Alma ya no me acuerdo de eso» (6794,9)"
+        }
       ],
       "quote": "Ni idea, criatura. De Alma ya no me acuerdo de eso."
     },
@@ -89,9 +97,14 @@
       "speed": 10,
       "shots": [
         {
-          "from": 2641,
+          "from": 2641.3,
+          "to": 2646,
+          "note": "Pilar: «la cena se enfría…» (2641,5), «Me acordé… a medias» (2643,1), «¿Solo a medias?» (2644,4)"
+        },
+        {
+          "from": 2650.2,
           "to": 2652,
-          "note": "Pilar (2641,5), «Me acordé… a medias» (2643,1), los platos (2651,6)"
+          "note": "Los platos (2650,4) y «Los platos los friego yo, que no soy un inútil» (2651,6)"
         }
       ],
       "quote": "¡Bah! Me acordé… a medias. Siéntate, que la sopa aún humea."
@@ -127,13 +140,13 @@
       "speed": 10,
       "shots": [
         {
-          "from": 1195,
+          "from": 1213,
           "to": 1221,
-          "note": "Día 0: en s7 cena y celebra (1197); en s13 «Anda, que casi se te olvida» (1216)"
+          "note": "Día 0: en s7 cena y celebra el aniversario; en s13 «Anda, que casi se te olvida» (1216) y «Pásame el pan…» (1217,6)"
         },
         {
-          "from": 2640,
-          "to": 2653,
+          "from": 2641,
+          "to": 2650,
           "note": "Día 1: en s7 «Me acordé… a medias» (2643,1); en s13 vuelve a casa a cenar"
         }
       ]
@@ -147,7 +160,11 @@
       "speed": 1,
       "memory": "4d3af77a-c6ff-48d4-ae1d-3178a9cf92ef",
       "shots": [
-        { "from": 6493.5, "to": 6495, "note": "Falso recuerdo (6493,2) y su drama (6493,8)" }
+        {
+          "from": 6493.5,
+          "to": 6495,
+          "note": "Falso recuerdo (6493,2) y su drama (6493,8)"
+        }
       ],
       "quote": "Creo que Tomás se acordó del aniversario, aunque fue casi a última hora."
     },
@@ -214,8 +231,13 @@
       "shots": [
         {
           "from": 9870,
+          "to": 9872.5,
+          "note": "«Bueno… ¿y Palma? Dime» (9870,5) y «quiero irme a Palma a estudiar» (9871,9)"
+        },
+        {
+          "from": 9878.5,
           "to": 9881.5,
-          "note": "Palma (9870,5) … «Me cuesta estar solo en esta casa» (9879,1) → «Yo estoy aquí» (9880,7)"
+          "note": "«Me cuesta estar solo en esta casa» (9879,1) → «Yo estoy aquí» (9880,7)"
         }
       ],
       "quote": "Ya, pero no te quedas solo. Yo estoy aquí. Mañana me cuentas lo de la panadería, ¿vale?"

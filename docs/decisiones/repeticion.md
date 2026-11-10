@@ -94,8 +94,35 @@ abandonadas, clases y saberes transmitidos y olvidos («ya no me acuerdo»).
   dibujados encima (`drawCineOverlay`, el mismo diseño que en pantalla). Las tarjetas son DOM:
   para grabarlas, «Grabar la pestaña» (`getDisplayMedia` recortado al marco).
 
+## Cine 2: planos de los guiones
+
+- **Órdenes de cámara antes de la escena.** `TownMap` encola `direct`, `focusAgent`… hasta que
+  Phaser crea la escena (con `&cine=1&agent=` se llamaba a la cámara antes y la página quedaba
+  en blanco), y `ReplayView` va dentro de una error boundary.
+- **«Así muere un recuerdo»** (`ReplayViews.story`): el texto en el minuto, la fuerza con los
+  umbrales del paquete (`meta.thresholds`), la curva ya muestreada y lo que le pasó en orden con
+  el motivo de la auditoría, leído sin redactar («olvidado (fuerza 0,049 < 0,05)», «la fuente
+  cambia: contado por Valentina → vivido»). Para eso `replay:pack` mete los recuerdos con
+  historia (`STORY_ACTIONS`: reconsolidado, esencia, fuente, falso, olvidado) aunque sean poco
+  importantes, y su borrado. Un recuerdo borrado no está en la base de datos: la tarjeta lo arma
+  con la auditoría (sin fuerza, que no se sabe).
+- **Pantalla partida** (`&src2=…&split=1`): un solo reloj (`ReplayPlayer.follow`); la segunda
+  partida tiene su estado (`LocalGame`, el MISMO reductor) y su mapa, fuera del store global.
+  Cámara y subtítulos por mitad (`useDirector`), con la zona segura de cada mitad (`halfSafe`):
+  arriba y abajo en 9:16, lado a lado en los demás. El clip compone los dos lienzos (`paint`).
+- **Contador de días** (tecla D): al cambiar de día y en cada salto, también en el clip.
+- **Escenas guardadas** (`docs/videos/escenas.json`, esquema `ReplayScenes`): solo datos, con
+  planos (`shots`) que se encadenan; `?scene=<id>` y la pestaña «Escenas». `pnpm replay:scenes`
+  busca cada frase en su paquete: el minuto de una escena se comprueba, no se supone.
+- **Arcos largos** (`arcs.ts`, tipo `arc`, aparte de los momentos): lo dicho de A a B en ≥ 3
+  días (palabras raras en el resto del pueblo, sin nombres ni formas de llamarse), metas
+  `confirmed` con la frase que lo logró, recuerdos de la semilla que se apagan y, con dos
+  carpetas, la misma intención o meta en las dos semillas (por vecino y primera frase).
+
 ## Herramientas
 
 - `record --track` guarda `positions.jsonl`: cada minuto, la posición de quien anda.
 - `replay:demo` graba en el propio proceso una partida corta en mock (sin servidor ni BD) y la
-  empaqueta: la usa el e2e (`e2e/global-setup.ts`) y sirve para probar sin grabación real.
+  empaqueta: la usa el e2e (`e2e/global-setup.ts`, semillas 7 y 13) y sirve para probar sin
+  grabación real; con `--rec`, deja también la grabación (para `study:analyze`).
+- `replay:scenes` comprueba las escenas guardadas contra sus paquetes.
