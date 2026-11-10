@@ -28,6 +28,11 @@ interface Props {
    */
   overlay?: (ctx: CanvasRenderingContext2D, w: number, h: number, format: ClipFormat) => void;
   /**
+   * Pinta el frame entero (en vez de recortar `source` y poner `overlay`): la pantalla partida
+   * compone dos lienzos en uno.
+   */
+  paint?: (ctx: CanvasRenderingContext2D, w: number, h: number, format: ClipFormat) => void;
+  /**
    * Grabar la pestaña (lo que se ve, con tarjetas y paneles) recortada a este rectángulo de la
    * ventana: para lo que no está en el lienzo del mapa.
    */
@@ -38,7 +43,14 @@ interface Props {
  * "Crear clip": graba el centro de la vista del mapa durante 10–60 s a 30 fps, en el formato
  * elegido (9:16, 4:5 o 16:9), con la marca, y lo ofrece para descargar. Todo en el navegador.
  */
-export function ClipRecorder({ source, onClose, formats = ["9:16"], overlay, tabRect }: Props) {
+export function ClipRecorder({
+  source,
+  onClose,
+  formats = ["9:16"],
+  overlay,
+  paint,
+  tabRect,
+}: Props) {
   const { t } = useI18n();
   const [duration, setDuration] = useState<(typeof DURATIONS)[number]>(10);
   const [format, setFormat] = useState<ClipFormat>(formats[0] ?? "9:16");
@@ -98,6 +110,7 @@ export function ClipRecorder({ source, onClose, formats = ["9:16"], overlay, tab
 
   const startCanvas = () => {
     if (!source()) return;
+    if (paint) return void record((ctx, W, H) => paint(ctx, W, H, format));
     const ratio = FORMAT_SIZE[format].w / FORMAT_SIZE[format].h;
     record((ctx, W, H) => {
       const src = source();

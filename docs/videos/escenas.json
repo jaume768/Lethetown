@@ -1,0 +1,246 @@
+{
+  "version": 1,
+  "scenes": [
+    {
+      "id": "alma-pregunta",
+      "title": "Valentina pregunta a Rafael por Alma",
+      "src": "s7",
+      "agent": "valentina",
+      "format": "9:16",
+      "speed": 10,
+      "shots": [
+        {
+          "from": 497,
+          "to": 500,
+          "note": "Valentina pregunta (497,5) y Rafael: «¿Alma? No me suena» (498,9)"
+        }
+      ],
+      "quote": "¿Y tú conociste a una tal Alma? Vivió aquí de joven."
+    },
+    {
+      "id": "alma-cara",
+      "title": "Aurora: «…ya no me acuerdo bien de su cara»",
+      "src": "s7",
+      "agent": "aurora",
+      "format": "9:16",
+      "speed": 1,
+      "memory": "e4d68450-eeb2-40ee-a684-afc6cc703126",
+      "shots": [
+        {
+          "from": 2504.5,
+          "to": 2506,
+          "note": "Recuerdo de la semilla reescrito al recordarlo (2425,6 y 2504,1)"
+        }
+      ],
+      "quote": "Ay, criatura, que ya no me acuerdo bien de su cara"
+    },
+    {
+      "id": "alma-pura-risa",
+      "title": "Aurora: «Alma era pura risa… ¿dónde estaba yo?»",
+      "src": "s7",
+      "agent": "aurora",
+      "format": "9:16",
+      "speed": 10,
+      "shots": [
+        {
+          "from": 4999,
+          "to": 5003,
+          "note": "Valentina pregunta (4999,7); Aurora responde (5001)"
+        }
+      ],
+      "quote": "Alma era pura risa, ay, criatura. Se marchó del pueblo un día y nunca más supe de ella… ¿dónde estaba yo?"
+    },
+    {
+      "id": "alma-foto",
+      "title": "La foto: «Curiosidad, nada más» → «De Alma ya no me acuerdo de eso»",
+      "src": "s7",
+      "agent": "aurora",
+      "format": "9:16",
+      "speed": 10,
+      "shots": [
+        {
+          "from": 6757.5,
+          "to": 6766,
+          "note": "«¿Las fotos son de Alma…?» (6758,1), «Curiosidad, nada más» (6762,4), la foto (6765,9)"
+        },
+        {
+          "from": 6794.6,
+          "to": 6796,
+          "note": "«De Alma ya no me acuerdo de eso» (6794,9)"
+        }
+      ],
+      "quote": "Ni idea, criatura. De Alma ya no me acuerdo de eso."
+    },
+    {
+      "id": "alma-olvido",
+      "title": "Aurora olvida «Alma fue una amiga mía…»",
+      "src": "s7",
+      "agent": "aurora",
+      "format": "9:16",
+      "speed": 1,
+      "memory": "9ce68bc4-f2f1-4456-826c-8c0aca93efbd",
+      "shots": [
+        {
+          "from": 8778.5,
+          "to": 8780,
+          "note": "Se vuelve vago (4339) y se olvida (8778): fuerza 0,049 < 0,05"
+        }
+      ],
+      "quote": "Alma fue una amiga mía que se marchó del pueblo y nunca volvió."
+    },
+    {
+      "id": "aniversario-si",
+      "title": "Tomás: «Me acordé… a medias»",
+      "src": "s7",
+      "agent": "tomas",
+      "format": "9:16",
+      "speed": 10,
+      "shots": [
+        {
+          "from": 2641.3,
+          "to": 2646,
+          "note": "Pilar: «la cena se enfría…» (2641,5), «Me acordé… a medias» (2643,1), «¿Solo a medias?» (2644,4)"
+        },
+        {
+          "from": 2650.2,
+          "to": 2652,
+          "note": "Los platos (2650,4) y «Los platos los friego yo, que no soy un inútil» (2651,6)"
+        }
+      ],
+      "quote": "¡Bah! Me acordé… a medias. Siéntate, que la sopa aún humea."
+    },
+    {
+      "id": "aniversario-no",
+      "title": "Semilla 13: a Tomás se le pasa el aniversario",
+      "src": "s13",
+      "agent": "tomas",
+      "format": "9:16",
+      "speed": 10,
+      "shots": [
+        {
+          "from": 744,
+          "to": 746.5,
+          "note": "Pilar le manda al huerto (744,5); se le pasa felicitarla (745,5)"
+        },
+        {
+          "from": 1215.5,
+          "to": 1219.5,
+          "note": "«Anda, que casi se te olvida…» (1216) y «Pásame el pan, que la sobrasada no se come sola» (1217,6)"
+        }
+      ],
+      "quote": "Pues sí, aquí estamos. Pásame el pan, que la sobrasada no se come sola."
+    },
+    {
+      "id": "aniversario-partido",
+      "title": "El aniversario en las dos semillas: cena del día 0 y del día 1",
+      "src": "s7",
+      "src2": "s13",
+      "agent": "tomas",
+      "format": "9:16",
+      "speed": 10,
+      "shots": [
+        {
+          "from": 1213,
+          "to": 1221,
+          "note": "Día 0: en s7 cena y celebra el aniversario; en s13 «Anda, que casi se te olvida» (1216) y «Pásame el pan…» (1217,6)"
+        },
+        {
+          "from": 2641,
+          "to": 2650,
+          "note": "Día 1: en s7 «Me acordé… a medias» (2643,1); en s13 vuelve a casa a cenar"
+        }
+      ]
+    },
+    {
+      "id": "aniversario-falso",
+      "title": "Pilar «recuerda» que Tomás se acordó del aniversario",
+      "src": "s7",
+      "agent": "pilar",
+      "format": "9:16",
+      "speed": 1,
+      "memory": "4d3af77a-c6ff-48d4-ae1d-3178a9cf92ef",
+      "shots": [
+        {
+          "from": 6493.5,
+          "to": 6495,
+          "note": "Falso recuerdo (6493,2) y su drama (6493,8)"
+        }
+      ],
+      "quote": "Creo que Tomás se acordó del aniversario, aunque fue casi a última hora."
+    },
+    {
+      "id": "julian-1",
+      "title": "Julián: «me da miedo quedarme solo aquí» (1)",
+      "src": "s13",
+      "agent": "julian",
+      "format": "9:16",
+      "speed": 10,
+      "shots": [
+        {
+          "from": 3832.5,
+          "to": 3835,
+          "note": "«me da miedo quedarme solo aquí» (3833,2); «Ya lo sé, papá. Come.» (3834,6)"
+        }
+      ],
+      "quote": "Inés… me da miedo quedarme solo aquí. Eso es."
+    },
+    {
+      "id": "julian-2",
+      "title": "Julián: «me da miedo quedarme solo» (2)",
+      "src": "s13",
+      "agent": "julian",
+      "format": "9:16",
+      "speed": 10,
+      "shots": [
+        {
+          "from": 5553.5,
+          "to": 5558,
+          "note": "«me da miedo quedarme solo» (5554,4); «Qué drama, papá» (5556)"
+        }
+      ],
+      "quote": "Inés… me da miedo quedarme solo. Si no es molestia."
+    },
+    {
+      "id": "julian-3",
+      "title": "Julián: «me da miedo quedarme solo» (3) y la cena",
+      "src": "s13",
+      "agent": "julian",
+      "format": "9:16",
+      "speed": 10,
+      "shots": [
+        {
+          "from": 8415.5,
+          "to": 8420,
+          "note": "«me da miedo quedarme solo» (8416,5); «Cenamos juntos, ¿vale?» (8418,2)"
+        },
+        {
+          "from": 8458,
+          "to": 8461,
+          "note": "«Papá, hoy sin disculpas» (8458,7); «Vale… sin disculpas» (8460,3)"
+        }
+      ],
+      "quote": "Vale… sin disculpas. Siéntate, que se enfría."
+    },
+    {
+      "id": "julian-final",
+      "title": "Julián e Inés: «Yo estoy aquí»",
+      "src": "s13",
+      "agent": "julian",
+      "format": "9:16",
+      "speed": 10,
+      "shots": [
+        {
+          "from": 9870,
+          "to": 9872.5,
+          "note": "«Bueno… ¿y Palma? Dime» (9870,5) y «quiero irme a Palma a estudiar» (9871,9)"
+        },
+        {
+          "from": 9878.5,
+          "to": 9881.5,
+          "note": "«Me cuesta estar solo en esta casa» (9879,1) → «Yo estoy aquí» (9880,7)"
+        }
+      ],
+      "quote": "Ya, pero no te quedas solo. Yo estoy aquí. Mañana me cuentas lo de la panadería, ¿vale?"
+    }
+  ]
+}

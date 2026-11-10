@@ -2,7 +2,7 @@
  * Paquete de repetición de una partida grabada, para verla en la web sin servidor ni LLM
  * (`/replay`). Lista blanca: ver replay/pack.ts y docs/decisiones/repeticion.md.
  * Uso: pnpm replay:pack <carpeta-grabacion> [--export <carpeta-bd>] [--from <min>] [--to <min>]
- *        [--out <fichero.replay.json.gz | .json>] [--map <fichero.tmj>]
+ *        [--out <fichero.replay.json.gz | .json>] [--map <fichero.tmj>] [--seed <n>]
  * Sin `--export`, usa la subcarpeta bd/ de la grabación si existe. El mapa es el del commit de
  * la partida (manifest.json) o, si no lo hay, el último commit anterior a la grabación.
  */
@@ -60,6 +60,7 @@ const bundle = buildBundle(rec, exp, {
   world: parseTiledMap(tmj),
   map: tmj,
   memory,
+  seed: optNum("seed"),
 });
 
 const out = resolve(flag("out") ?? `${basename(recDir)}.replay.json.gz`);

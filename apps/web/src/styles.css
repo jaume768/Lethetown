@@ -1477,3 +1477,151 @@ html.ui-skin .warn-text {
     display: none;
   }
 }
+
+/* «Así muere un recuerdo» (repetición) */
+.memory-story {
+  display: grid;
+  gap: 10px;
+}
+.story-text {
+  margin: 0;
+  font-size: 1.15em;
+  border-left: 3px solid var(--accent, #f0b84c);
+  padding-left: 10px;
+}
+.story-text.vague {
+  opacity: 0.75;
+  filter: blur(0.4px);
+}
+.story-text.forgotten {
+  opacity: 0.45;
+  text-decoration: line-through;
+}
+.story-bar {
+  position: relative;
+  height: 22px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  margin-bottom: 18px;
+}
+.story-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: #6fc36f;
+  transition: width 0.4s ease-out;
+}
+.story-fill.vague {
+  background: #e0b04c;
+}
+.story-fill.forgotten {
+  background: #c25454;
+}
+.story-mark {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  border-left: 2px dashed currentColor;
+  font-size: 0.75em;
+  padding-top: 24px;
+  white-space: nowrap;
+}
+.story-mark.forget {
+  color: #ff8a8a;
+}
+.story-mark.vague {
+  color: #e0b04c;
+}
+.story-curve {
+  width: 100%;
+  height: 120px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 4px;
+}
+.story-line {
+  fill: none;
+  stroke: #9fd3ff;
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+.story-forget,
+.story-vague {
+  stroke-dasharray: 6 4;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+.story-forget {
+  stroke: #ff8a8a;
+}
+.story-vague {
+  stroke: #e0b04c;
+}
+.story-steps {
+  margin: 0;
+  padding-left: 1.2em;
+  display: grid;
+  gap: 4px;
+}
+.story-step.forgotten {
+  color: #ff8a8a;
+}
+@media (prefers-reduced-motion: reduce) {
+  .story-fill {
+    transition: none;
+  }
+}
+
+/* Contador de días del modo cine */
+.cine-day {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  text-align: center;
+  pointer-events: none;
+  color: #fff;
+  font-family: var(--pixel);
+  font-weight: 700;
+  line-height: 1;
+  text-shadow: 0 0 12px rgba(0, 0, 0, 0.85);
+}
+
+/* Pantalla partida (dos repeticiones con el mismo reloj) */
+.replay-frame.split {
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
+  background: #10131b;
+}
+.replay-frame.split.stack {
+  flex-direction: column;
+}
+.replay-half {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.half-label {
+  position: absolute;
+  z-index: 3;
+  top: 8px;
+  right: 8px;
+  pointer-events: none;
+  padding: 0.2em 0.45em;
+  background: rgba(10, 12, 18, 0.78);
+  color: var(--accent);
+  font-family: var(--pixel);
+  font-weight: 700;
+}
+@media (max-width: 760px) {
+  .replay:not(.cine) .replay-frame.split {
+    flex-direction: column;
+  }
+}
+
+/* En el modo cine, las tarjetas caben en el marco (se graban con «Grabar la pestaña»). */
+.replay.cine .modal:not(.narrow) {
+  width: min(calc(var(--frame-w, 94vw) * 0.92), 94vw);
+  max-height: min(calc(var(--frame-h, 88vh) * 0.72), 88vh);
+}

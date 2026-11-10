@@ -25,6 +25,7 @@
     "study:analyze": "pnpm --filter @lethetown/server study:analyze --",
     "replay:pack": "pnpm --filter @lethetown/server replay:pack --",
     "replay:moments": "pnpm --filter @lethetown/server replay:moments --",
+    "replay:scenes": "pnpm --filter @lethetown/server replay:scenes --",
     "assets:placeholder": "tsx tools/generate-placeholder-assets.ts",
     "assets:check": "tsx tools/check-assets.ts",
     "portraits:compose": "tsx tools/compose-portraits.ts",

@@ -1,5 +1,13 @@
 # Lethetown
 
+**Un pueblo de 20 vecinos movidos por un LLM con una memoria que olvida, se reescribe al recordar
+y confunde quién le contó qué, como la humana.** Es un juego que se ve en el navegador y un banco
+de pruebas: cada olvido, cada recuerdo que cambia y cada meta queda medido y auditado.
+
+**[Investigación](docs/investigacion/README.md) · [Colabora](COLABORA.md) ·
+[Hoja de ruta](ROADMAP.md) · [Paper](docs/investigacion/paper/README.md)** ·
+[English](CONTRIBUTING.md)
+
 Un pueblo en pixel art en el navegador, al estilo de los juegos de simulación de vida, donde cada habitante es un **agente controlado por un LLM** (Anthropic u OpenAI) con una memoria lo más parecida posible a la humana.
 
 Parte de [_Generative Agents: Interactive Simulacra of Human Behavior_](https://arxiv.org/abs/2304.03442) (Park et al., 2023): flujo de memoria, recuperación por recencia, importancia y relevancia, planificación y reflexión. A eso le añade lo que hace humana a la memoria:
@@ -423,33 +431,38 @@ conversaciones largas, recuerdos que cambian, metas…) con atajos de teclado. E
 (`?cine=1`) deja solo el mapa en un marco 9:16, 4:5 o 16:9 con zona segura, cámara que encuadra
 a quien habla, subtítulos grandes, tarjetas (jardín de recuerdos, Rashomon, red, metas, maestro y
 alumno) y la marca «Repetición de una partida real», y graba clips a 30 fps.
-`pnpm replay:moments <grabación>` saca los candidatos a clip a `moments.md`. Ver
+`pnpm replay:moments <grabación> [<otra>]` saca los candidatos a clip a `moments.md`, con los
+arcos largos aparte (y, con dos semillas, cómo acabó en cada una lo mismo). También: la tarjeta
+«así muere un recuerdo» (`&memory=<id>`), la pantalla partida con dos semillas
+(`&src2=…&split=1`), el contador de días y las escenas de los guiones
+([`docs/videos/escenas.json`](docs/videos/README.md), `?scene=<id>`). Ver
 [repetición](docs/decisiones/repeticion.md).
 
 ### Comandos
 
-| Comando                                           | Qué hace                                                                                                                                         |
-| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `pnpm test` / `lint` / `typecheck` / `format`     | Vitest, ESLint, TypeScript y Prettier.                                                                                                           |
-| `pnpm map:generate [--pack nombre]`               | Regenera `seeds/town.tmj` con los sellos del pack indicado (por defecto, `activePack`).                                                          |
-| `pnpm assets:placeholder`                         | Genera el set placeholder propio en `apps/web/public/assets/placeholder/`.                                                                       |
-| `pnpm assets:check [--strict]`                    | Lista los assets en uso con su licencia y marca los no comerciales (`--strict` falla si hay alguno).                                             |
-| `pnpm portraits:compose`                          | Compone los retratos animados de los agentes con las capas del Portrait Generator ([docs/personajes.md](docs/personajes.md)).                    |
-| `pnpm user:create <usuario> [rol]`                | Crea un usuario (viewer, director o admin) en Postgres.                                                                                          |
-| `pnpm test:e2e`                                   | Smoke tests de la interfaz con Playwright (escritorio y 375 px), con su propio servidor mock.                                                    |
-| `pnpm interview [--advance horas]`                | Entrevista a cada agente con una batería fija de preguntas y guarda las respuestas en `interviews/`. Sirve como test de regresión de la memoria. |
-| `pnpm --filter @lethetown/server sim:text 16`     | Simulación en modo texto, sin servidor: 16 horas de juego con eventos y costes.                                                                  |
-| `pnpm --filter @lethetown/server cost:report 48`  | Llamadas y tokens por tarea en 48 h de mock reproducible (tabla Markdown) y espera media de las respuestas.                                      |
-| `pnpm --filter @lethetown/server latency:probe`   | Prueba corta en tiempo real con el proveedor de `.env`: espera entre mensajes (s reales) y espera en la cola del LLM por tarea.                  |
-| `pnpm --filter @lethetown/server record <dir>`    | Con `pnpm dev` en marcha, graba una partida (mensajes del WebSocket y estado de los agentes); `world:export <dir>` vuelca la BD del mundo.       |
-| `pnpm replay:pack <dir> [--out f.replay.json.gz]` | Empaqueta una partida grabada (y su `world:export`) para verla en `/replay`, sin servidor ni coste.                                              |
-| `pnpm replay:moments <dir>`                       | Momentos destacados de una partida (candidatos a clip) en `moments.md` y `moments.json`, con la frase literal y la puntuación explicada.         |
-| `pnpm study:analyze <dir> [<otro dir>]`           | Analiza una partida grabada (o compara dos): `analysis.json` y `analysis.md` con coste, espera, frases, intenciones, acciones, red y memoria.    |
-| `pnpm personality:derive [--write]`               | Propone personalidad y perfil de memoria a partir de rasgos, edad y descripción de `seeds/agents.json`.                                          |
-| `pnpm knowledge:derive [--write]`                 | Propone el perfil de conocimiento (estudios, oficio, idiomas, viajes, intereses) de cada semilla.                                                |
-| `pnpm goals:derive [--write]`                     | Propone una meta vital y proyectos medibles por semilla (las del repo están revisadas a mano).                                                   |
-| `pnpm skills:derive [--write]`                    | Propone los niveles de partida de las habilidades por oficio, intereses, idiomas y edad (los del repo están revisados a mano).                   |
-| `pnpm db:generate`                                | Genera una migración de Drizzle tras cambiar el esquema.                                                                                         |
+| Comando                                           | Qué hace                                                                                                                                                     |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `pnpm test` / `lint` / `typecheck` / `format`     | Vitest, ESLint, TypeScript y Prettier.                                                                                                                       |
+| `pnpm map:generate [--pack nombre]`               | Regenera `seeds/town.tmj` con los sellos del pack indicado (por defecto, `activePack`).                                                                      |
+| `pnpm assets:placeholder`                         | Genera el set placeholder propio en `apps/web/public/assets/placeholder/`.                                                                                   |
+| `pnpm assets:check [--strict]`                    | Lista los assets en uso con su licencia y marca los no comerciales (`--strict` falla si hay alguno).                                                         |
+| `pnpm portraits:compose`                          | Compone los retratos animados de los agentes con las capas del Portrait Generator ([docs/personajes.md](docs/personajes.md)).                                |
+| `pnpm user:create <usuario> [rol]`                | Crea un usuario (viewer, director o admin) en Postgres.                                                                                                      |
+| `pnpm test:e2e`                                   | Smoke tests de la interfaz con Playwright (escritorio y 375 px), con su propio servidor mock.                                                                |
+| `pnpm interview [--advance horas]`                | Entrevista a cada agente con una batería fija de preguntas y guarda las respuestas en `interviews/`. Sirve como test de regresión de la memoria.             |
+| `pnpm --filter @lethetown/server sim:text 16`     | Simulación en modo texto, sin servidor: 16 horas de juego con eventos y costes.                                                                              |
+| `pnpm --filter @lethetown/server cost:report 48`  | Llamadas y tokens por tarea en 48 h de mock reproducible (tabla Markdown) y espera media de las respuestas.                                                  |
+| `pnpm --filter @lethetown/server latency:probe`   | Prueba corta en tiempo real con el proveedor de `.env`: espera entre mensajes (s reales) y espera en la cola del LLM por tarea.                              |
+| `pnpm --filter @lethetown/server record <dir>`    | Con `pnpm dev` en marcha, graba una partida (mensajes del WebSocket y estado de los agentes); `world:export <dir>` vuelca la BD del mundo.                   |
+| `pnpm replay:pack <dir> [--out f.replay.json.gz]` | Empaqueta una partida grabada (y su `world:export`) para verla en `/replay`, sin servidor ni coste.                                                          |
+| `pnpm replay:moments <dir> [<otro dir>]`          | Momentos destacados (candidatos a clip) y arcos largos en `moments.md` y `moments.json`; con dos semillas, cómo acabó en cada una la misma intención o meta. |
+| `pnpm replay:scenes`                              | Comprueba las escenas de `docs/videos/escenas.json` contra sus paquetes (la frase y el minuto).                                                              |
+| `pnpm study:analyze <dir> [<otro dir>]`           | Analiza una partida grabada (o compara dos): `analysis.json` y `analysis.md` con coste, espera, frases, intenciones, acciones, red y memoria.                |
+| `pnpm personality:derive [--write]`               | Propone personalidad y perfil de memoria a partir de rasgos, edad y descripción de `seeds/agents.json`.                                                      |
+| `pnpm knowledge:derive [--write]`                 | Propone el perfil de conocimiento (estudios, oficio, idiomas, viajes, intereses) de cada semilla.                                                            |
+| `pnpm goals:derive [--write]`                     | Propone una meta vital y proyectos medibles por semilla (las del repo están revisadas a mano).                                                               |
+| `pnpm skills:derive [--write]`                    | Propone los niveles de partida de las habilidades por oficio, intereses, idiomas y edad (los del repo están revisados a mano).                               |
+| `pnpm db:generate`                                | Genera una migración de Drizzle tras cambiar el esquema.                                                                                                     |
 
 `SIM_SEED` en `.env` fija el azar de la memoria (rumores, reconsolidación…) para tener simulaciones reproducibles. El test dorado (`apps/server/src/sim/golden.test.ts`) compara 3 días de simulación en mock con una línea de tiempo guardada.
 

@@ -18,6 +18,14 @@ import type {
 } from "../schemas/memory";
 import type { AgentSkillsResponse, SkillState } from "../schemas/skills";
 import type { ReplayData, ReplayMemory } from "./bundle";
+import {
+  DEFAULT_THRESHOLDS,
+  STORY_ACTIONS,
+  STORY_END_ACTIONS,
+  storyStep,
+  textFromAudit,
+  type MemoryStory,
+} from "./memory-story";
 
 /**
  * Lo que mostraban los paneles en un instante de la partida, a partir de los datos del
@@ -78,6 +86,58 @@ export class ReplayViews {
       meta: m.meta,
     };
     return { view, strength: sample.strength, clarity: sample.clarity };
+  }
+
+  /**
+   * «Así muere un recuerdo»: su texto, la curva de fuerza y lo que le pasó hasta `t` (null si
+   * el paquete no sabe nada de él o aún no existía).
+   */
+  story(
+    memoryId: string,
+    t: number,
+    thresholds: { forget: number; vague: number } = DEFAULT_THRESHOLDS,
+  ): MemoryStory | null {
+    const m = this.data.memories.find((x) => x.id === memoryId);
+    const audit = this.data.audit
+      .filter(
+        (a) =>
+          a.memoryId === memoryId &&
+          (STORY_ACTIONS.includes(a.action) || STORY_END_ACTIONS.includes(a.action)),
+      )
+      .sort((a, b) => a.at - b.at);
+    const first = audit[0];
+    if (!m && !first) return null;
+    if (m ? m.createdAt > t : first!.at > t) return null;
+    const steps = audit.filter((a) => a.at <= t).map((a) => storyStep(a, this.names));
+    const forgotten = steps.find((s) => s.action === "forgotten" || s.action === "deleted");
+    const at = m ? this.memoryAt(m, t) : null;
+    const curve: [number, number][] = m
+      ? [
+          ...m.strengthAt.filter(([x]) => x <= t).map(([x, v]): [number, number] => [x, v]),
+          [t, at!.strength],
+        ]
+      : [];
+    const firstVersion = this.versions.get(memoryId)?.[0];
+    return {
+      memoryId,
+      agentId: m?.agentId ?? first!.agentId,
+      text: at?.view.text ?? textFromAudit(audit, t) ?? first!.memoryText,
+      firstText: firstVersion?.text ?? at?.view.text ?? first!.memoryText,
+      createdAt: m?.createdAt ?? null,
+      strength:
+        forgotten?.detail.kind === "forgotten" && !at
+          ? forgotten.detail.strength
+          : (at?.strength ?? 0),
+      strengthKnown: Boolean(at) || forgotten?.detail.kind === "forgotten",
+      clarity: forgotten ? "forgotten" : (at?.clarity ?? "clear"),
+      curve,
+      span: m?.strengthAt.length
+        ? [m.strengthAt[0]![0], Math.max(m.strengthAt.at(-1)![0], m.strengthAt[0]![0] + 1)]
+        : [first!.at, (audit.at(-1)?.at ?? first!.at) + 1],
+      thresholds,
+      steps,
+      forgottenAt: forgotten?.at ?? null,
+    };
   }
 
   /** Historial de versiones de un recuerdo hasta `t`. */

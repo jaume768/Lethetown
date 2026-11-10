@@ -20,7 +20,9 @@ export type MomentKind =
   | "external"
   | "goal"
   | "teaching"
-  | "forgetting";
+  | "forgetting"
+  /** Arco largo (varios días): ver arcs.ts; se ordenan aparte. */
+  | "arc";
 
 export interface Moment {
   id: string;
@@ -38,6 +40,12 @@ export interface Moment {
   why: string;
   eventId: string | null;
   placeId: string | null;
+  /** El recuerdo del momento (para la tarjeta «así muere un recuerdo»). */
+  memoryId?: string | null;
+  /** Arco: del primer al último minuto, y cuántas veces (o noches). */
+  span?: { from: number; to: number; count: number };
+  /** Arco de dos semillas: cómo acabó en cada una (por etiqueta). */
+  pair?: Record<string, { done: boolean; label: string; at: number | null }>;
 }
 
 /** Un nombre que el `PersonGuard` o el registro de referencias externas marcó. */
@@ -92,6 +100,7 @@ export const MOMENT_BASE: Record<MomentKind, number> = {
   forgetting: 0.35,
   conversation: 0.3,
   external: 0.25,
+  arc: 0.5,
 };
 
 /** Frases de olvido dichas en voz alta. */
@@ -346,6 +355,7 @@ export function findMoments(input: MomentInput): Moment[] {
           quote: `«${v.text}» → «${after}»`,
           eventId: m?.eventId ?? null,
           placeId: null,
+          memoryId,
         },
         { charge: m?.emotionalValence ?? 0 },
       );
@@ -364,6 +374,7 @@ export function findMoments(input: MomentInput): Moment[] {
         quote: a.memoryText,
         eventId: memories.get(a.memoryId)?.eventId ?? null,
         placeId: null,
+        memoryId: a.memoryId,
       },
       { base: MOMENT_BASE.transformation + 0.2 },
     );
@@ -385,6 +396,7 @@ export function findMoments(input: MomentInput): Moment[] {
         quote: a.memoryText,
         eventId: m.eventId,
         placeId: null,
+        memoryId: a.memoryId,
       },
       { charge: m.emotionalValence },
     );

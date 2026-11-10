@@ -24,7 +24,8 @@
     "start:worker": "tsx src/worker.ts",
     "replay:pack": "tsx src/scripts/replay-pack.ts",
     "replay:moments": "tsx src/scripts/replay-moments.ts",
-    "replay:demo": "tsx src/scripts/replay-demo.ts"
+    "replay:demo": "tsx src/scripts/replay-demo.ts",
+    "replay:scenes": "tsx src/scripts/replay-scenes.ts"
   },
   "dependencies": {
     "@fastify/cookie": "11.1.3",

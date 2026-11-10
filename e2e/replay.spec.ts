@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 const SRC = "/replay?src=/replays/e2e.replay.json.gz";
 
@@ -60,4 +60,105 @@ test("modo cine: marco, marca de la partida real y vuelta", async ({ page }) => 
 test("repetición: solo paquetes de /replays/", async ({ page }) => {
   await page.goto("/replay?src=https://example.com/x.replay.json.gz");
   await expect(page.getByRole("alert")).toContainText("/replays/");
+});
+
+/** Lo que la escena del mapa sabe de la cámara (solo en desarrollo: `window.__town`). */
+const camera = (page: Page) =>
+  page.evaluate(() => {
+    const town = (window as unknown as { __town?: Record<string, unknown> }).__town;
+    const mm = town?.minimap as { visible: boolean } | null | undefined;
+    return {
+      ready: Boolean(town?.ready),
+      directed: (town?.directed as string[] | null) ?? null,
+      minimap: mm ? mm.visible : null,
+    };
+  });
+
+test("modo cine con &agent=: hay lienzo y marca (no se queda en blanco), sin minimapa", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.goto(`${SRC}&cine=1&agent=aurora`);
+  await expect(page.locator(".replay-frame canvas")).toHaveCount(1, { timeout: 30_000 });
+  await expect(page.locator(".cine-mark")).toContainText("lethetown.com");
+  await expect.poll(async () => (await camera(page)).ready, { timeout: 30_000 }).toBe(true);
+  await expect.poll(async () => (await camera(page)).directed).toEqual(["aurora"]);
+  expect((await camera(page)).minimap).toBe(false);
+  expect(errors).toEqual([]);
+});
+
+for (const cine of [false, true]) {
+  test(`&t= y &agent= juntos ${cine ? "en el modo cine" : "sin modo cine"}`, async ({ page }) => {
+    const errors: string[] = [];
+    page.on("pageerror", (e) => errors.push(e.message));
+    await page.goto(`${SRC}&t=500&agent=valentina${cine ? "&cine=1" : ""}`);
+    await expect(page.getByTestId("replay-play")).toBeVisible({ timeout: 30_000 });
+    // Minuto 500 = día 0, 08:20.
+    await expect(page.getByTestId("replay-time")).toContainText("08:20");
+    await expect.poll(async () => (await camera(page)).ready, { timeout: 30_000 }).toBe(true);
+    if (cine) {
+      await expect.poll(async () => (await camera(page)).directed).toEqual(["valentina"]);
+      await expect(page.getByRole("combobox", { name: "Cámara" })).toHaveValue("valentina");
+    } else {
+      await expect(page.getByRole("tab", { name: "Agente" })).toHaveAttribute(
+        "aria-selected",
+        "true",
+      );
+      await expect(page.locator(".side")).toContainText("Valentina");
+      expect((await camera(page)).minimap).toBe(true);
+    }
+    expect(errors).toEqual([]);
+  });
+}
+
+test("modo cine: el contador de días sale al saltar y se apaga con D", async ({ page }) => {
+  await page.goto(`${SRC}&cine=1`);
+  await expect(page.getByTestId("replay-play")).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByTestId("cine-day")).toHaveText("Día 0");
+  await expect(page.getByTestId("cine-day")).toHaveCount(0, { timeout: 10_000 });
+  await page.getByRole("slider", { name: "Línea de tiempo" }).fill("520");
+  await expect(page.getByTestId("cine-day")).toHaveText("Día 0");
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+  await page.keyboard.press("d");
+  await expect(page.getByRole("button", { name: "Días" })).toHaveAttribute("aria-pressed", "false");
+  await expect(page.getByTestId("cine-day")).toHaveCount(0);
+});
+
+test("pantalla partida: dos semillas con un solo reloj y su etiqueta", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.goto(`${SRC}&src2=/replays/e2e-13.replay.json.gz&split=1&cine=1&agent=tomas&t=450`);
+  await expect(page.locator(".replay-frame.split canvas")).toHaveCount(2, { timeout: 30_000 });
+  await expect(page.getByTestId("split-label")).toHaveText(["Semilla 7", "Semilla 13"]);
+  await expect(page.getByTestId("replay-play")).toHaveCount(1);
+  await expect(page.getByRole("slider", { name: "Línea de tiempo" })).toHaveCount(1);
+  // Las dos cámaras siguen al mismo vecino.
+  const directed = () =>
+    page.evaluate(() => {
+      const w = window as unknown as Record<string, { directed?: string[] | null } | undefined>;
+      return [w.__town, w.__town2].map((x) => x?.directed?.includes("tomas") ?? false);
+    });
+  await expect.poll(directed, { timeout: 30_000 }).toEqual([true, true]);
+  await page.getByTestId("replay-play").click();
+  await expect(page.getByTestId("replay-time")).not.toContainText("07:30", { timeout: 10_000 });
+  expect(errors).toEqual([]);
+});
+
+test("escenas: ?scene= abre el modo cine con su vecino, minuto y velocidad", async ({ page }) => {
+  // La escena es de s7; aquí se carga la partida de prueba en su lugar (la URL manda).
+  await page.goto("/replay?scene=alma-pregunta&src=/replays/e2e.replay.json.gz");
+  await expect(page.getByTestId("replay-play")).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator(".replay.cine")).toHaveCount(1);
+  await expect(page.getByTestId("replay-time")).toContainText("08:17");
+  await expect(page.getByRole("radio", { name: "x10" })).toHaveAttribute("aria-checked", "true");
+  await expect(page.getByRole("radio", { name: "9:16" })).toHaveAttribute("aria-checked", "true");
+  await expect(page.getByRole("combobox", { name: "Cámara" })).toHaveValue("valentina");
+  // La pestaña de escenas, fuera del modo cine.
+  await page.getByRole("button", { name: "Salir del modo cine" }).click();
+  await expect(page.getByRole("tab", { name: "Escenas" })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByTestId("scenes").getByRole("link")).toHaveCount(13);
+  await expect(
+    page.getByTestId("scenes").getByRole("link", { name: /Me acordé… a medias/ }),
+  ).toHaveAttribute("href", "/replay?scene=aniversario-si");
 });

@@ -1,0 +1,53 @@
+name: Propuesta de experimento
+description: Una hipótesis que se pueda poner a prueba con una partida (y su mundo de control).
+title: "Experimento: "
+labels: ["experimento"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Cómo plantearlo, con un ejemplo completo: [COLABORA.md](https://github.com/jaume768/Lethetown/blob/main/COLABORA.md#proponer-un-experimento).
+        En inglés también vale. / English is fine too.
+  - type: textarea
+    id: hipotesis
+    attributes:
+      label: Hipótesis
+      description: Qué esperas que pase y por qué, en una frase que se pueda refutar.
+      placeholder: Con olvido y vaguedad, la misma semilla diverge más entre dos partidas que sin ellos.
+    validations:
+      required: true
+  - type: textarea
+    id: cambio
+    attributes:
+      label: Qué se cambia
+      description: Solo una cosa. Semilla, interruptor (`MEMORY_ABLATION`, `SIM_COGNITION=off`) o parámetro (`MemoryConfig`, `GoalsConfig`…) con su valor.
+      placeholder: "MEMORY_ABLATION=noForgetting,noVagueness en la semilla 7 (s7a)"
+    validations:
+      required: true
+  - type: textarea
+    id: medida
+    attributes:
+      label: Qué se mide
+      description: Métricas de `pnpm study:analyze` o recuentos sobre la exportación (`bd/*.jsonl`), y qué resultado refutaría la hipótesis.
+    validations:
+      required: true
+  - type: textarea
+    id: control
+    attributes:
+      label: Mundo de control
+      description: La misma semilla sin el cambio, a la vez. ¿Hace falta otra semilla para medir el azar?
+    validations:
+      required: true
+  - type: input
+    id: duracion
+    attributes:
+      label: Duración y coste estimado
+      description: Días de juego y mundos (≈ 1,31 $ por mundo y día con el LLM real; gratis en mock).
+      placeholder: 7 días · 3 mundos · ≈ 28 $
+    validations:
+      required: true
+  - type: textarea
+    id: notas
+    attributes:
+      label: Antecedentes y notas
+      description: Estudios o literatura en que se basa, riesgos, lo que no se sabe medir aún.

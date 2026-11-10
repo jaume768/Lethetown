@@ -1,0 +1,6 @@
+# Las preguntas y las conversaciones, en Discussions; los issues, para lo que se puede hacer.
+blank_issues_enabled: false
+contact_links:
+  - name: Preguntas y conversación (Discussions)
+    url: https://github.com/jaume768/Lethetown/discussions
+    about: Dudas, ideas a medio cocer, resultados para comentar. / Questions, half-baked ideas, results to discuss.

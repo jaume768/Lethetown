@@ -90,7 +90,8 @@ TypeScript estricto. El porqué de cada decisión está en [docs/decisiones/](do
   blanca (zod descarta lo demás; nada de costes, usuarios, moderación ni rutas) con versión; la
   web lo reproduce con el MISMO reductor (`feed` → `applyMessage`) y la API de solo lectura
   desde el paquete; nada de psicología en la web (la fuerza se muestrea al empaquetar). Lo que
-  se ve es real: nada se redacta. Ver [repetición](docs/decisiones/repeticion.md).
+  se ve es real: nada se redacta. Escenas de vídeo en `docs/videos/escenas.json` (solo datos;
+  `pnpm replay:scenes` las comprueba). Ver [repetición](docs/decisiones/repeticion.md).
 - **Ritmo y habla**: quien recibe una frase piensa al minuto (`ctx.wake`, un solo tick pendiente
   por agente); lo que se oye en una charla en curso se valora por reglas (`rateHeard`); lo que se
   dice se recorta en código (`clipText`); tareas urgentes en `URGENT_TASKS` de la cola LLM. Ver
@@ -122,7 +123,8 @@ TypeScript estricto. El porqué de cada decisión está en [docs/decisiones/](do
 - `pnpm --filter @lethetown/server cost:report 48` (coste reproducible y espera de respuesta) ·
   `latency:probe [min] [x]` (prueba real corta) · `record <dir>` / `world:export <dir>` (grabar
   una partida) · `pnpm study:analyze <dir> [<otro> …]` (analizarla) · `sim:text <horas>` ·
-  `pnpm replay:pack <dir>` (paquete de repetición) · `pnpm replay:moments <dir>` ·
+  `pnpm replay:pack <dir>` (paquete de repetición) · `pnpm replay:moments <dir> [<otro>]` ·
+  `pnpm replay:scenes` ·
   `pnpm --filter @lethetown/server replay:demo` (paquete corto en mock, sin servidor) ·
   `pnpm interview [--advance h]` · `pnpm personality:derive` · `pnpm knowledge:derive` ·
   `pnpm goals:derive` · `pnpm skills:derive` · `pnpm map:generate` ·

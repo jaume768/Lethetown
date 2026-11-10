@@ -1,10 +1,16 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import type { AgentState } from "../schemas/agent";
 import type { SimEvent } from "../schemas/api";
 import type { Drama } from "../schemas/drama";
+import type { MemoryAuditAction, MemoryAuditEntry } from "../schemas/memory";
+import { confirmedArcs, pairArcs, repeatedArcs, seedMemoryArcs } from "../replay/arcs";
 import type { Goal } from "../schemas/goals";
 import { positionAt } from "../map/movement";
-import { EMPTY_REPLAY_DATA, ReplayBundle, type ReplayMemory } from "../replay/bundle";
+import { EMPTY_REPLAY_DATA, ReplayBundle, ReplayData, type ReplayMemory } from "../replay/bundle";
+import { storyStep, textFromAudit } from "../replay/memory-story";
+import { ReplayScenes, SceneShot, sceneBundlePath, shotAt } from "../replay/scenes";
 import {
   agentAt,
   agentPatch,
@@ -584,5 +590,339 @@ describe("esquema del paquete", () => {
 
   it("rechaza una versión que no entiende", () => {
     expect(ReplayBundle.safeParse({ format: "lethetown-replay", version: 99 }).success).toBe(false);
+  });
+});
+
+describe("así muere un recuerdo", () => {
+  const names = new Map([
+    ["aurora", "Aurora Vidal"],
+    ["valentina", "Valentina Ríos"],
+  ]);
+  const audit = (action: MemoryAuditAction, at: number, reason: string) => ({
+    agentId: "aurora",
+    memoryId: "alma",
+    memoryText: "Alma fue una amiga mía que se marchó del pueblo y nunca volvió.",
+    action,
+    reason,
+    at,
+  });
+  const data = ReplayData.parse({
+    ...EMPTY_REPLAY_DATA,
+    memories: [
+      {
+        id: "alma",
+        agentId: "aurora",
+        text: "Alma fue una amiga mía que se marchó del pueblo y nunca volvió.",
+        gist: "Tuve una amiga de juventud que se fue del pueblo.",
+        createdAt: 0,
+        lastAccessedAt: 100,
+        importance: 3,
+        emotionalValence: -0.2,
+        strength: 0.9,
+        source: "vivido",
+        type: "observation",
+        people: [],
+        placeId: null,
+        eventId: null,
+        links: [],
+        status: "active",
+        forgottenAt: 900,
+        meta: {},
+        strengthAt: [
+          [100, 0.9, "clear"],
+          [500, 0.2, "vague"],
+          [900, 0.04, "forgotten"],
+        ],
+      },
+    ],
+    audit: [
+      audit("gist", 400, 'se volvió vago; solo queda la esencia: "Tuve una amiga de juventud."'),
+      audit(
+        "source_changed",
+        600,
+        'ya no recuerda bien quién se lo contó: "contado por valentina" → "vivido"',
+      ),
+      audit("reinforced", 650, "ruido"),
+      audit(
+        "forgotten",
+        900,
+        "su fuerza bajó a 0.049 (umbral de olvido 0.05) sin volver a recordarlo",
+      ),
+    ],
+  });
+  const views = new ReplayViews(data, names);
+
+  it("en cada minuto, la curva y los cambios hasta entonces, con el motivo legible", () => {
+    expect(views.story("alma", -1)).toBeNull();
+    expect(views.story("nada", 500)).toBeNull();
+    const mid = views.story("alma", 650)!;
+    expect(mid.steps.map((s) => s.action)).toEqual(["gist", "source_changed"]);
+    expect(mid.steps[0]!.detail).toEqual({ kind: "gist", gist: "Tuve una amiga de juventud." });
+    expect(mid.steps[1]!.detail).toEqual({
+      kind: "source",
+      from: "contado por Valentina",
+      to: "vivido",
+    });
+    expect(mid.curve.map(([t]) => t)).toEqual([100, 500, 650]);
+    expect(mid.strength).toBeLessThan(0.2);
+    expect(mid.forgottenAt).toBeNull();
+    const end = views.story("alma", 1000, { forget: 0.05, vague: 0.3 })!;
+    expect(end.clarity).toBe("forgotten");
+    expect(end.forgottenAt).toBe(900);
+    expect(end.steps.at(-1)!.detail).toEqual({
+      kind: "forgotten",
+      strength: 0.049,
+      threshold: 0.05,
+    });
+  });
+
+  it("un recuerdo borrado: el texto sale de la auditoría (también el falso)", () => {
+    const rows = [
+      {
+        ...audit("false_memory", 10, "su mente rellenó los huecos: «Creo que se acordó.»"),
+        memoryText: "Se acordó del aniversario.",
+      },
+      { ...audit("gist", 20, "se volvió vago"), memoryText: "Creo que se acordó." },
+      {
+        ...audit("deleted", 30, "presupuesto de memoria superado"),
+        memoryText: "Creo que se acordó.",
+      },
+    ].map((r) => ({ ...r, memoryId: "borrado" }));
+    const v = new ReplayViews(ReplayData.parse({ ...EMPTY_REPLAY_DATA, audit: rows }), names);
+    expect(textFromAudit(rows, 5)).toBe("Se acordó del aniversario.");
+    expect(textFromAudit(rows.slice(0, 1), 15)).toBe("Creo que se acordó.");
+    const s = v.story("borrado", 15)!;
+    expect(s.text).toBe("Creo que se acordó.");
+    expect(s.strengthKnown).toBe(false);
+    expect(s.steps[0]!.detail).toEqual({ kind: "false", text: "Creo que se acordó." });
+    const end = v.story("borrado", 40)!;
+    expect(end.steps.at(-1)!.action).toBe("deleted");
+    expect(end.clarity).toBe("forgotten");
+  });
+
+  it("un motivo que no se sabe leer se enseña tal cual", () => {
+    const s = storyStep(
+      { ...audit("false_memory", 1, "mezcló dos recuerdos"), action: "false_memory" },
+      names,
+    );
+    expect(s.detail).toEqual({ kind: "reason", reason: "mezcló dos recuerdos" });
+  });
+});
+
+describe("escenas guardadas", () => {
+  it("docs/videos/escenas.json es válido (ids únicos, planos en orden)", () => {
+    const file = readFileSync(
+      fileURLToPath(new URL("../../../../docs/videos/escenas.json", import.meta.url)),
+      "utf8",
+    );
+    const { scenes } = ReplayScenes.parse(JSON.parse(file));
+    expect(scenes.length).toBeGreaterThanOrEqual(13);
+    for (const s of scenes) {
+      const starts = s.shots.map((x) => x.from);
+      expect(starts, s.id).toEqual([...starts].sort((a, b) => a - b));
+    }
+    expect(scenes.find((s) => s.id === "aniversario-partido")!.src2).toBe("s13");
+  });
+
+  it("el plano de un minuto, y rechaza planos al revés", () => {
+    const shots = [
+      { from: 10, to: 20 },
+      { from: 50, to: 60 },
+    ];
+    expect(shotAt(shots, 5)).toBe(0);
+    expect(shotAt(shots, 25)).toBe(1);
+    expect(shotAt(shots, 60)).toBe(-1);
+    expect(sceneBundlePath("s7")).toBe("/replays/s7.replay.json.gz");
+    expect(() => SceneShot.parse({ from: 5, to: 4 })).toThrow();
+  });
+});
+
+describe("arcos largos", () => {
+  const names = new Map([
+    ["julian", "Julián Ortega"],
+    ["ines", "Inés Ortega"],
+    ["tomas", "Tomás Herrero"],
+    ["pilar", "Pilar Herrero"],
+  ]);
+  let n = 0;
+  const say = (time: number, who: string, to: string, line: string): SimEvent => ({
+    id: `c${n++}:1`,
+    time,
+    agentId: who,
+    kind: "speech",
+    text: `${names.get(who)} → ${names.get(to)}: "${line}"`,
+    participants: [who, to],
+  });
+  const events = [
+    say(100, "julian", "ines", "Inés… me da miedo quedarme solo aquí."),
+    say(1600, "julian", "ines", "Me da miedo quedarme solo. Si no es molestia."),
+    say(3000, "julian", "ines", "Inés, me da miedo quedarme solo en esta casa."),
+    say(3001, "ines", "julian", "Ya, pero no te quedas solo. Yo estoy aquí."),
+    // Otras parejas (para la rareza de las palabras).
+    ...[0, 1, 2, 3].map((d) => say(d * 1440 + 50, "tomas", "pilar", "Pásame el pan, Pilar.")),
+    ...[0, 1, 2].map((d) => say(d * 1440 + 60, "pilar", "tomas", "Toma el pan.")),
+  ];
+  const goal = (over: Partial<Goal>): Goal =>
+    ({
+      id: "g1",
+      agentId: "julian",
+      level: "project",
+      parentId: null,
+      text: "Contarle a Inés que me da miedo quedarme solo",
+      status: "achieved",
+      progress: 1,
+      motivation: 1,
+      frustration: 0,
+      criterion: {
+        type: "confirmed",
+        question: "¿Le ha dicho a Inés que le da miedo quedarse solo?",
+        measure: { type: "conversations", personId: "ines", topics: ["miedo"], count: 1 },
+      },
+      measured: 1,
+      baseline: null,
+      seen: [],
+      resource: null,
+      departure: null,
+      createdAt: 50,
+      updatedAt: 3100,
+      lastProgressAt: 3000,
+      history: [
+        {
+          at: 1500,
+          status: "active",
+          progress: 0.95,
+          motivation: 1,
+          frustration: 0,
+          reason: "comprobado al repasar el día: aún no: no lo dijo",
+        },
+        {
+          at: 3100,
+          status: "active",
+          progress: 0.95,
+          motivation: 1,
+          frustration: 0,
+          reason: "comprobado al repasar el día: se ha logrado: se lo dijo",
+        },
+        {
+          at: 3100,
+          status: "achieved",
+          progress: 1,
+          motivation: 1,
+          frustration: 0,
+          reason: "conseguida (el motor midió el criterio)",
+        },
+      ],
+      ...over,
+    }) as Goal;
+
+  it("lo mismo de A a B en ≥ 3 días: primero, último y cuántas veces", () => {
+    const arcs = repeatedArcs({ names, events, dramas: [], chronicles: [] });
+    const julian = arcs.find((a) => a.agents[0] === "julian")!;
+    expect(julian.title).toMatch(/miedo/);
+    expect(julian.title).toContain("en 3 días (3 veces)");
+    expect(julian.span).toEqual({ from: 100, to: 3000, count: 3 });
+    expect(julian.quote).toMatch(/^«Inés… me da miedo quedarme solo aquí\.» … «Inés, me da miedo/);
+    // Inés solo lo dice un día.
+    expect(arcs.some((a) => a.agents[0] === "ines")).toBe(false);
+  });
+
+  it("meta confirmada: la frase que lo logró y las noches que costó", () => {
+    const [arc] = confirmedArcs({ names, events, dramas: [], chronicles: [], goals: [goal({})] });
+    expect(arc!.subkind).toBe("confirmed");
+    expect(arc!.quote).toBe("Inés, me da miedo quedarme solo en esta casa.");
+    expect(arc!.time).toBe(3000);
+    expect(arc!.title).toContain("tras 2 noches");
+    expect(arc!.why).toContain("se lo dijo");
+    // Las medibles (sin consolidación) no son de este tipo.
+    expect(
+      confirmedArcs({
+        names,
+        events,
+        dramas: [],
+        chronicles: [],
+        goals: [
+          goal({ criterion: { type: "visits", placeId: "lago", count: 1 } } as Partial<Goal>),
+        ],
+      }),
+    ).toEqual([]);
+  });
+
+  it("recuerdos de la semilla que se apagan, con el día", () => {
+    const mem = (id: string, createdAt: number) => ({
+      id,
+      agentId: "tomas",
+      text: "No sé qué día es el aniversario.",
+      eventId: null,
+      createdAt,
+      importance: 6,
+      emotionalValence: -0.3,
+    });
+    const row = (memoryId: string, action: MemoryAuditAction, at: number) => ({
+      agentId: "tomas",
+      memoryId,
+      memoryText: "No sé qué día es el aniversario.",
+      action,
+      reason: "",
+      at,
+    });
+    const arcs = seedMemoryArcs({
+      names,
+      events: [],
+      dramas: [],
+      chronicles: [],
+      from: 420,
+      memories: [mem("seed", 410), mem("nuevo", 900)],
+      audit: [
+        row("seed", "gist", 2000),
+        row("seed", "forgotten", 5000),
+        row("nuevo", "forgotten", 6000),
+      ],
+    });
+    expect(arcs).toHaveLength(1);
+    expect(arcs[0]!.title).toBe(
+      "Tomás Herrero: un recuerdo de toda la vida se vuelve vago el día 1 y se olvida el día 3",
+    );
+    expect(arcs[0]!.memoryId).toBe("seed");
+  });
+
+  it("dos semillas: la misma intención y cómo acabó en cada una", () => {
+    const intention = (action: MemoryAuditAction, at: number, extra = "") => ({
+      agentId: "tomas",
+      memoryId: `i${at}`,
+      memoryText: `Quiero felicitar a Pilar por nuestro aniversario.${extra}`,
+      action,
+      reason: "",
+      at,
+    });
+    const input = (audit: MemoryAuditEntry[], goals: Goal[] = []) => ({
+      names,
+      events: [],
+      dramas: [],
+      chronicles: [],
+      audit,
+      goals,
+    });
+    const pairs = pairArcs(
+      { label: "s7", input: input([intention("intention_kept", 430)], [goal({})]) },
+      {
+        label: "s13",
+        input: input(
+          [
+            intention("intention_forgotten", 745, " Cuarenta y cinco años ya."),
+            intention("intention_dropped", 2269, " Cuarenta y cinco años ya."),
+          ],
+          [goal({ status: "active" })],
+        ),
+      },
+    );
+    const anniversary = pairs.find((p) => p.title.includes("aniversario"))!;
+    expect(anniversary.pair).toEqual({
+      s7: { done: true, label: "se acordó", at: 430 },
+      s13: { done: false, label: "se le pasó, luego lo dejó", at: 745 },
+    });
+    expect(anniversary.time).toBe(430);
+    expect(pairs.find((p) => p.id.includes(":goal:"))!.title).toContain(
+      "s7: la consiguió · s13: sigue en ello",
+    );
   });
 });

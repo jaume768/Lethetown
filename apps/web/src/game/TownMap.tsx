@@ -15,6 +15,8 @@ export interface MapController {
   canvas(): HTMLCanvasElement | null;
   /** Modo cine: encuadra a estos vecinos (null = cámara libre). */
   direct(ids: string[] | null): void;
+  /** Modo cine: cuánto quedan por encima del centro (fracción del alto). */
+  directOffset(fraction: number): void;
 }
 
 interface Props {
@@ -33,6 +35,15 @@ interface Props {
   /** Overlay para OBS: fondo transparente y sin minimapa. */
   transparent?: boolean;
   controller?: { current: MapController | null };
+  /**
+   * Otra partida que no es la del store (la segunda de la pantalla partida): su mapa, quién
+   * piensa y sus efectos de memoria.
+   */
+  own?: {
+    mapUrl: string;
+    isThinking: (id: string) => boolean;
+    onMemoryEffect: (l: (e: { agentId: string; kind: string }) => void) => () => void;
+  };
 }
 
 function sync(
@@ -57,26 +68,38 @@ export function TownMap(props: Props) {
 
   useEffect(() => {
     const townScene = new TownScene();
+    // Órdenes de cámara que llegan antes de que la escena exista: se aplican al crearla.
+    const pending: (() => void)[] = [];
+    const whenReady = (fn: () => void) => (townScene.ready ? fn() : void pending.push(fn));
     townScene.onReady = () => {
       sync(townScene, latest.current);
       townScene.setFollow(latest.current.followId);
+      for (const fn of pending.splice(0)) fn();
     };
     townScene.gameTime = gameTimeNow;
-    townScene.isThinking = (id) => (getState().thinking[id]?.count ?? 0) > 0;
-    const offEffects = onMemoryEffect((e) => townScene.memoryEffect(e.agentId, e.kind));
+    const own = latest.current.own;
+    townScene.mapUrl = own?.mapUrl ?? null;
+    townScene.isThinking = own?.isThinking ?? ((id) => (getState().thinking[id]?.count ?? 0) > 0);
+    const offEffects = (own?.onMemoryEffect ?? onMemoryEffect)((e) =>
+      townScene.memoryEffect(e.agentId, e.kind),
+    );
     scene.current = townScene;
     if (latest.current.controller) {
       latest.current.controller.current = {
-        focusPlace: (id) => townScene.focusPlace(id),
-        focusAgent: (id) => townScene.focusAgent(id),
-        nudge: (dx, dy) => townScene.nudgeCamera(dx, dy),
-        zoom: (step) => townScene.zoomBy(step),
+        focusPlace: (id) => whenReady(() => townScene.focusPlace(id)),
+        focusAgent: (id) => whenReady(() => townScene.focusAgent(id)),
+        nudge: (dx, dy) => whenReady(() => townScene.nudgeCamera(dx, dy)),
+        zoom: (step) => whenReady(() => townScene.zoomBy(step)),
         canvas: () => (townScene.ready ? townScene.canvas : null),
-        direct: (ids) => townScene.setDirector(ids),
+        direct: (ids) => whenReady(() => townScene.setDirector(ids)),
+        directOffset: (f) => whenReady(() => void (townScene.directorOffset = f)),
       };
     }
     // Solo en desarrollo: acceso desde la consola / scripts de captura.
-    if (import.meta.env.DEV) (window as unknown as { __town: TownScene }).__town = townScene;
+    if (import.meta.env.DEV && !own)
+      (window as unknown as { __town: TownScene }).__town = townScene;
+    if (import.meta.env.DEV && own)
+      (window as unknown as { __town2: TownScene }).__town2 = townScene;
     const transparent = latest.current.transparent ?? false;
     const game = new Phaser.Game({
       type: Phaser.AUTO,

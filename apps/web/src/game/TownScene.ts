@@ -57,6 +57,8 @@ export class TownScene extends Phaser.Scene {
   onReady: () => void = () => {};
   /** Devuelve el tiempo de juego estimado ahora. */
   gameTime: () => number = () => 0;
+  /** De dónde sale el mapa (.tmj); null: el de la API (o el de la repetición). */
+  mapUrl: string | null = null;
   /** Agentes con una llamada al LLM en curso. */
   isThinking: (id: string) => boolean = () => false;
   ready = false;
@@ -69,7 +71,7 @@ export class TownScene extends Phaser.Scene {
 
   preload() {
     this.load.json("manifest", "/assets/manifest.json");
-    this.load.json("tmj", apiPath("/api/map"));
+    this.load.json("tmj", this.mapUrl ?? apiPath("/api/map"));
   }
 
   create() {
