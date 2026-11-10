@@ -10,8 +10,11 @@
 
 ## 2. Planos de los guiones
 
-- [ ] Tarjeta «así muere un recuerdo» (`&memory=<id>` o desde un momento)
-- [ ] Lista blanca de `replay:pack`: recuerdos con auditoría que cuenta (olvido, esencia, fuente…)
+- [x] Tarjeta «así muere un recuerdo» (`&memory=<id>` o desde un momento con `memoryId`):
+      texto, barra con los umbrales de vaguedad y olvido, curva muestreada y los cambios con el
+      motivo de la auditoría (`ReplayViews.story`, `storyStep`)
+- [x] Lista blanca de `replay:pack`: entran los recuerdos con historia en la auditoría
+      (`STORY_ACTIONS`); el paquete lleva los umbrales (`meta.thresholds`) y `--seed`
 - [ ] Pantalla partida (`&src2=…&split=1`) con clip compuesto
 - [ ] Contador de días (tecla D), también en el clip
 

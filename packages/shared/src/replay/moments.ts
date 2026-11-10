@@ -38,6 +38,8 @@ export interface Moment {
   why: string;
   eventId: string | null;
   placeId: string | null;
+  /** El recuerdo del momento (para la tarjeta «así muere un recuerdo»). */
+  memoryId?: string | null;
 }
 
 /** Un nombre que el `PersonGuard` o el registro de referencias externas marcó. */
@@ -346,6 +348,7 @@ export function findMoments(input: MomentInput): Moment[] {
           quote: `«${v.text}» → «${after}»`,
           eventId: m?.eventId ?? null,
           placeId: null,
+          memoryId,
         },
         { charge: m?.emotionalValence ?? 0 },
       );
@@ -364,6 +367,7 @@ export function findMoments(input: MomentInput): Moment[] {
         quote: a.memoryText,
         eventId: memories.get(a.memoryId)?.eventId ?? null,
         placeId: null,
+        memoryId: a.memoryId,
       },
       { base: MOMENT_BASE.transformation + 0.2 },
     );
@@ -385,6 +389,7 @@ export function findMoments(input: MomentInput): Moment[] {
         quote: a.memoryText,
         eventId: m.eventId,
         placeId: null,
+        memoryId: a.memoryId,
       },
       { charge: m.emotionalValence },
     );

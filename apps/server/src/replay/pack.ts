@@ -27,6 +27,7 @@ import {
   SocialProfileChange,
   agentPatch,
   conversationOf,
+  STORY_ACTIONS,
   LONG_CONVERSATION_TURNS,
   type ExternalMark,
   type ReplayFrame,
@@ -144,6 +145,8 @@ export interface PackOptions {
   world: World;
   map: Row;
   memory: Pick<MemoryConfig, "retrieval" | "skills">;
+  /** Semilla de la partida, si el manifiesto no la trae (`--seed`). */
+  seed?: number;
 }
 
 /** El paquete entero (validado: lo que no pasa el esquema, no entra). */
@@ -215,7 +218,7 @@ export function buildBundle(
     format: REPLAY_FORMAT,
     version: REPLAY_VERSION,
     meta: {
-      seed: man?.seed ?? null,
+      seed: opts.seed ?? man?.seed ?? null,
       playedOn: startedAt && /^\d{4}-\d{2}-\d{2}/.test(startedAt) ? startedAt.slice(0, 10) : null,
       models: [...new Set(models)].filter((m) => /^[\w.:-]{1,80}$/.test(m)).slice(0, 10),
       code: man?.sha && /^[0-9a-f]{7,40}$/.test(man.sha) ? man.sha.slice(0, 10) : null,
@@ -223,6 +226,10 @@ export function buildBundle(
       to,
       durationMinutes: to - from,
       walkTilesPerMinute: 6,
+      thresholds: {
+        forget: opts.memory.retrieval.forgetThreshold,
+        vague: opts.memory.retrieval.vagueThreshold,
+      },
     },
     world: opts.world,
     map: opts.map,
@@ -255,6 +262,11 @@ export function buildData(
     (v) => v.at <= to,
   );
   const changed = new Set(versions.map((v) => v.memoryId));
+  // Los que tienen historia (se vuelven vagos, cambian de fuente, se olvidan…): la tarjeta
+  // «así muere un recuerdo» necesita su texto y su curva.
+  const storied = new Set(
+    auditAll.filter((a) => STORY_ACTIONS.includes(a.action)).map((a) => a.memoryId),
+  );
   // Recuerdos de los momentos (dramas y conversaciones largas, para la vista Rashomon).
   const keyEvents = new Set<string>();
   const turns = new Map<string, number>();
@@ -273,6 +285,7 @@ export function buildData(
       (m) =>
         m.importance >= MIN_IMPORTANCE ||
         changed.has(m.id) ||
+        storied.has(m.id) ||
         (m.eventId !== null && keyEvents.has(m.eventId)),
     )
     .map((m) => ({

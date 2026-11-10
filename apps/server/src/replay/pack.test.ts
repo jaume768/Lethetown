@@ -146,7 +146,16 @@ function fixture(): string {
     embedding: [0.1, 0.2],
     owner_email: EMAIL,
   };
-  writeFileSync(join(bd, "memories.jsonl"), jsonl([memoryRow]));
+  // Poco importantes y sin momento: m2 entra porque tiene historia (se olvida); m3, no.
+  const minor = { ...memoryRow, importance: 2, event_id: null };
+  writeFileSync(
+    join(bd, "memories.jsonl"),
+    jsonl([
+      memoryRow,
+      { ...minor, id: "m2", text: "Una amiga que se fue" },
+      { ...minor, id: "m3", text: "El pan de ayer" },
+    ]),
+  );
   writeFileSync(
     join(bd, "memory_audit.jsonl"),
     jsonl([
@@ -158,6 +167,16 @@ function fixture(): string {
         action: "gist",
         reason: "esencia",
         at: 105,
+        world_id: "default",
+      },
+      {
+        id: 3,
+        agent_id: "ana",
+        memory_id: "m2",
+        memory_text: "Una amiga que se fue",
+        action: "forgotten",
+        reason: "su fuerza bajó a 0.049 (umbral de olvido 0.05) sin volver a recordarlo",
+        at: 108,
         world_id: "default",
       },
       {
@@ -248,6 +267,7 @@ describe("paquete de repetición", () => {
       to: 110,
       durationMinutes: 10,
       walkTilesPerMinute: 6,
+      thresholds: { forget: 0.05, vague: 0.3 },
     });
   });
 
@@ -259,8 +279,11 @@ describe("paquete de repetición", () => {
   });
 
   it("los datos de los paneles, sin el ruido de la auditoría", () => {
-    expect(bundle.data!.memories.map((m) => m.text)).toEqual(["Discutí con Leo"]);
-    expect(bundle.data!.audit.map((a) => a.action)).toEqual(["gist"]);
+    expect(bundle.data!.memories.map((m) => m.text)).toEqual([
+      "Discutí con Leo",
+      "Una amiga que se fue",
+    ]);
+    expect(bundle.data!.audit.map((a) => a.action)).toEqual(["gist", "forgotten"]);
     expect(bundle.data!.profiles[0]).toMatchObject({ ownerId: "ana", affinity: -0.4 });
   });
 

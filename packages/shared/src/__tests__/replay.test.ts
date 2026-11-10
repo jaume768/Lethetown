@@ -4,7 +4,8 @@ import type { SimEvent } from "../schemas/api";
 import type { Drama } from "../schemas/drama";
 import type { Goal } from "../schemas/goals";
 import { positionAt } from "../map/movement";
-import { EMPTY_REPLAY_DATA, ReplayBundle, type ReplayMemory } from "../replay/bundle";
+import { EMPTY_REPLAY_DATA, ReplayBundle, ReplayData, type ReplayMemory } from "../replay/bundle";
+import { storyStep } from "../replay/memory-story";
 import {
   agentAt,
   agentPatch,
@@ -584,5 +585,97 @@ describe("esquema del paquete", () => {
 
   it("rechaza una versión que no entiende", () => {
     expect(ReplayBundle.safeParse({ format: "lethetown-replay", version: 99 }).success).toBe(false);
+  });
+});
+
+describe("así muere un recuerdo", () => {
+  const names = new Map([
+    ["aurora", "Aurora Vidal"],
+    ["valentina", "Valentina Ríos"],
+  ]);
+  const audit = (action: string, at: number, reason: string) => ({
+    agentId: "aurora",
+    memoryId: "alma",
+    memoryText: "Alma fue una amiga mía que se marchó del pueblo y nunca volvió.",
+    action,
+    reason,
+    at,
+  });
+  const data = ReplayData.parse({
+    ...EMPTY_REPLAY_DATA,
+    memories: [
+      {
+        id: "alma",
+        agentId: "aurora",
+        text: "Alma fue una amiga mía que se marchó del pueblo y nunca volvió.",
+        gist: "Tuve una amiga de juventud que se fue del pueblo.",
+        createdAt: 0,
+        lastAccessedAt: 100,
+        importance: 3,
+        emotionalValence: -0.2,
+        strength: 0.9,
+        source: "vivido",
+        type: "observation",
+        people: [],
+        placeId: null,
+        eventId: null,
+        links: [],
+        status: "active",
+        forgottenAt: 900,
+        meta: {},
+        strengthAt: [
+          [100, 0.9, "clear"],
+          [500, 0.2, "vague"],
+          [900, 0.04, "forgotten"],
+        ],
+      },
+    ],
+    audit: [
+      audit("gist", 400, 'se volvió vago; solo queda la esencia: "Tuve una amiga de juventud."'),
+      audit(
+        "source_changed",
+        600,
+        'ya no recuerda bien quién se lo contó: "contado por valentina" → "vivido"',
+      ),
+      audit("reinforced", 650, "ruido"),
+      audit(
+        "forgotten",
+        900,
+        "su fuerza bajó a 0.049 (umbral de olvido 0.05) sin volver a recordarlo",
+      ),
+    ],
+  });
+  const views = new ReplayViews(data, names);
+
+  it("en cada minuto, la curva y los cambios hasta entonces, con el motivo legible", () => {
+    expect(views.story("alma", -1)).toBeNull();
+    expect(views.story("nada", 500)).toBeNull();
+    const mid = views.story("alma", 650)!;
+    expect(mid.steps.map((s) => s.action)).toEqual(["gist", "source_changed"]);
+    expect(mid.steps[0]!.detail).toEqual({ kind: "gist", gist: "Tuve una amiga de juventud." });
+    expect(mid.steps[1]!.detail).toEqual({
+      kind: "source",
+      from: "contado por Valentina",
+      to: "vivido",
+    });
+    expect(mid.curve.map(([t]) => t)).toEqual([100, 500, 650]);
+    expect(mid.strength).toBeLessThan(0.2);
+    expect(mid.forgottenAt).toBeNull();
+    const end = views.story("alma", 1000, { forget: 0.05, vague: 0.3 })!;
+    expect(end.clarity).toBe("forgotten");
+    expect(end.forgottenAt).toBe(900);
+    expect(end.steps.at(-1)!.detail).toEqual({
+      kind: "forgotten",
+      strength: 0.049,
+      threshold: 0.05,
+    });
+  });
+
+  it("un motivo que no se sabe leer se enseña tal cual", () => {
+    const s = storyStep(
+      { ...audit("false_memory", 1, "mezcló dos recuerdos"), action: "false_memory" },
+      names,
+    );
+    expect(s.detail).toEqual({ kind: "reason", reason: "mezcló dos recuerdos" });
   });
 });

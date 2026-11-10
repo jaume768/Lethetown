@@ -50,6 +50,10 @@ export const ReplayMeta = z.object({
   durationMinutes: z.number().nonnegative(),
   /** Baldosas por minuto de juego al andar (para interpolar entre fotos). */
   walkTilesPerMinute: z.number().positive().default(6),
+  /** Umbrales de la memoria con que se jugó (`MemoryConfig.retrieval`): olvido y vaguedad. */
+  thresholds: z
+    .object({ forget: z.number().min(0).max(1), vague: z.number().min(0).max(1) })
+    .optional(),
 });
 export type ReplayMeta = z.infer<typeof ReplayMeta>;
 

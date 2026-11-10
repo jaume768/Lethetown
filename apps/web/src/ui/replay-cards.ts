@@ -9,12 +9,14 @@ export function safeReplaySrc(src: string | null): string | null {
 export type Card =
   | { kind: "garden" | "goals" | "skills"; agentId: string }
   | { kind: "rashomon"; eventId: string }
+  | { kind: "memory"; memoryId: string }
   | { kind: "network" };
 
 /** Las tarjetas que tienen sentido para un momento (la primera, la que se abre por defecto). */
 export function cardsFor(m: Moment, hasAccounts: (eventId: string) => boolean): Card[] {
   const out: Card[] = [];
   const [a, b] = m.agents;
+  if (m.memoryId) out.push({ kind: "memory", memoryId: m.memoryId });
   if (m.eventId && hasAccounts(m.eventId)) out.push({ kind: "rashomon", eventId: m.eventId });
   if (m.kind === "goal" && a) out.push({ kind: "goals", agentId: a });
   if (m.kind === "teaching" && (b ?? a)) out.push({ kind: "skills", agentId: (b ?? a)! });

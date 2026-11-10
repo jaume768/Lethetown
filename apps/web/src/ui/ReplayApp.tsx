@@ -33,6 +33,7 @@ import { EventLog } from "./EventLog";
 import { formatGameTime } from "./format";
 import { GoalsPanel } from "./GoalsPanel";
 import { MemoryGarden } from "./MemoryGarden";
+import { MemoryStoryCard } from "./MemoryStoryCard";
 import { Modal } from "./Modal";
 import { NetworkModal } from "./NetworkModal";
 import { RashomonModal } from "./RashomonModal";
@@ -199,8 +200,17 @@ function createSession(bundle: ReplayBundle, params: URLSearchParams): Session {
     now: () => player.now(),
   });
   const t = Number(params.get("t"));
-  player.seek(Number.isFinite(t) && params.has("t") ? t : src.from);
+  player.seek(Number.isFinite(t) && params.has("t") ? t : (memoryEnd(src, params) ?? src.from));
   return { src, player, onSpeech };
+}
+
+/** `&memory=<id>` sin `&t=`: justo después de lo último que le pasa (se ve la historia entera). */
+function memoryEnd(src: ReplaySource, params: URLSearchParams): number | null {
+  const id = params.get("memory");
+  if (!id) return null;
+  const story = src.views.story(id, src.to, src.bundle.meta.thresholds);
+  const last = story?.steps.at(-1)?.at;
+  return last === undefined ? null : last + 0.5;
 }
 
 const KIND_ICON: Record<Moment["kind"], string> = {
@@ -239,12 +249,21 @@ function ReplayView({ session, params }: { session: Session; params: URLSearchPa
       return next;
     });
   const [tab, setTab] = useState<"moments" | "dramas" | "agent" | "chronicles">(
-    params.get("agent") ? "agent" : "moments",
+    params.get("agent") && !params.get("memory") ? "agent" : "moments",
   );
-  const [selectedId, setSelectedId] = useState<string | null>(params.get("agent"));
+  /** `&agent=`, o el dueño del recuerdo de `&memory=`. */
+  const initialAgent = useMemo(() => {
+    const memoryId = params.get("memory");
+    const owner = memoryId ? src.views.story(memoryId, src.to)?.agentId : undefined;
+    return params.get("agent") ?? owner ?? null;
+  }, [params, src]);
+  const [selectedId, setSelectedId] = useState<string | null>(initialAgent);
   /** A quién sigue la cámara del modo cine (null = automático: quien habla). */
-  const [focusId, setFocusId] = useState<string | null>(params.get("agent"));
-  const [card, setCard] = useState<Card | null>(null);
+  const [focusId, setFocusId] = useState<string | null>(initialAgent);
+  const [card, setCard] = useState<Card | null>(() => {
+    const memoryId = params.get("memory");
+    return memoryId ? { kind: "memory", memoryId } : null;
+  });
   const [clip, setClip] = useState(false);
   const [lines, setLines] = useState<(SubtitleLine & { until: number })[]>([]);
   const [frameSize, setFrameSize] = useState({ w: 0, h: 0 });
@@ -301,9 +320,8 @@ function ReplayView({ session, params }: { session: Session; params: URLSearchPa
 
   // `&agent=`: la cámara empieza en él (la orden espera a que exista la escena).
   useEffect(() => {
-    const id = params.get("agent");
-    if (id) map.current?.focusAgent(id);
-  }, [params]);
+    if (initialAgent) map.current?.focusAgent(initialAgent);
+  }, [initialAgent]);
 
   // Cámara del modo cine: a quien se sigue (y con quien habla), o a quien habla.
   useEffect(() => {
@@ -419,6 +437,19 @@ function ReplayView({ session, params }: { session: Session; params: URLSearchPa
   }, []);
 
   const cardView = (c: Card): ReactNode => {
+    if (c.kind === "memory") {
+      const story = src.views.story(c.memoryId, ps.t, meta.thresholds);
+      const owner = story ? (src.names.get(story.agentId) ?? story.agentId) : "";
+      return (
+        <Modal
+          title={t("replay.card.memory", { name: owner.split(" ")[0]! })}
+          onClose={() => setCard(null)}
+          className="cine-card"
+        >
+          <MemoryStoryCard story={story} />
+        </Modal>
+      );
+    }
     const agent = "agentId" in c ? game.agents.find((a) => a.id === c.agentId) : undefined;
     if (c.kind === "rashomon")
       return <RashomonModal eventId={c.eventId} onClose={() => setCard(null)} />;

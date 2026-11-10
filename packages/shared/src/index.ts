@@ -32,4 +32,5 @@ export * from "./cognition/config";
 export * from "./replay/bundle";
 export * from "./replay/motion";
 export * from "./replay/views";
+export * from "./replay/memory-story";
 export * from "./replay/moments";
