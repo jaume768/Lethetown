@@ -314,8 +314,8 @@ function ReplayView({ session, params }: { session: Session; params: URLSearchPa
 
   const goToMoment = useCallback(
     (m: Moment, withCard = false) => {
-      // Un poco antes, para ver cómo empieza.
-      player.seek(m.time - 1);
+      // Un poco antes, para ver cómo empieza; lo de la memoria, justo después (que ya exista).
+      player.seek(m.kind === "rashomon" || m.kind === "transformation" ? m.time + 0.5 : m.time - 1);
       const a = m.agents[0] ?? null;
       if (a) {
         setSelectedId(a);

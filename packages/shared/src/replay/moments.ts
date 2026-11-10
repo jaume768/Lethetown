@@ -302,7 +302,15 @@ export function findMoments(input: MomentInput): Moment[] {
         id: `rashomon:${eventId}`,
         kind: "rashomon",
         subkind: changed ? "reconsolidated" : "valence",
-        time: Math.min(...accounts.map((m) => m.createdAt)),
+        // Cuando ya son distintos: existen las dos versiones citadas (y el cambio, si lo hubo).
+        time: Math.max(
+          ...accounts
+            .slice(0, 2)
+            .flatMap((m) => [
+              m.createdAt,
+              ...(versionsOf.get(m.id) ?? []).slice(0, 1).map((v) => v.at),
+            ]),
+        ),
         agents,
         title: `Lo recuerdan distinto: ${agents.slice(0, 3).map(name).join(", ")}`,
         quote: accounts
