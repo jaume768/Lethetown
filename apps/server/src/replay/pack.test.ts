@@ -179,6 +179,17 @@ function fixture(): string {
         at: 108,
         world_id: "default",
       },
+      // El borrado entra si el recuerdo tiene historia (m2), no si no la tiene (m3).
+      ...["m2", "m3"].map((memory_id, i) => ({
+        id: 10 + i,
+        agent_id: "ana",
+        memory_id,
+        memory_text: "x",
+        action: "deleted",
+        reason: "presupuesto de memoria superado",
+        at: 109,
+        world_id: "default",
+      })),
       {
         id: 2,
         agent_id: "ana",
@@ -283,7 +294,11 @@ describe("paquete de repetición", () => {
       "Discutí con Leo",
       "Una amiga que se fue",
     ]);
-    expect(bundle.data!.audit.map((a) => a.action)).toEqual(["gist", "forgotten"]);
+    expect(bundle.data!.audit.map((a) => [a.action, a.memoryId])).toEqual([
+      ["gist", "m1"],
+      ["forgotten", "m2"],
+      ["deleted", "m2"],
+    ]);
     expect(bundle.data!.profiles[0]).toMatchObject({ ownerId: "ana", affinity: -0.4 });
   });
 

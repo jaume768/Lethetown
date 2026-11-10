@@ -22,9 +22,12 @@
 
 ## 3. Escenas guardadas
 
-- [ ] `docs/videos/escenas.json` + `docs/videos/README.md`
-- [ ] `&scene=<id>` y pestaña «Escenas»
-- [ ] Minutos verificados contra los eventos de s7 y s13
+- [x] `docs/videos/escenas.json` (13 escenas, con planos `shots`) + `docs/videos/README.md`;
+      esquema `ReplayScenes` en shared (test que valida el fichero)
+- [x] `?scene=<id>` (cine, vecino, minuto, formato, velocidad, tarjeta; al acabar un plano, el
+      siguiente) y pestaña «Escenas»; tarjetas del modo cine del ancho del marco
+- [x] Minutos verificados contra los eventos de s7 y s13 (`pnpm replay:scenes` lo comprueba);
+      la tarjeta de un recuerdo borrado se arma con la auditoría (el borrado entra en el paquete)
 
 ## 4. Momentos: arcos largos
 

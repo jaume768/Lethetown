@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
+  type CSSProperties,
   type MutableRefObject,
   type ReactNode,
 } from "react";
@@ -51,6 +52,7 @@ import { RashomonModal } from "./RashomonModal";
 import { SkillsPanel } from "./SkillsPanel";
 import { LoadingScreen } from "./StatusOverlay";
 import { cardsFor, safeReplaySrc, type Card } from "./replay-cards";
+import { SCENES, sceneById, withScene } from "./scenes";
 import { Tabs } from "./Tabs";
 
 const PREF_KEY = "lethetown.replay";
@@ -88,7 +90,7 @@ function savePrefs(p: Prefs) {
 /** `/replay`: carga un paquete (arrastrándolo o con `?src=/replays/…`) y lo reproduce. */
 export function ReplayApp() {
   const { t } = useI18n();
-  const params = useMemo(() => new URLSearchParams(location.search), []);
+  const params = useMemo(() => withScene(new URLSearchParams(location.search)), []);
   const [session, setSession] = useState<Session | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -385,15 +387,19 @@ function ReplayView({ session, params }: { session: Session; params: URLSearchPa
   const frameRef = useRef<HTMLDivElement>(null);
   const hostRef = useRef<HTMLDivElement>(null);
   const [cine, setCine] = useState(params.get("cine") === "1");
-  const [prefs, setPrefsState] = useState(loadPrefs);
+  const scene = useMemo(() => sceneById(params.get("scene")), [params]);
+  // El formato de la escena (sin guardarlo en las preferencias).
+  const [prefs, setPrefsState] = useState(() =>
+    scene ? { ...loadPrefs(), format: scene.format } : loadPrefs(),
+  );
   const setPrefs = (p: Partial<Prefs>) =>
     setPrefsState((old) => {
       const next = { ...old, ...p };
       savePrefs(next);
       return next;
     });
-  const [tab, setTab] = useState<"moments" | "dramas" | "agent" | "chronicles">(
-    params.get("agent") && !params.get("memory") ? "agent" : "moments",
+  const [tab, setTab] = useState<"moments" | "scenes" | "dramas" | "agent" | "chronicles">(
+    scene ? "scenes" : params.get("agent") && !params.get("memory") ? "agent" : "moments",
   );
   /** `&agent=`, o el dueño del recuerdo de `&memory=`. */
   const initialAgent = useMemo(() => {
@@ -624,6 +630,8 @@ function ReplayView({ session, params }: { session: Session; params: URLSearchPa
             }}
           />
         );
+      case "scenes":
+        return <ScenesList current={scene?.id ?? null} />;
       case "dramas":
         return (
           <DramaFeed
@@ -671,6 +679,26 @@ function ReplayView({ session, params }: { session: Session; params: URLSearchPa
       },
     [second],
   );
+  // Escena: su velocidad, y al acabar un plano, el siguiente (o pausa al final).
+  useEffect(() => {
+    if (scene) player.setSpeed(scene.speed);
+  }, [scene, player]);
+  const inShot = useRef<number | null>(null);
+  useEffect(() => {
+    if (!scene) return;
+    const i = scene.shots.findIndex((x) => ps.t >= x.from - 0.01 && ps.t < x.to);
+    if (i >= 0) {
+      inShot.current = i;
+      return;
+    }
+    const was = inShot.current;
+    inShot.current = null;
+    if (was === null || !ps.playing) return;
+    const next = scene.shots[was + 1];
+    if (next) player.seek(next.from);
+    else player.pause();
+  }, [scene, player, ps.t, ps.playing]);
+
   // Encuadre de cada mitad: en medio de lo que se ve de ella (zona segura y subtítulos).
   useEffect(() => {
     if (!cine) return;
@@ -759,7 +787,18 @@ function ReplayView({ session, params }: { session: Session; params: URLSearchPa
   };
 
   return (
-    <div className={`replay ${cine ? "cine" : ""}`}>
+    <div
+      className={`replay ${cine ? "cine" : ""}`}
+      // Las tarjetas del modo cine caben en el marco (para grabar la pestaña).
+      style={
+        cine && frameSize.w
+          ? ({
+              "--frame-w": `${frameSize.w}px`,
+              "--frame-h": `${frameSize.h}px`,
+            } as CSSProperties)
+          : undefined
+      }
+    >
       {!cine && (
         <header className="header replay-header">
           <a className="brand" href="/" aria-label={t("replay.backLive")}>
@@ -871,6 +910,7 @@ function ReplayView({ session, params }: { session: Session; params: URLSearchPa
           <Tabs
             tabs={[
               { id: "moments", label: t("replay.moments") },
+              { id: "scenes", label: t("replay.scenes") },
               { id: "dramas", label: t("tabs.dramas") },
               { id: "agent", label: t("tabs.agent") },
               { id: "chronicles", label: t("tabs.chronicles") },
@@ -963,6 +1003,36 @@ function Subtitles(props: {
         </p>
       ))}
     </div>
+  );
+}
+
+/** Pestaña «Escenas»: las de `docs/videos/escenas.json` (cada una abre su repetición). */
+function ScenesList({ current }: { current: string | null }) {
+  const { t } = useI18n();
+  return (
+    <ol className="moment-list readable" data-testid="scenes">
+      {SCENES.map((s) => (
+        <li key={s.id} className={`card moment ${s.id === current ? "active" : ""}`}>
+          <a
+            className="moment-go"
+            href={`/replay?scene=${s.id}`}
+            aria-current={s.id === current ? "true" : undefined}
+          >
+            <span className="small muted">
+              🎬 {s.src}
+              {s.src2 ? ` | ${s.src2}` : ""} · {formatGameTime(s.shots[0]!.from)} · {s.format} · x
+              {s.speed}
+            </span>
+            <strong>{s.title}</strong>
+            {s.quote && <q className="moment-quote">{s.quote}</q>}
+          </a>
+          <span className="small muted">
+            {t("replay.sceneShots", { n: s.shots.length })}
+            {s.memory ? ` · ${t("replay.cardBtn.memory")}` : ""}
+          </span>
+        </li>
+      ))}
+    </ol>
   );
 }
 

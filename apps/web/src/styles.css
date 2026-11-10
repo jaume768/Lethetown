@@ -1619,3 +1619,9 @@ html.ui-skin .warn-text {
     flex-direction: column;
   }
 }
+
+/* En el modo cine, las tarjetas caben en el marco (se graban con «Grabar la pestaña»). */
+.replay.cine .modal:not(.narrow) {
+  width: min(calc(var(--frame-w, 94vw) * 0.92), 94vw);
+  max-height: min(calc(var(--frame-h, 88vh) * 0.72), 88vh);
+}

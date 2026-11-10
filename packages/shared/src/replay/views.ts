@@ -18,7 +18,14 @@ import type {
 } from "../schemas/memory";
 import type { AgentSkillsResponse, SkillState } from "../schemas/skills";
 import type { ReplayData, ReplayMemory } from "./bundle";
-import { DEFAULT_THRESHOLDS, STORY_ACTIONS, storyStep, type MemoryStory } from "./memory-story";
+import {
+  DEFAULT_THRESHOLDS,
+  STORY_ACTIONS,
+  STORY_END_ACTIONS,
+  storyStep,
+  textFromAudit,
+  type MemoryStory,
+} from "./memory-story";
 
 /**
  * Lo que mostraban los paneles en un instante de la partida, a partir de los datos del
@@ -92,13 +99,17 @@ export class ReplayViews {
   ): MemoryStory | null {
     const m = this.data.memories.find((x) => x.id === memoryId);
     const audit = this.data.audit
-      .filter((a) => a.memoryId === memoryId && STORY_ACTIONS.includes(a.action))
+      .filter(
+        (a) =>
+          a.memoryId === memoryId &&
+          (STORY_ACTIONS.includes(a.action) || STORY_END_ACTIONS.includes(a.action)),
+      )
       .sort((a, b) => a.at - b.at);
     const first = audit[0];
     if (!m && !first) return null;
     if (m ? m.createdAt > t : first!.at > t) return null;
     const steps = audit.filter((a) => a.at <= t).map((a) => storyStep(a, this.names));
-    const forgotten = steps.find((s) => s.action === "forgotten");
+    const forgotten = steps.find((s) => s.action === "forgotten" || s.action === "deleted");
     const at = m ? this.memoryAt(m, t) : null;
     const curve: [number, number][] = m
       ? [
@@ -110,13 +121,14 @@ export class ReplayViews {
     return {
       memoryId,
       agentId: m?.agentId ?? first!.agentId,
-      text: at?.view.text ?? first!.memoryText,
+      text: at?.view.text ?? textFromAudit(audit, t) ?? first!.memoryText,
       firstText: firstVersion?.text ?? at?.view.text ?? first!.memoryText,
       createdAt: m?.createdAt ?? null,
       strength:
-        forgotten && forgotten.detail.kind === "forgotten" && !at
+        forgotten?.detail.kind === "forgotten" && !at
           ? forgotten.detail.strength
-          : (at?.strength ?? 1),
+          : (at?.strength ?? 0),
+      strengthKnown: Boolean(at) || forgotten?.detail.kind === "forgotten",
       clarity: forgotten ? "forgotten" : (at?.clarity ?? "clear"),
       curve,
       span: m?.strengthAt.length

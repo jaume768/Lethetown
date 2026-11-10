@@ -28,6 +28,7 @@ import {
   agentPatch,
   conversationOf,
   STORY_ACTIONS,
+  STORY_END_ACTIONS,
   LONG_CONVERSATION_TURNS,
   type ExternalMark,
   type ReplayFrame,
@@ -301,7 +302,12 @@ export function buildData(
   const kept = new Set(memories.map((m) => m.id));
   return ReplayData.parse({
     memories,
-    audit: auditAll.filter((a) => !AUDIT_NOISE.has(a.action)),
+    // Sin ruido, salvo el borrado de un recuerdo con historia (es como acaba).
+    audit: auditAll.filter(
+      (a) =>
+        !AUDIT_NOISE.has(a.action) ||
+        (STORY_END_ACTIONS.includes(a.action) && storied.has(a.memoryId)),
+    ),
     versions: versions.filter((v) => kept.has(v.memoryId)),
     profiles: rows<SocialProfile>(SocialProfile, exp.social_profiles),
     history: rows<SocialProfileChange>(SocialProfileChange, exp.social_profile_history).filter(

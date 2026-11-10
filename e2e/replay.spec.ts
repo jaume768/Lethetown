@@ -144,3 +144,21 @@ test("pantalla partida: dos semillas con un solo reloj y su etiqueta", async ({ 
   await expect(page.getByTestId("replay-time")).not.toContainText("07:30", { timeout: 10_000 });
   expect(errors).toEqual([]);
 });
+
+test("escenas: ?scene= abre el modo cine con su vecino, minuto y velocidad", async ({ page }) => {
+  // La escena es de s7; aquí se carga la partida de prueba en su lugar (la URL manda).
+  await page.goto("/replay?scene=alma-pregunta&src=/replays/e2e.replay.json.gz");
+  await expect(page.getByTestId("replay-play")).toBeVisible({ timeout: 30_000 });
+  await expect(page.locator(".replay.cine")).toHaveCount(1);
+  await expect(page.getByTestId("replay-time")).toContainText("08:17");
+  await expect(page.getByRole("radio", { name: "x10" })).toHaveAttribute("aria-checked", "true");
+  await expect(page.getByRole("radio", { name: "9:16" })).toHaveAttribute("aria-checked", "true");
+  await expect(page.getByRole("combobox", { name: "Cámara" })).toHaveValue("valentina");
+  // La pestaña de escenas, fuera del modo cine.
+  await page.getByRole("button", { name: "Salir del modo cine" }).click();
+  await expect(page.getByRole("tab", { name: "Escenas" })).toHaveAttribute("aria-selected", "true");
+  await expect(page.getByTestId("scenes").getByRole("link")).toHaveCount(13);
+  await expect(
+    page.getByTestId("scenes").getByRole("link", { name: /Me acordé… a medias/ }),
+  ).toHaveAttribute("href", "/replay?scene=aniversario-si");
+});

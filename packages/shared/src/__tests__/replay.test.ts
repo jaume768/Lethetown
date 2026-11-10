@@ -1,11 +1,15 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import type { AgentState } from "../schemas/agent";
 import type { SimEvent } from "../schemas/api";
 import type { Drama } from "../schemas/drama";
+import type { MemoryAuditAction } from "../schemas/memory";
 import type { Goal } from "../schemas/goals";
 import { positionAt } from "../map/movement";
 import { EMPTY_REPLAY_DATA, ReplayBundle, ReplayData, type ReplayMemory } from "../replay/bundle";
-import { storyStep } from "../replay/memory-story";
+import { storyStep, textFromAudit } from "../replay/memory-story";
+import { ReplayScenes, SceneShot, sceneBundlePath, shotAt } from "../replay/scenes";
 import {
   agentAt,
   agentPatch,
@@ -593,7 +597,7 @@ describe("así muere un recuerdo", () => {
     ["aurora", "Aurora Vidal"],
     ["valentina", "Valentina Ríos"],
   ]);
-  const audit = (action: string, at: number, reason: string) => ({
+  const audit = (action: MemoryAuditAction, at: number, reason: string) => ({
     agentId: "aurora",
     memoryId: "alma",
     memoryText: "Alma fue una amiga mía que se marchó del pueblo y nunca volvió.",
@@ -671,11 +675,63 @@ describe("así muere un recuerdo", () => {
     });
   });
 
+  it("un recuerdo borrado: el texto sale de la auditoría (también el falso)", () => {
+    const rows = [
+      {
+        ...audit("false_memory", 10, "su mente rellenó los huecos: «Creo que se acordó.»"),
+        memoryText: "Se acordó del aniversario.",
+      },
+      { ...audit("gist", 20, "se volvió vago"), memoryText: "Creo que se acordó." },
+      {
+        ...audit("deleted", 30, "presupuesto de memoria superado"),
+        memoryText: "Creo que se acordó.",
+      },
+    ].map((r) => ({ ...r, memoryId: "borrado" }));
+    const v = new ReplayViews(ReplayData.parse({ ...EMPTY_REPLAY_DATA, audit: rows }), names);
+    expect(textFromAudit(rows, 5)).toBe("Se acordó del aniversario.");
+    expect(textFromAudit(rows.slice(0, 1), 15)).toBe("Creo que se acordó.");
+    const s = v.story("borrado", 15)!;
+    expect(s.text).toBe("Creo que se acordó.");
+    expect(s.strengthKnown).toBe(false);
+    expect(s.steps[0]!.detail).toEqual({ kind: "false", text: "Creo que se acordó." });
+    const end = v.story("borrado", 40)!;
+    expect(end.steps.at(-1)!.action).toBe("deleted");
+    expect(end.clarity).toBe("forgotten");
+  });
+
   it("un motivo que no se sabe leer se enseña tal cual", () => {
     const s = storyStep(
       { ...audit("false_memory", 1, "mezcló dos recuerdos"), action: "false_memory" },
       names,
     );
     expect(s.detail).toEqual({ kind: "reason", reason: "mezcló dos recuerdos" });
+  });
+});
+
+describe("escenas guardadas", () => {
+  it("docs/videos/escenas.json es válido (ids únicos, planos en orden)", () => {
+    const file = readFileSync(
+      fileURLToPath(new URL("../../../../docs/videos/escenas.json", import.meta.url)),
+      "utf8",
+    );
+    const { scenes } = ReplayScenes.parse(JSON.parse(file));
+    expect(scenes.length).toBeGreaterThanOrEqual(13);
+    for (const s of scenes) {
+      const starts = s.shots.map((x) => x.from);
+      expect(starts, s.id).toEqual([...starts].sort((a, b) => a - b));
+    }
+    expect(scenes.find((s) => s.id === "aniversario-partido")!.src2).toBe("s13");
+  });
+
+  it("el plano de un minuto, y rechaza planos al revés", () => {
+    const shots = [
+      { from: 10, to: 20 },
+      { from: 50, to: 60 },
+    ];
+    expect(shotAt(shots, 5)).toBe(0);
+    expect(shotAt(shots, 25)).toBe(1);
+    expect(shotAt(shots, 60)).toBe(-1);
+    expect(sceneBundlePath("s7")).toBe("/replays/s7.replay.json.gz");
+    expect(() => SceneShot.parse({ from: 5, to: 4 })).toThrow();
   });
 });

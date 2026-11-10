@@ -24,6 +24,8 @@ function StepText({ step }: { step: StoryStep }) {
       );
     case "rewritten":
       return <>{t("replay.story.rewritten", { text: d.text })}</>;
+    case "false":
+      return <>{t("replay.story.false", { text: d.text })}</>;
     case "reason":
       return <>{`${t(`replay.story.action.${step.action}` as MessageKey)}: ${d.reason}`}</>;
   }
@@ -72,27 +74,36 @@ export function MemoryStoryCard({ story }: { story: MemoryStory | null }) {
       {story.firstText !== story.text && (
         <p className="small muted">{t("replay.story.first", { text: story.firstText })}</p>
       )}
-      <div
-        className="story-bar"
-        role="meter"
-        aria-valuemin={0}
-        aria-valuemax={1}
-        aria-valuenow={Math.round(story.strength * 1000) / 1000}
-        aria-label={t("replay.story.strength")}
-      >
-        <div className={`story-fill ${story.clarity}`} style={{ width: pct(story.strength) }} />
-        <span className="story-mark vague" style={{ left: pct(vague) }}>
-          {t("replay.story.vagueLine", { n: num(vague) })}
-        </span>
-        <span className="story-mark forget" style={{ left: pct(forget) }}>
-          {t("replay.story.forgetLine", { n: num(forget) })}
-        </span>
-      </div>
-      <p className="small">
-        <strong>{t("replay.story.strengthN", { n: num(story.strength, 3) })}</strong> ·{" "}
-        {t(`memory.clarity.${story.clarity}`)}
-        {forgotten && story.forgottenAt !== null && ` · ${formatGameTime(story.forgottenAt)}`}
-      </p>
+      {story.strengthKnown ? (
+        <>
+          <div
+            className="story-bar"
+            role="meter"
+            aria-valuemin={0}
+            aria-valuemax={1}
+            aria-valuenow={Math.round(story.strength * 1000) / 1000}
+            aria-label={t("replay.story.strength")}
+          >
+            <div className={`story-fill ${story.clarity}`} style={{ width: pct(story.strength) }} />
+            <span className="story-mark vague" style={{ left: pct(vague) }}>
+              {t("replay.story.vagueLine", { n: num(vague) })}
+            </span>
+            <span className="story-mark forget" style={{ left: pct(forget) }}>
+              {t("replay.story.forgetLine", { n: num(forget) })}
+            </span>
+          </div>
+          <p className="small">
+            <strong>{t("replay.story.strengthN", { n: num(story.strength, 3) })}</strong> ·{" "}
+            {t(`memory.clarity.${story.clarity}`)}
+            {forgotten && story.forgottenAt !== null && ` · ${formatGameTime(story.forgottenAt)}`}
+          </p>
+        </>
+      ) : (
+        <p className="small">
+          {t(`memory.clarity.${story.clarity}`)}
+          {story.forgottenAt !== null && ` · ${formatGameTime(story.forgottenAt)}`}
+        </p>
+      )}
       {story.curve.length > 1 && <Curve story={story} />}
       <ol className="story-steps">
         {story.createdAt !== null && (

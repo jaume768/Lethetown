@@ -15,6 +15,9 @@ export const STORY_ACTIONS: readonly MemoryAuditAction[] = [
   "forgotten",
 ];
 
+/** El final de un recuerdo que no lo selecciona (hay muchos), pero que se cuenta si lo tiene. */
+export const STORY_END_ACTIONS: readonly MemoryAuditAction[] = ["deleted"];
+
 /** Umbrales por defecto de `MemoryConfig.retrieval` (si el paquete no trae los suyos). */
 export const DEFAULT_THRESHOLDS = { forget: 0.05, vague: 0.3 };
 
@@ -27,6 +30,8 @@ export type StoryDetail =
   | { kind: "forgotten"; strength: number; threshold: number }
   /** Se reescribió al recordarlo: el texto nuevo. */
   | { kind: "rewritten"; text: string }
+  /** Falso recuerdo: lo que la mente rellenó. */
+  | { kind: "false"; text: string }
   /** El motivo tal cual (lo que no se sabe leer). */
   | { kind: "reason"; reason: string };
 
@@ -43,8 +48,9 @@ export interface MemoryStory {
   text: string;
   firstText: string;
   createdAt: number | null;
-  /** Fuerza y claridad en el minuto pedido. */
+  /** Fuerza y claridad en el minuto pedido (la fuerza, si se sabe: un borrado no la deja). */
   strength: number;
+  strengthKnown: boolean;
   clarity: Clarity;
   /** La curva hasta el minuto pedido: [minuto, fuerza]. */
   curve: [number, number][];
@@ -78,6 +84,23 @@ export function storyStep(a: MemoryAuditEntry, names: ReadonlyMap<string, string
   } else if (a.action === "reconsolidated") {
     const m = /pasó a: "([\s\S]*)"\s*$/.exec(r);
     if (m) detail = { kind: "rewritten", text: m[1]! };
+  } else if (a.action === "false_memory") {
+    const m = /rellenó los huecos: «([\s\S]*)»\s*$/.exec(r);
+    if (m) detail = { kind: "false", text: m[1]! };
   }
   return { action: a.action, at: a.at, detail };
+}
+
+/**
+ * El texto de un recuerdo en `t` solo con la auditoría (cuando ya no está en la base de datos:
+ * se borró): el de antes del siguiente cambio o, si no lo hay, el que dejó el último.
+ */
+export function textFromAudit(rows: readonly MemoryAuditEntry[], t: number): string | null {
+  const sorted = [...rows].sort((a, b) => a.at - b.at);
+  const next = sorted.find((a) => a.at > t);
+  if (next) return next.memoryText;
+  const last = sorted.at(-1);
+  if (!last) return null;
+  const d = storyStep(last, new Map()).detail;
+  return d.kind === "rewritten" || d.kind === "false" ? d.text : last.memoryText;
 }
