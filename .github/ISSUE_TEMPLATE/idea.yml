@@ -1,0 +1,31 @@
+name: Idea
+description: Algo nuevo para el pueblo, la simulación, el análisis o la web.
+title: "Idea: "
+labels: ["idea"]
+body:
+  - type: textarea
+    id: que
+    attributes:
+      label: Qué
+      description: La idea, en pocas líneas. / The idea, in a few lines.
+    validations:
+      required: true
+  - type: textarea
+    id: porque
+    attributes:
+      label: Para qué
+      description: Qué pregunta de investigación o qué historia del pueblo haría posible.
+    validations:
+      required: true
+  - type: textarea
+    id: como
+    attributes:
+      label: Cómo encajaría
+      description: Si la tienes pensada. Lo nuevo del mundo es un sistema (`SimSystem`); la psicología se calcula en agent-core, no se pide al modelo (ver CLAUDE.md).
+  - type: checkboxes
+    id: menores
+    attributes:
+      label: Protección de menores
+      options:
+        - label: La idea no debilita la protección de menores (`MinorGuard`).
+          required: true

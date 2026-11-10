@@ -1,0 +1,35 @@
+name: Error
+description: Algo que no funciona como debería.
+title: "Error: "
+labels: ["error"]
+body:
+  - type: textarea
+    id: que
+    attributes:
+      label: Qué pasa
+      description: Lo que ves y lo que esperabas. Con el mensaje de error, si lo hay.
+    validations:
+      required: true
+  - type: textarea
+    id: pasos
+    attributes:
+      label: Cómo reproducirlo
+      description: Pasos mínimos. Si es en la simulación, el modo (mock o real), la semilla y el minuto de juego.
+      placeholder: |
+        1. pnpm dev (mock, SIM_SEED=7)
+        2. …
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Versión
+      description: Commit (`git rev-parse --short HEAD`), navegador y sistema.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Lo relevante del log del servidor o de la consola. Sin cookies, claves ni cuerpos de peticiones.
+      render: text

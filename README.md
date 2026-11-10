@@ -1,5 +1,13 @@
 # Lethetown
 
+**Un pueblo de 20 vecinos movidos por un LLM con una memoria que olvida, se reescribe al recordar
+y confunde quién le contó qué, como la humana.** Es un juego que se ve en el navegador y un banco
+de pruebas: cada olvido, cada recuerdo que cambia y cada meta queda medido y auditado.
+
+**[Investigación](docs/investigacion/README.md) · [Colabora](COLABORA.md) ·
+[Hoja de ruta](ROADMAP.md) · [Paper](docs/investigacion/paper/README.md)** ·
+[English](CONTRIBUTING.md)
+
 Un pueblo en pixel art en el navegador, al estilo de los juegos de simulación de vida, donde cada habitante es un **agente controlado por un LLM** (Anthropic u OpenAI) con una memoria lo más parecida posible a la humana.
 
 Parte de [_Generative Agents: Interactive Simulacra of Human Behavior_](https://arxiv.org/abs/2304.03442) (Park et al., 2023): flujo de memoria, recuperación por recencia, importancia y relevancia, planificación y reflexión. A eso le añade lo que hace humana a la memoria:

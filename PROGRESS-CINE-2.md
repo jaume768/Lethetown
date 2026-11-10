@@ -40,13 +40,23 @@
 
 ## 5. Colaboradores y apoyo
 
-- [ ] `docs/investigacion/README.md` y `docs/investigacion/paper/README.md`
-- [ ] `COLABORA.md` / `CONTRIBUTING.md`
-- [ ] `ROADMAP.md`
-- [ ] `.github/ISSUE_TEMPLATE/` y `.github/FUNDING.yml` (comentado)
-- [ ] `docs/primeros-issues.md`
-- [ ] README: qué es y enlaces arriba
+- [x] `docs/investigacion/README.md` (+ `README.en.md`): qué se estudia y E1–E3 con sus hallazgos
+      y cifras; `docs/investigacion/paper/README.md` enlaza `Lethetown-paper.pdf`
+- [x] `COLABORA.md` / `CONTRIBUTING.md`: proponer un experimento (ejemplo completo con
+      `ABLATION=on` y `COGNITION_CONTROL=on`), ejecutar pruebas (mock gratis con
+      `replay:demo --rec`, real corta, grabar, analizar, empaquetar y qué no compartir), código y
+      apoyo (coste medido por mundo y día y por estudio de 7 días)
+- [x] `ROADMAP.md` (+ `ROADMAP.en.md`): hecho (fases 0–3.6), siguiente y preguntas abiertas
+- [x] `.github/ISSUE_TEMPLATE/` (experimento, resultado, idea, error; `config.yml` a Discussions)
+      y `.github/FUNDING.yml` comentado con un TODO
+- [x] `docs/primeros-issues.md`: 10 tareas (6 experimentos en mock)
+- [x] README: qué es y enlaces arriba
 
 ## Pendiente del autor
 
 - Falta `LICENSE`: lo decide el autor.
+- `<CONTACTO>` en `COLABORA.md` y `CONTRIBUTING.md` (apoyar el proyecto).
+- `docs/investigacion/paper/Lethetown-paper.pdf` (el enlace ya está).
+- `.github/FUNDING.yml`: las cuentas reales, y descomentar.
+- Activar **Discussions** en GitHub (lo enlaza `.github/ISSUE_TEMPLATE/config.yml`) y crear las
+  etiquetas `experimento`, `resultado`, `idea` y `error` (las plantillas las ponen si existen).

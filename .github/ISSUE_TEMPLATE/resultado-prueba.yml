@@ -1,0 +1,44 @@
+name: Resultado de una prueba
+description: Lo que salió de una partida (mock o real) que hayas ejecutado.
+title: "Resultado: "
+labels: ["resultado"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Cómo grabar, analizar y empaquetar: [COLABORA.md](https://github.com/jaume768/Lethetown/blob/main/COLABORA.md#ejecutar-pruebas).
+        **No adjuntes** `.env`, `.record-pass`, claves, la carpeta `bd/` entera ni assets de `vendor/`.
+        El `.replay.json.gz` sí se puede compartir (lista blanca).
+  - type: input
+    id: experimento
+    attributes:
+      label: Experimento
+      description: El issue de la propuesta, si lo hay (#123).
+  - type: textarea
+    id: partida
+    attributes:
+      label: La partida
+      description: Commit (`git rev-parse --short HEAD`), modo (mock o real, modelos), semillas, interruptores, días de juego y velocidad.
+      placeholder: "abc1234 · real (haiku + sonnet) · s7 y s7a (MEMORY_ABLATION=noForgetting,noVagueness) · 7 días a x10"
+    validations:
+      required: true
+  - type: textarea
+    id: cifras
+    attributes:
+      label: Cifras
+      description: Lo relevante de `analysis.md` (o pégalo entero), y el coste total.
+      render: markdown
+    validations:
+      required: true
+  - type: textarea
+    id: lectura
+    attributes:
+      label: Qué muestra
+      description: Tu lectura, con ejemplos literales (minuto de juego y frase). ¿Confirma, refuta o no decide?
+    validations:
+      required: true
+  - type: textarea
+    id: ficheros
+    attributes:
+      label: Ficheros
+      description: Enlace al `.replay.json.gz`, `moments.md`, `analysis.json`… (sin datos privados).
