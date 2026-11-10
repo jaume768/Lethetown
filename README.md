@@ -413,28 +413,43 @@ el camino, asociaciones, red y coste).
 
 Todas las variables, con su explicación, están en [`.env.example`](.env.example).
 
+### Repetición y modo cine
+
+Una partida grabada se ve en la web sin servidor, sin LLM y sin coste: `pnpm replay:pack
+<grabación>` hace un `.replay.json.gz` (solo lo publicable: lista blanca) y `/replay` lo
+reproduce (arrastrándolo o con `?src=/replays/<nombre>`, de `apps/web/public/replays/`). Play,
+velocidades de x1 a x360, saltar a un día y hora y una lista de **momentos** (dramas, crónicas,
+conversaciones largas, recuerdos que cambian, metas…) con atajos de teclado. El **modo cine**
+(`?cine=1`) deja solo el mapa en un marco 9:16, 4:5 o 16:9 con zona segura, cámara que encuadra
+a quien habla, subtítulos grandes, tarjetas (jardín de recuerdos, Rashomon, red, metas, maestro y
+alumno) y la marca «Repetición de una partida real», y graba clips a 30 fps.
+`pnpm replay:moments <grabación>` saca los candidatos a clip a `moments.md`. Ver
+[repetición](docs/decisiones/repeticion.md).
+
 ### Comandos
 
-| Comando                                          | Qué hace                                                                                                                                         |
-| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `pnpm test` / `lint` / `typecheck` / `format`    | Vitest, ESLint, TypeScript y Prettier.                                                                                                           |
-| `pnpm map:generate [--pack nombre]`              | Regenera `seeds/town.tmj` con los sellos del pack indicado (por defecto, `activePack`).                                                          |
-| `pnpm assets:placeholder`                        | Genera el set placeholder propio en `apps/web/public/assets/placeholder/`.                                                                       |
-| `pnpm assets:check [--strict]`                   | Lista los assets en uso con su licencia y marca los no comerciales (`--strict` falla si hay alguno).                                             |
-| `pnpm portraits:compose`                         | Compone los retratos animados de los agentes con las capas del Portrait Generator ([docs/personajes.md](docs/personajes.md)).                    |
-| `pnpm user:create <usuario> [rol]`               | Crea un usuario (viewer, director o admin) en Postgres.                                                                                          |
-| `pnpm test:e2e`                                  | Smoke tests de la interfaz con Playwright (escritorio y 375 px), con su propio servidor mock.                                                    |
-| `pnpm interview [--advance horas]`               | Entrevista a cada agente con una batería fija de preguntas y guarda las respuestas en `interviews/`. Sirve como test de regresión de la memoria. |
-| `pnpm --filter @lethetown/server sim:text 16`    | Simulación en modo texto, sin servidor: 16 horas de juego con eventos y costes.                                                                  |
-| `pnpm --filter @lethetown/server cost:report 48` | Llamadas y tokens por tarea en 48 h de mock reproducible (tabla Markdown) y espera media de las respuestas.                                      |
-| `pnpm --filter @lethetown/server latency:probe`  | Prueba corta en tiempo real con el proveedor de `.env`: espera entre mensajes (s reales) y espera en la cola del LLM por tarea.                  |
-| `pnpm --filter @lethetown/server record <dir>`   | Con `pnpm dev` en marcha, graba una partida (mensajes del WebSocket y estado de los agentes); `world:export <dir>` vuelca la BD del mundo.       |
-| `pnpm study:analyze <dir> [<otro dir>]`          | Analiza una partida grabada (o compara dos): `analysis.json` y `analysis.md` con coste, espera, frases, intenciones, acciones, red y memoria.    |
-| `pnpm personality:derive [--write]`              | Propone personalidad y perfil de memoria a partir de rasgos, edad y descripción de `seeds/agents.json`.                                          |
-| `pnpm knowledge:derive [--write]`                | Propone el perfil de conocimiento (estudios, oficio, idiomas, viajes, intereses) de cada semilla.                                                |
-| `pnpm goals:derive [--write]`                    | Propone una meta vital y proyectos medibles por semilla (las del repo están revisadas a mano).                                                   |
-| `pnpm skills:derive [--write]`                   | Propone los niveles de partida de las habilidades por oficio, intereses, idiomas y edad (los del repo están revisados a mano).                   |
-| `pnpm db:generate`                               | Genera una migración de Drizzle tras cambiar el esquema.                                                                                         |
+| Comando                                           | Qué hace                                                                                                                                         |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `pnpm test` / `lint` / `typecheck` / `format`     | Vitest, ESLint, TypeScript y Prettier.                                                                                                           |
+| `pnpm map:generate [--pack nombre]`               | Regenera `seeds/town.tmj` con los sellos del pack indicado (por defecto, `activePack`).                                                          |
+| `pnpm assets:placeholder`                         | Genera el set placeholder propio en `apps/web/public/assets/placeholder/`.                                                                       |
+| `pnpm assets:check [--strict]`                    | Lista los assets en uso con su licencia y marca los no comerciales (`--strict` falla si hay alguno).                                             |
+| `pnpm portraits:compose`                          | Compone los retratos animados de los agentes con las capas del Portrait Generator ([docs/personajes.md](docs/personajes.md)).                    |
+| `pnpm user:create <usuario> [rol]`                | Crea un usuario (viewer, director o admin) en Postgres.                                                                                          |
+| `pnpm test:e2e`                                   | Smoke tests de la interfaz con Playwright (escritorio y 375 px), con su propio servidor mock.                                                    |
+| `pnpm interview [--advance horas]`                | Entrevista a cada agente con una batería fija de preguntas y guarda las respuestas en `interviews/`. Sirve como test de regresión de la memoria. |
+| `pnpm --filter @lethetown/server sim:text 16`     | Simulación en modo texto, sin servidor: 16 horas de juego con eventos y costes.                                                                  |
+| `pnpm --filter @lethetown/server cost:report 48`  | Llamadas y tokens por tarea en 48 h de mock reproducible (tabla Markdown) y espera media de las respuestas.                                      |
+| `pnpm --filter @lethetown/server latency:probe`   | Prueba corta en tiempo real con el proveedor de `.env`: espera entre mensajes (s reales) y espera en la cola del LLM por tarea.                  |
+| `pnpm --filter @lethetown/server record <dir>`    | Con `pnpm dev` en marcha, graba una partida (mensajes del WebSocket y estado de los agentes); `world:export <dir>` vuelca la BD del mundo.       |
+| `pnpm replay:pack <dir> [--out f.replay.json.gz]` | Empaqueta una partida grabada (y su `world:export`) para verla en `/replay`, sin servidor ni coste.                                              |
+| `pnpm replay:moments <dir>`                       | Momentos destacados de una partida (candidatos a clip) en `moments.md` y `moments.json`, con la frase literal y la puntuación explicada.         |
+| `pnpm study:analyze <dir> [<otro dir>]`           | Analiza una partida grabada (o compara dos): `analysis.json` y `analysis.md` con coste, espera, frases, intenciones, acciones, red y memoria.    |
+| `pnpm personality:derive [--write]`               | Propone personalidad y perfil de memoria a partir de rasgos, edad y descripción de `seeds/agents.json`.                                          |
+| `pnpm knowledge:derive [--write]`                 | Propone el perfil de conocimiento (estudios, oficio, idiomas, viajes, intereses) de cada semilla.                                                |
+| `pnpm goals:derive [--write]`                     | Propone una meta vital y proyectos medibles por semilla (las del repo están revisadas a mano).                                                   |
+| `pnpm skills:derive [--write]`                    | Propone los niveles de partida de las habilidades por oficio, intereses, idiomas y edad (los del repo están revisados a mano).                   |
+| `pnpm db:generate`                                | Genera una migración de Drizzle tras cambiar el esquema.                                                                                         |
 
 `SIM_SEED` en `.env` fija el azar de la memoria (rumores, reconsolidación…) para tener simulaciones reproducibles. El test dorado (`apps/server/src/sim/golden.test.ts`) compara 3 días de simulación en mock con una línea de tiempo guardada.
 
@@ -661,5 +676,6 @@ El cliente elige automáticamente el pack con el que se generó el mapa (propied
    - **Desarrollo y aprendizaje** ✅ habilidades que se practican, se enseñan y se oxidan; saberes del pueblo que se cuentan, se deforman y se pierden; deriva lenta de la personalidad; pestaña «Habilidades y saberes» y «Saberes del pueblo».
    - **Corrección 2.5** ✅ (de la segunda partida de estudio): pasos que no se pierden y siguiente proyecto, metas cualitativas comprobadas de noche, frustración que lleva a abandonos en una semana, intenciones sin inflación, nadie inventa vecinos (`PersonGuard`) y menos ruido en los registros.
    - **Corrección 3.5** ✅ (de la tercera partida de estudio): menos ruido en el `PersonGuard` (apodos, siglas, listas, conocidos por otros) y en familia para la protección de menores, efecto de espaciado en la memoria, metas vitales confirmadas de noche, habilidades con histéresis y práctica rutinaria, enseñanza sin encadenar, deriva de la personalidad con lo malo y respecto al pueblo, saberes que no se repiten y se deforman, comer lo hecho, caché del prefijo común, rangos en la base de datos y partidas de estudio con desfase, control en ablación y manifiesto.
+   - **Repetición y modo cine** ✅ partidas grabadas en la web sin servidor ni coste, momentos destacados, cámara, subtítulos, marcos de redes y clips.
    - **Cognición en movimiento (3.6)** ✅ encuentros por el camino con saliencia calculada, saludar y pararse a charlar (y retomar el camino), hablar andando y sin dejar la actividad, asociaciones sin LLM, presencia por proximidad, dramas y métricas; con interruptores por mundo para el mundo de control.
 9. **Siguiente**: economía (`buy_item` / `sell_item`, ya preparada con `Item.value`; en euros), mensajes a distancia (teléfonos fijos y cabinas, cartas), ciclo vital (las metas aplazadas de los menores), la evaluación comparativa con modelos reales, OAuth, editor de mundos y agentes desde la web, traducción de los prompts (hoy se pide al modelo que responda en el idioma del mundo).

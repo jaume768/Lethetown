@@ -13,6 +13,8 @@ export interface MapController {
   nudge(dx: number, dy: number): void;
   zoom(step: number): void;
   canvas(): HTMLCanvasElement | null;
+  /** Modo cine: encuadra a estos vecinos (null = cámara libre). */
+  direct(ids: string[] | null): void;
 }
 
 interface Props {
@@ -70,6 +72,7 @@ export function TownMap(props: Props) {
         nudge: (dx, dy) => townScene.nudgeCamera(dx, dy),
         zoom: (step) => townScene.zoomBy(step),
         canvas: () => (townScene.ready ? townScene.canvas : null),
+        direct: (ids) => townScene.setDirector(ids),
       };
     }
     // Solo en desarrollo: acceso desde la consola / scripts de captura.

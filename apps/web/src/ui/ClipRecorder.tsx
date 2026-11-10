@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useI18n } from "../i18n";
 import { gameTimeNow } from "../net/store";
+import { FORMAT_SIZE, type ClipFormat } from "./cine";
 import { formatGameTime } from "./format";
 import { Modal } from "./Modal";
 
-const DURATIONS = [10, 20, 30] as const;
-const OUT_W = 720;
-const OUT_H = 1280;
+const DURATIONS = [10, 20, 30, 60] as const;
+const FPS = 30;
 const WATERMARK = "lethetown.com";
 
 function pickMime(): string | null {
@@ -17,66 +17,64 @@ function pickMime(): string | null {
   return null;
 }
 
-/**
- * "Crear clip": graba en vertical (9:16) el centro de la vista del mapa durante 10–30 s, con la
- * hora de juego y la marca de agua, y lo ofrece para descargar. Todo ocurre en el navegador.
- */
-export function ClipRecorder({
-  source,
-  onClose,
-}: {
+interface Props {
   source: () => HTMLCanvasElement | null;
   onClose: () => void;
-}) {
+  /** Formatos que se ofrecen (el primero, por defecto). */
+  formats?: readonly ClipFormat[];
+  /**
+   * Lo que se dibuja encima en cada frame (subtítulos, marca); sin él, la hora y la marca de
+   * agua de siempre.
+   */
+  overlay?: (ctx: CanvasRenderingContext2D, w: number, h: number, format: ClipFormat) => void;
+  /**
+   * Grabar la pestaña (lo que se ve, con tarjetas y paneles) recortada a este rectángulo de la
+   * ventana: para lo que no está en el lienzo del mapa.
+   */
+  tabRect?: () => DOMRect | null;
+}
+
+/**
+ * "Crear clip": graba el centro de la vista del mapa durante 10–60 s a 30 fps, en el formato
+ * elegido (9:16, 4:5 o 16:9), con la marca, y lo ofrece para descargar. Todo en el navegador.
+ */
+export function ClipRecorder({ source, onClose, formats = ["9:16"], overlay, tabRect }: Props) {
   const { t } = useI18n();
   const [duration, setDuration] = useState<(typeof DURATIONS)[number]>(10);
+  const [format, setFormat] = useState<ClipFormat>(formats[0] ?? "9:16");
   const [elapsed, setElapsed] = useState<number | null>(null);
   const [url, setUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const stopRef = useRef<() => void>(() => {});
   const mime = pickMime();
 
   useEffect(() => () => stopRef.current(), []);
   useEffect(() => () => void (url && URL.revokeObjectURL(url)), [url]);
 
-  const start = () => {
-    const src = source();
-    if (!src || !mime) return;
+  /** Graba lo que pinte `draw` en un lienzo del tamaño del formato. */
+  const record = (draw: (ctx: CanvasRenderingContext2D, w: number, h: number) => void) => {
+    if (!mime) return;
+    const { w: OUT_W, h: OUT_H } = FORMAT_SIZE[format];
     const out = document.createElement("canvas");
     out.width = OUT_W;
     out.height = OUT_H;
     const ctx = out.getContext("2d")!;
     ctx.imageSmoothingEnabled = false;
     let raf = 0;
-    const draw = () => {
-      // Recorte vertical del centro de la vista, escalado a 720×1280.
-      const cropH = src.height;
-      const cropW = Math.min(src.width, Math.round((cropH * 9) / 16));
-      const sx = Math.round((src.width - cropW) / 2);
-      ctx.fillStyle = "#1d2330";
-      ctx.fillRect(0, 0, OUT_W, OUT_H);
-      const scale = Math.min(OUT_W / cropW, OUT_H / cropH);
-      const dw = cropW * scale;
-      const dh = cropH * scale;
-      ctx.drawImage(src, sx, 0, cropW, cropH, (OUT_W - dw) / 2, (OUT_H - dh) / 2, dw, dh);
-      ctx.fillStyle = "rgba(16,19,27,0.75)";
-      ctx.fillRect(0, 0, OUT_W, 72);
-      ctx.fillStyle = "#f0b84c";
-      ctx.font = "bold 34px 'Pixelify Sans', monospace";
-      ctx.fillText(formatGameTime(gameTimeNow()), 24, 48);
-      ctx.fillStyle = "rgba(255,255,255,0.8)";
-      ctx.font = "bold 30px 'Pixelify Sans', monospace";
-      const w = ctx.measureText(WATERMARK).width;
-      ctx.fillText(WATERMARK, OUT_W - w - 24, OUT_H - 32);
-      raf = requestAnimationFrame(draw);
+    const loop = () => {
+      draw(ctx, OUT_W, OUT_H);
+      raf = requestAnimationFrame(loop);
     };
-    draw();
-    const stream = out.captureStream(30);
-    const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 4_000_000 });
+    loop();
+    const stream = out.captureStream(FPS);
+    const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 8_000_000 });
     const chunks: Blob[] = [];
+    let cleanup = () => {};
     rec.ondataavailable = (e) => e.data.size && chunks.push(e.data);
     rec.onstop = () => {
       cancelAnimationFrame(raf);
       stream.getTracks().forEach((tr) => tr.stop());
+      cleanup();
       setUrl(URL.createObjectURL(new Blob(chunks, { type: mime })));
       setElapsed(null);
     };
@@ -92,8 +90,72 @@ export function ClipRecorder({
     };
     stopRef.current = stop;
     setUrl(null);
+    setError(null);
     setElapsed(0);
     rec.start(1000);
+    return (fn: () => void) => (cleanup = fn);
+  };
+
+  const startCanvas = () => {
+    if (!source()) return;
+    const ratio = FORMAT_SIZE[format].w / FORMAT_SIZE[format].h;
+    record((ctx, W, H) => {
+      const src = source();
+      ctx.fillStyle = "#1d2330";
+      ctx.fillRect(0, 0, W, H);
+      if (src) {
+        // Recorte del centro de la vista con la proporción del formato.
+        let cropW = src.width;
+        let cropH = Math.round(cropW / ratio);
+        if (cropH > src.height) {
+          cropH = src.height;
+          cropW = Math.round(cropH * ratio);
+        }
+        const sx = Math.round((src.width - cropW) / 2);
+        const sy = Math.round((src.height - cropH) / 2);
+        ctx.drawImage(src, sx, sy, cropW, cropH, 0, 0, W, H);
+      }
+      if (overlay) return overlay(ctx, W, H, format);
+      ctx.fillStyle = "rgba(16,19,27,0.75)";
+      ctx.fillRect(0, 0, W, Math.round(H * 0.056));
+      ctx.fillStyle = "#f0b84c";
+      ctx.font = `bold ${Math.round(H * 0.027)}px 'Pixelify Sans', monospace`;
+      ctx.fillText(formatGameTime(gameTimeNow()), W * 0.033, H * 0.038);
+      ctx.fillStyle = "rgba(255,255,255,0.8)";
+      ctx.font = `bold ${Math.round(H * 0.023)}px 'Pixelify Sans', monospace`;
+      const mw = ctx.measureText(WATERMARK).width;
+      ctx.fillText(WATERMARK, W - mw - W * 0.033, H - H * 0.025);
+    });
+  };
+
+  /** La pestaña entera (con las tarjetas), recortada al marco. */
+  const startTab = async () => {
+    const md = navigator.mediaDevices as MediaDevices | undefined;
+    if (!md?.getDisplayMedia) return setError(t("clip.tabUnsupported"));
+    let media: MediaStream;
+    try {
+      media = await md.getDisplayMedia({
+        video: { frameRate: FPS },
+        audio: false,
+        preferCurrentTab: true,
+      } as DisplayMediaStreamOptions);
+    } catch {
+      return setError(t("clip.tabDenied"));
+    }
+    const video = document.createElement("video");
+    video.srcObject = media;
+    video.muted = true;
+    await video.play();
+    const onCleanup = record((ctx, W, H) => {
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, W, H);
+      const r = tabRect?.();
+      if (!r || !video.videoWidth) return;
+      // De píxeles de la ventana a píxeles del vídeo capturado.
+      const k = video.videoWidth / window.innerWidth;
+      ctx.drawImage(video, r.x * k, r.y * k, r.width * k, r.height * k, 0, 0, W, H);
+    });
+    onCleanup?.(() => media.getTracks().forEach((tr) => tr.stop()));
   };
 
   return (
@@ -102,7 +164,24 @@ export function ClipRecorder({
         <p className="error">{t("clip.unsupported")}</p>
       ) : (
         <>
-          <p className="muted small">{t("clip.hint")}</p>
+          <p className="muted small">
+            {formats.length > 1 ? t("clip.hintFormats") : t("clip.hint")}
+          </p>
+          {formats.length > 1 && (
+            <div className="wrap" role="group" aria-label={t("clip.format")}>
+              {formats.map((f) => (
+                <button
+                  key={f}
+                  className={`btn small ${format === f ? "active" : ""}`}
+                  aria-pressed={format === f}
+                  disabled={elapsed !== null}
+                  onClick={() => setFormat(f)}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
+          )}
           <div className="wrap" role="group" aria-label={t("clip.duration")}>
             {DURATIONS.map((d) => (
               <button
@@ -116,11 +195,18 @@ export function ClipRecorder({
               </button>
             ))}
           </div>
-          <div className="row" style={{ marginTop: 8 }}>
+          <div className="row wrap" style={{ marginTop: 8 }}>
             {elapsed === null ? (
-              <button className="btn primary" onClick={start}>
-                ⏺ {t("clip.start")}
-              </button>
+              <>
+                <button className="btn primary" onClick={startCanvas}>
+                  ⏺ {t("clip.start")}
+                </button>
+                {tabRect && (
+                  <button className="btn" onClick={() => void startTab()}>
+                    ⏺ {t("clip.tab")}
+                  </button>
+                )}
+              </>
             ) : (
               <>
                 <span role="status" aria-live="polite">
@@ -132,6 +218,11 @@ export function ClipRecorder({
               </>
             )}
           </div>
+          {error && (
+            <p className="error small" role="alert">
+              {error}
+            </p>
+          )}
           {url && (
             <div className="clip-result">
               <video src={url} controls playsInline className="clip-preview" />
