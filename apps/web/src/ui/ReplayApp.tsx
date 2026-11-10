@@ -17,7 +17,10 @@ import { decodeBundle, REPLAY_SPEEDS, ReplaySource, type ReplaySpeed } from "../
 import { feed, startReplay, useGame } from "../net/store";
 import {
   CLIP_FORMATS,
+  DAY_CARD_MS,
   SAFE_ZONE,
+  dayAlpha,
+  daySize,
   drawCineOverlay,
   formatPlayedOn,
   subtitleMs,
@@ -47,9 +50,11 @@ interface Prefs {
   format: ClipFormat;
   guides: boolean;
   mark: boolean;
+  /** Contador de días del modo cine (tecla D). */
+  days: boolean;
 }
 function loadPrefs(): Prefs {
-  const def: Prefs = { format: "9:16", guides: true, mark: true };
+  const def: Prefs = { format: "9:16", guides: true, mark: true, days: true };
   try {
     const raw = JSON.parse(localStorage.getItem(PREF_KEY) ?? "{}") as Partial<Prefs>;
     return {
@@ -58,6 +63,7 @@ function loadPrefs(): Prefs {
         : def.format,
       guides: raw.guides ?? def.guides,
       mark: raw.mark ?? def.mark,
+      days: raw.days ?? def.days,
     };
   } catch {
     return def;
@@ -408,6 +414,7 @@ function ReplayView({ session, params }: { session: Session; params: URLSearchPa
       else if (k === "c") setCine((c) => !c);
       else if (k === "g" && cine) setPrefs({ guides: !prefs.guides });
       else if (k === "m" && cine) setPrefs({ mark: !prefs.mark });
+      else if (k === "d" && cine) setPrefs({ days: !prefs.days });
       else if (k === "Escape" && card) setCard(null);
       else if (k === "Escape" && cine) setCine(false);
       else return;
@@ -427,6 +434,30 @@ function ReplayView({ session, params }: { session: Session; params: URLSearchPa
   const today = Math.floor(ps.t / 1440);
   const linesRef = useRef(lines);
   linesRef.current = lines;
+
+  // Contador de días: al cambiar de día y en cada salto, un rato.
+  const [dayUntil, setDayUntil] = useState(0);
+  const [, setDayTick] = useState(0);
+  const dayUntilRef = useRef(dayUntil);
+  dayUntilRef.current = dayUntil;
+  useEffect(() => {
+    if (cine && prefs.days) setDayUntil(performance.now() + DAY_CARD_MS);
+  }, [today, ps.seeks, cine, prefs.days]);
+  useEffect(() => {
+    if (!dayUntil) return;
+    // Repinta mientras se apaga (para la opacidad en pantalla).
+    const timer = setInterval(() => {
+      setDayTick((n) => n + 1);
+      if (performance.now() > dayUntilRef.current) {
+        clearInterval(timer);
+        setDayUntil(0);
+      }
+    }, 100);
+    return () => clearInterval(timer);
+  }, [dayUntil]);
+  const dayLabel = t("replay.dayN", { n: today });
+  const dayRef = useRef({ label: dayLabel, on: false });
+  dayRef.current = { label: dayLabel, on: cine && prefs.days };
   const prefsRef = useRef(prefs);
   prefsRef.current = prefs;
 
@@ -607,6 +638,20 @@ function ReplayView({ session, params }: { session: Session; params: URLSearchPa
                 <strong>{watermark[1]}</strong>
               </div>
             )}
+            {cine && prefs.days && dayUntil > 0 && (
+              <div
+                className="cine-day"
+                role="status"
+                data-testid="cine-day"
+                style={{
+                  top: `${(safe.top + (1 - safe.top - safe.bottom) * 0.18) * 100}%`,
+                  fontSize: daySize(prefs.format, frameSize.h),
+                  opacity: dayAlpha(dayUntil, performance.now()),
+                }}
+              >
+                {dayLabel}
+              </div>
+            )}
             {(cine || lines.length > 0) && (
               <div
                 className={`subtitles ${cine ? "" : "inline"}`}
@@ -691,6 +736,12 @@ function ReplayView({ session, params }: { session: Session; params: URLSearchPa
               format,
               lines: linesRef.current,
               watermark: prefsRef.current.mark ? watermark : null,
+              day: dayRef.current.on
+                ? {
+                    label: dayRef.current.label,
+                    alpha: dayAlpha(dayUntilRef.current, performance.now()),
+                  }
+                : null,
             })
           }
           tabRect={() => frameRef.current?.getBoundingClientRect() ?? null}
@@ -842,6 +893,13 @@ function ReplayControls(props: {
             onClick={() => props.onPrefs({ mark: !prefs.mark })}
           >
             {t("replay.mark")}
+          </button>
+          <button
+            className={`btn small ${prefs.days ? "active" : ""}`}
+            aria-pressed={prefs.days}
+            onClick={() => props.onPrefs({ days: !prefs.days })}
+          >
+            {t("replay.days")}
           </button>
           <button className="btn small" onClick={props.onClip}>
             ⏺ {t("map.clip")}

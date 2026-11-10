@@ -9,6 +9,8 @@ export interface PlayerState {
   t: number;
   playing: boolean;
   speed: ReplaySpeed;
+  /** Cuántos saltos van (cambia en cada `seek`: el contador de días se enseña al saltar). */
+  seeks: number;
 }
 
 /**
@@ -20,6 +22,7 @@ export class ReplayPlayer {
   private playing = false;
   private speed: ReplaySpeed = 60;
   private realAt = 0;
+  private seeks = 0;
   private timer: ReturnType<typeof setInterval> | null = null;
   private last: number;
   private snapshot: PlayerState;
@@ -52,7 +55,7 @@ export class ReplayPlayer {
   }
 
   private make(): PlayerState {
-    return { t: this.t, playing: this.playing, speed: this.speed };
+    return { t: this.t, playing: this.playing, speed: this.speed, seeks: this.seeks };
   }
 
   private emit() {
@@ -69,6 +72,7 @@ export class ReplayPlayer {
     this.t = Math.min(this.src.to, Math.max(this.src.from, t));
     this.realAt = performance.now();
     this.last = this.t;
+    this.seeks++;
     this.onFeed(this.src.seek(this.t, this.rate()), true);
     this.emit();
   }

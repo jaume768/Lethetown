@@ -459,7 +459,7 @@ const es = {
   "replay.guides": "Zona segura",
   "replay.mark": "Marca",
   "replay.keys":
-    "Atajos: espacio o K, reproducir y pausar; flechas o J y L, 10 minutos (con mayúsculas, una hora); 1 a 5, velocidad; N y P, momento siguiente y anterior; C, modo cine; G, zona segura; M, marca; Esc, cerrar.",
+    "Atajos: espacio o K, reproducir y pausar; flechas o J y L, 10 minutos (con mayúsculas, una hora); 1 a 5, velocidad; N y P, momento siguiente y anterior; C, modo cine; G, zona segura; M, marca; D, contador de días; Esc, cerrar.",
   "replay.momentKind": "Tipo de momento",
   "replay.allMoments": "Todos ({n})",
   "replay.kind.drama": "Dramas",
@@ -471,6 +471,7 @@ const es = {
   "replay.kind.goal": "Metas",
   "replay.kind.teaching": "Maestro y alumno",
   "replay.kind.forgetting": "Olvidos",
+  "replay.days": "Días",
   "replay.cards": "Tarjetas",
   "replay.cardBtn.garden": "Recuerdos de {name}",
   "replay.cardBtn.goals": "Metas de {name}",

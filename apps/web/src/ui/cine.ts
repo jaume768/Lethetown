@@ -38,6 +38,25 @@ export interface CineOverlay {
   lines: SubtitleLine[];
   /** Marca: [«Repetición de una partida real · modelo · fecha», «lethetown.com»], o null. */
   watermark: [string, string] | null;
+  /** Contador de días («Día 3») y su opacidad (0–1), o nada. */
+  day?: { label: string; alpha: number } | null;
+  /** Etiqueta de la mitad (pantalla partida: «Semilla 7»), o nada. */
+  label?: string | null;
+}
+
+/** Cuánto (ms reales) se ve el contador de días, y cuánto tarda en apagarse al final. */
+export const DAY_CARD_MS = 2600;
+export const DAY_FADE_MS = 600;
+
+/** Opacidad del contador de días: entero hasta el final, y se apaga en `DAY_FADE_MS`. */
+export function dayAlpha(until: number, now: number): number {
+  const left = until - now;
+  return left <= 0 ? 0 : Math.min(1, left / DAY_FADE_MS);
+}
+
+/** Tamaño de letra del contador de días (px) para un marco de `h` de alto. */
+export function daySize(format: ClipFormat, h: number): number {
+  return Math.round(subtitleSize(format, h) * 2.4);
 }
 
 /** Tamaño de letra de los subtítulos (px) para un marco de `h` de alto. */
@@ -88,6 +107,30 @@ export function drawCineOverlay(
     ctx.fillStyle = "#f0b84c";
     ctx.fillText(o.watermark[1], left, y);
     ctx.shadowBlur = 0;
+  }
+  if (o.label) {
+    const small = Math.round(size * 0.6);
+    ctx.font = `700 ${small}px 'Pixelify Sans', sans-serif`;
+    const lw = ctx.measureText(o.label).width;
+    const pad = small * 0.35;
+    const x = right - lw - pad * 2;
+    const y = h * safe.top;
+    ctx.fillStyle = "rgba(10,12,18,0.78)";
+    ctx.fillRect(x, y, lw + pad * 2, small + pad * 2);
+    ctx.fillStyle = "#f0b84c";
+    ctx.fillText(o.label, x + pad, y + pad);
+  }
+  if (o.day && o.day.alpha > 0) {
+    const big = daySize(o.format, h);
+    ctx.save();
+    ctx.globalAlpha = o.day.alpha;
+    ctx.font = `700 ${big}px 'Pixelify Sans', sans-serif`;
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#ffffff";
+    ctx.shadowColor = "rgba(0,0,0,0.85)";
+    ctx.shadowBlur = big * 0.15;
+    ctx.fillText(o.day.label, w / 2, h * safe.top + h * (1 - safe.top - safe.bottom) * 0.18);
+    ctx.restore();
   }
   // De abajo arriba: la última frase, justo encima de la zona tapada.
   let bottom = h * (1 - safe.bottom);

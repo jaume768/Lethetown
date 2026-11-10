@@ -460,7 +460,7 @@ const en: Record<MessageKey, string> = {
   "replay.guides": "Safe zone",
   "replay.mark": "Mark",
   "replay.keys":
-    "Shortcuts: space or K, play and pause; arrows or J and L, 10 minutes (with shift, one hour); 1 to 5, speed; N and P, next and previous moment; C, cinema mode; G, safe zone; M, mark; Esc, close.",
+    "Shortcuts: space or K, play and pause; arrows or J and L, 10 minutes (with shift, one hour); 1 to 5, speed; N and P, next and previous moment; C, cinema mode; G, safe zone; M, mark; D, day counter; Esc, close.",
   "replay.momentKind": "Kind of moment",
   "replay.allMoments": "All ({n})",
   "replay.kind.drama": "Dramas",
@@ -472,6 +472,7 @@ const en: Record<MessageKey, string> = {
   "replay.kind.goal": "Goals",
   "replay.kind.teaching": "Teacher and student",
   "replay.kind.forgetting": "Forgetting",
+  "replay.days": "Days",
   "replay.cards": "Cards",
   "replay.cardBtn.garden": "{name}'s memories",
   "replay.cardBtn.goals": "{name}'s goals",

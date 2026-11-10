@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { applyMessage, INITIAL_STATE } from "../net/game-state";
 import { ReplayPlayer } from "../net/replay-player";
 import { decodeBundle, ReplaySource } from "../net/replay-source";
-import { drawCineOverlay, formatPlayedOn, subtitleMs } from "../ui/cine";
+import { dayAlpha, drawCineOverlay, formatPlayedOn, subtitleMs } from "../ui/cine";
 import { cardsFor, safeReplaySrc } from "../ui/replay-cards";
 
 const agent = (id: string, x: number) =>
@@ -227,6 +227,10 @@ describe("piezas del modo cine", () => {
     expect(subtitleMs("hola")).toBeLessThan(subtitleMs("una frase bastante más larga"));
     expect(subtitleMs("x".repeat(1000))).toBe(8000);
     expect(formatPlayedOn("2026-11-03")).toBe("03/11/2026");
+    // El contador de días: entero y luego se apaga.
+    expect(dayAlpha(5000, 1000)).toBe(1);
+    expect(dayAlpha(1300, 1000)).toBeCloseTo(0.5);
+    expect(dayAlpha(1000, 2000)).toBe(0);
     const calls: string[] = [];
     const ctx = new Proxy(
       {},
@@ -244,9 +248,13 @@ describe("piezas del modo cine", () => {
       format: "9:16",
       lines: [{ id: "1", name: "Ana", color: "#f00", text: "Hola, Leo" }],
       watermark: ["Repetición de una partida real · mock · 03/11/2026", "lethetown.com"],
+      day: { label: "Día 3", alpha: 1 },
+      label: "Semilla 7",
     });
     const texts = calls.filter((c) => c.startsWith("fillText")).join("|");
     expect(texts).toContain("lethetown.com");
+    expect(texts).toContain("Día 3");
+    expect(texts).toContain("Semilla 7");
     expect(texts).toContain("Ana: ");
     expect(texts).toContain("Hola, Leo");
   });

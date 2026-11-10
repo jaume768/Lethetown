@@ -16,7 +16,7 @@
 - [x] Lista blanca de `replay:pack`: entran los recuerdos con historia en la auditoría
       (`STORY_ACTIONS`); el paquete lleva los umbrales (`meta.thresholds`) y `--seed`
 - [ ] Pantalla partida (`&src2=…&split=1`) con clip compuesto
-- [ ] Contador de días (tecla D), también en el clip
+- [x] Contador de días (tecla D, botón «Días»): al cambiar de día y en los saltos, también en el clip
 
 ## 3. Escenas guardadas
 

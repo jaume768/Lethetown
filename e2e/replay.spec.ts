@@ -111,3 +111,16 @@ for (const cine of [false, true]) {
     expect(errors).toEqual([]);
   });
 }
+
+test("modo cine: el contador de días sale al saltar y se apaga con D", async ({ page }) => {
+  await page.goto(`${SRC}&cine=1`);
+  await expect(page.getByTestId("replay-play")).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByTestId("cine-day")).toHaveText("Día 0");
+  await expect(page.getByTestId("cine-day")).toHaveCount(0, { timeout: 10_000 });
+  await page.getByRole("slider", { name: "Línea de tiempo" }).fill("520");
+  await expect(page.getByTestId("cine-day")).toHaveText("Día 0");
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+  await page.keyboard.press("d");
+  await expect(page.getByRole("button", { name: "Días" })).toHaveAttribute("aria-pressed", "false");
+  await expect(page.getByTestId("cine-day")).toHaveCount(0);
+});

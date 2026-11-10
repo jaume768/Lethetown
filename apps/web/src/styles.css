@@ -1569,3 +1569,18 @@ html.ui-skin .warn-text {
     transition: none;
   }
 }
+
+/* Contador de días del modo cine */
+.cine-day {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  text-align: center;
+  pointer-events: none;
+  color: #fff;
+  font-family: var(--pixel);
+  font-weight: 700;
+  line-height: 1;
+  text-shadow: 0 0 12px rgba(0, 0, 0, 0.85);
+}
