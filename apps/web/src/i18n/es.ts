@@ -472,6 +472,7 @@ const es = {
   "replay.kind.teaching": "Maestro y alumno",
   "replay.kind.forgetting": "Olvidos",
   "replay.days": "Días",
+  "replay.seedLabel": "Semilla {n}",
   "replay.cards": "Tarjetas",
   "replay.cardBtn.garden": "Recuerdos de {name}",
   "replay.cardBtn.goals": "Metas de {name}",

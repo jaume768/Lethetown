@@ -25,6 +25,70 @@ export const SAFE_ZONE: Record<
   "16:9": { top: 0.06, bottom: 0.08, left: 0.05, right: 0.05 },
 };
 
+type Safe = { top: number; bottom: number; left: number; right: number };
+
+/** Pantalla partida: arriba y abajo en 9:16; una al lado de la otra en los demás. */
+export function splitStacked(format: ClipFormat): boolean {
+  return format === "9:16";
+}
+
+/** Tamaño de los subtítulos en una mitad respecto al marco entero. */
+export const SPLIT_SCALE = 0.75;
+
+/** Margen (fracción) en el lado de una mitad que da a la otra. */
+const SPLIT_GAP = 0.03;
+
+/**
+ * Zona segura de una mitad de la pantalla partida (en fracciones de la mitad): la del marco
+ * entero en los lados que tocan el borde y un margen pequeño en el que da a la otra mitad.
+ */
+export function halfSafe(format: ClipFormat, half: 0 | 1): Safe {
+  const s = SAFE_ZONE[format];
+  if (splitStacked(format)) {
+    return half === 0
+      ? { top: s.top * 2, bottom: SPLIT_GAP, left: s.left, right: s.right }
+      : { top: SPLIT_GAP, bottom: s.bottom * 2, left: s.left, right: s.right };
+  }
+  return half === 0
+    ? { top: s.top, bottom: s.bottom, left: s.left * 2, right: SPLIT_GAP }
+    : { top: s.top, bottom: s.bottom, left: SPLIT_GAP, right: s.right * 2 };
+}
+
+/** Lo que ocupan abajo los subtítulos (fracción del alto) encima de la zona segura. */
+const SUBTITLE_SPACE = 0.2;
+
+/**
+ * Cuánto quedan los encuadrados por encima del centro (fracción del alto) para caer en medio de
+ * lo que se ve: entre la zona segura de arriba y los subtítulos de abajo.
+ */
+export function directorOffsetFor(safe: Safe): number {
+  const middle = (safe.top + (1 - safe.bottom - SUBTITLE_SPACE)) / 2;
+  return Math.min(0.3, Math.max(-0.1, 0.5 - middle));
+}
+
+/** Rectángulo de cada mitad dentro de un marco de w×h. */
+export function halfRects(
+  format: ClipFormat,
+  w: number,
+  h: number,
+): [
+  { x: number; y: number; w: number; h: number },
+  { x: number; y: number; w: number; h: number },
+] {
+  if (splitStacked(format)) {
+    const hh = Math.round(h / 2);
+    return [
+      { x: 0, y: 0, w, h: hh },
+      { x: 0, y: hh, w, h: h - hh },
+    ];
+  }
+  const hw = Math.round(w / 2);
+  return [
+    { x: 0, y: 0, w: hw, h },
+    { x: hw, y: 0, w: w - hw, h },
+  ];
+}
+
 export interface SubtitleLine {
   id: string;
   name: string;
@@ -42,6 +106,12 @@ export interface CineOverlay {
   day?: { label: string; alpha: number } | null;
   /** Etiqueta de la mitad (pantalla partida: «Semilla 7»), o nada. */
   label?: string | null;
+  /** Otra zona segura (la de una mitad de la pantalla partida). */
+  safe?: Safe;
+  /** Ancho máximo de la marca (fracción del marco; en pantalla partida, menos). */
+  markWidth?: number;
+  /** Tamaño de los subtítulos respecto al normal (en una mitad, algo menos). */
+  scale?: number;
 }
 
 /** Cuánto (ms reales) se ve el contador de días, y cuánto tarda en apagarse al final. */
@@ -86,10 +156,10 @@ export function drawCineOverlay(
   h: number,
   o: CineOverlay,
 ) {
-  const safe = SAFE_ZONE[o.format];
+  const safe = o.safe ?? SAFE_ZONE[o.format];
   const left = w * safe.left;
   const right = w * (1 - safe.right);
-  const size = subtitleSize(o.format, h);
+  const size = Math.round(subtitleSize(o.format, h) * (o.scale ?? 1));
   ctx.save();
   ctx.textBaseline = "top";
   if (o.watermark) {
@@ -99,7 +169,8 @@ export function drawCineOverlay(
     ctx.shadowColor = "rgba(0,0,0,0.8)";
     ctx.shadowBlur = 4;
     let y = h * safe.top;
-    for (const l of wrap(ctx, o.watermark[0], right - left)) {
+    const markW = o.markWidth !== undefined ? w * o.markWidth : right - left;
+    for (const l of wrap(ctx, o.watermark[0], markW)) {
       ctx.fillText(l, left, y);
       y += small * 1.25;
     }
@@ -171,4 +242,22 @@ export function formatPlayedOn(date: string | null): string {
   if (!date) return "";
   const [y, m, d] = date.split("-");
   return `${d}/${m}/${y}`;
+}
+
+/** Dibuja el centro de `src` con la proporción del rectángulo (el recorte de los clips). */
+export function drawCentered(
+  ctx: CanvasRenderingContext2D,
+  src: CanvasImageSource & { width: number; height: number },
+  r: { x: number; y: number; w: number; h: number },
+) {
+  const ratio = r.w / r.h;
+  let cropW = src.width;
+  let cropH = Math.round(cropW / ratio);
+  if (cropH > src.height) {
+    cropH = src.height;
+    cropW = Math.round(cropH * ratio);
+  }
+  const sx = Math.round((src.width - cropW) / 2);
+  const sy = Math.round((src.height - cropH) / 2);
+  ctx.drawImage(src, sx, sy, cropW, cropH, r.x, r.y, r.w, r.h);
 }

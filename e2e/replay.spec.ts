@@ -124,3 +124,23 @@ test("modo cine: el contador de días sale al saltar y se apaga con D", async ({
   await expect(page.getByRole("button", { name: "Días" })).toHaveAttribute("aria-pressed", "false");
   await expect(page.getByTestId("cine-day")).toHaveCount(0);
 });
+
+test("pantalla partida: dos semillas con un solo reloj y su etiqueta", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.goto(`${SRC}&src2=/replays/e2e-13.replay.json.gz&split=1&cine=1&agent=tomas&t=450`);
+  await expect(page.locator(".replay-frame.split canvas")).toHaveCount(2, { timeout: 30_000 });
+  await expect(page.getByTestId("split-label")).toHaveText(["Semilla 7", "Semilla 13"]);
+  await expect(page.getByTestId("replay-play")).toHaveCount(1);
+  await expect(page.getByRole("slider", { name: "Línea de tiempo" })).toHaveCount(1);
+  // Las dos cámaras siguen al mismo vecino.
+  const directed = () =>
+    page.evaluate(() => {
+      const w = window as unknown as Record<string, { directed?: string[] | null } | undefined>;
+      return [w.__town, w.__town2].map((x) => x?.directed?.includes("tomas") ?? false);
+    });
+  await expect.poll(directed, { timeout: 30_000 }).toEqual([true, true]);
+  await page.getByTestId("replay-play").click();
+  await expect(page.getByTestId("replay-time")).not.toContainText("07:30", { timeout: 10_000 });
+  expect(errors).toEqual([]);
+});

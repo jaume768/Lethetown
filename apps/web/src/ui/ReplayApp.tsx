@@ -1,4 +1,4 @@
-import type { Drama, Moment, ReplayBundle, SimEvent } from "@lethetown/shared";
+import type { AgentState, Drama, Moment, ReplayBundle, SimEvent } from "@lethetown/shared";
 import { splitSpeech } from "@lethetown/shared";
 import {
   useCallback,
@@ -8,17 +8,25 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
+  type MutableRefObject,
   type ReactNode,
 } from "react";
 import { TownMap, type MapController } from "../game/TownMap";
-import { useI18n, type MessageKey } from "../i18n";
+import { t, useI18n, type MessageKey } from "../i18n";
 import { ReplayPlayer } from "../net/replay-player";
 import { decodeBundle, REPLAY_SPEEDS, ReplaySource, type ReplaySpeed } from "../net/replay-source";
+import { LocalGame, useLocalGame } from "../net/local-game";
 import { feed, startReplay, useGame } from "../net/store";
 import {
   CLIP_FORMATS,
   DAY_CARD_MS,
   SAFE_ZONE,
+  SPLIT_SCALE,
+  directorOffsetFor,
+  drawCentered,
+  halfRects,
+  halfSafe,
+  splitStacked,
   dayAlpha,
   daySize,
   drawCineOverlay,
@@ -88,11 +96,12 @@ export function ReplayApp() {
   const requested = useRef(false);
 
   const open = useCallback(
-    async (bytes: () => Promise<ArrayBuffer>) => {
+    async (bytes: () => Promise<ArrayBuffer>, second?: () => Promise<ArrayBuffer>) => {
       setLoading(true);
       setError(null);
       try {
-        setSession(createSession(await decodeBundle(await bytes()), params));
+        const [a, b] = await Promise.all([bytes(), second?.()]);
+        setSession(createSession(await decodeBundle(a), params, b ? await decodeBundle(b) : null));
       } catch (e) {
         setError(e instanceof Error ? e.message : String(e));
       } finally {
@@ -105,14 +114,18 @@ export function ReplayApp() {
   useEffect(() => {
     const raw = params.get("src");
     const src = safeReplaySrc(raw);
-    if (raw && !src) return setError(t("replay.badSrc"));
+    // Pantalla partida: `&src2=…&split=1`.
+    const raw2 = params.get("split") === "1" ? params.get("src2") : null;
+    const src2 = safeReplaySrc(raw2);
+    if ((raw && !src) || (raw2 && !src2)) return setError(t("replay.badSrc"));
+    const get = (path: string) => async () => {
+      const res = await fetch(path);
+      if (!res.ok) throw new Error(`${path}: ${res.status}`);
+      return res.arrayBuffer();
+    };
     if (src && !requested.current) {
       requested.current = true;
-      void open(async () => {
-        const res = await fetch(src);
-        if (!res.ok) throw new Error(`${src}: ${res.status}`);
-        return res.arrayBuffer();
-      });
+      void open(get(src), src2 ? get(src2) : undefined);
     }
   }, [open, params, t]);
 
@@ -184,9 +197,34 @@ interface Session {
   player: ReplayPlayer;
   /** Frases nuevas (para los subtítulos). */
   onSpeech: Set<(lines: SimEvent[]) => void>;
+  /** Etiqueta de la partida en la pantalla partida («Semilla 7»). */
+  label: string;
+  /** La segunda partida de la pantalla partida (mismo reloj, su propio estado), o null. */
+  second: {
+    src: ReplaySource;
+    game: LocalGame;
+    onSpeech: Set<(lines: SimEvent[]) => void>;
+    mapUrl: string;
+    label: string;
+  } | null;
 }
 
-function createSession(bundle: ReplayBundle, params: URLSearchParams): Session {
+/** «Semilla 7», o el nombre del fichero si el paquete no sabe su semilla. */
+function bundleLabel(bundle: ReplayBundle, path: string | null): string {
+  if (bundle.meta.seed !== null) return t("replay.seedLabel", { n: bundle.meta.seed });
+  return (
+    (path ?? "")
+      .split("/")
+      .pop()
+      ?.replace(/\.replay\.json(\.gz)?$|\.json(\.gz)?$/, "") ?? ""
+  );
+}
+
+function createSession(
+  bundle: ReplayBundle,
+  params: URLSearchParams,
+  bundle2: ReplayBundle | null = null,
+): Session {
   const src = new ReplaySource(bundle);
   const onSpeech = new Set<(lines: SimEvent[]) => void>();
   const player = new ReplayPlayer(
@@ -205,9 +243,23 @@ function createSession(bundle: ReplayBundle, params: URLSearchParams): Session {
     file: (path) => files[path] ?? null,
     now: () => player.now(),
   });
+  let second: Session["second"] = null;
+  if (bundle2) {
+    const src2 = new ReplaySource(bundle2);
+    const game = new LocalGame();
+    const onSpeech2 = new Set<(lines: SimEvent[]) => void>();
+    player.follow(src2, game.feed, (lines) => onSpeech2.forEach((l) => l(lines)));
+    second = {
+      src: src2,
+      game,
+      onSpeech: onSpeech2,
+      mapUrl: blob(bundle2.map),
+      label: bundleLabel(bundle2, params.get("src2")),
+    };
+  }
   const t = Number(params.get("t"));
   player.seek(Number.isFinite(t) && params.has("t") ? t : (memoryEnd(src, params) ?? src.from));
-  return { src, player, onSpeech };
+  return { src, player, onSpeech, label: bundleLabel(bundle, params.get("src")), second };
 }
 
 /** `&memory=<id>` sin `&t=`: justo después de lo último que le pasa (se ve la historia entera). */
@@ -236,6 +288,92 @@ function usePlayer(player: ReplayPlayer) {
     (l) => player.subscribe(l),
     () => player.state,
   );
+}
+
+type Line = SubtitleLine & { until: number };
+const NO_SPEECH = new Set<(lines: SimEvent[]) => void>();
+
+/**
+ * Subtítulos y cámara del modo cine de una repetición (en pantalla partida, uno por mitad):
+ * cada frase nueva entra en los subtítulos y la cámara encuadra a quien se sigue (y con quien
+ * habla) o, en automático, a quien habla, quedándose en una conversación hasta que lleva 5
+ * minutos callada.
+ */
+function useDirector(o: {
+  player: ReplayPlayer;
+  onSpeech: Set<(lines: SimEvent[]) => void>;
+  agents: AgentState[];
+  cine: boolean;
+  focusId: string | null;
+  map: MutableRefObject<MapController | null>;
+}) {
+  const { player, onSpeech, cine, focusId, map } = o;
+  const [lines, setLines] = useState<Line[]>([]);
+  const conversation = useRef<{ ids: string[]; at: number } | null>(null);
+  const agentsRef = useRef(o.agents);
+  agentsRef.current = o.agents;
+  const focusRef = useRef(focusId);
+  focusRef.current = focusId;
+
+  useEffect(() => {
+    const onLines = (evs: SimEvent[]) => {
+      const focus = focusRef.current;
+      const current = conversation.current;
+      const holding = !focus && current && player.now() - current.at < 5 ? current.ids : null;
+      const relevant = evs.filter((e) =>
+        focus
+          ? e.agentId === focus || e.participants.includes(focus)
+          : !holding || holding.some((id) => e.agentId === id || e.participants.includes(id)),
+      );
+      const last = relevant.at(-1) ?? (holding ? undefined : evs.at(-1));
+      if (!last?.agentId) return;
+      const other = last.participants.find((p) => p !== last.agentId);
+      conversation.current = { ids: other ? [last.agentId, other] : [last.agentId], at: last.time };
+      const now = performance.now();
+      const fresh = relevant.slice(-2).map((e) => {
+        const a = agentsRef.current.find((x) => x.id === e.agentId);
+        const text = splitSpeech(e.text).line;
+        return {
+          id: e.id,
+          name: (a?.name ?? e.agentId ?? "").split(" ")[0]!,
+          color: a?.appearance.shirt ?? "#f0b84c",
+          text,
+          until: now + subtitleMs(text),
+        };
+      });
+      setLines((old) =>
+        [...old.filter((l) => !fresh.some((f) => f.id === l.id)), ...fresh].slice(-2),
+      );
+    };
+    onSpeech.add(onLines);
+    const prune = setInterval(() => {
+      const now = performance.now();
+      setLines((old) => (old.some((l) => l.until < now) ? old.filter((l) => l.until >= now) : old));
+    }, 250);
+    return () => {
+      onSpeech.delete(onLines);
+      clearInterval(prune);
+    };
+  }, [onSpeech, player]);
+
+  useEffect(() => {
+    if (!cine) {
+      map.current?.direct(null);
+      return;
+    }
+    const pick = () => {
+      const c = conversation.current;
+      const recent = c && player.now() - c.at < 5 ? c.ids : null;
+      const focus = focusRef.current;
+      const ids = focus ? (recent?.includes(focus) ? recent : [focus]) : (recent ?? null);
+      map.current?.direct(ids);
+    };
+    pick();
+    const timer = setInterval(pick, 300);
+    return () => clearInterval(timer);
+  }, [cine, focusId, player, map]);
+
+  return { lines, conversation };
 }
 
 function ReplayView({ session, params }: { session: Session; params: URLSearchParams }) {
@@ -271,81 +409,34 @@ function ReplayView({ session, params }: { session: Session; params: URLSearchPa
     return memoryId ? { kind: "memory", memoryId } : null;
   });
   const [clip, setClip] = useState(false);
-  const [lines, setLines] = useState<(SubtitleLine & { until: number })[]>([]);
   const [frameSize, setFrameSize] = useState({ w: 0, h: 0 });
   const [kindFilter, setKindFilter] = useState<Moment["kind"] | "">("");
-  const conversation = useRef<{ ids: string[]; at: number } | null>(null);
-
-  const agentsRef = useRef(game.agents);
-  agentsRef.current = game.agents;
-  const focusRef = useRef(focusId);
-  focusRef.current = focusId;
-
-  // Subtítulos y encuadre: cada frase nueva.
-  useEffect(() => {
-    const onLines = (evs: SimEvent[]) => {
-      const focus = focusRef.current;
-      const current = conversation.current;
-      // En automático se queda en una conversación hasta que lleva 5 minutos callada.
-      const holding = !focus && current && player.now() - current.at < 5 ? current.ids : null;
-      const relevant = evs.filter((e) =>
-        focus
-          ? e.agentId === focus || e.participants.includes(focus)
-          : !holding || holding.some((id) => e.agentId === id || e.participants.includes(id)),
-      );
-      const last = relevant.at(-1) ?? (holding ? undefined : evs.at(-1));
-      if (!last?.agentId) return;
-      const other = last.participants.find((p) => p !== last.agentId);
-      conversation.current = { ids: other ? [last.agentId, other] : [last.agentId], at: last.time };
-      const now = performance.now();
-      const fresh = relevant.slice(-2).map((e) => {
-        const a = agentsRef.current.find((x) => x.id === e.agentId);
-        const text = splitSpeech(e.text).line;
-        return {
-          id: e.id,
-          name: (a?.name ?? e.agentId ?? "").split(" ")[0]!,
-          color: a?.appearance.shirt ?? "#f0b84c",
-          text,
-          until: now + subtitleMs(text),
-        };
-      });
-      setLines((old) =>
-        [...old.filter((l) => !fresh.some((f) => f.id === l.id)), ...fresh].slice(-2),
-      );
-    };
-    session.onSpeech.add(onLines);
-    const prune = setInterval(() => {
-      const now = performance.now();
-      setLines((old) => (old.some((l) => l.until < now) ? old.filter((l) => l.until >= now) : old));
-    }, 250);
-    return () => {
-      session.onSpeech.delete(onLines);
-      clearInterval(prune);
-    };
-  }, [session, player]);
+  const second = session.second;
+  const game2 = useLocalGame(second?.game ?? null);
+  const split = second !== null;
+  const map2 = useRef<MapController | null>(null);
+  const { lines, conversation } = useDirector({
+    player,
+    onSpeech: session.onSpeech,
+    agents: game.agents,
+    cine,
+    focusId,
+    map,
+  });
+  const { lines: lines2 } = useDirector({
+    player,
+    onSpeech: second?.onSpeech ?? NO_SPEECH,
+    agents: game2.agents,
+    cine,
+    focusId,
+    map: map2,
+  });
 
   // `&agent=`: la cámara empieza en él (la orden espera a que exista la escena).
   useEffect(() => {
     if (initialAgent) map.current?.focusAgent(initialAgent);
+    if (initialAgent) map2.current?.focusAgent(initialAgent);
   }, [initialAgent]);
-
-  // Cámara del modo cine: a quien se sigue (y con quien habla), o a quien habla.
-  useEffect(() => {
-    if (!cine) {
-      map.current?.direct(null);
-      return;
-    }
-    const pick = () => {
-      const c = conversation.current;
-      const recent = c && player.now() - c.at < 5 ? c.ids : null;
-      const focus = focusRef.current;
-      const ids = focus ? (recent?.includes(focus) ? recent : [focus]) : (recent ?? null);
-      map.current?.direct(ids);
-    };
-    pick();
-    const timer = setInterval(pick, 300);
-    return () => clearInterval(timer);
-  }, [cine, focusId, player]);
 
   // El marco del formato, lo más grande que quepa.
   useLayoutEffect(() => {
@@ -434,6 +525,8 @@ function ReplayView({ session, params }: { session: Session; params: URLSearchPa
   const today = Math.floor(ps.t / 1440);
   const linesRef = useRef(lines);
   linesRef.current = lines;
+  const lines2Ref = useRef(lines2);
+  lines2Ref.current = lines2;
 
   // Contador de días: al cambiar de día y en cada salto, un rato.
   const [dayUntil, setDayUntil] = useState(0);
@@ -566,6 +659,104 @@ function ReplayView({ session, params }: { session: Session; params: URLSearchPa
 
   const safe = SAFE_ZONE[prefs.format];
   const fontPx = subtitleSize(prefs.format, frameSize.h);
+  /** Pantalla partida: arriba y abajo en 9:16 (y en el móvil), si no, una al lado de la otra. */
+  const stacked = cine && splitStacked(prefs.format);
+  const markWidth = stacked ? 0.5 : 0.3;
+  const own2 = useMemo(
+    () =>
+      second && {
+        mapUrl: second.mapUrl,
+        isThinking: (id: string) => (second.game.get().thinking[id]?.count ?? 0) > 0,
+        onMemoryEffect: second.game.onMemoryEffect,
+      },
+    [second],
+  );
+  // Encuadre de cada mitad: en medio de lo que se ve de ella (zona segura y subtítulos).
+  useEffect(() => {
+    if (!cine) return;
+    map.current?.directOffset(
+      directorOffsetFor(split ? halfSafe(prefs.format, 0) : SAFE_ZONE[prefs.format]),
+    );
+    map2.current?.directOffset(directorOffsetFor(halfSafe(prefs.format, 1)));
+  }, [cine, split, prefs.format]);
+
+  /** El clip de la pantalla partida: los dos lienzos compuestos en uno, cada uno con lo suyo. */
+  const paintSplit = (ctx: CanvasRenderingContext2D, W: number, H: number, format: ClipFormat) => {
+    ctx.fillStyle = "#1d2330";
+    ctx.fillRect(0, 0, W, H);
+    const canvases = [map.current?.canvas() ?? null, map2.current?.canvas() ?? null];
+    const labels = [session.label, second?.label ?? ""];
+    const halfLines = [linesRef.current, lines2Ref.current];
+    halfRects(format, W, H).forEach((r, i) => {
+      const c = canvases[i];
+      if (c) drawCentered(ctx, c, r);
+      ctx.save();
+      ctx.translate(r.x, r.y);
+      ctx.beginPath();
+      ctx.rect(0, 0, r.w, r.h);
+      ctx.clip();
+      drawCineOverlay(ctx, r.w, r.h, {
+        format,
+        lines: halfLines[i]!,
+        watermark: null,
+        label: labels[i],
+        safe: halfSafe(format, i as 0 | 1),
+        scale: (SPLIT_SCALE * H) / r.h,
+      });
+      ctx.restore();
+    });
+    // La raya entre las dos.
+    ctx.fillStyle = "#10131b";
+    if (splitStacked(format)) ctx.fillRect(0, Math.round(H / 2) - 2, W, 4);
+    else ctx.fillRect(Math.round(W / 2) - 2, 0, 4, H);
+    drawCineOverlay(ctx, W, H, {
+      format,
+      lines: [],
+      watermark: prefsRef.current.mark ? watermark : null,
+      markWidth: splitStacked(format) ? 0.5 : 0.3,
+      day: dayRef.current.on
+        ? { label: dayRef.current.label, alpha: dayAlpha(dayUntilRef.current, performance.now()) }
+        : null,
+    });
+  };
+  const halfView = (i: 0 | 1) => {
+    const g = i === 0 ? game : game2;
+    const hs = cine ? halfSafe(prefs.format, i) : null;
+    return (
+      <div className="replay-half" key={i}>
+        <TownMap
+          world={g.world}
+          agents={g.agents}
+          selectedId={cine || i === 1 ? null : selectedId}
+          followId={null}
+          weather={g.weather}
+          minimap={false}
+          onSelect={i === 0 ? onSelect : () => undefined}
+          onFollowChange={() => undefined}
+          controller={i === 0 ? map : map2}
+          own={i === 0 ? undefined : (own2 ?? undefined)}
+        />
+        <div
+          className="half-label"
+          data-testid="split-label"
+          style={
+            hs
+              ? { top: `${hs.top * 100}%`, right: `${hs.right * 100}%`, fontSize: fontPx * 0.45 }
+              : undefined
+          }
+        >
+          {i === 0 ? session.label : second?.label}
+        </div>
+        <Subtitles
+          lines={i === 0 ? lines : lines2}
+          cine={cine}
+          safe={hs}
+          fontPx={fontPx * SPLIT_SCALE}
+        />
+        {!g.loaded && <LoadingScreen />}
+      </div>
+    );
+  };
 
   return (
     <div className={`replay ${cine ? "cine" : ""}`}>
@@ -596,21 +787,31 @@ function ReplayView({ session, params }: { session: Session; params: URLSearchPa
         <div ref={hostRef} className="replay-host">
           <div
             ref={frameRef}
-            className="replay-frame"
+            className={`replay-frame ${split ? `split ${stacked ? "stack" : "side"}` : ""}`}
             style={cine && frameSize.w ? { width: frameSize.w, height: frameSize.h } : undefined}
           >
-            <TownMap
-              world={game.world}
-              agents={game.agents}
-              selectedId={cine ? null : selectedId}
-              followId={null}
-              weather={game.weather}
-              // Ni en el modo cine ni en los clips.
-              minimap={!cine && !clip}
-              onSelect={onSelect}
-              onFollowChange={() => undefined}
-              controller={map}
-            />
+            {split ? (
+              <>
+                {halfView(0)}
+                {halfView(1)}
+              </>
+            ) : (
+              <>
+                <TownMap
+                  world={game.world}
+                  agents={game.agents}
+                  selectedId={cine ? null : selectedId}
+                  followId={null}
+                  weather={game.weather}
+                  // Ni en el modo cine ni en los clips.
+                  minimap={!cine && !clip}
+                  onSelect={onSelect}
+                  onFollowChange={() => undefined}
+                  controller={map}
+                />
+                <Subtitles lines={lines} cine={cine} safe={safe} fontPx={fontPx} />
+              </>
+            )}
             {cine && prefs.guides && (
               <div className="safe-guides" aria-hidden="true">
                 <div style={{ top: 0, left: 0, right: 0, height: `${safe.top * 100}%` }} />
@@ -632,6 +833,7 @@ function ReplayView({ session, params }: { session: Session; params: URLSearchPa
                   top: `${safe.top * 100}%`,
                   left: `${safe.left * 100}%`,
                   fontSize: fontPx * 0.5,
+                  ...(split ? { maxWidth: `${markWidth * 100}%` } : {}),
                 }}
               >
                 <div>{watermark[0]}</div>
@@ -650,33 +852,6 @@ function ReplayView({ session, params }: { session: Session; params: URLSearchPa
                 }}
               >
                 {dayLabel}
-              </div>
-            )}
-            {(cine || lines.length > 0) && (
-              <div
-                className={`subtitles ${cine ? "" : "inline"}`}
-                role="log"
-                aria-live="polite"
-                aria-label={t("replay.subtitles")}
-                style={
-                  cine
-                    ? {
-                        left: `${safe.left * 100}%`,
-                        right: `${safe.right * 100}%`,
-                        bottom: `${safe.bottom * 100}%`,
-                        fontSize: fontPx,
-                      }
-                    : undefined
-                }
-              >
-                {lines.map((l) => (
-                  <p key={l.id} className="subtitle">
-                    <span className="subtitle-name" style={{ color: l.color }}>
-                      {l.name}:
-                    </span>{" "}
-                    {l.text}
-                  </p>
-                ))}
               </div>
             )}
             {!game.loaded && <LoadingScreen />}
@@ -744,9 +919,49 @@ function ReplayView({ session, params }: { session: Session; params: URLSearchPa
                 : null,
             })
           }
+          paint={split ? paintSplit : undefined}
           tabRect={() => frameRef.current?.getBoundingClientRect() ?? null}
         />
       )}
+    </div>
+  );
+}
+
+/** Subtítulos: grandes y dentro de la zona segura en el modo cine; si no, en línea. */
+function Subtitles(props: {
+  lines: Line[];
+  cine: boolean;
+  safe: { top: number; bottom: number; left: number; right: number } | null;
+  fontPx: number;
+}) {
+  const { t } = useI18n();
+  const { lines, cine, safe } = props;
+  if (!cine && !lines.length) return null;
+  return (
+    <div
+      className={`subtitles ${cine ? "" : "inline"}`}
+      role="log"
+      aria-live="polite"
+      aria-label={t("replay.subtitles")}
+      style={
+        cine && safe
+          ? {
+              left: `${safe.left * 100}%`,
+              right: `${safe.right * 100}%`,
+              bottom: `${safe.bottom * 100}%`,
+              fontSize: props.fontPx,
+            }
+          : undefined
+      }
+    >
+      {lines.map((l) => (
+        <p key={l.id} className="subtitle">
+          <span className="subtitle-name" style={{ color: l.color }}>
+            {l.name}:
+          </span>{" "}
+          {l.text}
+        </p>
+      ))}
     </div>
   );
 }

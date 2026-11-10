@@ -1584,3 +1584,38 @@ html.ui-skin .warn-text {
   line-height: 1;
   text-shadow: 0 0 12px rgba(0, 0, 0, 0.85);
 }
+
+/* Pantalla partida (dos repeticiones con el mismo reloj) */
+.replay-frame.split {
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
+  background: #10131b;
+}
+.replay-frame.split.stack {
+  flex-direction: column;
+}
+.replay-half {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.half-label {
+  position: absolute;
+  z-index: 3;
+  top: 8px;
+  right: 8px;
+  pointer-events: none;
+  padding: 0.2em 0.45em;
+  background: rgba(10, 12, 18, 0.78);
+  color: var(--accent);
+  font-family: var(--pixel);
+  font-weight: 700;
+}
+@media (max-width: 760px) {
+  .replay:not(.cine) .replay-frame.split {
+    flex-direction: column;
+  }
+}

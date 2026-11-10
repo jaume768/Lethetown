@@ -4,7 +4,17 @@ import { describe, expect, it } from "vitest";
 import { applyMessage, INITIAL_STATE } from "../net/game-state";
 import { ReplayPlayer } from "../net/replay-player";
 import { decodeBundle, ReplaySource } from "../net/replay-source";
-import { dayAlpha, drawCineOverlay, formatPlayedOn, subtitleMs } from "../ui/cine";
+import {
+  dayAlpha,
+  directorOffsetFor,
+  drawCineOverlay,
+  formatPlayedOn,
+  halfRects,
+  halfSafe,
+  SAFE_ZONE,
+  subtitleMs,
+} from "../ui/cine";
+import { LocalGame } from "../net/local-game";
 import { cardsFor, safeReplaySrc } from "../ui/replay-cards";
 
 const agent = (id: string, x: number) =>
@@ -190,6 +200,38 @@ describe("fuente de la repetición", () => {
     // Un paso sin reproducir no avanza; con «step» tras saltar, oye lo que quede.
     player.step();
     player.dispose();
+  });
+});
+
+describe("pantalla partida", () => {
+  it("dos repeticiones con un solo reloj: cada una a su estado, por minuto de juego", () => {
+    const a: ServerMessage[][] = [];
+    const second = new LocalGame();
+    const player = new ReplayPlayer(new ReplaySource(bundle), (m) => a.push(m));
+    player.follow(new ReplaySource(bundle), second.feed);
+    player.seek(160);
+    expect(second.get().loaded).toBe(true);
+    expect(second.get().weather).toBe("rain");
+    expect(second.get().events.map((e) => e.id)).toEqual(["c1:1", "c1:2"]);
+    expect(reduce(a.at(-1)!).weather).toBe("rain");
+    player.dispose();
+  });
+
+  it("mitades: arriba y abajo en 9:16, lado a lado en los demás, con su zona segura", () => {
+    expect(halfRects("9:16", 1080, 1920)).toEqual([
+      { x: 0, y: 0, w: 1080, h: 960 },
+      { x: 0, y: 960, w: 1080, h: 960 },
+    ]);
+    expect(halfRects("16:9", 1920, 1080)[1]).toEqual({ x: 960, y: 0, w: 960, h: 1080 });
+    // La de arriba lleva el menú de la red; la de abajo, la descripción.
+    expect(halfSafe("9:16", 0).top).toBeCloseTo(SAFE_ZONE["9:16"].top * 2);
+    expect(halfSafe("9:16", 1).bottom).toBeCloseTo(SAFE_ZONE["9:16"].bottom * 2);
+    expect(halfSafe("16:9", 0).left).toBeCloseTo(SAFE_ZONE["16:9"].left * 2);
+    // Encuadre: un poco por encima del centro en el marco entero, más en la mitad de abajo.
+    expect(directorOffsetFor(SAFE_ZONE["9:16"])).toBeCloseTo(0.145);
+    expect(directorOffsetFor(halfSafe("9:16", 1))).toBeGreaterThan(
+      directorOffsetFor(halfSafe("9:16", 0)),
+    );
   });
 });
 

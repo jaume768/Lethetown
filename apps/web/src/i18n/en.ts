@@ -473,6 +473,7 @@ const en: Record<MessageKey, string> = {
   "replay.kind.teaching": "Teacher and student",
   "replay.kind.forgetting": "Forgetting",
   "replay.days": "Days",
+  "replay.seedLabel": "Seed {n}",
   "replay.cards": "Cards",
   "replay.cardBtn.garden": "{name}'s memories",
   "replay.cardBtn.goals": "{name}'s goals",

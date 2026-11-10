@@ -15,7 +15,9 @@
       motivo de la auditoría (`ReplayViews.story`, `storyStep`)
 - [x] Lista blanca de `replay:pack`: entran los recuerdos con historia en la auditoría
       (`STORY_ACTIONS`); el paquete lleva los umbrales (`meta.thresholds`) y `--seed`
-- [ ] Pantalla partida (`&src2=…&split=1`) con clip compuesto
+- [x] Pantalla partida (`&src2=…&split=1`): un reloj (`ReplayPlayer.follow`), la segunda con su
+      estado (`LocalGame`, mismo reductor) y su mapa; etiqueta «Semilla N», cámara y subtítulos por
+      mitad (`useDirector`), arriba y abajo en 9:16; clip compuesto (`paint`, `halfRects`)
 - [x] Contador de días (tecla D, botón «Días»): al cambiar de día y en los saltos, también en el clip
 
 ## 3. Escenas guardadas

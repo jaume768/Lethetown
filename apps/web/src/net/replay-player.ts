@@ -13,6 +13,13 @@ export interface PlayerState {
   seeks: number;
 }
 
+/** Una repetición que avanza con el reloj: la principal y, en pantalla partida, la segunda. */
+interface Track {
+  src: ReplaySource;
+  onFeed: (msgs: ServerMessage[], reset: boolean) => void;
+  onSpeech: (lines: SimEvent[]) => void;
+}
+
 /**
  * Reloj y avance de la repetición: play/pausa, velocidad y saltos. Emite al store los mensajes
  * de `ReplaySource` (`onFeed`) y avisa de las frases nuevas (`onSpeech`, para los subtítulos).
@@ -27,15 +34,30 @@ export class ReplayPlayer {
   private last: number;
   private snapshot: PlayerState;
   private readonly listeners = new Set<() => void>();
+  private readonly tracks: Track[];
 
   constructor(
     private readonly src: ReplaySource,
-    private readonly onFeed: (msgs: ServerMessage[], reset: boolean) => void,
-    private readonly onSpeech: (lines: SimEvent[]) => void = () => {},
+    onFeed: (msgs: ServerMessage[], reset: boolean) => void,
+    onSpeech: (lines: SimEvent[]) => void = () => {},
   ) {
     this.t = src.from;
     this.last = src.from;
     this.snapshot = this.make();
+    this.tracks = [{ src, onFeed, onSpeech }];
+  }
+
+  /**
+   * Otra repetición con el mismo reloj (pantalla partida): se sincroniza por minuto de juego y
+   * se pone en el minuto actual.
+   */
+  follow(src: ReplaySource, onFeed: Track["onFeed"], onSpeech: Track["onSpeech"] = () => {}): void {
+    this.tracks.push({ src, onFeed, onSpeech });
+    onFeed(src.seek(this.t, this.rate()), true);
+  }
+
+  private advanceAll(t: number) {
+    for (const k of this.tracks) k.onFeed(k.src.advance(t, this.rate()), false);
   }
 
   /** Minuto de juego ahora mismo (entre pasos, extrapolado: el mapa anda suave). */
@@ -73,7 +95,7 @@ export class ReplayPlayer {
     this.realAt = performance.now();
     this.last = this.t;
     this.seeks++;
-    this.onFeed(this.src.seek(this.t, this.rate()), true);
+    for (const k of this.tracks) k.onFeed(k.src.seek(this.t, this.rate()), true);
     this.emit();
   }
 
@@ -92,7 +114,7 @@ export class ReplayPlayer {
     this.playing = false;
     if (this.timer) clearInterval(this.timer);
     this.timer = null;
-    this.onFeed(this.src.advance(this.t, 0), false);
+    this.advanceAll(this.t);
     this.emit();
   }
 
@@ -105,16 +127,18 @@ export class ReplayPlayer {
     this.t = this.now();
     this.realAt = performance.now();
     this.speed = speed;
-    this.onFeed(this.src.advance(this.t, this.rate()), false);
+    this.advanceAll(this.t);
     this.emit();
   }
 
   /** Un paso: lo que pasó desde el anterior. */
   step() {
     const now = this.now();
-    this.onFeed(this.src.advance(now, this.rate()), false);
-    const lines = this.src.speechBetween(this.last, now);
-    if (lines.length) this.onSpeech(lines);
+    this.advanceAll(now);
+    for (const k of this.tracks) {
+      const lines = k.src.speechBetween(this.last, now);
+      if (lines.length) k.onSpeech(lines);
+    }
     this.last = now;
     if (now >= this.src.to) {
       this.t = this.src.to;
