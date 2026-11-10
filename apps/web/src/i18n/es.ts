@@ -434,6 +434,8 @@ const es = {
   "replay.loading": "Cargando la partida…",
   "replay.backLive": "Volver al pueblo en directo",
   "replay.badSrc": "Solo se cargan paquetes de /replays/ de este sitio.",
+  "replay.crashed": "Algo ha fallado al pintar la repetición.",
+  "replay.reload": "Volver a cargar",
   "replay.watermark": "Repetición de una partida real · {model} · {date}",
   "replay.badge": "Repetición",
   "replay.meta": "Partida del {date} · {model} · semilla {seed} · {hours} h de juego",

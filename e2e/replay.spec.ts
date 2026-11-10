@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 const SRC = "/replay?src=/replays/e2e.replay.json.gz";
 
@@ -61,3 +61,53 @@ test("repetición: solo paquetes de /replays/", async ({ page }) => {
   await page.goto("/replay?src=https://example.com/x.replay.json.gz");
   await expect(page.getByRole("alert")).toContainText("/replays/");
 });
+
+/** Lo que la escena del mapa sabe de la cámara (solo en desarrollo: `window.__town`). */
+const camera = (page: Page) =>
+  page.evaluate(() => {
+    const town = (window as unknown as { __town?: Record<string, unknown> }).__town;
+    const mm = town?.minimap as { visible: boolean } | null | undefined;
+    return {
+      ready: Boolean(town?.ready),
+      directed: (town?.directed as string[] | null) ?? null,
+      minimap: mm ? mm.visible : null,
+    };
+  });
+
+test("modo cine con &agent=: hay lienzo y marca (no se queda en blanco), sin minimapa", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.goto(`${SRC}&cine=1&agent=aurora`);
+  await expect(page.locator(".replay-frame canvas")).toHaveCount(1, { timeout: 30_000 });
+  await expect(page.locator(".cine-mark")).toContainText("lethetown.com");
+  await expect.poll(async () => (await camera(page)).ready, { timeout: 30_000 }).toBe(true);
+  await expect.poll(async () => (await camera(page)).directed).toEqual(["aurora"]);
+  expect((await camera(page)).minimap).toBe(false);
+  expect(errors).toEqual([]);
+});
+
+for (const cine of [false, true]) {
+  test(`&t= y &agent= juntos ${cine ? "en el modo cine" : "sin modo cine"}`, async ({ page }) => {
+    const errors: string[] = [];
+    page.on("pageerror", (e) => errors.push(e.message));
+    await page.goto(`${SRC}&t=500&agent=valentina${cine ? "&cine=1" : ""}`);
+    await expect(page.getByTestId("replay-play")).toBeVisible({ timeout: 30_000 });
+    // Minuto 500 = día 0, 08:20.
+    await expect(page.getByTestId("replay-time")).toContainText("08:20");
+    await expect.poll(async () => (await camera(page)).ready, { timeout: 30_000 }).toBe(true);
+    if (cine) {
+      await expect.poll(async () => (await camera(page)).directed).toEqual(["valentina"]);
+      await expect(page.getByRole("combobox", { name: "Cámara" })).toHaveValue("valentina");
+    } else {
+      await expect(page.getByRole("tab", { name: "Agente" })).toHaveAttribute(
+        "aria-selected",
+        "true",
+      );
+      await expect(page.locator(".side")).toContainText("Valentina");
+      expect((await camera(page)).minimap).toBe(true);
+    }
+    expect(errors).toEqual([]);
+  });
+}

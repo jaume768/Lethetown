@@ -435,6 +435,8 @@ const en: Record<MessageKey, string> = {
   "replay.loading": "Loading the game…",
   "replay.backLive": "Back to the live town",
   "replay.badSrc": "Only bundles from this site's /replays/ are loaded.",
+  "replay.crashed": "Something went wrong drawing the replay.",
+  "replay.reload": "Reload",
   "replay.watermark": "Replay of a real game · {model} · {date}",
   "replay.badge": "Replay",
   "replay.meta": "Game of {date} · {model} · seed {seed} · {hours} h of game time",

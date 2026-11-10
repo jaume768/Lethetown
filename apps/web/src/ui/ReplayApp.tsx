@@ -28,6 +28,7 @@ import {
 import { ChroniclePanel } from "./ChroniclePanel";
 import { ClipRecorder } from "./ClipRecorder";
 import { DramaFeed } from "./DramaFeed";
+import { ErrorBoundary } from "./ErrorBoundary";
 import { EventLog } from "./EventLog";
 import { formatGameTime } from "./format";
 import { GoalsPanel } from "./GoalsPanel";
@@ -108,7 +109,26 @@ export function ReplayApp() {
     }
   }, [open, params, t]);
 
-  if (session) return <ReplayView session={session} params={params} />;
+  if (session)
+    return (
+      <ErrorBoundary
+        fallback={(message) => (
+          <div className="replay-drop">
+            <div className="panel readable replay-drop-box" role="alert">
+              <h1 className="brand">{t("replay.title")}</h1>
+              <p>{t("replay.crashed")}</p>
+              <p className="error small">{message}</p>
+              <p className="muted small">
+                <a href={location.pathname + location.search}>{t("replay.reload")}</a> ·{" "}
+                <a href="/">{t("replay.backLive")}</a>
+              </p>
+            </div>
+          </div>
+        )}
+      >
+        <ReplayView session={session} params={params} />
+      </ErrorBoundary>
+    );
   return (
     <div
       className="replay-drop"
@@ -218,7 +238,9 @@ function ReplayView({ session, params }: { session: Session; params: URLSearchPa
       savePrefs(next);
       return next;
     });
-  const [tab, setTab] = useState<"moments" | "dramas" | "agent" | "chronicles">("moments");
+  const [tab, setTab] = useState<"moments" | "dramas" | "agent" | "chronicles">(
+    params.get("agent") ? "agent" : "moments",
+  );
   const [selectedId, setSelectedId] = useState<string | null>(params.get("agent"));
   /** A quién sigue la cámara del modo cine (null = automático: quien habla). */
   const [focusId, setFocusId] = useState<string | null>(params.get("agent"));
@@ -276,6 +298,12 @@ function ReplayView({ session, params }: { session: Session; params: URLSearchPa
       clearInterval(prune);
     };
   }, [session, player]);
+
+  // `&agent=`: la cámara empieza en él (la orden espera a que exista la escena).
+  useEffect(() => {
+    const id = params.get("agent");
+    if (id) map.current?.focusAgent(id);
+  }, [params]);
 
   // Cámara del modo cine: a quien se sigue (y con quien habla), o a quien habla.
   useEffect(() => {
@@ -515,7 +543,8 @@ function ReplayView({ session, params }: { session: Session; params: URLSearchPa
               selectedId={cine ? null : selectedId}
               followId={null}
               weather={game.weather}
-              minimap={!cine}
+              // Ni en el modo cine ni en los clips.
+              minimap={!cine && !clip}
               onSelect={onSelect}
               onFollowChange={() => undefined}
               controller={map}

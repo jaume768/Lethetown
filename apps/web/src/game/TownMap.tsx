@@ -57,9 +57,13 @@ export function TownMap(props: Props) {
 
   useEffect(() => {
     const townScene = new TownScene();
+    // Órdenes de cámara que llegan antes de que la escena exista: se aplican al crearla.
+    const pending: (() => void)[] = [];
+    const whenReady = (fn: () => void) => (townScene.ready ? fn() : void pending.push(fn));
     townScene.onReady = () => {
       sync(townScene, latest.current);
       townScene.setFollow(latest.current.followId);
+      for (const fn of pending.splice(0)) fn();
     };
     townScene.gameTime = gameTimeNow;
     townScene.isThinking = (id) => (getState().thinking[id]?.count ?? 0) > 0;
@@ -67,12 +71,12 @@ export function TownMap(props: Props) {
     scene.current = townScene;
     if (latest.current.controller) {
       latest.current.controller.current = {
-        focusPlace: (id) => townScene.focusPlace(id),
-        focusAgent: (id) => townScene.focusAgent(id),
-        nudge: (dx, dy) => townScene.nudgeCamera(dx, dy),
-        zoom: (step) => townScene.zoomBy(step),
+        focusPlace: (id) => whenReady(() => townScene.focusPlace(id)),
+        focusAgent: (id) => whenReady(() => townScene.focusAgent(id)),
+        nudge: (dx, dy) => whenReady(() => townScene.nudgeCamera(dx, dy)),
+        zoom: (step) => whenReady(() => townScene.zoomBy(step)),
         canvas: () => (townScene.ready ? townScene.canvas : null),
-        direct: (ids) => townScene.setDirector(ids),
+        direct: (ids) => whenReady(() => townScene.setDirector(ids)),
       };
     }
     // Solo en desarrollo: acceso desde la consola / scripts de captura.
