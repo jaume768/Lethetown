@@ -5,7 +5,14 @@ import type { Drama } from "../schemas/drama";
 import type { Goal } from "../schemas/goals";
 import { positionAt } from "../map/movement";
 import { EMPTY_REPLAY_DATA, ReplayBundle, type ReplayMemory } from "../replay/bundle";
-import { agentAt, agentsAt, expandFrames, indexTrack, lastAtOrBefore } from "../replay/motion";
+import {
+  agentAt,
+  agentPatch,
+  agentsAt,
+  expandFrames,
+  indexTrack,
+  lastAtOrBefore,
+} from "../replay/motion";
 import { findMoments, scoreMoment, splitSpeech, topMoments } from "../replay/moments";
 import { goalAt, ReplayViews, strengthSample } from "../replay/views";
 
@@ -50,8 +57,21 @@ describe("fotos", () => {
       { time: 20, agents: [], removed: ["a"] },
     ]);
     expect(frames.map((f) => f.agents.map((x) => x.id))).toEqual([["a", "b"], ["a", "b"], ["b"]]);
-    expect(frames[1]!.byId.get("a")).toBe(a);
-    expect(frames[1]!.byId.get("b")).toBe(b2);
+    expect(frames[1]!.byId.get("a")).toBe(frames[0]!.byId.get("a"));
+    expect(frames[1]!.byId.get("b")).toEqual(b2);
+  });
+
+  it("parches por campo: solo lo que cambia, y lo que deja de estar", () => {
+    const a = agent("a", { talking: true, plan: [] });
+    const b = agent("a", { tile: { x: 5, y: 5 }, plan: [] });
+    expect(agentPatch(a, a)).toBeNull();
+    const patch = agentPatch(a, b)!;
+    expect(patch).toEqual({ id: "a", tile: { x: 5, y: 5 }, unset: ["talking"] });
+    const [, second] = expandFrames([
+      { time: 0, agents: [a] },
+      { time: 10, agents: [patch] },
+    ]);
+    expect(second!.byId.get("a")).toEqual(b);
   });
 
   it("busca la última foto anterior", () => {
@@ -147,8 +167,8 @@ describe("interpolación del movimiento", () => {
       { time: 0, agents: [a] },
       { time: 10, agents: [b] },
     ]);
-    expect(agentsAt(frames, 10, ctx)[0]).toBe(b);
-    expect(agentsAt(frames, 99, ctx)[0]).toBe(b);
+    expect(agentsAt(frames, 10, ctx)[0]).toEqual(b);
+    expect(agentsAt(frames, 99, ctx)[0]).toEqual(b);
     expect(agentsAt(frames, 9.9, ctx)[0]!.movement).not.toBeNull();
   });
 });
@@ -482,7 +502,10 @@ describe("momentos", () => {
     });
     const byKind = Object.fromEntries(moments.map((m) => [m.kind, m]));
     expect(byKind.rashomon!.quote).toBe("Ana: «Leo me gritó» / Leo: «Ana y yo bromeamos»");
-    expect(byKind.goal!.title).toBe("Eva consigue: Abrir un taller");
+    expect(byKind.goal!).toMatchObject({
+      title: "Eva consigue una meta (lo abrió)",
+      quote: "Abrir un taller",
+    });
     expect(byKind.teaching!.agents).toEqual(["ana", "leo"]);
     expect(byKind.external!.quote).toBe("Pablo lo sabe");
     expect(byKind.chronicle!.quote).toBe("Llovió mucho en todo el pueblo.");
@@ -492,8 +515,13 @@ describe("momentos", () => {
   it("los mejores, con tope por tipo", () => {
     const many = Array.from({ length: 10 }, (_, i) => ({ kind: "drama", score: 1 - i / 100 }));
     const few = [{ kind: "goal", score: 0.1 }];
-    const top = topMoments([...many, ...few] as never, 5, 3);
+    const top = topMoments([...many, ...few] as never, 5, 3, 1);
     expect(top.map((m) => m.kind)).toEqual(["drama", "drama", "drama", "goal"]);
+    // Con un mínimo por tipo, entra el de poca puntuación aunque no quepan todos.
+    expect(topMoments([...many, ...few] as never, 2, 3, 1).map((m) => m.kind)).toEqual([
+      "drama",
+      "goal",
+    ]);
   });
 });
 

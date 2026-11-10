@@ -2,7 +2,7 @@ import { AWAY_LOCATION } from "../schemas/goals";
 import type { AgentState, Movement } from "../schemas/agent";
 import type { TilePoint, World } from "../schemas/world";
 import { findPath, pathLength, toWaypoints, type Grid } from "../map/pathfinding";
-import type { ReplayFrame, ReplayTrack } from "./bundle";
+import type { AgentPatch, ReplayFrame, ReplayTrack } from "./bundle";
 
 /** Fotos completas (todas con todos los agentes), compartiendo los objetos que no cambian. */
 export interface FullFrame {
@@ -18,11 +18,35 @@ export function expandFrames(frames: readonly ReplayFrame[]): FullFrame[] {
   for (const f of frames) {
     const next = new Map(current);
     for (const id of f.removed ?? []) next.delete(id);
-    for (const a of f.agents) next.set(a.id, a);
+    for (const { unset, ...patch } of f.agents) {
+      const merged = { ...next.get(patch.id), ...patch } as Record<string, unknown>;
+      for (const key of unset ?? []) delete merged[key];
+      next.set(patch.id, merged as AgentState);
+    }
     current = next;
     out.push({ time: f.time, agents: [...next.values()], byId: next });
   }
   return out;
+}
+
+/** Parche de `next` respecto a `prev` (null si no cambió nada). */
+export function agentPatch(prev: AgentState | undefined, next: AgentState): AgentPatch | null {
+  if (!prev) return next;
+  const patch: Record<string, unknown> = { id: next.id };
+  const a = prev as Record<string, unknown>;
+  const b = next as Record<string, unknown>;
+  let changed = false;
+  for (const key of Object.keys(b)) {
+    if (JSON.stringify(a[key]) === JSON.stringify(b[key])) continue;
+    patch[key] = b[key];
+    changed = true;
+  }
+  const unset = Object.keys(a).filter((k) => !(k in b) || b[k] === undefined);
+  if (unset.length) {
+    patch.unset = unset;
+    changed = true;
+  }
+  return changed ? (patch as AgentPatch) : null;
 }
 
 /** Índice de la última entrada con `time ≤ t` (−1 si todas son posteriores). Búsqueda binaria. */

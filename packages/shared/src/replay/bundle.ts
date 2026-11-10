@@ -68,13 +68,22 @@ export type ReplayServerMessage = z.infer<typeof ReplayServerMessage>;
 export const ReplayMessage = z.object({ t: z.number(), msg: ReplayServerMessage });
 export type ReplayMessage = z.infer<typeof ReplayMessage>;
 
+/** Parche de un agente: su id y solo los campos que cambiaron desde la foto anterior. */
+export const AgentPatch = AgentState.partial().extend({
+  id: z.string(),
+  /** Campos opcionales que dejó de tener (`companionId`, `talking`…). */
+  unset: z.array(z.string()).optional(),
+});
+export type AgentPatch = z.infer<typeof AgentPatch>;
+
 /**
- * Foto del estado de los agentes. La primera lleva a todos; las demás, solo los que cambiaron
- * desde la anterior (y `removed`, los que ya no están).
+ * Foto del estado de los agentes. La primera lleva a todos enteros; las demás, solo los campos
+ * que cambiaron de cada uno desde la anterior (el plan del día, casi nunca) y `removed`, los
+ * que ya no están.
  */
 export const ReplayFrame = z.object({
   time: z.number(),
-  agents: z.array(AgentState),
+  agents: z.array(AgentPatch),
   removed: z.array(z.string()).optional(),
 });
 export type ReplayFrame = z.infer<typeof ReplayFrame>;

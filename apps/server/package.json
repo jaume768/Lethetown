@@ -21,7 +21,10 @@
     "user:create": "tsx src/scripts/user-create.ts",
     "dev:worker": "tsx watch --clear-screen=false src/worker.ts",
     "start:api": "tsx src/api-main.ts",
-    "start:worker": "tsx src/worker.ts"
+    "start:worker": "tsx src/worker.ts",
+    "replay:pack": "tsx src/scripts/replay-pack.ts",
+    "replay:moments": "tsx src/scripts/replay-moments.ts",
+    "replay:demo": "tsx src/scripts/replay-demo.ts"
   },
   "dependencies": {
     "@fastify/cookie": "11.1.3",

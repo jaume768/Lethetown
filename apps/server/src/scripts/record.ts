@@ -7,8 +7,10 @@
  *
  * Uso (con `pnpm dev` en marcha):
  *   RECORD_USER=… RECORD_PASSWORD=… pnpm --filter @lethetown/server record <carpeta> \
- *     [--hours 48] [--until <minuto>] [--every 10] [--api http://localhost:3001] \
+ *     [--hours 48] [--until <minuto>] [--track] [--every 10] [--api http://localhost:3001] \
  *     [--origin http://localhost:5173]
+ * `--track`: además, positions.jsonl con la posición de cada agente que se mueve cada minuto de
+ * juego (`{ time, p: [[id, x, y]…] }`), para que la repetición (`replay:pack`) siga su ruta real.
  * `--until`: minuto de juego absoluto en que termina (para reanudar una grabación cortada sin
  * volver a contar `--hours` desde el principio). `--env-file`: el entorno del servidor que se
  * graba (p. ej. .env.study.s7), para el manifiesto (solo una lista blanca, sin secretos).
@@ -25,7 +27,7 @@
 import { execFileSync } from "node:child_process";
 import { createWriteStream, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import type { AgentState, ServerMessage } from "@lethetown/shared";
+import { positionAt, type AgentState, type ServerMessage } from "@lethetown/shared";
 import { parse as parseDotenv } from "dotenv";
 import { buildManifest } from "../analysis/manifest";
 import { fromRoot } from "../paths";
@@ -36,18 +38,24 @@ const flag = (name: string, def: string) => {
   return i >= 0 && args[i + 1] ? args[i + 1]! : def;
 };
 const outDir = resolve(
-  args.find((a, i) => !a.startsWith("--") && !args[i - 1]?.startsWith("--")) ?? "recording",
+  args.find(
+    (a, i) => !a.startsWith("--") && !(args[i - 1]?.startsWith("--") && args[i - 1] !== "--track"),
+  ) ?? "recording",
 );
 const hours = Number(flag("hours", "48"));
 const until = flag("until", "");
 const every = Number(flag("every", "10"));
 const api = flag("api", "http://localhost:3001");
 const origin = flag("origin", "http://localhost:5173");
+const tracking = args.includes("--track");
 
 mkdirSync(outDir, { recursive: true });
 writeManifest();
 const messages = createWriteStream(join(outDir, "messages.jsonl"), { flags: "a" });
 const states = createWriteStream(join(outDir, "states.jsonl"), { flags: "a" });
+const positions = tracking
+  ? createWriteStream(join(outDir, "positions.jsonl"), { flags: "a" })
+  : null;
 const log = (msg: string) => console.log(`[${new Date().toISOString()}] ${msg}`);
 
 /** El manifiesto de la partida (una vez: al reanudar la grabación no se pisa). */
@@ -130,6 +138,30 @@ function shot(time: number) {
   states.write(`${JSON.stringify({ wallMs: Date.now(), time, agents: [...agents.values()] })}\n`);
 }
 
+/** Último minuto de juego escrito en la pista. */
+let trackedUntil: number | null = null;
+
+/**
+ * Pista de posiciones: cada minuto entero desde el último, los que iban andando (su posición por
+ * la ruta que mandó el servidor). Quien está quieto no se escribe (se ve en las fotos).
+ */
+function track(time: number) {
+  if (!positions) return;
+  const last = trackedUntil ?? Math.floor(time) - 1;
+  for (let m = last + 1; m <= Math.floor(time); m++) {
+    const p: [string, number, number][] = [];
+    for (const a of agents.values()) {
+      const mv = a.movement;
+      // Hasta un minuto después de llegar, para que la pista acabe donde se paró.
+      if (!mv || m < mv.startTime || m > mv.endTime + 1) continue;
+      const pos = positionAt(a, m);
+      p.push([a.id, Math.round(pos.x * 10) / 10, Math.round(pos.y * 10) / 10]);
+    }
+    if (p.length) positions.write(`${JSON.stringify({ time: m, p })}\n`);
+  }
+  trackedUntil = Math.max(last, Math.floor(time));
+}
+
 function onMessage(msg: ServerMessage) {
   const wallMs = Date.now();
   if (msg.type === "snapshot") {
@@ -147,6 +179,7 @@ function onMessage(msg: ServerMessage) {
     for (const a of msg.agents) agents.set(a.id, a);
     if (msg.type === "delta") for (const id of msg.removed) agents.delete(id);
     lastTime = msg.clock.time;
+    if (startTime !== null) track(lastTime);
     if (startTime !== null && lastTime >= nextShot) {
       shot(lastTime);
       // A x360 un mensaje puede saltarse varias fotos: la siguiente, después de esta hora.
@@ -208,5 +241,6 @@ writeFileSync(
 );
 messages.end();
 states.end();
+positions?.end();
 log("Grabación terminada");
 process.exit(0);

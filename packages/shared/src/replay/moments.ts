@@ -4,6 +4,7 @@ import type { Goal } from "../schemas/goals";
 import type { Lore, LoreHolder } from "../schemas/lore";
 import type { MemoryAuditEntry, MemoryVersion, SocialProfile } from "../schemas/memory";
 import type { SkillState } from "../schemas/skills";
+import type { ReplayBundle } from "./bundle";
 
 /**
  * Momentos destacados de una partida (para la lista del reproductor y `pnpm replay:moments`):
@@ -145,14 +146,14 @@ export function scoreMoment(input: {
 export function findMoments(input: MomentInput): Moment[] {
   const name = (id: string) => input.names.get(id) ?? id;
   const affinity = affinityIndex(input.profiles ?? []);
+  // Carga emocional: lo que se tienen los dos protagonistas (los dos primeros), en los dos sentidos.
   const charge = (agents: readonly string[]) => {
-    let best = 0;
-    for (const a of agents)
-      for (const b of agents) {
-        if (a === b) continue;
-        best = Math.max(best, Math.abs(affinity.get(`${a}>${b}`) ?? 0));
-      }
-    return best;
+    const [a, b] = agents;
+    if (!a || !b) return 0;
+    const ab = affinity.get(`${a}>${b}`);
+    const ba = affinity.get(`${b}>${a}`);
+    const known = [ab, ba].filter((x): x is number => x !== undefined);
+    return known.length ? Math.max(...known.map(Math.abs)) : 0;
   };
   const out: Moment[] = [];
   const push = (
@@ -170,15 +171,33 @@ export function findMoments(input: MomentInput): Moment[] {
     out.push({ ...m, ...s });
   };
   const events = new Map(input.events.map((e) => [e.id, e]));
+  const talks = new Map<string, SimEvent[]>();
+  for (const e of [...input.events].sort((a, b) => a.time - b.time)) {
+    if (e.kind !== "speech") continue;
+    const id = conversationOf(e.id);
+    talks.set(id, [...(talks.get(id) ?? []), e]);
+  }
+  /** La frase de un drama: la suya, o la última de su conversación antes del drama. */
+  const lineOf = (d: Drama): SimEvent | undefined => {
+    if (!d.eventId) return undefined;
+    const direct = events.get(d.eventId);
+    if (direct) return direct;
+    const lines = talks.get(conversationOf(d.eventId)) ?? [];
+    return lines.filter((l) => l.time <= d.time + 1).at(-1) ?? lines[0];
+  };
 
-  // Dramas (sin repetir el mismo tipo con los mismos vecinos en dos horas).
+  // Dramas: uno por conversación y tipo, y sin repetir tipo y vecinos en dos horas.
   const lastDrama = new Map<string, Drama>();
+  const seenTalk = new Set<string>();
   for (const d of [...input.dramas].sort((a, b) => a.time - b.time)) {
     const key = `${d.kind}|${[...d.agents].sort().join(",")}`;
     const prev = lastDrama.get(key);
     if (prev && d.time - prev.time < 120) continue;
+    const talkKey = d.eventId ? `${d.kind}|${conversationOf(d.eventId)}` : null;
+    if (talkKey && seenTalk.has(talkKey)) continue;
+    if (talkKey) seenTalk.add(talkKey);
     lastDrama.set(key, d);
-    const ev = d.eventId ? events.get(d.eventId) : undefined;
+    const ev = lineOf(d);
     push(
       {
         id: `drama:${d.id}`,
@@ -188,7 +207,7 @@ export function findMoments(input: MomentInput): Moment[] {
         agents: d.agents,
         title: d.title,
         quote: ev?.kind === "speech" ? splitSpeech(ev.text).line : (ev?.text ?? d.title),
-        eventId: d.eventId,
+        eventId: ev?.id ?? d.eventId,
         placeId: d.placeId,
       },
       { base: MOMENT_BASE.drama * (0.5 + d.score) },
@@ -210,11 +229,8 @@ export function findMoments(input: MomentInput): Moment[] {
   }
 
   // Conversaciones largas y frases de olvido.
-  const talks = new Map<string, SimEvent[]>();
   for (const e of input.events) {
     if (e.kind !== "speech") continue;
-    const id = conversationOf(e.id);
-    talks.set(id, [...(talks.get(id) ?? []), e]);
     const line = splitSpeech(e.text).line;
     if (e.agentId && FORGETTING_RE.test(line)) {
       push({
@@ -232,7 +248,6 @@ export function findMoments(input: MomentInput): Moment[] {
   }
   for (const [id, lines] of talks) {
     if (lines.length < LONG_CONVERSATION_TURNS) continue;
-    lines.sort((a, b) => a.time - b.time);
     const agents = unique(lines.flatMap((l) => (l.agentId ? [l.agentId] : [])));
     const quote = lines
       .map((l) => splitSpeech(l.text).line)
@@ -271,11 +286,15 @@ export function findMoments(input: MomentInput): Moment[] {
       if (!firstByAgent.has(m.agentId)) firstByAgent.set(m.agentId, m);
     }
     if (firstByAgent.size < 2) continue;
-    const accounts = [...firstByAgent.values()];
+    // Primero los que cambiaron al recordarlo (lo que se ve distinto).
+    const accounts = [...firstByAgent.values()].sort(
+      (a, b) => Number(versionsOf.has(b.id)) - Number(versionsOf.has(a.id)),
+    );
     const valences = accounts.map((m) => m.emotionalValence);
     const spread = Math.max(...valences) - Math.min(...valences);
     const changed = accounts.some((m) => versionsOf.has(m.id));
-    if (!changed && spread < 0.6) continue;
+    // Distinto de verdad: alguno se reescribió al recordarlo, o lo vivieron con ánimo opuesto.
+    if (!changed && spread < 0.8) continue;
     const agents = accounts.map((m) => m.agentId);
     push(
       {
@@ -292,7 +311,10 @@ export function findMoments(input: MomentInput): Moment[] {
         eventId,
         placeId: null,
       },
-      { charge: Math.max(charge(agents), spread / 2) },
+      {
+        base: MOMENT_BASE.rashomon + (changed ? 0.1 : 0),
+        charge: Math.max(charge(agents), spread / 2),
+      },
     );
   }
 
@@ -382,8 +404,8 @@ export function findMoments(input: MomentInput): Moment[] {
         subkind: h.status,
         time: h.at,
         agents: [g.agentId],
-        title: `${name(g.agentId)} ${h.status === "achieved" ? "consigue" : "abandona"}: ${g.text}`,
-        quote: h.reason,
+        title: `${name(g.agentId)} ${h.status === "achieved" ? "consigue una meta" : "abandona una meta"} (${h.reason})`,
+        quote: g.text,
         eventId: null,
         placeId: null,
       });
@@ -429,18 +451,32 @@ export function findMoments(input: MomentInput): Moment[] {
   return out.sort((a, b) => b.score - a.score || a.time - b.time);
 }
 
-/** Los mejores, con un tope por tipo para que haya de todo. */
-export function topMoments(moments: readonly Moment[], max = 200, perKind = 60): Moment[] {
-  const count = new Map<MomentKind, number>();
-  const out: Moment[] = [];
-  for (const m of moments) {
-    const n = count.get(m.kind) ?? 0;
-    if (n >= perKind) continue;
-    count.set(m.kind, n + 1);
-    out.push(m);
-    if (out.length >= max) break;
-  }
-  return out;
+/**
+ * Los mejores, con un tope por tipo (y por tipo de drama) para que haya de todo: primero los
+ * `minPerKind` mejores de cada tipo, luego el resto por puntuación. Ordenados por puntuación.
+ */
+export function topMoments(
+  moments: readonly Moment[],
+  max = 200,
+  perKind = 30,
+  minPerKind = 5,
+): Moment[] {
+  const keyOf = (m: Moment) => (m.kind === "drama" ? `drama:${m.subkind}` : m.kind);
+  const count = new Map<string, number>();
+  const chosen = new Set<Moment>();
+  const take = (limit: number) => {
+    for (const m of moments) {
+      if (chosen.size >= max) return;
+      if (chosen.has(m)) continue;
+      const n = count.get(keyOf(m)) ?? 0;
+      if (n >= limit) continue;
+      count.set(keyOf(m), n + 1);
+      chosen.add(m);
+    }
+  };
+  take(Math.min(minPerKind, perKind));
+  take(perKind);
+  return moments.filter((m) => chosen.has(m));
 }
 
 function affinityIndex(profiles: readonly SocialProfile[]): Map<string, number> {
@@ -454,4 +490,38 @@ function unique<T>(xs: readonly T[]): T[] {
 function firstSentence(text: string): string {
   const m = /^(.{20,280}?[.!?])(\s|$)/s.exec(text);
   return (m ? m[1]! : text.slice(0, 280)).trim();
+}
+
+/** La entrada de `findMoments` a partir de un paquete de repetición (lo que lleva). */
+export function momentInputFromBundle(bundle: ReplayBundle): MomentInput {
+  const names = new Map<string, string>();
+  for (const f of bundle.frames) for (const a of f.agents) if (a.name) names.set(a.id, a.name);
+  const events: SimEvent[] = [];
+  const dramas: Drama[] = [];
+  const chronicles: { t: number; chronicle: Chronicle }[] = [];
+  for (const { t, msg } of bundle.messages) {
+    if (msg.type === "event") events.push(msg.event);
+    else if (msg.type === "drama") dramas.push(msg.drama);
+    else if (msg.type === "chronicle") chronicles.push({ t, chronicle: msg.chronicle });
+  }
+  const d = bundle.data;
+  return {
+    names,
+    events,
+    dramas,
+    chronicles,
+    from: bundle.meta.from,
+    ...(d
+      ? {
+          goals: d.goals,
+          audit: d.audit,
+          memories: d.memories,
+          versions: d.versions,
+          profiles: d.profiles,
+          lore: d.lore,
+          holders: d.holders,
+          skills: d.skills,
+        }
+      : {}),
+  };
 }
