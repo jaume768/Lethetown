@@ -24,3 +24,4 @@ márcala como sustituida) en el mismo commit.
 | Habilidades: práctica, maestros, olvido y lo que cambian      | [skills.md](skills.md)         |
 | Saberes del pueblo: transmisión, deformación y pérdida        | [lore.md](lore.md)             |
 | Cognición en movimiento: encuentros, asociaciones, en camino  | [cognicion.md](cognicion.md)   |
+| Repetición de partidas grabadas y modo cine                   | [repeticion.md](repeticion.md) |
