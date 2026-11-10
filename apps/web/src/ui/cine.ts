@@ -1,0 +1,131 @@
+/**
+ * Modo cine (repetición): formatos de vídeo de redes, sus zonas seguras y el dibujo de los
+ * subtítulos y la marca sobre el lienzo del clip (lo mismo que se ve en pantalla, en el vídeo).
+ */
+export type ClipFormat = "9:16" | "4:5" | "16:9";
+export const CLIP_FORMATS: readonly ClipFormat[] = ["9:16", "4:5", "16:9"];
+
+/** Tamaño de salida de cada formato (píxeles del vídeo). */
+export const FORMAT_SIZE: Record<ClipFormat, { w: number; h: number }> = {
+  "9:16": { w: 1080, h: 1920 },
+  "4:5": { w: 1080, h: 1350 },
+  "16:9": { w: 1920, h: 1080 },
+};
+
+/**
+ * Zona segura (fracción del marco que tapan los botones de la red): en 9:16 (TikTok, Reels)
+ * arriba el menú, abajo la descripción y a la derecha los botones; en 4:5 y 16:9, un margen.
+ */
+export const SAFE_ZONE: Record<
+  ClipFormat,
+  { top: number; bottom: number; left: number; right: number }
+> = {
+  "9:16": { top: 0.13, bottom: 0.22, left: 0.06, right: 0.16 },
+  "4:5": { top: 0.06, bottom: 0.08, left: 0.06, right: 0.06 },
+  "16:9": { top: 0.06, bottom: 0.08, left: 0.05, right: 0.05 },
+};
+
+export interface SubtitleLine {
+  id: string;
+  name: string;
+  /** Color del nombre (el de su ropa en el mapa). */
+  color: string;
+  text: string;
+}
+
+export interface CineOverlay {
+  format: ClipFormat;
+  lines: SubtitleLine[];
+  /** Marca: [«Repetición de una partida real · modelo · fecha», «lethetown.com»], o null. */
+  watermark: [string, string] | null;
+}
+
+/** Tamaño de letra de los subtítulos (px) para un marco de `h` de alto. */
+export function subtitleSize(format: ClipFormat, h: number): number {
+  return Math.round(h * (format === "16:9" ? 0.045 : format === "4:5" ? 0.036 : 0.03));
+}
+
+/** Parte un texto en líneas de como mucho `maxWidth` (medido con el contexto). */
+function wrap(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
+  const out: string[] = [];
+  let line = "";
+  for (const word of text.split(/\s+/)) {
+    const next = line ? `${line} ${word}` : word;
+    if (line && ctx.measureText(next).width > maxWidth) {
+      out.push(line);
+      line = word;
+    } else line = next;
+  }
+  if (line) out.push(line);
+  return out;
+}
+
+/** Subtítulos (nombre en color + frase, con fondo) y marca, dentro de la zona segura. */
+export function drawCineOverlay(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  o: CineOverlay,
+) {
+  const safe = SAFE_ZONE[o.format];
+  const left = w * safe.left;
+  const right = w * (1 - safe.right);
+  const size = subtitleSize(o.format, h);
+  ctx.save();
+  ctx.textBaseline = "top";
+  if (o.watermark) {
+    const small = Math.round(size * 0.5);
+    ctx.font = `600 ${small}px 'Pixelify Sans', sans-serif`;
+    ctx.fillStyle = "rgba(255,255,255,0.85)";
+    ctx.shadowColor = "rgba(0,0,0,0.8)";
+    ctx.shadowBlur = 4;
+    let y = h * safe.top;
+    for (const l of wrap(ctx, o.watermark[0], right - left)) {
+      ctx.fillText(l, left, y);
+      y += small * 1.25;
+    }
+    ctx.font = `700 ${Math.round(small * 1.1)}px 'Pixelify Sans', sans-serif`;
+    ctx.fillStyle = "#f0b84c";
+    ctx.fillText(o.watermark[1], left, y);
+    ctx.shadowBlur = 0;
+  }
+  // De abajo arriba: la última frase, justo encima de la zona tapada.
+  let bottom = h * (1 - safe.bottom);
+  const pad = size * 0.35;
+  for (const line of [...o.lines].reverse()) {
+    ctx.font = `600 ${size}px 'Pixelify Sans', sans-serif`;
+    const nameText = `${line.name}: `;
+    const rows = wrap(ctx, nameText + line.text, right - left - pad * 2);
+    const boxH = rows.length * size * 1.2 + pad * 2;
+    const top = bottom - boxH;
+    ctx.fillStyle = "rgba(10,12,18,0.78)";
+    ctx.fillRect(left, top, right - left, boxH);
+    rows.forEach((row, i) => {
+      const y = top + pad + i * size * 1.2;
+      if (i === 0 && row.startsWith(nameText.trim())) {
+        ctx.fillStyle = line.color;
+        ctx.fillText(nameText, left + pad, y);
+        const nw = ctx.measureText(nameText).width;
+        ctx.fillStyle = "#ffffff";
+        ctx.fillText(row.slice(nameText.length), left + pad + nw, y);
+      } else {
+        ctx.fillStyle = "#ffffff";
+        ctx.fillText(row, left + pad, y);
+      }
+    });
+    bottom = top - size * 0.3;
+  }
+  ctx.restore();
+}
+
+/** Cuánto (ms reales) se queda un subtítulo: lo justo para leerlo. */
+export function subtitleMs(text: string): number {
+  return Math.min(8000, 2200 + text.length * 55);
+}
+
+/** «2026-11-03» → «03/11/2026». */
+export function formatPlayedOn(date: string | null): string {
+  if (!date) return "";
+  const [y, m, d] = date.split("-");
+  return `${d}/${m}/${y}`;
+}

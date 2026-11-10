@@ -32,6 +32,46 @@ function set(patch: Partial<GameState>) {
 /** Tiempo de juego entre mensajes: sin saltos atrás aunque los mensajes lleguen con retraso. */
 const clockEstimate = new ClockEstimator();
 
+/**
+ * Modo repetición (`/replay`): el paquete hace de servidor. Los mensajes entran por `feed` al
+ * mismo reductor (`applyMessage`), `api()` responde desde el paquete (solo lectura), los ficheros
+ * (`/api/map`, `/api/state`) salen de él y el reloj es el de la repetición.
+ */
+export interface ReplayHooks {
+  /** La respuesta a un GET de la API en el minuto actual (undefined = no existe). */
+  api(path: string): unknown;
+  /** URL local (blob:) de un fichero de la API, o null. */
+  file(path: string): string | null;
+  /** Minuto de juego de la repetición ahora mismo. */
+  now(): number;
+}
+let replay: ReplayHooks | null = null;
+
+/** Entra en modo repetición: sin WebSocket ni servidor. */
+export function startReplay(hooks: ReplayHooks) {
+  replay = hooks;
+  socket?.close();
+  state = { ...INITIAL_STATE, connected: true };
+  for (const l of listeners) l();
+}
+
+export function inReplay(): boolean {
+  return replay !== null;
+}
+
+/**
+ * Mensajes de la repetición, todos de una vez (un solo aviso a React). `reset`: se parte de cero
+ * (al saltar a otro minuto).
+ */
+export function feed(msgs: readonly ServerMessage[], reset = false) {
+  let next = reset ? { ...INITIAL_STATE, connected: true } : state;
+  for (const msg of msgs) {
+    if (msg.type === "memory_effect") for (const l of effectListeners) l(msg);
+    next = applyMessage(next, msg);
+  }
+  if (next !== state || reset) set(next);
+}
+
 function handle(msg: ServerMessage) {
   if (msg.type === "snapshot") {
     clockEstimate.sync(
@@ -53,12 +93,14 @@ export const WORLD_ID = new URLSearchParams(location.search).get("world") ?? "de
 
 /** `/api/x` → `/api/worlds/<mundo>/x` (salvo las rutas generales). */
 export function apiPath(path: string): string {
+  const local = replay?.file(path);
+  if (local) return local;
   return worldApiPath(path, WORLD_ID);
 }
 
 /** Conecta al WebSocket del servidor y reconecta si se cae. */
 export function connect() {
-  if (socket) return;
+  if (socket || replay) return;
   const url = `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws?world=${encodeURIComponent(WORLD_ID)}`;
   const ws = new WebSocket(url);
   socket = ws;
@@ -74,6 +116,7 @@ export function connect() {
   };
   ws.onclose = () => {
     socket = null;
+    if (replay) return;
     set({ connected: false, retries: state.retries + 1 });
     // Backoff suave: 1,5 s, 3 s, 4,5 s… hasta 15 s.
     setTimeout(connect, Math.min(15_000, 1500 * (state.retries || 1)));
@@ -102,6 +145,13 @@ export function send(msg: ClientMessage) {
 
 /** Pequeño helper de fetch JSON contra la API del servidor. */
 export async function api<T>(path: string, body?: unknown): Promise<T> {
+  if (replay) {
+    // La repetición es de solo lectura: nada cambia la partida.
+    if (body !== undefined) throw new Error(`${path}: repetición (solo lectura)`);
+    const res = replay.api(path);
+    if (res === undefined) throw new Error(`${path}: 404 (no está en la repetición)`);
+    return res as T;
+  }
   const res = await fetch(apiPath(path), {
     method: body === undefined ? "GET" : "POST",
     headers: body === undefined ? undefined : { "content-type": "application/json" },
@@ -118,6 +168,7 @@ export function onMemoryEffect(listener: (e: MemoryEffectMessage) => void): () =
 
 /** Tiempo de juego estimado ahora mismo (entre ticks del servidor; nunca retrocede). */
 export function gameTimeNow(): number {
+  if (replay) return replay.now();
   return clockEstimate.now(performance.now());
 }
 

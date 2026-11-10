@@ -43,6 +43,10 @@ export class TownScene extends Phaser.Scene {
   private marks: Record<string, AffinityIcon> | null = null;
   private followId: string | null = null;
   private following = false;
+  /** Modo cine: a quiénes encuadra la cámara (uno o dos), o null. */
+  private directed: string[] | null = null;
+  /** Fracción del alto que los encuadrados quedan por encima del centro (modo cine). */
+  directorOffset = 0.15;
   private assetsOk = false;
   private built = false;
   private pendingAgents: AgentState[] = [];
@@ -182,6 +186,47 @@ export class TownScene extends Phaser.Scene {
     else cam.stopFollow();
   }
 
+  /**
+   * Modo cine: encuadra a uno o dos vecinos (a los dos si hablan), con paneo y zoom suaves
+   * (de golpe con prefers-reduced-motion). null: deja la cámara donde esté.
+   */
+  setDirector(ids: string[] | null) {
+    this.directed = ids?.length ? ids : null;
+    if (this.directed) {
+      this.followId = null;
+      this.following = false;
+      this.cameras.main.stopFollow();
+    }
+  }
+
+  private directCamera(dtSeconds: number) {
+    if (!this.directed) return;
+    const pts = this.directed.flatMap((id) => {
+      const v = this.views.get(id);
+      return v && v.container.visible ? [{ x: v.container.x, y: v.container.y - TS / 2 }] : [];
+    });
+    if (!pts.length) return;
+    const cam = this.cameras.main;
+    const xs = pts.map((p) => p.x);
+    const ys = pts.map((p) => p.y);
+    const cx = (Math.min(...xs) + Math.max(...xs)) / 2;
+    const cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+    // Que quepan los dos con margen (10 baldosas a lo ancho, 12 a lo alto por los bocadillos).
+    const w = Math.max(...xs) - Math.min(...xs) + TS * 10;
+    const h = Math.max(...ys) - Math.min(...ys) + TS * 12;
+    const fit = Math.min(cam.width / w, cam.height / h);
+    const zoom = Phaser.Math.Clamp(fit, 2, 3.5);
+    const mid0 = cam.midPoint;
+    // Lejos (otra parte del pueblo): corte, como en el cine; cerca, paneo suave.
+    const far = Math.hypot(cx - mid0.x, cy - mid0.y) > cam.width / cam.zoom;
+    const k = this.reducedMotion || far ? 1 : 1 - Math.exp(-dtSeconds * 2.5);
+    cam.setZoom(cam.zoom + (zoom - cam.zoom) * k);
+    // Un poco por encima del centro: abajo van los subtítulos.
+    const below = (this.directorOffset * cam.height) / cam.zoom;
+    const mid = cam.midPoint;
+    cam.centerOn(mid.x + (cx - mid.x) * k, mid.y + (cy + below - mid.y) * k);
+  }
+
   /** "Ir a verlo": deja de seguir y centra la cámara en un lugar (con zoom de cerca). */
   focusPlace(placeId: string) {
     const place = this.world?.places.find((p) => p.id === placeId);
@@ -257,6 +302,7 @@ export class TownScene extends Phaser.Scene {
         reducedMotion: this.reducedMotion,
       });
     }
+    this.directCamera(dtSeconds);
     this.placeLabels();
     this.updateRoofs(now);
     this.ambience?.update(now, dtSeconds);
