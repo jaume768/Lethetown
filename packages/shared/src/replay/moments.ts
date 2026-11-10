@@ -206,7 +206,8 @@ export function findMoments(input: MomentInput): Moment[] {
         time: d.time,
         agents: d.agents,
         title: d.title,
-        quote: ev?.kind === "speech" ? splitSpeech(ev.text).line : (ev?.text ?? d.title),
+        // La frase literal; si no la hay (un olvido, una meta), nada: el título ya lo cuenta.
+        quote: ev?.kind === "speech" ? splitSpeech(ev.text).line : (ev?.text ?? ""),
         eventId: ev?.id ?? d.eventId,
         placeId: d.placeId,
       },

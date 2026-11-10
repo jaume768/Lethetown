@@ -89,8 +89,7 @@ function markdown(list: Moment[]): string {
       `- **${formatGameTime(m.time)}** (minuto ${Math.round(m.time)}) · ${m.kind}${m.subkind ? ` (${m.subkind})` : ""} · ${m.agents.map(name).join(", ") || "—"}`,
       `- Puntuación ${m.score.toFixed(2)}: ${m.why}`,
       "",
-      `> ${m.quote.replace(/\n+/g, " ")}`,
-      "",
+      ...(m.quote ? [`> ${m.quote.replace(/\n+/g, " ")}`, ""] : []),
     );
   });
   return lines.join("\n");
