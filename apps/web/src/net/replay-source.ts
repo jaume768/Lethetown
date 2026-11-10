@@ -11,6 +11,7 @@ import {
   RUNNING,
   agentsAt,
   expandFrames,
+  findArcs,
   findMoments,
   gridOf,
   indexTrack,
@@ -86,7 +87,9 @@ export class ReplaySource {
       routes: new Map(),
     };
     this.snapshotWorld = bundle.world;
-    this.moments = topMoments(findMoments(momentInputFromBundle(bundle)), 300, 40);
+    const input = momentInputFromBundle(bundle);
+    // Los arcos largos van aparte de los momentos (no compiten por la puntuación).
+    this.moments = [...topMoments(findMoments(input), 300, 40), ...findArcs(input, 40)];
   }
 
   get from(): number {

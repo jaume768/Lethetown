@@ -471,6 +471,7 @@ const en: Record<MessageKey, string> = {
   "replay.kind.external": "Outside names",
   "replay.kind.goal": "Goals",
   "replay.kind.teaching": "Teacher and student",
+  "replay.kind.arc": "Long arcs",
   "replay.kind.forgetting": "Forgetting",
   "replay.days": "Days",
   "replay.seedLabel": "Seed {n}",

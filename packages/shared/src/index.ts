@@ -35,3 +35,4 @@ export * from "./replay/views";
 export * from "./replay/memory-story";
 export * from "./replay/scenes";
 export * from "./replay/moments";
+export * from "./replay/arcs";

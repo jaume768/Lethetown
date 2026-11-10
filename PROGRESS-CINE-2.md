@@ -31,9 +31,12 @@
 
 ## 4. Momentos: arcos largos
 
-- [ ] Tipo `arc`: lo mismo repetido en ≥ 3 días, metas confirmadas, recuerdos de la semilla que
-      se vuelven vagos u olvidan, y emparejar dos semillas
-- [ ] Sección propia en `moments.md`
+- [x] Tipo `arc` (`arcs.ts`): lo mismo de A a B en ≥ 3 días (palabras raras en el pueblo: primero,
+      último y cuántas), metas `confirmed` con la frase que lo logró, recuerdos de la semilla que se
+      vuelven vagos u olvidan (con el día) y, con dos carpetas, la misma intención o meta en las dos
+      semillas y cómo acabó (`pnpm replay:moments s7 s13`: el aniversario sale primero)
+- [x] Sección propia en `moments.md` («Arcos largos» y «Las dos semillas»); en el reproductor,
+      filtro «Arcos largos» (🧵)
 
 ## 5. Colaboradores y apoyo
 

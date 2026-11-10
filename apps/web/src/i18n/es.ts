@@ -470,6 +470,7 @@ const es = {
   "replay.kind.external": "Nombres de fuera",
   "replay.kind.goal": "Metas",
   "replay.kind.teaching": "Maestro y alumno",
+  "replay.kind.arc": "Arcos largos",
   "replay.kind.forgetting": "Olvidos",
   "replay.days": "Días",
   "replay.seedLabel": "Semilla {n}",

@@ -4,7 +4,8 @@ import { describe, expect, it } from "vitest";
 import type { AgentState } from "../schemas/agent";
 import type { SimEvent } from "../schemas/api";
 import type { Drama } from "../schemas/drama";
-import type { MemoryAuditAction } from "../schemas/memory";
+import type { MemoryAuditAction, MemoryAuditEntry } from "../schemas/memory";
+import { confirmedArcs, pairArcs, repeatedArcs, seedMemoryArcs } from "../replay/arcs";
 import type { Goal } from "../schemas/goals";
 import { positionAt } from "../map/movement";
 import { EMPTY_REPLAY_DATA, ReplayBundle, ReplayData, type ReplayMemory } from "../replay/bundle";
@@ -733,5 +734,195 @@ describe("escenas guardadas", () => {
     expect(shotAt(shots, 60)).toBe(-1);
     expect(sceneBundlePath("s7")).toBe("/replays/s7.replay.json.gz");
     expect(() => SceneShot.parse({ from: 5, to: 4 })).toThrow();
+  });
+});
+
+describe("arcos largos", () => {
+  const names = new Map([
+    ["julian", "Julián Ortega"],
+    ["ines", "Inés Ortega"],
+    ["tomas", "Tomás Herrero"],
+    ["pilar", "Pilar Herrero"],
+  ]);
+  let n = 0;
+  const say = (time: number, who: string, to: string, line: string): SimEvent => ({
+    id: `c${n++}:1`,
+    time,
+    agentId: who,
+    kind: "speech",
+    text: `${names.get(who)} → ${names.get(to)}: "${line}"`,
+    participants: [who, to],
+  });
+  const events = [
+    say(100, "julian", "ines", "Inés… me da miedo quedarme solo aquí."),
+    say(1600, "julian", "ines", "Me da miedo quedarme solo. Si no es molestia."),
+    say(3000, "julian", "ines", "Inés, me da miedo quedarme solo en esta casa."),
+    say(3001, "ines", "julian", "Ya, pero no te quedas solo. Yo estoy aquí."),
+    // Otras parejas (para la rareza de las palabras).
+    ...[0, 1, 2, 3].map((d) => say(d * 1440 + 50, "tomas", "pilar", "Pásame el pan, Pilar.")),
+    ...[0, 1, 2].map((d) => say(d * 1440 + 60, "pilar", "tomas", "Toma el pan.")),
+  ];
+  const goal = (over: Partial<Goal>): Goal =>
+    ({
+      id: "g1",
+      agentId: "julian",
+      level: "project",
+      parentId: null,
+      text: "Contarle a Inés que me da miedo quedarme solo",
+      status: "achieved",
+      progress: 1,
+      motivation: 1,
+      frustration: 0,
+      criterion: {
+        type: "confirmed",
+        question: "¿Le ha dicho a Inés que le da miedo quedarse solo?",
+        measure: { type: "conversations", personId: "ines", topics: ["miedo"], count: 1 },
+      },
+      measured: 1,
+      baseline: null,
+      seen: [],
+      resource: null,
+      departure: null,
+      createdAt: 50,
+      updatedAt: 3100,
+      lastProgressAt: 3000,
+      history: [
+        {
+          at: 1500,
+          status: "active",
+          progress: 0.95,
+          motivation: 1,
+          frustration: 0,
+          reason: "comprobado al repasar el día: aún no: no lo dijo",
+        },
+        {
+          at: 3100,
+          status: "active",
+          progress: 0.95,
+          motivation: 1,
+          frustration: 0,
+          reason: "comprobado al repasar el día: se ha logrado: se lo dijo",
+        },
+        {
+          at: 3100,
+          status: "achieved",
+          progress: 1,
+          motivation: 1,
+          frustration: 0,
+          reason: "conseguida (el motor midió el criterio)",
+        },
+      ],
+      ...over,
+    }) as Goal;
+
+  it("lo mismo de A a B en ≥ 3 días: primero, último y cuántas veces", () => {
+    const arcs = repeatedArcs({ names, events, dramas: [], chronicles: [] });
+    const julian = arcs.find((a) => a.agents[0] === "julian")!;
+    expect(julian.title).toMatch(/miedo/);
+    expect(julian.title).toContain("en 3 días (3 veces)");
+    expect(julian.span).toEqual({ from: 100, to: 3000, count: 3 });
+    expect(julian.quote).toMatch(/^«Inés… me da miedo quedarme solo aquí\.» … «Inés, me da miedo/);
+    // Inés solo lo dice un día.
+    expect(arcs.some((a) => a.agents[0] === "ines")).toBe(false);
+  });
+
+  it("meta confirmada: la frase que lo logró y las noches que costó", () => {
+    const [arc] = confirmedArcs({ names, events, dramas: [], chronicles: [], goals: [goal({})] });
+    expect(arc!.subkind).toBe("confirmed");
+    expect(arc!.quote).toBe("Inés, me da miedo quedarme solo en esta casa.");
+    expect(arc!.time).toBe(3000);
+    expect(arc!.title).toContain("tras 2 noches");
+    expect(arc!.why).toContain("se lo dijo");
+    // Las medibles (sin consolidación) no son de este tipo.
+    expect(
+      confirmedArcs({
+        names,
+        events,
+        dramas: [],
+        chronicles: [],
+        goals: [
+          goal({ criterion: { type: "visits", placeId: "lago", count: 1 } } as Partial<Goal>),
+        ],
+      }),
+    ).toEqual([]);
+  });
+
+  it("recuerdos de la semilla que se apagan, con el día", () => {
+    const mem = (id: string, createdAt: number) => ({
+      id,
+      agentId: "tomas",
+      text: "No sé qué día es el aniversario.",
+      eventId: null,
+      createdAt,
+      importance: 6,
+      emotionalValence: -0.3,
+    });
+    const row = (memoryId: string, action: MemoryAuditAction, at: number) => ({
+      agentId: "tomas",
+      memoryId,
+      memoryText: "No sé qué día es el aniversario.",
+      action,
+      reason: "",
+      at,
+    });
+    const arcs = seedMemoryArcs({
+      names,
+      events: [],
+      dramas: [],
+      chronicles: [],
+      from: 420,
+      memories: [mem("seed", 410), mem("nuevo", 900)],
+      audit: [
+        row("seed", "gist", 2000),
+        row("seed", "forgotten", 5000),
+        row("nuevo", "forgotten", 6000),
+      ],
+    });
+    expect(arcs).toHaveLength(1);
+    expect(arcs[0]!.title).toBe(
+      "Tomás Herrero: un recuerdo de toda la vida se vuelve vago el día 1 y se olvida el día 3",
+    );
+    expect(arcs[0]!.memoryId).toBe("seed");
+  });
+
+  it("dos semillas: la misma intención y cómo acabó en cada una", () => {
+    const intention = (action: MemoryAuditAction, at: number, extra = "") => ({
+      agentId: "tomas",
+      memoryId: `i${at}`,
+      memoryText: `Quiero felicitar a Pilar por nuestro aniversario.${extra}`,
+      action,
+      reason: "",
+      at,
+    });
+    const input = (audit: MemoryAuditEntry[], goals: Goal[] = []) => ({
+      names,
+      events: [],
+      dramas: [],
+      chronicles: [],
+      audit,
+      goals,
+    });
+    const pairs = pairArcs(
+      { label: "s7", input: input([intention("intention_kept", 430)], [goal({})]) },
+      {
+        label: "s13",
+        input: input(
+          [
+            intention("intention_forgotten", 745, " Cuarenta y cinco años ya."),
+            intention("intention_dropped", 2269, " Cuarenta y cinco años ya."),
+          ],
+          [goal({ status: "active" })],
+        ),
+      },
+    );
+    const anniversary = pairs.find((p) => p.title.includes("aniversario"))!;
+    expect(anniversary.pair).toEqual({
+      s7: { done: true, label: "se acordó", at: 430 },
+      s13: { done: false, label: "se le pasó, luego lo dejó", at: 745 },
+    });
+    expect(anniversary.time).toBe(430);
+    expect(pairs.find((p) => p.id.includes(":goal:"))!.title).toContain(
+      "s7: la consiguió · s13: sigue en ello",
+    );
   });
 });

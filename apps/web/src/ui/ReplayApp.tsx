@@ -283,6 +283,7 @@ const KIND_ICON: Record<Moment["kind"], string> = {
   goal: "🎯",
   teaching: "🧑‍🏫",
   forgetting: "🕳",
+  arc: "🧵",
 };
 
 function usePlayer(player: ReplayPlayer) {
