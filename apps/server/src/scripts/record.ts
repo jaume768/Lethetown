@@ -140,26 +140,44 @@ function shot(time: number) {
 
 /** Último minuto de juego escrito en la pista. */
 let trackedUntil: number | null = null;
+/** Posiciones por escribir: minuto → agente → [x, y]. */
+const pending = new Map<number, Map<string, [number, number]>>();
+const tenth = (v: number) => Math.round(v * 10) / 10;
+
+/** Posiciones de los que andan en los minutos (`from`, `to`], por la ruta que mandó el servidor. */
+function collect(states: Iterable<AgentState>, from: number, to: number) {
+  for (const a of states) {
+    const mv = a.movement;
+    if (!mv) continue;
+    // Hasta un minuto después de llegar, para que la pista acabe donde se paró.
+    const last = Math.min(to, Math.floor(mv.endTime) + 1);
+    for (let m = Math.max(from + 1, Math.ceil(mv.startTime)); m <= last; m++) {
+      const pos = positionAt(a, m);
+      let at = pending.get(m);
+      if (!at) pending.set(m, (at = new Map()));
+      at.set(a.id, [tenth(pos.x), tenth(pos.y)]);
+    }
+  }
+}
 
 /**
- * Pista de posiciones: cada minuto entero desde el último, los que iban andando (su posición por
- * la ruta que mandó el servidor). Quien está quieto no se escribe (se ve en las fotos).
+ * Pista de posiciones: cada minuto entero desde el último, los que iban andando. Con las rutas de
+ * antes del delta (las que acaban de terminar: el delta ya trae la llegada) y las de después (las
+ * que empezaron entre dos deltas). Quien está quieto no se escribe (se ve en las fotos).
  */
-function track(time: number) {
+function track(before: AgentState[], time: number) {
   if (!positions) return;
-  const last = trackedUntil ?? Math.floor(time) - 1;
-  for (let m = last + 1; m <= Math.floor(time); m++) {
-    const p: [string, number, number][] = [];
-    for (const a of agents.values()) {
-      const mv = a.movement;
-      // Hasta un minuto después de llegar, para que la pista acabe donde se paró.
-      if (!mv || m < mv.startTime || m > mv.endTime + 1) continue;
-      const pos = positionAt(a, m);
-      p.push([a.id, Math.round(pos.x * 10) / 10, Math.round(pos.y * 10) / 10]);
-    }
-    if (p.length) positions.write(`${JSON.stringify({ time: m, p })}\n`);
+  const now = Math.floor(time);
+  const from = trackedUntil ?? now - 1;
+  collect(before, from, now);
+  collect(agents.values(), from, now);
+  for (const m of [...pending.keys()].sort((x, y) => x - y)) {
+    if (m > now) continue;
+    const p = [...pending.get(m)!].map(([id, [x, y]]) => [id, x, y]);
+    positions.write(`${JSON.stringify({ time: m, p })}\n`);
+    pending.delete(m);
   }
-  trackedUntil = Math.max(last, Math.floor(time));
+  trackedUntil = Math.max(from, now);
 }
 
 function onMessage(msg: ServerMessage) {
@@ -176,10 +194,11 @@ function onMessage(msg: ServerMessage) {
     return;
   }
   if (msg.type === "delta" || msg.type === "tick") {
+    const before = msg.agents.flatMap((a) => agents.get(a.id) ?? []);
     for (const a of msg.agents) agents.set(a.id, a);
     if (msg.type === "delta") for (const id of msg.removed) agents.delete(id);
     lastTime = msg.clock.time;
-    if (startTime !== null) track(lastTime);
+    if (startTime !== null) track(before, lastTime);
     if (startTime !== null && lastTime >= nextShot) {
       shot(lastTime);
       // A x360 un mensaje puede saltarse varias fotos: la siguiente, después de esta hora.
