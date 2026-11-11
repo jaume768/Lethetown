@@ -32,7 +32,7 @@ Además, `record` admite ahora `--until <minuto de juego>`: al relanzarlo termin
 | `extract-s7.txt`, `extract-s13.txt`             | Cifras de las preguntas pendientes (metas, intenciones, saberes, PersonGuard…) |
 | `server.log`, `record.log` · `vigilancia.md`    | Logs de cada servidor y de la grabación; el registro de la vigilancia (en git) |
 
-Los datos brutos de la partida 2 no están en esta máquina: la comparación con ella usa las cifras de [su informe](../partida-3dias-mundo-metas/estudio2.md).
+Los datos brutos de la partida 2 no están en esta máquina: la comparación con ella usa las cifras de [su informe](../e2-partida-3dias-metas/ESTUDIO.md).
 
 ## Resumen en cifras
 

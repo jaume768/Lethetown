@@ -42,12 +42,12 @@ Abre un issue con la plantilla «Propuesta de experimento». Lo que hace falta:
   y `s13` (normales) y `s7a`, la semilla 7 con `MEMORY_ABLATION=noForgetting,noVagueness`:
 
   ```bash
-  STUDY_DIR=estudio/olvido ABLATION=on OFFSET_MINUTES=30 scripts/estudio-semana.sh prepare
-  STUDY_DIR=estudio/olvido ABLATION=on OFFSET_MINUTES=30 scripts/estudio-semana.sh start
-  STUDY_DIR=estudio/olvido ABLATION=on scripts/estudio-semana.sh record
+  STUDY_DIR=docs/investigacion/estudios/olvido ABLATION=on OFFSET_MINUTES=30 scripts/estudio-semana.sh prepare
+  STUDY_DIR=docs/investigacion/estudios/olvido ABLATION=on OFFSET_MINUTES=30 scripts/estudio-semana.sh start
+  STUDY_DIR=docs/investigacion/estudios/olvido ABLATION=on scripts/estudio-semana.sh record
   # … al acabar:
-  STUDY_DIR=estudio/olvido ABLATION=on scripts/estudio-semana.sh export
-  pnpm study:analyze estudio/olvido/s7 estudio/olvido/s7a
+  STUDY_DIR=docs/investigacion/estudios/olvido ABLATION=on scripts/estudio-semana.sh export
+  pnpm study:analyze docs/investigacion/estudios/olvido/s7 docs/investigacion/estudios/olvido/s7a
   ```
 
 - **Qué se mide.** Entre `s7` y `s7a`: frases por día, parejas que hablan y Gini, intenciones
@@ -75,7 +75,7 @@ pnpm --filter @lethetown/server sim:text 16      # o en texto, sin servidor: 16 
 pnpm --filter @lethetown/server replay:demo      # una partida corta en mock, ya empaquetada
 # Una partida en mock grabada con su base de datos (para study:analyze), con un interruptor:
 MEMORY_ABLATION=noForgetting,noVagueness \
-  pnpm --filter @lethetown/server replay:demo --hours 72 --seed 7 --rec estudio/mock/s7a
+  pnpm --filter @lethetown/server replay:demo --hours 72 --seed 7 --rec docs/investigacion/estudios/mock/s7a
 ```
 
 El mock no llama a ningún modelo: sirve para probar el código y los interruptores, no para sacar
@@ -95,11 +95,11 @@ Una partida de estudio entera, con Postgres y grabación, está en `.env.study.e
 ### Grabar, analizar, empaquetar y compartir
 
 ```bash
-RECORD_USER=… RECORD_PASSWORD=… pnpm --filter @lethetown/server record estudio/mia --hours 48 --track
-pnpm --filter @lethetown/server world:export ../../estudio/mia/bd --world default
-pnpm study:analyze estudio/mia                  # analysis.md y analysis.json
-pnpm replay:moments estudio/mia                 # moments.md: momentos y arcos largos
-pnpm replay:pack estudio/mia --out apps/web/public/replays/mia.replay.json.gz
+RECORD_USER=… RECORD_PASSWORD=… pnpm --filter @lethetown/server record docs/investigacion/estudios/mia --hours 48 --track
+pnpm --filter @lethetown/server world:export ../../docs/investigacion/estudios/mia/bd --world default
+pnpm study:analyze docs/investigacion/estudios/mia                  # analysis.md y analysis.json
+pnpm replay:moments docs/investigacion/estudios/mia                 # moments.md: momentos y arcos largos
+pnpm replay:pack docs/investigacion/estudios/mia --out apps/web/public/replays/mia.replay.json.gz
 ```
 
 `/replay?src=/replays/mia.replay.json.gz` la reproduce en la web sin servidor ni coste. Para
@@ -146,12 +146,12 @@ adultos con menores, solo en lugares públicos. Un cambio que lo debilite no se 
 
 Cada partida real cuesta dinero, y el coste está medido:
 
-| Qué                                                  | Coste                         | De dónde                                                                                    |
-| ---------------------------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------- |
-| Un mundo, un día de juego                            | **1,31 $** (1,19–1,43)        | [E3](estudio/semana-fase3/ESTUDIO.md), media de dos semillas                                |
-| Un estudio de 7 días con dos semillas                | **18,38 $**                   | [E3](estudio/semana-fase3/ESTUDIO.md)                                                       |
-| Un estudio de 7 días con mundo de control (3 mundos) | unos **28 $** (estimado)      | 3 × 7 × 1,31 $                                                                              |
-| Las partidas anteriores                              | 3,65 $ (48 h) · 4,90 $ (72 h) | [E1](estudio/partida-2dias/ESTUDIO.md), [E2](estudio/partida-3dias-mundo-metas/estudio2.md) |
+| Qué                                                  | Coste                         | De dónde                                                                                                                           |
+| ---------------------------------------------------- | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Un mundo, un día de juego                            | **1,31 $** (1,19–1,43)        | [E3](docs/investigacion/estudios/e3-semana-fase3/ESTUDIO.md), media de dos semillas                                                |
+| Un estudio de 7 días con dos semillas                | **18,38 $**                   | [E3](docs/investigacion/estudios/e3-semana-fase3/ESTUDIO.md)                                                                       |
+| Un estudio de 7 días con mundo de control (3 mundos) | unos **28 $** (estimado)      | 3 × 7 × 1,31 $                                                                                                                     |
+| Las partidas anteriores                              | 3,65 $ (48 h) · 4,90 $ (72 h) | [E1](docs/investigacion/estudios/e1-partida-2dias/ESTUDIO.md), [E2](docs/investigacion/estudios/e2-partida-3dias-metas/ESTUDIO.md) |
 
 Además del dinero de las llamadas, una semana de juego son unas 12,5 h reales de máquina.
 

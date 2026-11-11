@@ -34,7 +34,7 @@ Partidas reales (Anthropic: decisiones con `claude-haiku-5-5`, planes y consolid
 `claude-sonnet-5-5`), grabadas y analizadas con `pnpm study:analyze`. Cada informe trae sus cifras
 y de dónde salen.
 
-### E1 — 48 horas ([informe](../../estudio/partida-2dias/ESTUDIO.md))
+### E1 — 48 horas ([informe](estudios/e1-partida-2dias/ESTUDIO.md))
 
 - **Un falso recuerdo colectivo nace de una muletilla.** La de Hugo («ya te lo pago, de verdad»)
   se vuelve una deuda con Valentina que nadie sembró: intenciones, reconsolidación («ya van dos
@@ -43,7 +43,7 @@ y de dónde salen.
 - **Memoria prospectiva:** 197 intenciones cumplidas frente a 30 fallidas (13 %).
 - **Coste:** 3,65 $ por 48 h de juego; el 75 % en tres tareas de Sonnet que no tocan la charla.
 
-### E2 — 72 horas, Mallorca y metas ([informe](../../estudio/partida-3dias-mundo-metas/estudio2.md))
+### E2 — 72 horas, Mallorca y metas ([informe](estudios/e2-partida-3dias-metas/ESTUDIO.md))
 
 - **Una vecina que no existe:** los dos chismosos inventan a «la Pepa» y la sostienen con la
   misma maquinaria: 23 recuerdos con ella, aprendidos el uno del otro con su fuente.
@@ -52,7 +52,7 @@ y de dónde salen.
   metas cualitativas que comprueba la consolidación.
 - **0 anacronismos** en 1.596 frases; 27 metas conseguidas; 1,63 $ por día de juego.
 
-### E3 — una semana, dos semillas en paralelo ([informe](../../estudio/semana-fase3/ESTUDIO.md))
+### E3 — una semana, dos semillas en paralelo ([informe](estudios/e3-semana-fase3/ESTUDIO.md))
 
 - **Las cifras se parecen; las historias, no.** Con las mismas semillas de personajes, en s13
   Julián le dice a Inés que le da miedo quedarse solo (y la consolidación lo confirma); en s7 lo

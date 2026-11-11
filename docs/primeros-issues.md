@@ -6,10 +6,10 @@ mock ya los mueve (lo que dicen los vecinos, no). Una partida en mock grabada, c
 datos, sin servidor:
 
 ```bash
-pnpm --filter @lethetown/server replay:demo --hours 72 --seed 7 --rec estudio/mock/s7
+pnpm --filter @lethetown/server replay:demo --hours 72 --seed 7 --rec docs/investigacion/estudios/mock/s7
 MEMORY_ABLATION=noForgetting,noVagueness \
-  pnpm --filter @lethetown/server replay:demo --hours 72 --seed 7 --rec estudio/mock/s7a
-pnpm study:analyze estudio/mock/s7 estudio/mock/s7a
+  pnpm --filter @lethetown/server replay:demo --hours 72 --seed 7 --rec docs/investigacion/estudios/mock/s7a
+pnpm study:analyze docs/investigacion/estudios/mock/s7 docs/investigacion/estudios/mock/s7a
 ```
 
 Respeta `MEMORY_ABLATION`, `SIM_COGNITION` y `config/memory.json`. Cómo plantear y compartir

@@ -14,7 +14,7 @@
 # DATABASE_URL usa ${POSTGRES_PASSWORD} de .env, por eso se carga después).
 #
 # Opciones (variables de entorno):
-#   STUDY_DIR=estudio/semana-e4   carpeta de la partida (por defecto, la de la fase 3)
+#   STUDY_DIR=docs/investigacion/estudios/e4-semana   carpeta de la partida (por defecto, la de la fase 3)
 #   OFFSET_MINUTES=30             minutos REALES de desfase entre una semilla y la siguiente al
 #                                 arrancarlas juntas: así no planifican en el mismo segundo y no
 #                                 se reparten la caché de prompts (el coste de cada una se puede
@@ -26,7 +26,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-OUT="$ROOT/${STUDY_DIR:-estudio/semana-fase3}"
+OUT="$ROOT/${STUDY_DIR:-docs/investigacion/estudios/e3-semana-fase3}"
 OFFSET_MINUTES="${OFFSET_MINUTES:-0}"
 HOURS="${HOURS:-168}"
 # Minuto de juego en que acaba la grabación: el inicio (día 0, 06:50) más HOURS. Así, si hay que
@@ -74,7 +74,7 @@ prepare() {
     fi
     docker exec lethetown-db createdb -U lethetown "$db"
     with_env "$seed" pnpm -s db:migrate
-    # Contraseña del director, solo en local (estudio/ está fuera de git).
+    # Contraseña del director, solo en local (los datos de docs/investigacion/estudios/ están fuera de git).
     if [[ ! -f "$dir/.record-pass" ]]; then
       (umask 077 && openssl rand -hex 16 >"$dir/.record-pass")
     fi

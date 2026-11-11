@@ -43,12 +43,12 @@ Open an issue with the "Propuesta de experimento" (experiment proposal) template
   `s13` (normal) and `s7a`, seed 7 with `MEMORY_ABLATION=noForgetting,noVagueness`:
 
   ```bash
-  STUDY_DIR=estudio/olvido ABLATION=on OFFSET_MINUTES=30 scripts/estudio-semana.sh prepare
-  STUDY_DIR=estudio/olvido ABLATION=on OFFSET_MINUTES=30 scripts/estudio-semana.sh start
-  STUDY_DIR=estudio/olvido ABLATION=on scripts/estudio-semana.sh record
+  STUDY_DIR=docs/investigacion/estudios/olvido ABLATION=on OFFSET_MINUTES=30 scripts/estudio-semana.sh prepare
+  STUDY_DIR=docs/investigacion/estudios/olvido ABLATION=on OFFSET_MINUTES=30 scripts/estudio-semana.sh start
+  STUDY_DIR=docs/investigacion/estudios/olvido ABLATION=on scripts/estudio-semana.sh record
   # … when it ends:
-  STUDY_DIR=estudio/olvido ABLATION=on scripts/estudio-semana.sh export
-  pnpm study:analyze estudio/olvido/s7 estudio/olvido/s7a
+  STUDY_DIR=docs/investigacion/estudios/olvido ABLATION=on scripts/estudio-semana.sh export
+  pnpm study:analyze docs/investigacion/estudios/olvido/s7 docs/investigacion/estudios/olvido/s7a
   ```
 
 - **What is measured.** Between `s7` and `s7a`: lines per day, talking pairs and Gini, intentions
@@ -75,7 +75,7 @@ pnpm --filter @lethetown/server sim:text 16      # or text only, no server: 16 g
 pnpm --filter @lethetown/server replay:demo      # a short mock run, already packed
 # A recorded mock run with its database (for study:analyze), with a switch:
 MEMORY_ABLATION=noForgetting,noVagueness \
-  pnpm --filter @lethetown/server replay:demo --hours 72 --seed 7 --rec estudio/mock/s7a
+  pnpm --filter @lethetown/server replay:demo --hours 72 --seed 7 --rec docs/investigacion/estudios/mock/s7a
 ```
 
 The mock calls no model: it tests code and switches, not behaviour.
@@ -94,11 +94,11 @@ A full study run, with Postgres and recording, is described in `.env.study.examp
 ### Record, analyse, pack and share
 
 ```bash
-RECORD_USER=… RECORD_PASSWORD=… pnpm --filter @lethetown/server record estudio/mine --hours 48 --track
-pnpm --filter @lethetown/server world:export ../../estudio/mine/bd --world default
-pnpm study:analyze estudio/mine                 # analysis.md and analysis.json
-pnpm replay:moments estudio/mine                # moments.md: moments and long arcs
-pnpm replay:pack estudio/mine --out apps/web/public/replays/mine.replay.json.gz
+RECORD_USER=… RECORD_PASSWORD=… pnpm --filter @lethetown/server record docs/investigacion/estudios/mine --hours 48 --track
+pnpm --filter @lethetown/server world:export ../../docs/investigacion/estudios/mine/bd --world default
+pnpm study:analyze docs/investigacion/estudios/mine                 # analysis.md and analysis.json
+pnpm replay:moments docs/investigacion/estudios/mine                # moments.md: moments and long arcs
+pnpm replay:pack docs/investigacion/estudios/mine --out apps/web/public/replays/mine.replay.json.gz
 ```
 
 `/replay?src=/replays/mine.replay.json.gz` plays it in the browser with no server or cost. To
@@ -144,12 +144,12 @@ in public places. Changes that weaken this are not accepted. See
 
 Every real run costs money, and the cost is measured:
 
-| What                                          | Cost                        | Source                                                                                      |
-| --------------------------------------------- | --------------------------- | ------------------------------------------------------------------------------------------- |
-| One world, one game day                       | **$1.31** (1.19–1.43)       | [E3](estudio/semana-fase3/ESTUDIO.md), mean of two seeds                                    |
-| A 7-day study with two seeds                  | **$18.38**                  | [E3](estudio/semana-fase3/ESTUDIO.md)                                                       |
-| A 7-day study with a control world (3 worlds) | about **$28** (estimate)    | 3 × 7 × $1.31                                                                               |
-| Earlier runs                                  | $3.65 (48 h) · $4.90 (72 h) | [E1](estudio/partida-2dias/ESTUDIO.md), [E2](estudio/partida-3dias-mundo-metas/estudio2.md) |
+| What                                          | Cost                        | Source                                                                                                                             |
+| --------------------------------------------- | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| One world, one game day                       | **$1.31** (1.19–1.43)       | [E3](docs/investigacion/estudios/e3-semana-fase3/ESTUDIO.md), mean of two seeds                                                    |
+| A 7-day study with two seeds                  | **$18.38**                  | [E3](docs/investigacion/estudios/e3-semana-fase3/ESTUDIO.md)                                                                       |
+| A 7-day study with a control world (3 worlds) | about **$28** (estimate)    | 3 × 7 × $1.31                                                                                                                      |
+| Earlier runs                                  | $3.65 (48 h) · $4.90 (72 h) | [E1](docs/investigacion/estudios/e1-partida-2dias/ESTUDIO.md), [E2](docs/investigacion/estudios/e2-partida-3dias-metas/ESTUDIO.md) |
 
 Besides API calls, one game week is about 12.5 real hours of machine time.
 

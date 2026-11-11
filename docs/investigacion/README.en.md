@@ -35,7 +35,7 @@ Design notes (in Spanish) are in [docs/decisiones](../decisiones/README.md).
 Real runs (Anthropic: decisions with `claude-haiku-5-5`, plans and consolidation with
 `claude-sonnet-5-5`), recorded and analysed with `pnpm study:analyze`. Reports are in Spanish.
 
-### E1 — 48 hours ([report](../../estudio/partida-2dias/ESTUDIO.md))
+### E1 — 48 hours ([report](estudios/e1-partida-2dias/ESTUDIO.md))
 
 - **A shared false memory grows out of a catchphrase.** Hugo's ("I'll pay you back, really")
   becomes a debt to Valentina that nobody seeded: intentions, reconsolidation ("it's been two
@@ -44,7 +44,7 @@ Real runs (Anthropic: decisions with `claude-haiku-5-5`, plans and consolidation
 - **Prospective memory:** 197 intentions kept vs 30 missed (13 %).
 - **Cost:** $3.65 for 48 game hours; 75 % went to three Sonnet tasks outside conversation.
 
-### E2 — 72 hours, Mallorca and goals ([report](../../estudio/partida-3dias-mundo-metas/estudio2.md))
+### E2 — 72 hours, Mallorca and goals ([report](estudios/e2-partida-3dias-metas/ESTUDIO.md))
 
 - **A neighbour who doesn't exist:** the two village gossips invent "la Pepa" and keep her alive
   with the same machinery: 23 memories about her, each learnt from the other with its source.
@@ -53,7 +53,7 @@ Real runs (Anthropic: decisions with `claude-haiku-5-5`, plans and consolidation
   qualitative goals checked by the nightly consolidation.
 - **0 anachronisms** in 1,596 lines; 27 goals achieved; $1.63 per game day.
 
-### E3 — one week, two seeds in parallel ([report](../../estudio/semana-fase3/ESTUDIO.md))
+### E3 — one week, two seeds in parallel ([report](estudios/e3-semana-fase3/ESTUDIO.md))
 
 - **Similar numbers, different stories.** With the same character seeds, in s13 Julián tells Inés
   he is afraid of being left alone (and consolidation confirms it); in s7 he dodges it. Tomás
