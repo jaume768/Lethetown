@@ -1,4 +1,61 @@
-# Personajes y retratos
+# Assets y créditos
+
+Los packs de pixel art (de terceros, fuera del repositorio), el manifest, los créditos y los
+retratos de los vecinos.
+
+## Créditos (obligatorio)
+
+El pixel art del juego es obra de **LimeZu**:
+
+- [Modern Exteriors](https://limezu.itch.io/modernexteriors)
+- [Modern Interiors](https://limezu.itch.io/moderninteriors) (versión gratuita)
+- [Modern User Interface](https://limezu.itch.io/modernuserinterface) (incluye el Portrait Generator, herramienta de [MrSwordsman](https://legendaryswordsman2.itch.io/portrait-generator))
+- Página del autor: [limezu.itch.io](https://limezu.itch.io/)
+
+La pantalla de **Créditos** del juego muestra lo que exige cada licencia (sale del campo
+`credits` del manifest). Cada asset del manifest lleva `license: "commercial" | "non-commercial"`;
+`pnpm assets:check` lista los que están en uso y la web avisa en modo Director si alguno no es
+comercial. Inventario y licencias: `apps/web/public/assets/vendor/LICENSES.md` (ignorado por git).
+
+Las licencias de LimeZu **prohíben redistribuir** los assets. Por eso no están en el repositorio: cada desarrollador los descarga de itch.io y los descomprime en `apps/web/public/assets/vendor/`, que está en `.gitignore`. La versión gratuita de Modern Interiors además solo permite uso **no comercial**.
+
+Las fuentes [Pixelify Sans](https://github.com/eifetx/Pixelify-Sans) (títulos y botones) y [Atkinson Hyperlegible](https://github.com/googlefonts/atkinson-hyperlegible) (textos largos) se distribuyen bajo la SIL Open Font License 1.1 y están incluidas en `apps/web/public/assets/fonts/` con sus licencias.
+
+## Instalar los packs
+
+Descomprime las versiones de 16×16 en `apps/web/public/assets/vendor/limezu/`, manteniendo la estructura de los zip:
+
+```
+apps/web/public/assets/vendor/limezu/
+├── exteriors/Modern_Exteriors_16x16/...           # modernexteriors-win.zip
+├── interiors_free/Modern tiles_Free/...           # Modern_Interiors_Free_v2.2.zip
+├── ui/16x16/...                                   # modernuserinterface-win.zip
+└── portraits/Portrait_Generator - 16x16|32x32|48x48 # «Portrait Pieces» del Portrait Generator
+```
+
+Luego `pnpm portraits:compose` para generar los retratos (ver [Retratos](#retratos-portrait-generator-de-limezu)).
+
+Compruébalo con `git check-ignore -v apps/web/public/assets/vendor/limezu`.
+
+## Manifest y packs
+
+`apps/web/public/assets/manifest.json` (esquema zod en `packages/shared/src/assets/manifest.ts`) define, para cada pack:
+
+- `tilesets`: imagen y tamaño de cada tileset.
+- `stamps`: los "sellos" con los que el generador compone el mapa. Cada sello es un trozo del tileset (`x`, `y`, `w`, `h`) en modo `fixed`, `pattern` o `nineslice`, con su ancla respecto al spot y las baldosas que bloquean el paso.
+- `characters`: hojas de personaje con sus animaciones (`walk_down`, `sit_left`…). Las del placeholder son recoloreables con el `appearance` de cada agente.
+- `agentCharacters`: qué personaje usa cada agente.
+- `ui`: hoja de Modern User Interface y las piezas (panel, botón…) que el cliente recorta para la piel de la interfaz; sin ella, estilo pixel propio.
+- `portraits`: retratos compuestos (64 px para el inspector, 32 px junto a los bocadillos).
+
+Hay dos packs: `limezu` (el que usa el `.tmj` del repo) y `placeholder`, un set propio generado por código que sí se commitea. Para cambiar de pack:
+
+```bash
+pnpm assets:placeholder              # solo para el placeholder
+pnpm map:generate --pack placeholder # o --pack limezu
+```
+
+El cliente elige automáticamente el pack con el que se generó el mapa (propiedad `assetPack` del `.tmj`). Si regeneras el mapa, perderás los retoques que hayas hecho a mano en Tiled.
 
 ## Retratos (Portrait Generator de LimeZu)
 
