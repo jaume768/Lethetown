@@ -141,3 +141,5 @@ TypeScript estricto. El porqué de cada decisión está en [docs/decisiones/](do
 - Prettier (ancho 100, comillas dobles); ESLint con `consistent-type-imports`.
 - Tests con Vitest junto a la lógica.
 - Commits pequeños, en español y con prefijo convencional (`feat(agent-core): …`).
+- Una fase en curso lleva su avance en `PROGRESS.md` en la raíz; al fusionar, se condensa en
+  `docs/historial.md`, lo pendiente pasa a `docs/roadmap.md` y `PROGRESS.md` se borra.

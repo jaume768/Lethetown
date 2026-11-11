@@ -117,7 +117,7 @@ llegar y pasos concretos) sin que el LLM se invente el progreso. Sistema `goals`
   frustración tardaba unos 6 días en llegar a 0,7), progreso medio 0,33 y 2 conflictos. Con la
   corrección 2.5: 3 conseguidos en 48 h (los proyectos con tema no cuentan cualquier charla del
   mock), progreso medio 0,22 y frustración media 0,09. Lo que pase
-  con el LLM real hay que medirlo en una partida (ver PROGRESS-MUNDO-METAS.md).
+  con el LLM real hay que medirlo en una partida (ver [pendiente de validar](../roadmap.md#metas-e-intenciones)).
 
 ## Interfaz y métricas
 

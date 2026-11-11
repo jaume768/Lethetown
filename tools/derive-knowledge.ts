@@ -2,7 +2,7 @@
  * Propone un perfil de conocimiento (estudios, oficio, idiomas, lugares de fuera, intereses y
  * nivel cultural) coherente con la edad, la descripción, el trabajo y los rasgos de cada agente de
  * seeds/agents.json, en la época de config/world.json. Es un punto de partida: los perfiles del
- * repositorio están revisados a mano después (ver PROGRESS-MUNDO-METAS.md).
+ * repositorio están revisados a mano después (ver docs/historial.md).
  *
  * Uso: pnpm knowledge:derive             (muestra la propuesta)
  *      pnpm knowledge:derive --write     (la escribe en los agentes que no tienen)

@@ -104,4 +104,5 @@ Ver las acciones en [acciones](acciones.md#aprender-y-enseñar).
 
 En 48 h de mock (`SIM_SEED=7`): unas 170 horas de práctica, 7 sesiones, algún resultado regalado; en
 3 días casi nadie cambia de etiqueta (se aprende despacio a propósito). Con el LLM real hay que
-medir si se piden y ofrecen sesiones con naturalidad o en exceso (ver PROGRESS-APRENDIZAJE.md).
+medir si se piden y ofrecen sesiones con naturalidad o en exceso (ver
+[pendiente de validar](../roadmap.md#aprendizaje-y-personalidad)).

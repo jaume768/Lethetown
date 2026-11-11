@@ -49,7 +49,7 @@ system → messages`, una entrada de 1 h no puede ir detrás de una de 5 min, y 
   para todas las tareas por agente (decidir y las de memoria también, con 5 min) y en los lotes
   (caché de mejor esfuerzo). OpenAI recibe el texto entero. **El mock no mide la caché real**
   (cachea por el `system` entero): con `cost:report 48` sale lo mismo; hay que medirlo con
-  `latency:probe` (ver PROGRESS-CORRECCION-3-5.md).
+  `latency:probe` (ver [pendiente de validar](../roadmap.md#coste-y-estudio)).
 - **Prompt caching**: el prompt fijo de identidad no contiene nada variable; lo variable va en el
   prompt de usuario. Anthropic con `cache_control`; OpenAI con `prompt_cache_key` por agente.
 - **Respuesta en un único JSON** validado con zod; si falla, comportamiento por defecto (seguir el
@@ -72,5 +72,5 @@ system → messages`, una entrada de 1 h no puede ir detrás de una de 5 min, y 
 | `gist.minImportance` = 4                  |     3041 |             801 988 |      346 |
 
 Desde la fase de cimientos, `cost:report` da también el coste que tendrían esos tokens a
-precios de Haiku 5.5 y Sonnet 5.5 según el enrutado, y la auditoría de la memoria. Tabla en
-`PROGRESS-CIMIENTOS.md`.
+precios de Haiku 5.5 y Sonnet 5.5 según el enrutado, y la auditoría de la memoria. Por paso, en el
+[historial](../historial.md#cimientos-fase-0).

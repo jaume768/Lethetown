@@ -40,13 +40,13 @@ plantilla.
 
 ## Análisis y repetición
 
-7. **Una escena nueva.** Con los paquetes de E3 (ver `PROGRESS-REPETICION.md`), busca un
+7. **Una escena nueva.** Con los paquetes de E3 (ver [vídeos](videos/README.md#paquetes-de-e3-s7-y-s13-paso-a-paso)), busca un
    momento en `moments.md` (o en la lista del reproductor), añádelo a
    `docs/videos/escenas.json` y compruébalo con `pnpm replay:scenes` ([cómo](videos/README.md)).
 8. **Divergencia entre semillas.** Un script (en `apps/server/src/scripts/`) que, a partir de
    dos grabaciones, dé una cifra de cuánto divergen: intenciones y metas emparejadas que acaban
    distinto (`pairArcs`), parejas que hablan en una y no en la otra, afinidades finales. Es la
-   medida que pide la primera [pregunta abierta](../ROADMAP.md#preguntas-abiertas).
+   medida que pide la primera [pregunta abierta](roadmap.md#preguntas-abiertas).
 9. **Una partida real corta.** Con una clave propia, `latency:probe 30 10` y el informe de coste
    por tarea (`cost:report 48`): ¿cuadra con los 1,31 $ por mundo y día de E3? Compártelo con la
    plantilla «Resultado de una prueba».

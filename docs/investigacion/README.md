@@ -8,7 +8,7 @@ pregunta: **¿qué pasa en un pueblo cuando la memoria de sus habitantes deja de
 fiable e ilimitado?** La hipótesis es que el olvido, la reconstrucción de los recuerdos y las
 diferencias psicológicas producen historias individuales y dinámicas sociales más variadas y
 verosímiles. Es una hipótesis abierta: los estudios de abajo son observaciones, todavía sin el
-mundo de control que la pondría a prueba (ver [preguntas abiertas](../../ROADMAP.md#preguntas-abiertas)).
+mundo de control que la pondría a prueba (ver [preguntas abiertas](../roadmap.md#preguntas-abiertas)).
 
 Toda la psicología es código con parámetros (`MemoryConfig` en `packages/agent-core`), no
 instrucciones al modelo: el LLM habla, propone y redacta; el motor decide qué se recuerda, qué se

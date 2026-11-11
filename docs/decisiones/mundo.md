@@ -45,8 +45,8 @@
   Govern, los atentados del 11-S, el Mundial de Corea y Japón en junio, Operación Triunfo, Son
   Dureta, UIB, Canal 4, GOB…); se evitan IB3 (2005) y Son Espases (2011), que son anacronismos en
   el registro, como los smartphones, WhatsApp o las redes sociales. Ya no lo son el euro, el móvil,
-  los SMS, internet, el correo electrónico ni el DVD. Las semillas se revisaron (en 1996: ver
-  PROGRESS-MUNDO-METAS.md; en 2002, la libreta del fiado en euros y los gustos de Inés y Leo).
+  los SMS, internet, el correo electrónico ni el DVD. Las semillas se revisaron (en 1996: ver el
+  [historial](../historial.md#mundo-y-metas-fases-1-y-2); en 2002, la libreta del fiado en euros y los gustos de Inés y Leo).
 - **Perfil de conocimiento** (`knowledge` en la semilla): estudios, oficio, idiomas, lugares de
   fuera, intereses y nivel cultural, en el prompt fijo («Lo que sabes: …»), con la regla de
   responder como el personaje a lo que no sabría o no existe en su época. `pnpm knowledge:derive`

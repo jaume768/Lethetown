@@ -5,7 +5,7 @@ y confunde quién le contó qué, como la humana.** Es un juego que se ve en el 
 de pruebas: cada olvido, cada recuerdo que cambia y cada meta queda medido y auditado.
 
 **[Investigación](docs/investigacion/README.md) · [Colabora](CONTRIBUTING.md) ·
-[Hoja de ruta](ROADMAP.md) · [Decisiones](docs/decisiones/README.md) ·
+[Hoja de ruta](docs/roadmap.md) · [Decisiones](docs/decisiones/README.md) ·
 [Documentación](docs/README.md)** · [English](CONTRIBUTING.md)
 
 Un pueblo en pixel art donde cada habitante es un **agente controlado por un LLM** (Anthropic u
@@ -105,5 +105,5 @@ Instalación, manifest y retratos: [docs/assets.md](docs/assets.md).
 ---
 
 [Investigación](docs/investigacion/README.md) · [Colabora](CONTRIBUTING.md) ·
-[Hoja de ruta](ROADMAP.md) · [Decisiones](docs/decisiones/README.md) ·
+[Hoja de ruta](docs/roadmap.md) · [Decisiones](docs/decisiones/README.md) ·
 [Documentación](docs/README.md) · [English](CONTRIBUTING.md)
