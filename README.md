@@ -6,7 +6,7 @@ de pruebas: cada olvido, cada recuerdo que cambia y cada meta queda medido y aud
 
 **[Investigación](docs/investigacion/README.md) · [Colabora](CONTRIBUTING.md) ·
 [Hoja de ruta](docs/roadmap.md) · [Decisiones](docs/decisiones/README.md) ·
-[Documentación](docs/README.md)** · [English](CONTRIBUTING.md)
+[Documentación](docs/README.md)** · [English](docs/en/README.md)
 
 Un pueblo en pixel art donde cada habitante es un **agente controlado por un LLM** (Anthropic u
 OpenAI). Parte de [_Generative Agents_](https://arxiv.org/abs/2304.03442) (Park et al., 2023):
@@ -106,4 +106,4 @@ Instalación, manifest y retratos: [docs/assets.md](docs/assets.md).
 
 [Investigación](docs/investigacion/README.md) · [Colabora](CONTRIBUTING.md) ·
 [Hoja de ruta](docs/roadmap.md) · [Decisiones](docs/decisiones/README.md) ·
-[Documentación](docs/README.md) · [English](CONTRIBUTING.md)
+[Documentación](docs/README.md) · [English](docs/en/README.md)

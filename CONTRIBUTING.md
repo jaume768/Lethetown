@@ -1,172 +1,233 @@
-# Contributing
+# Colabora
 
-[Español](COLABORA.md)
+[English](docs/en/README.md)
 
-Lethetown is a village of 20 neighbours driven by an LLM, with a memory that forgets, rewrites
-itself and gets things wrong like a human one, and a test bench to study it: every forgotten
-memory, every change and every goal is audited with its reason. What has been seen so far is in
-[Research](docs/investigacion/README.en.md); what comes next, in the [roadmap](ROADMAP.en.md).
+Lethetown es un pueblo de 20 vecinos movidos por un LLM con una memoria que olvida, se reescribe
+y se equivoca como la humana, y un banco de pruebas para estudiarla: cada olvido, cada recuerdo
+que cambia y cada meta queda auditado con su motivo. Lo que se ha visto hasta ahora está en
+[Investigación](docs/investigacion/README.md); lo que viene, en la [hoja de ruta](docs/roadmap.md).
 
-There are four ways to help: **propose an experiment**, **run tests**, **contribute code** and
-**support the project**. To get started, see the [first tasks](docs/primeros-issues.md) (in
-Spanish). Code comments, UI texts and commit messages are in Spanish; issues and discussions in
-English are welcome.
+Hay cuatro formas de ayudar: **proponer un experimento**, **ejecutar pruebas**, **contribuir
+código** y **apoyar el proyecto**. Para empezar, hay una lista de
+[primeras tareas](#por-dónde-empezar).
 
-## Propose an experiment
+## Por dónde empezar
 
-Open an issue with the "Propuesta de experimento" (experiment proposal) template. It needs:
+Para empezar a colaborar. Casi todas son experimentos pequeños que se pueden hacer **en mock,
+gratis y sin claves**: la memoria, el olvido, las metas y la red los calcula el motor, así que el
+mock ya los mueve (lo que dicen los vecinos, no). Una partida en mock grabada, con su base de
+datos, sin servidor:
 
-1. **Hypothesis**: what you expect and why (one falsifiable sentence).
-2. **What changes**, and only that:
-   - the **seed** (`SIM_SEED`, or the characters in `seeds/agents.json`);
-   - an existing **switch**: `MEMORY_ABLATION=noForgetting,noVagueness` (no forgetting or
-     vagueness), `SIM_COGNITION=off` (no "cognition on the move", phase 3.6);
-   - a **parameter** of `MemoryConfig` (forgetting and vagueness thresholds, decay,
-     reconsolidation, source confusion…), `GoalsConfig`, `SkillsConfig` or `LoreConfig`, all in
-     `packages/agent-core` with defaults and units. Memory ones go in `config/memory.json` (read
-     at start-up if present: one server per world, as in `scripts/estudio-semana.sh`).
-3. **What is measured**: `pnpm study:analyze` metrics (cost, latency, lines, social network and
-   Gini, intentions kept or missed, goals achieved or abandoned, reconsolidations, forgetting,
-   archived and deleted memories, anachronisms, lore passed on and distorted…) or a count over
-   the database export (`bd/*.jsonl`).
-4. **Control world**: the same seed without the change, at the same time
-   (`scripts/estudio-semana.sh` runs several worlds in parallel; add up their cost, since they
-   share the prompt cache).
-5. **Duration**: 3 game days are enough for memory and conversation; goal abandonment and
-   personality drift need a week.
+```bash
+pnpm --filter @lethetown/server replay:demo --hours 72 --seed 7 --rec docs/investigacion/estudios/mock/s7
+MEMORY_ABLATION=noForgetting,noVagueness \
+  pnpm --filter @lethetown/server replay:demo --hours 72 --seed 7 --rec docs/investigacion/estudios/mock/s7a
+pnpm study:analyze docs/investigacion/estudios/mock/s7 docs/investigacion/estudios/mock/s7a
+```
 
-### Full example: does forgetting make stories more varied?
+Respeta `MEMORY_ABLATION`, `SIM_COGNITION` y `config/memory.json`. Cómo plantear y compartir
+cada experimento: [abajo](#proponer-un-experimento). Al coger una tarea, abre un issue con su
+plantilla.
 
-- **Hypothesis.** With forgetting and vagueness, the same seed diverges more between two runs than
-  without them, because what is forgotten and filled in changes what each neighbour does next.
-- **What changes.** Three worlds at once, 30 min apart so they don't share the cache: `s7` and
-  `s13` (normal) and `s7a`, seed 7 with `MEMORY_ABLATION=noForgetting,noVagueness`:
+### Experimentos
+
+1. **Umbral de olvido.** Con `config/memory.json` → `retrieval.forgetThreshold` a 0,05 (por
+   defecto) y a 0,10, dos partidas en mock de 3 días con la semilla 7. ¿Cuántos olvidos,
+   archivados y borrados más? ¿Cambian las intenciones cumplidas? Mide con `study:analyze` y
+   `bd/memory_audit.jsonl`.
+2. **Ablación en mock.** Lo mismo con `MEMORY_ABLATION=noForgetting,noVagueness` frente a
+   normal: es el ensayo barato del mundo de control de E4 (¿funciona el interruptor? ¿qué
+   métricas se mueven ya en mock?).
+3. **Cognición en movimiento.** `SIM_COGNITION=off` frente a `on`, un día en mock: encuentros,
+   saludos, charlas en el camino y asociaciones (`study:analyze A B` los compara). ¿Cambia la
+   red (parejas que hablan, Gini)?
+4. **Reconsolidación.** `reconsolidation.probability` a 0,1 (por defecto) y a 0,3: ¿cuántas
+   versiones por recuerdo y cuántos «lo recuerdan distinto» (`replay:moments`, tipo
+   `rashomon`)? En mock el texto no cambia de verdad; lo que se mide es la frecuencia.
+5. **Azar frente a diseño.** Tres semillas en mock (7, 13, 21), 3 días: con
+   `pnpm replay:moments A B` por parejas, ¿cuántas intenciones o metas de la semilla acaban
+   distinto («Las dos semillas»)? Es la línea base para saber cuánto diverge un pueblo solo por
+   el azar.
+6. **Espaciado.** `decay.recallStabilityGrowth` a 1,8 (por defecto) y a 1,4: ¿cuántos recuerdos
+   acaban con la estabilidad en el tope (`memories.stability` = `maxStabilityHours`)?
+
+### Análisis y repetición
+
+7. **Una escena nueva.** Con los paquetes de E3 (ver [vídeos](docs/videos/README.md#paquetes-de-e3-s7-y-s13-paso-a-paso)), busca un
+   momento en `moments.md` (o en la lista del reproductor), añádelo a
+   `docs/videos/escenas.json` y compruébalo con `pnpm replay:scenes` ([cómo](docs/videos/README.md)).
+8. **Divergencia entre semillas.** Un script (en `apps/server/src/scripts/`) que, a partir de
+   dos grabaciones, dé una cifra de cuánto divergen: intenciones y metas emparejadas que acaban
+   distinto (`pairArcs`), parejas que hablan en una y no en la otra, afinidades finales. Es la
+   medida que pide la primera [pregunta abierta](docs/roadmap.md#preguntas-abiertas).
+9. **Una partida real corta.** Con una clave propia, `latency:probe 30 10` y el informe de coste
+   por tarea (`cost:report 48`): ¿cuadra con los 1,31 $ por mundo y día de E3? Compártelo con la
+   plantilla «Resultado de una prueba».
+
+### Documentación
+
+10. **La página en inglés.** Es una sola, [docs/en/README.md](docs/en/README.md): revisarla y
+    añadir un resumen de las decisiones más leídas ([índice](docs/decisiones/README.md) y
+    [memoria](docs/decisiones/memoria.md)).
+
+## Proponer un experimento
+
+Abre un issue con la plantilla «Propuesta de experimento». Lo que hace falta:
+
+1. **Hipótesis**: qué esperas que pase y por qué (una frase que se pueda refutar).
+2. **Qué se cambia**, y solo eso:
+   - la **semilla** (`SIM_SEED`, o los personajes de `seeds/agents.json`);
+   - un **interruptor** que ya existe: `MEMORY_ABLATION=noForgetting,noVagueness` (sin olvido
+     ni vaguedad), `SIM_COGNITION=off` (sin la cognición en movimiento de la fase 3.6);
+   - un **parámetro** de `MemoryConfig` (umbrales de olvido y vaguedad, decaimiento,
+     reconsolidación, confusión de fuente…), de `GoalsConfig`, `SkillsConfig` o `LoreConfig`,
+     todos en `packages/agent-core` con su valor por defecto y sus unidades. Los de memoria se
+     cambian en `config/memory.json` (si existe, el servidor lo lee al arrancar: un servidor por
+     mundo, como en `scripts/estudio-semana.sh`).
+3. **Qué se mide**: métricas de `pnpm study:analyze` (coste, espera, frases, red social y Gini,
+   intenciones cumplidas o pasadas, metas conseguidas o abandonadas, reconsolidaciones, olvidos,
+   archivados, borrados, anacronismos, saberes transmitidos y deformados…) o un recuento sobre la
+   exportación de la base de datos (`bd/*.jsonl`).
+4. **Mundo de control**: la misma semilla sin el cambio, a la vez (`scripts/estudio-semana.sh`
+   lanza varios mundos en paralelo; súmales el coste, porque comparten caché).
+5. **Duración**: 3 días de juego bastan para la memoria y la conversación; los abandonos de metas
+   y la deriva de la personalidad necesitan una semana.
+
+### Ejemplo completo: ¿el olvido hace las historias más variadas?
+
+- **Hipótesis.** Con olvido y vaguedad, la misma semilla diverge más entre dos partidas que sin
+  ellos, porque lo olvidado y lo rellenado cambia lo que cada vecino hace después.
+- **Qué se cambia.** Tres mundos a la vez, desfasados 30 min para no repartirse la caché: `s7`
+  y `s13` (normales) y `s7a`, la semilla 7 con `MEMORY_ABLATION=noForgetting,noVagueness`:
 
   ```bash
   STUDY_DIR=docs/investigacion/estudios/olvido ABLATION=on OFFSET_MINUTES=30 scripts/estudio-semana.sh prepare
   STUDY_DIR=docs/investigacion/estudios/olvido ABLATION=on OFFSET_MINUTES=30 scripts/estudio-semana.sh start
   STUDY_DIR=docs/investigacion/estudios/olvido ABLATION=on scripts/estudio-semana.sh record
-  # … when it ends:
+  # … al acabar:
   STUDY_DIR=docs/investigacion/estudios/olvido ABLATION=on scripts/estudio-semana.sh export
   pnpm study:analyze docs/investigacion/estudios/olvido/s7 docs/investigacion/estudios/olvido/s7a
   ```
 
-- **What is measured.** Between `s7` and `s7a`: lines per day, talking pairs and Gini, intentions
-  kept, goals achieved and abandoned, cost; and in the audit (`bd/memory_audit.jsonl`), false
-  memories (`false_memory`) and source confusions (`source_changed`), which should drop in `s7a`.
-  And divergence: from `pnpm replay:moments s7 s13` versus `s7a`, how many seeded intentions or
-  goals end differently (section "Las dos semillas").
-- **Control.** `s7a` is the control of `s7`; `s13` tells how much changes by chance alone.
-- **Duration and cost.** 7 game days, about 12.5 real hours; about $9 per world (E3: $1.31 per
-  world and day), about $28 for the three.
+- **Qué se mide.** Entre `s7` y `s7a`: frases por día, parejas que hablan y Gini, intenciones
+  cumplidas, metas conseguidas y abandonadas, coste; y en la auditoría
+  (`bd/memory_audit.jsonl`), los falsos recuerdos (`false_memory`) y las confusiones de fuente
+  (`source_changed`), que en `s7a` deberían bajar. Y la divergencia: de `pnpm replay:moments s7 s13` frente a
+  `s7a`, cuántas intenciones o metas de la semilla acaban distinto (sección «Las dos semillas»).
+- **Control.** `s7a` es el control de `s7`; `s13` dice cuánto cambia solo por el azar.
+- **Duración y coste.** 7 días de juego, unas 12,5 h reales; unos 9 $ por mundo (E3: 1,31 $ por
+  mundo y día), unos 28 $ los tres.
 
-Another one with existing switches: `COGNITION_CONTROL=on` runs `s7c` with `SIM_COGNITION=off`
-to measure whether cognition on the move (greeting, stopping to chat, associations on the way)
-changes the social network and the cost.
+Otro con lo que ya existe: `COGNITION_CONTROL=on` lanza `s7c` con `SIM_COGNITION=off` para medir
+si la cognición en movimiento (saludar, pararse a charlar, asociaciones por el camino) cambia la
+red social y el coste (`study:analyze s7 s7c` compara encuentros, saludos, charlas en el camino y
+asociaciones).
 
-## Run tests
+## Ejecutar pruebas
 
-### A mock run (free, no keys)
+### Una partida en mock (gratis, sin claves)
 
 ```bash
 pnpm install
-pnpm dev                                         # http://localhost:5173, mock and in memory
-pnpm --filter @lethetown/server sim:text 16      # or text only, no server: 16 game hours
-pnpm --filter @lethetown/server replay:demo      # a short mock run, already packed
-# A recorded mock run with its database (for study:analyze), with a switch:
+pnpm dev                                         # http://localhost:5173, modo mock y en RAM
+pnpm --filter @lethetown/server sim:text 16      # o en texto, sin servidor: 16 h de juego
+pnpm --filter @lethetown/server replay:demo      # una partida corta en mock, ya empaquetada
+# Una partida en mock grabada con su base de datos (para study:analyze), con un interruptor:
 MEMORY_ABLATION=noForgetting,noVagueness \
   pnpm --filter @lethetown/server replay:demo --hours 72 --seed 7 --rec docs/investigacion/estudios/mock/s7a
 ```
 
-The mock calls no model: it tests code and switches, not behaviour.
+El mock no llama a ningún modelo: sirve para probar el código y los interruptores, no para sacar
+conclusiones sobre el comportamiento.
 
-### A short real run
+### Una partida real corta
 
-With an Anthropic key in `.env` (`LLM_PROVIDER=anthropic`, see `.env.example`):
+Con una clave de Anthropic en `.env` (`LLM_PROVIDER=anthropic`, ver `.env.example`):
 
 ```bash
-pnpm --filter @lethetown/server latency:probe 30 10   # 30 real minutes at x10: latency and cost
+pnpm --filter @lethetown/server latency:probe 30 10   # 30 min reales a x10: espera y coste
 ```
 
-A full study run, with Postgres and recording, is described in `.env.study.example` and
+Una partida de estudio entera, con Postgres y grabación, está en `.env.study.example` y
 `scripts/estudio-semana.sh` (`prepare`, `start`, `record`, `status`, `export`).
 
-### Record, analyse, pack and share
+### Grabar, analizar, empaquetar y compartir
 
 ```bash
-RECORD_USER=… RECORD_PASSWORD=… pnpm --filter @lethetown/server record docs/investigacion/estudios/mine --hours 48 --track
-pnpm --filter @lethetown/server world:export ../../docs/investigacion/estudios/mine/bd --world default
-pnpm study:analyze docs/investigacion/estudios/mine                 # analysis.md and analysis.json
-pnpm replay:moments docs/investigacion/estudios/mine                # moments.md: moments and long arcs
-pnpm replay:pack docs/investigacion/estudios/mine --out apps/web/public/replays/mine.replay.json.gz
+RECORD_USER=… RECORD_PASSWORD=… pnpm --filter @lethetown/server record docs/investigacion/estudios/mia --hours 48 --track
+pnpm --filter @lethetown/server world:export ../../docs/investigacion/estudios/mia/bd --world default
+pnpm study:analyze docs/investigacion/estudios/mia                  # analysis.md y analysis.json
+pnpm replay:moments docs/investigacion/estudios/mia                 # moments.md: momentos y arcos largos
+pnpm replay:pack docs/investigacion/estudios/mia --out apps/web/public/replays/mia.replay.json.gz
 ```
 
-`/replay?src=/replays/mine.replay.json.gz` plays it in the browser with no server or cost. To
-share results, open an issue with the "Resultado de una prueba" (test result) template with the
-`analysis.md` and, optionally, the `.replay.json.gz` (a whitelist: no costs, users, emails, keys,
-moderation or local paths).
+`/replay?src=/replays/mia.replay.json.gz` la reproduce en la web sin servidor ni coste. Para
+compartir los resultados, abre un issue con la plantilla «Resultado de una prueba» con el
+`analysis.md` y, si quieres, el `.replay.json.gz` (es una lista blanca: no lleva costes,
+usuarios, correos, claves, moderación ni rutas).
 
-**Never share** `.env` or `.env.*`, a run's `.record-pass` file (the recording user's password),
-API keys, cookies, the whole `bd/` folder (it has `llm_calls` and `moderation_log`) or anything
-from `apps/web/public/assets/vendor/` (licensed third-party assets: not redistributable, not even
-in screenshots).
+**Nunca compartas** `.env` ni `.env.*`, el fichero `.record-pass` de una partida (la contraseña
+del usuario que graba), claves de API, cookies, la carpeta `bd/` entera (lleva `llm_calls` y
+`moderation_log`) ni nada de `apps/web/public/assets/vendor/` (assets de terceros con licencia:
+no se redistribuyen, ni en capturas).
 
-## Contribute code
+## Contribuir código
 
 ```bash
-pnpm install && pnpm dev     # works without Postgres or keys
-pnpm typecheck && pnpm lint && pnpm format:check && pnpm test   # before every commit (CI)
-pnpm test:e2e                # Playwright, in mock mode
+pnpm install && pnpm dev     # funciona sin Postgres ni claves
+pnpm typecheck && pnpm lint && pnpm format:check && pnpm test && pnpm docs:check   # antes de cada commit
+pnpm test:e2e                # Playwright, en mock
 ```
 
-Conventions are in [CLAUDE.md](CLAUDE.md) and the reasons behind each decision in
-[docs/decisiones](docs/decisiones/README.md) (Spanish). In short:
+Las convenciones están en [CLAUDE.md](CLAUDE.md) y el porqué de cada decisión, en
+[docs/decisiones](docs/decisiones/README.md). En resumen:
 
-- **Monorepo:** `packages/shared` (zod schemas, the single source of truth for messages),
-  `packages/agent-core` (pure logic: memory, psychology, goals; no network or DB), `apps/server`
-  (simulation and every LLM call) and `apps/web` (Phaser draws, React panels; never calls an LLM).
-- **Psychology is computed, not asked of the model:** every parameter in its `Config` with a
-  default and units; every forgotten or changed memory audited with its reason.
-- **Anything new in the world is a system** (`SimSystem`) and **every action** goes through the
-  engine's catalogue.
-- **Randomness** only through the seeded `Rng`; **time** in game minutes; UI texts in
-  `i18n/es.ts` and `en.ts`; accessible.
-- **Golden test** (`sim/golden.test.ts`): a refactor doesn't change it; a behaviour change
-  regenerates it and explains why in the commit.
-- **Commits** small, in Spanish, with a conventional prefix (`feat(agent-core): …`).
+- **Monorepo:** `packages/shared` (esquemas zod, única fuente de verdad de los mensajes),
+  `packages/agent-core` (lógica pura: memoria, psicología, metas; sin red ni BD), `apps/server`
+  (simulación y todas las llamadas al LLM) y `apps/web` (Phaser pinta, React los paneles; nunca
+  llama a un LLM).
+- **La psicología se calcula, no se pide al modelo:** todo parámetro en su `Config` con valor
+  por defecto y unidades; cada olvido o cambio, auditado con su motivo.
+- **Lo nuevo del mundo es un sistema** (`SimSystem`) y **cada acción** pasa por el catálogo del
+  motor ([plantilla](docs/decisiones/sistemas.md), [acciones](docs/decisiones/acciones.md)).
+- **Azar** solo con el `Rng` sembrado; **tiempo** en minutos de juego; textos de la interfaz en
+  `i18n/es.ts` y `en.ts`; accesible.
+- **Test dorado** (`sim/golden.test.ts`): un refactor no lo cambia; un cambio de comportamiento
+  lo regenera y lo explica en el commit.
+- **Commits** pequeños, en español, con prefijo convencional (`feat(agent-core): …`).
 
-**Child protection (top priority).** There are minors in the village. Every LLM text that enters
-the world goes through `MinorGuard`: nothing romantic with a minor, and adults meet minors only
-in public places. Changes that weaken this are not accepted. See
+**Protección de menores (prioritaria).** Hay menores en el pueblo. Todo texto del LLM que entra
+en el mundo pasa por `MinorGuard`: nada romántico con un menor, y las citas e invitaciones de
+adultos con menores, solo en lugares públicos. Un cambio que lo debilite no se acepta. Ver
 [menores](docs/decisiones/menores.md).
 
-## Support the project
+## Apoyar el proyecto
 
-Every real run costs money, and the cost is measured:
+Cada partida real cuesta dinero, y el coste está medido:
 
-| What                                          | Cost                        | Source                                                                                                                             |
-| --------------------------------------------- | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| One world, one game day                       | **$1.31** (1.19–1.43)       | [E3](docs/investigacion/estudios/e3-semana-fase3/ESTUDIO.md), mean of two seeds                                                    |
-| A 7-day study with two seeds                  | **$18.38**                  | [E3](docs/investigacion/estudios/e3-semana-fase3/ESTUDIO.md)                                                                       |
-| A 7-day study with a control world (3 worlds) | about **$28** (estimate)    | 3 × 7 × $1.31                                                                                                                      |
-| Earlier runs                                  | $3.65 (48 h) · $4.90 (72 h) | [E1](docs/investigacion/estudios/e1-partida-2dias/ESTUDIO.md), [E2](docs/investigacion/estudios/e2-partida-3dias-metas/ESTUDIO.md) |
+| Qué                                                  | Coste                         | De dónde                                                                                                                           |
+| ---------------------------------------------------- | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Un mundo, un día de juego                            | **1,31 $** (1,19–1,43)        | [E3](docs/investigacion/estudios/e3-semana-fase3/ESTUDIO.md), media de dos semillas                                                |
+| Un estudio de 7 días con dos semillas                | **18,38 $**                   | [E3](docs/investigacion/estudios/e3-semana-fase3/ESTUDIO.md)                                                                       |
+| Un estudio de 7 días con mundo de control (3 mundos) | unos **28 $** (estimado)      | 3 × 7 × 1,31 $                                                                                                                     |
+| Las partidas anteriores                              | 3,65 $ (48 h) · 4,90 $ (72 h) | [E1](docs/investigacion/estudios/e1-partida-2dias/ESTUDIO.md), [E2](docs/investigacion/estudios/e2-partida-3dias-metas/ESTUDIO.md) |
 
-Besides API calls, one game week is about 12.5 real hours of machine time.
+Además del dinero de las llamadas, una semana de juego son unas 12,5 h reales de máquina.
 
-**What support pays for:**
+**A qué va el apoyo:**
 
-- **More runs, with controls:** each hypothesis needs several seeds, its control world and
-  repetitions; today one long run is launched at a time.
-- **Assets:** third-party pixel art is licensed and not redistributable; support can buy full
-  packs (characters, interiors) or commission original, publishable art.
-- **Development time:** economy, life cycle, building and the comparative evaluation.
+- **Más partidas y con control:** cada hipótesis necesita varias semillas, su mundo de control
+  y repetirlas; hoy se lanza una partida larga cada vez.
+- **Assets:** el pixel art de terceros tiene licencia y no se redistribuye; con apoyo se pueden
+  comprar packs completos (personajes, interiores) o encargar arte propio publicable.
+- **Tiempo de desarrollo:** economía, ciclo de vida, construcción y la evaluación comparativa.
 
-**Ways to help:**
+**Formas de ayudar:**
 
-- **API or compute credits** (LLM or cloud providers): they are the biggest cost.
-- **Universities and labs** (memory psychology, cognitive science, AI): designing experiments,
-  reviewing metrics, co-authoring publications.
-- **Sponsorship** by people or companies.
-- **Investment**, for those who want to talk about it.
+- **Créditos de API o de computación** (proveedores de LLM o de nube): son lo que más cuesta.
+- **Universidades y laboratorios** (psicología de la memoria, ciencias cognitivas, IA): diseñar
+  experimentos, revisar métricas, colaborar en publicaciones.
+- **Patrocinio** de personas o empresas.
+- **Inversión**, para quien quiera hablarlo.
 
-Contact: `<CONTACTO>`
+Contacto: `<CONTACTO>`

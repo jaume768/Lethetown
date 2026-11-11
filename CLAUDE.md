@@ -118,8 +118,9 @@ TypeScript estricto. El porqué de cada decisión está en [docs/decisiones/](do
 
 - `pnpm dev` (funciona sin Postgres ni API keys) · `pnpm test:e2e` · `TEST_DATABASE_URL=… pnpm test`.
   Si `.env` apunta a Anthropic o a Postgres, para probar en mock: `LLM_PROVIDER=mock DATABASE_URL=`.
-- Antes de cada commit: `pnpm typecheck && pnpm lint && pnpm format:check && pnpm test` (lo que
-  ejecuta la CI). `pnpm -s typecheck` puede esconder errores de tsc: mira el código de salida.
+- Antes de cada commit: `pnpm typecheck && pnpm lint && pnpm format:check && pnpm test &&
+pnpm docs:check` (lo que ejecuta la CI; `docs:check`, enlaces y anclas de los `.md`).
+  `pnpm -s typecheck` puede esconder errores de tsc: mira el código de salida.
 - `pnpm --filter @lethetown/server cost:report 48` (coste reproducible y espera de respuesta) ·
   `latency:probe [min] [x]` (prueba real corta) · `record <dir>` / `world:export <dir>` (grabar
   una partida) · `pnpm study:analyze <dir> [<otro> …]` (analizarla) · `sim:text <horas>` ·

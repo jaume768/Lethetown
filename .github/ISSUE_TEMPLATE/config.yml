@@ -4,3 +4,9 @@ contact_links:
   - name: Preguntas y conversación (Discussions)
     url: https://github.com/jaume768/Lethetown/discussions
     about: Dudas, ideas a medio cocer, resultados para comentar. / Questions, half-baked ideas, results to discuss.
+  - name: Cómo colaborar (CONTRIBUTING.md)
+    url: https://github.com/jaume768/Lethetown/blob/main/CONTRIBUTING.md
+    about: Proponer un experimento, ejecutar pruebas, contribuir código o apoyar el proyecto.
+  - name: English
+    url: https://github.com/jaume768/Lethetown/blob/main/docs/en/README.md
+    about: What Lethetown is, the research, the roadmap and how to help.

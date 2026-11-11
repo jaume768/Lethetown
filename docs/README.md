@@ -14,4 +14,5 @@ Un sitio para cada cosa. En la raíz quedan el [README](../README.md), las conve
 | [decisiones/](decisiones/README.md)       | El porqué de cada decisión, un fichero por área                                                         |
 | [investigacion/](investigacion/README.md) | Qué se estudia, los estudios E1–E3, evaluación y coste, el paper                                        |
 | [videos/](videos/README.md)               | Escenas guardadas para los vídeos (`escenas.json`) y cómo grabarlas                                     |
+| [en/README.md](en/README.md)              | La única página en inglés: qué es, investigación, hoja de ruta y cómo colaborar                         |
 | [capturas/](capturas/)                    | Capturas de la interfaz (sin assets de terceros)                                                        |

@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Cómo grabar, analizar y empaquetar: [COLABORA.md](https://github.com/jaume768/Lethetown/blob/main/COLABORA.md#ejecutar-pruebas).
+        Cómo grabar, analizar y empaquetar: [CONTRIBUTING.md](https://github.com/jaume768/Lethetown/blob/main/CONTRIBUTING.md#ejecutar-pruebas).
         **No adjuntes** `.env`, `.record-pass`, claves, la carpeta `bd/` entera ni assets de `vendor/`.
         El `.replay.json.gz` sí se puede compartir (lista blanca).
   - type: input

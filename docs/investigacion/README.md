@@ -1,6 +1,6 @@
 # Investigación
 
-[English](README.en.md)
+[English](../en/README.md)
 
 Lethetown es un pueblo de 20 vecinos movidos por un LLM con una memoria que **se parece a la
 humana**: olvida, se vuelve vaga, se reescribe al recordar y confunde quién le contó qué. La
@@ -154,8 +154,11 @@ caché, no se ve en el mock: hay que medirlo con el LLM real. Detalle en
 
 ## Paper
 
-En [`paper/`](paper/README.md).
+[Lethetown-paper.pdf](paper/Lethetown-paper.pdf): el artículo del proyecto (memoria humana en
+agentes LLM: olvido, reconsolidación, confusión de fuentes y falsos recuerdos en un pueblo
+simulado). Las cifras salen de los [estudios](#estudios); cada informe dice de qué fichero y con
+qué comando (`pnpm study:analyze`).
 
 ## Proponer o ejecutar un experimento
 
-Ver [COLABORA.md](../../COLABORA.md#proponer-un-experimento).
+Ver [CONTRIBUTING.md](../../CONTRIBUTING.md#proponer-un-experimento).
