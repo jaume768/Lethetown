@@ -2,6 +2,8 @@
 
 Juego de navegador con agentes LLM, memoria de tipo humano y psicología. Monorepo pnpm,
 TypeScript estricto. El porqué de cada decisión está en [docs/decisiones/](docs/decisiones/README.md).
+La documentación tiene un sitio para cada cosa, con su índice en [docs/README.md](docs/README.md):
+en la raíz solo `README.md`, este fichero, `CONTRIBUTING.md` y la configuración.
 
 ## Estructura y límites
 
