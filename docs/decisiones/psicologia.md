@@ -7,7 +7,7 @@ psicológica en los prompts si se puede calcular en código.
   y semántica, confusión de fuente, olvido de fechas e intenciones, sugestionabilidad, pico de
   reminiscencia (mayores) y congruencia con el ánimo (neuroticismo). Lo recibe el `MemorySystem`
   de cada proceso (también el api, para que el inspector puntúe igual).
-- **Personalidades revisadas a mano** (`pnpm personality:derive` solo propone; se equivoca, p. ej.,
+- **Personalidades revisadas a mano** (`pnpm seeds:derive personality` solo propone; se equivoca, p. ej.,
   atribuyendo a Pilar lo de "desastre con las fechas" que su descripción dice de Tomás). Un test
   comprueba que encajan con las descripciones.
 - **Ánimo circumplejo**: valencia y activación con etiqueta; base 0.2 ± extraversión ∓

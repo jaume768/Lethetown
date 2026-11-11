@@ -29,10 +29,7 @@
     "assets:placeholder": "tsx tools/generate-placeholder-assets.ts",
     "assets:check": "tsx tools/check-assets.ts",
     "portraits:compose": "tsx tools/compose-portraits.ts",
-    "personality:derive": "tsx tools/derive-personality.ts",
-    "knowledge:derive": "tsx tools/derive-knowledge.ts",
-    "goals:derive": "tsx tools/derive-goals.ts",
-    "skills:derive": "tsx tools/derive-skills.ts",
+    "seeds:derive": "tsx tools/derive-seeds.ts",
     "user:create": "pnpm --filter @lethetown/server user:create --",
     "test:e2e": "playwright test",
     "docs:check": "tsx tools/check-links.ts"

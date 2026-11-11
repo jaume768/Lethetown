@@ -127,8 +127,8 @@ pnpm docs:check` (lo que ejecuta la CI; `docs:check`, enlaces y anclas de los `.
   `pnpm replay:pack <dir>` (paquete de repetición) · `pnpm replay:moments <dir> [<otro>]` ·
   `pnpm replay:scenes` ·
   `pnpm --filter @lethetown/server replay:demo` (paquete corto en mock, sin servidor) ·
-  `pnpm interview [--advance h]` · `pnpm personality:derive` · `pnpm knowledge:derive` ·
-  `pnpm goals:derive` · `pnpm skills:derive` · `pnpm map:generate` ·
+  `pnpm interview [--advance h]` ·
+  `pnpm seeds:derive <personality|knowledge|goals|skills|all>` · `pnpm map:generate` ·
   `pnpm assets:check` · `pnpm portraits:compose` · `pnpm user:create <usuario> [rol]`.
 - Postgres de docker-compose en el puerto **5433**. Retención de datos: `config/retention.json`.
 - Partidas de estudio largas: `.env.study.example` (capa sobre `.env`; la Batch API solo a ≤ x10);

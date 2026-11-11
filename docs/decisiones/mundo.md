@@ -49,7 +49,7 @@
   [historial](../historial.md#mundo-y-metas-fases-1-y-2); en 2002, la libreta del fiado en euros y los gustos de Inés y Leo).
 - **Perfil de conocimiento** (`knowledge` en la semilla): estudios, oficio, idiomas, lugares de
   fuera, intereses y nivel cultural, en el prompt fijo («Lo que sabes: …»), con la regla de
-  responder como el personaje a lo que no sabría o no existe en su época. `pnpm knowledge:derive`
+  responder como el personaje a lo que no sabría o no existe en su época. `pnpm seeds:derive knowledge`
   propone; los 20 están revisados a mano y un test comprueba que encajan.
 - **Aprender de otros** (sistema `knowledge`): un nombre de fuera que alguien dice y quien lo oye
   no tiene en su perfil queda como recuerdo semántico «X me contó algo de …» con

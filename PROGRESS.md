@@ -12,6 +12,6 @@ Antes: 47 `.md` versionados.
 - [x] 3. `CONTRIBUTING.md` único, `docs/roadmap.md`, `docs/en/README.md`
 - [x] 4. Enlaces de todo lo movido (docs, plantillas, comentarios)
 - [x] 5. Capturas sin uso
-- [ ] 6a. `tools/derive-seeds.ts` (`pnpm seeds:derive <tipo>`), igual byte a byte
+- [x] 6a. `tools/derive-seeds.ts` (`pnpm seeds:derive <tipo>`), igual byte a byte
 - [ ] 6b. Código muerto (knip) y alias de scripts duplicados
 - [ ] Final: comprobaciones, `docs/README.md`, fusionar

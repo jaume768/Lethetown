@@ -46,8 +46,8 @@ y que eso se note en el mundo, sin que el LLM se invente el nivel de nadie. Sist
   semana, el día 4 a las 00:00 bajaban de etiqueta 8 habilidades por mundo a la vez: valores de
   las semillas justo en 0,20, 0,45 o 0,70 que perdían milésimas al oxidarse. Además, ningún
   nivel de partida está en un umbral (± 0,01): las semillas se subieron 0,03 (con la etiqueta
-  que se quería) y `skills:derive` hace lo mismo (`offThreshold`); un test lo comprueba.
-- **Semillas** (`skills` en `seeds/agents.json`): `pnpm skills:derive` propone por oficio,
+  que se quería) y `seeds:derive skills` hace lo mismo (`offThreshold`); un test lo comprueba.
+- **Semillas** (`skills` en `seeds/agents.json`): `pnpm seeds:derive skills` propone por oficio,
   intereses, idiomas y edad; están revisadas a mano (el script daba «café y barra» a Lucía porque
   dibuja en el café). Un test comprueba que cada oficio es su mejor habilidad, que los menores no
   pasan de 0,4 y que los mayores saben cocinar.
