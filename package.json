@@ -34,7 +34,8 @@
     "goals:derive": "tsx tools/derive-goals.ts",
     "skills:derive": "tsx tools/derive-skills.ts",
     "user:create": "pnpm --filter @lethetown/server user:create --",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "docs:check": "tsx tools/check-links.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
