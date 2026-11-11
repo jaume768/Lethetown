@@ -4,7 +4,7 @@ import type { AppConfig } from "../config";
 import { fromRoot } from "../paths";
 
 /** Dimensión de los vectores en la base de datos (all-MiniLM-L6-v2 y bge-small: 384). */
-export const EMBEDDING_DIM = 384;
+const EMBEDDING_DIM = 384;
 
 type Extractor = (
   texts: string[],
@@ -12,7 +12,7 @@ type Extractor = (
 ) => Promise<{ tolist(): number[][] }>;
 
 /** Embeddings locales con transformers.js (ONNX en CPU). Se descarga el modelo la primera vez. */
-export class LocalEmbedder implements Embedder {
+class LocalEmbedder implements Embedder {
   readonly dim = EMBEDDING_DIM;
   readonly name: string;
 
@@ -48,7 +48,7 @@ export class LocalEmbedder implements Embedder {
  * Embeddings locales en un worker_thread: misma salida que `LocalEmbedder`, pero el cálculo no
  * bloquea el hilo principal. Las peticiones se encolan en el hilo y se responden por id.
  */
-export class ThreadedEmbedder implements Embedder {
+class ThreadedEmbedder implements Embedder {
   readonly dim = EMBEDDING_DIM;
   readonly name: string;
   private nextId = 0;

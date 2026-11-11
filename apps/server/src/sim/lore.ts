@@ -174,7 +174,7 @@ export function seedLore(ctx: SimContext, now: number): void {
 }
 
 /** Cómo lo recuerda (para un recuerdo o el prompt): «Las magdalenas de Francisca: harina…; …». */
-export function versionText(l: Lore, elements: HeldElement[]): string {
+function versionText(l: Lore, elements: HeldElement[]): string {
   return `${l.title}: ${elements.map((e) => e.text).join("; ")}`;
 }
 
@@ -265,7 +265,7 @@ export function shareLore(
 }
 
 /** Practicar la habilidad de un saber (o estar en su sitio) lo refuerza. */
-export function loreOnPractice(ctx: SimContext, p: PracticeTick): void {
+function loreOnPractice(ctx: SimContext, p: PracticeTick): void {
   for (const { lore: l, holder: h } of heldBy(ctx, p.agent.id)) {
     const related = l.skill === p.skill || (l.placeId && l.placeId === p.agent.state.locationId);
     if (!related || (h.lastUsedAt !== null && p.now - h.lastUsedAt < USE_COOLDOWN)) continue;

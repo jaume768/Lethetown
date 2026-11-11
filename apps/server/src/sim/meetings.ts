@@ -10,13 +10,13 @@ import type { SimContext } from "./context";
 import { goOrDo } from "./routines";
 
 /** Minutos antes de la hora en que uno se acuerda (o no) y sale hacia la cita. */
-export const MEETING_LEAD = 20;
+const MEETING_LEAD = 20;
 /** Minutos después de la hora que se espera a los demás. */
 export const MEETING_WINDOW = 45;
 /** Llegar más tarde de esto (minutos) es llegar tarde. */
-export const LATE_AFTER = 10;
+const LATE_AFTER = 10;
 /** Duración del hueco que reserva una cita en el plan (minutos). */
-export const MEETING_SLOT = 60;
+const MEETING_SLOT = 60;
 /** Afinidad y confianza que quita un plantón (a quien esperaba) y llegar tarde. */
 const NO_SHOW_AFFINITY = -0.15;
 const NO_SHOW_TRUST = -0.1;
@@ -83,7 +83,7 @@ export function agendaLines(ctx: SimContext, agentId: string, now: number): stri
 }
 
 /** Hueco del plan de una cita (minuto del día de inicio y lo que se hace). */
-export function slotOf(ctx: SimContext, c: Commitment, agentId: string): PlanItem {
+function slotOf(ctx: SimContext, c: Commitment, agentId: string): PlanItem {
   const others = c.participants.filter((p) => p !== agentId).map((p) => first(ctx, p));
   const start = Math.max(0, (c.at % 1440) - MEETING_LEAD);
   return {

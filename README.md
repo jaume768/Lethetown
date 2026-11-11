@@ -4,51 +4,47 @@
 y confunde quién le contó qué, como la humana.** Es un juego que se ve en el navegador y un banco
 de pruebas: cada olvido, cada recuerdo que cambia y cada meta queda medido y auditado.
 
-**[Investigación](docs/investigacion/README.md) · [Colabora](COLABORA.md) ·
-[Hoja de ruta](ROADMAP.md) · [Paper](docs/investigacion/paper/README.md)** ·
-[English](CONTRIBUTING.md)
+**[Investigación](docs/investigacion/README.md) · [Colabora](CONTRIBUTING.md) ·
+[Hoja de ruta](docs/roadmap.md) · [Decisiones](docs/decisiones/README.md) ·
+[Documentación](docs/README.md)** · [English](docs/en/README.md)
 
-Un pueblo en pixel art en el navegador, al estilo de los juegos de simulación de vida, donde cada habitante es un **agente controlado por un LLM** (Anthropic u OpenAI) con una memoria lo más parecida posible a la humana.
+Un pueblo en pixel art donde cada habitante es un **agente controlado por un LLM** (Anthropic u
+OpenAI). Parte de [_Generative Agents_](https://arxiv.org/abs/2304.03442) (Park et al., 2023):
+flujo de memoria, recuperación por recencia, importancia y relevancia, planificación y reflexión.
+A eso le añade lo que hace humana a la memoria:
 
-Parte de [_Generative Agents: Interactive Simulacra of Human Behavior_](https://arxiv.org/abs/2304.03442) (Park et al., 2023): flujo de memoria, recuperación por recencia, importancia y relevancia, planificación y reflexión. A eso le añade lo que hace humana a la memoria:
+- **Olvido y vaguedad**: la fuerza de cada recuerdo decae con el tiempo de juego; por debajo de
+  un umbral solo queda la esencia y por debajo de otro ya no se recupera.
+- **Repetición espaciada y congruencia con el ánimo**: recordar refuerza (más cuanto más débil
+  estaba) y se recuerda mejor lo que encaja con el ánimo.
+- **Consolidación nocturna**: al dormir, el agente reflexiona sobre el día citando sus recuerdos,
+  refuerza lo importante y debilita lo trivial.
+- **Reconsolidación y confusión de fuente**: los recuerdos se reescriben un poco al evocarlos
+  (con historial de versiones) y «me lo contó X» puede pasar a «lo viví».
+- **Fichas sociales, rumores y olvido por presupuesto**, cada olvido registrado con su motivo.
+- **Psicología**: Big Five y perfil de memoria propios, ánimo en dos dimensiones, hábitos, sueño,
+  sesgos, falsos recuerdos, memoria prospectiva y relaciones que evolucionan.
+- **Acciones con consecuencias** y **normas del mundo** (casas privadas, horarios): la IA decide,
+  el motor comprueba si es posible y lo ejecuta.
+- **Mallorca, 2002**: un pueblo inventado del interior, recién llegado el euro, con móviles
+  sencillos y sin redes sociales; cada vecino sabe lo que sabría alguien con su vida en esa época.
+- **Metas, habilidades y saberes** medidos por el motor: avanzar motiva, estancarse frustra; se
+  aprende practicando y los saberes se deforman al contarse.
+- **Protección de menores**: nada romántico con un menor, ni en los prompts ni en lo que escribe
+  el LLM, y ningún adulto a solas con un menor fuera de un sitio público.
 
-- **Olvido**: la fuerza de cada recuerdo decae exponencialmente con el tiempo de juego. Por debajo de un umbral ya no se recupera.
-- **Vaguedad**: por debajo de otro umbral solo se recuerda la esencia, que genera el LLM.
-- **Repetición espaciada**: recordar algo lo refuerza, y más cuanto más débil estaba.
-- **Congruencia con el ánimo**: se recuerda mejor lo que encaja con el ánimo actual.
-- **Consolidación nocturna**: al dormir, el agente reflexiona sobre el día, cita los recuerdos en que se basa, refuerza lo importante y debilita lo trivial.
-- **Reconsolidación**: los recuerdos se reescriben un poco al evocarlos, y queda un historial de versiones.
-- **Confusión de fuente**: con el tiempo, "me lo contó X" puede pasar a "lo viví".
-- **Fichas sociales** por persona, **rumores** que se propagan al escuchar a escondidas y **olvido por presupuesto**. Cada decisión de olvido queda registrada con su motivo.
-- **Psicología**: personalidad (Big Five) y memoria propia por agente, ánimo bidimensional, hábitos, sueño, sesgos, falsos recuerdos, memoria prospectiva y relaciones que evolucionan (ver [Psicología](#psicología)).
-- **Acciones con consecuencias**: quedar (y dar plantón), explorar y descubrir el pueblo, conversar en grupo, usar objetos, prestar y devolver cosas, invitar a casa, acompañar a alguien y dejar notas. La IA decide qué hacer; el motor comprueba si es posible y lo ejecuta (ver [Qué pueden hacer](#qué-pueden-hacer-los-habitantes)).
-- **Normas del mundo**: casas privadas con sus invitados (y quien se cuela), horarios de apertura.
-- **Mallorca, 2002**: un pueblo inventado del interior de la isla, recién llegado el euro, con
-  móviles sencillos y SMS, cabinas, cartas y carretes, sin redes sociales ni teléfonos con
-  internet. Cada vecino sabe lo que sabría alguien con su vida en esa época, aprende lo que le
-  cuentan los demás y un registro apunta los anacronismos (ver [El mundo](#el-mundo) y
-  [por qué 2002](#por-qué-2002-y-no-1996)).
-- **Metas**: cada vecino tiene una meta vital, proyectos y pasos que el motor mide (la IA propone,
-  el motor decide); avanzar motiva, estancarse frustra, se abandona o se cambia de rumbo según la
-  personalidad, hay metas que chocan y quien lo consigue puede irse a vivir a Palma (y volver de
-  visita). Lo que no basta contar («hablar de verdad» con alguien) lo comprueba la reflexión
-  nocturna con lo que se dijo.
-- **Protección de menores**: ningún menor tiene ni recibe contenido romántico o sexual, ni en los prompts ni en lo que escribe el LLM, y ningún adulto puede quedar a solas con un menor fuera de un sitio público.
-
-Todo funciona **sin API keys** gracias a un proveedor LLM simulado (mock).
-
-La pregunta que guía el proyecto: **¿qué pasa cuando la memoria de los habitantes deja de ser un
-registro fiable e ilimitado?** La hipótesis es que el olvido, la reconstrucción de los recuerdos y
-las diferencias psicológicas producen historias individuales y dinámicas sociales más variadas y
-verosímiles. Es una hipótesis abierta, no un resultado medido (ver [Evaluación](#evaluación-y-coste)).
+Todo funciona **sin API keys** con un proveedor simulado (mock). La pregunta que guía el
+proyecto: **¿qué pasa cuando la memoria de los habitantes deja de ser un registro fiable e
+ilimitado?** La hipótesis (abierta, no un resultado) es que el olvido, la reconstrucción de los
+recuerdos y las diferencias psicológicas dan historias más variadas y verosímiles. Ver
+[Investigación](docs/investigacion/README.md).
 
 ## Un habitante, por dentro
 
 Cada vecino percibe, recuerda, siente, decide y actúa. Hay **dos capas**: reglas programadas
 (reloj, rutas, umbrales de memoria, ánimo, necesidades, normas, validación de acciones) y el
 modelo de lenguaje, solo donde el lenguaje y el contexto aportan (decidir, conversar, resumir,
-reflexionar). Así se controla el coste, se puede auditar cada decisión y las pruebas son
-reproducibles.
+reflexionar). Así se controla el coste, se audita cada decisión y las pruebas son reproducibles.
 
 ```mermaid
 flowchart LR
@@ -64,631 +60,50 @@ flowchart LR
   C --> E
 ```
 
-| Capacidad                   | Qué tiene cada habitante                                                                                                                                                                                                                                                                                                                                                                                                      |
-| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Identidad**               | Nombre, edad, rasgos, historia, forma de hablar (registro, muletillas, temas), casa y trabajo. Prompt fijo y cacheable.                                                                                                                                                                                                                                                                                                       |
-| **Personalidad**            | Big Five (apertura, responsabilidad, extraversión, amabilidad, neuroticismo) y un perfil de memoria propio: cuánto olvida, cuánto confunde la fuente, lo sugestionable que es, la edad. Cambia muy despacio con lo vivido (unas centésimas por semana como mucho).                                                                                                                                                            |
-| **Emociones**               | Ánimo en dos dimensiones, valencia (agradable–desagradable) y activación (calma–tensión), con etiqueta («contento», «irritable», «preocupado»…). Cada uno tiene su nivel base y vuelve a él con el tiempo; el hambre irrita, el cansancio apaga, la soledad entristece. Lo mueven las conversaciones, los plantones, los préstamos sin devolver, los regalos, los intrusos, el tiempo y los recuerdos que vuelven sin querer. |
-| **Necesidades**             | Energía, hambre y necesidad social (que depende de la extraversión: un introvertido recarga a solas). Dormir recupera según la calidad del sueño.                                                                                                                                                                                                                                                                             |
-| **Memoria**                 | Recuerdos con fuerza que decae, esencia cuando se vuelven vagos, reconsolidación al evocarlos, confusión de fuente, consolidación al dormir, olvido por presupuesto, hábitos, diario del día, recuerdos intrusivos y falsos recuerdos marcados.                                                                                                                                                                               |
-| **Intenciones**             | Memoria prospectiva: «tengo que devolverle el libro a Carmen» con pistas de persona, lugar u hora. Se acuerda, se le olvida o cae en la cuenta tarde. Las citas se apoyan en ella.                                                                                                                                                                                                                                            |
-| **Relaciones**              | Ficha por persona (afinidad, confianza, familiaridad, tipo de vínculo) con historial, no necesariamente recíproca. Rumores con credibilidad según quién los cuenta, mera exposición, perdón y rencor.                                                                                                                                                                                                                         |
-| **Conocimiento del pueblo** | No todos conocen todo: sitios de siempre, vistos al pasar, explorados o que alguien les contó.                                                                                                                                                                                                                                                                                                                                |
-| **Pertenencias**            | Inventario con dueño y préstamos (y la intención de devolverlos).                                                                                                                                                                                                                                                                                                                                                             |
-| **Habilidades**             | 14 del pueblo (cocina, panadería, café y barra, huerto, pesca, fotografía, música, cuidados…): suben con la práctica (más con un maestro delante), se oxidan sin ella y cambian lo que sale (arreglar, la calidad del café o del pan). Se enseñan unos a otros.                                                                                                                                                               |
-| **Saberes**                 | Recetas, técnicas, sitios, historias y canciones del pueblo, cada uno con su versión: se deforman al contarse, se refuerzan con el uso y pueden perderse.                                                                                                                                                                                                                                                                     |
-| **Acciones**                | Un catálogo cerrado que el motor valida (siguiente sección).                                                                                                                                                                                                                                                                                                                                                                  |
+Cada uno tiene identidad y forma de hablar, personalidad que deriva muy despacio, emociones y
+necesidades, memoria e intenciones, relaciones no necesariamente recíprocas, lo que conoce del
+pueblo, sus pertenencias, 14 habilidades y los saberes del pueblo a su manera. El detalle, en
+[Arquitectura](docs/arquitectura.md#un-habitante-por-dentro).
 
-## Qué pueden hacer los habitantes
+## Qué pueden hacer
 
-**La IA decide, el motor valida y ejecuta.** En cada decisión el modelo elige «seguir con el plan»
-o una acción del catálogo con sus parámetros y explica por qué, en la misma llamada. El motor solo
-le ofrece las acciones posibles en ese momento; si aun así algo no se puede (un sitio que no
-conoce, una casa ajena, un local cerrado, alguien que ya se fue), el agente lo percibe con el
-motivo («No pude…»), lo recuerda y puede reconsiderarlo. El estado nuevo se guarda en Postgres
-(con `world_id`), en las instantáneas y también funciona en RAM.
-
-| Acción                                                                   | Qué hace                                                            | Qué comprueba el motor                                                             |
-| ------------------------------------------------------------------------ | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| `do_activity`                                                            | Cambiar de actividad o ir a otro sitio                              | Que conozca el sitio, que pueda entrar (casa propia o invitado) y que esté abierto |
-| `say`                                                                    | Hablar a alguien; si está conversando, unirse a su grupo            | Que esté aquí y despierto; grupos de hasta 5                                       |
-| `propose_meeting`, `accept_meeting`, `decline_meeting`, `cancel_meeting` | Quedar un día a una hora en un sitio                                | Hora razonable, sitio conocido y abierto; con un menor, solo en sitios públicos    |
-| `explore`                                                                | Salir a descubrir sitios                                            | Queda algo abierto por descubrir; el motor elige la ruta                           |
-| `use_object`                                                             | Preparar café, cocinar, hornear, regar, arreglar algo roto…         | Que el verbo valga en el estado actual del objeto                                  |
-| `give_item`, `lend_item`, `return_item`, `take_item`, `leave_item`       | Regalar, prestar, devolver, coger, dejar                            | De quién es, quién lo lleva y quién está delante                                   |
-| `invite`, `accept_invite`, `decline_invite`                              | Ir juntos ahora (a tomar algo, a casa)                              | Solo a la casa propia; comparten la ruta                                           |
-| `follow`                                                                 | Acompañar a alguien un rato                                         | En cada paso, normas y protección de menores                                       |
-| `post_note`, `leave_note`                                                | Colgar una nota en el tablón de la plaza o dejar una nota a alguien | En la plaza / en una casa; nada privado entre adulto y menor                       |
-| `practice`                                                               | Ponerse a practicar algo un rato                                    | Que la habilidad exista; el sitio, conocido y abierto; con tiempo libre            |
-| `ask_to_learn`, `teach`, `accept_teaching`, `decline_teaching`           | Pedir que te enseñen u ofrecerte a enseñar, y la sesión             | Quien enseña sabe más; con un menor, en público o en su casa con su familia        |
-| `help`                                                                   | Ayudar a alguien en lo que está haciendo                            | Que esté haciendo algo que se pueda aprender                                       |
-| `show_result`                                                            | Enseñar y regalar algo hecho por uno (una foto, pan)                | Que sea suyo y lo lleve                                                            |
-| `share_lore`                                                             | Contar una receta, un sitio, una historia o una canción             | Que lo sepa y no lo haya olvidado                                                  |
-
-Y lo que pasa sin que nadie lo pida: los **plantones** (quien esperaba pierde afinidad y confianza y
-se le nota en el ánimo), los **préstamos vencidos** (el dueño lo nota), los **intrusos** (quien
-vive en la casa lo ve), los locales que **abren y cierran** (y echan a quien se queda), los
-**descubrimientos** al pasar cerca de un sitio y los sitios que se aprenden **porque alguien de
-confianza los nombra**. Todo queda en el log con su icono y en el feed de dramas.
-
-<p>
-  <img src="docs/capturas/inventario.png" alt="Inventario de Carmen: ha prestado el libro de poemas a Lucía" width="260">
-  <img src="docs/capturas/lugares-conocidos.png" alt="Lugares que conoce Valentina y cómo los descubrió" width="260">
-  <img src="docs/capturas/agenda.png" alt="Agenda de citas en el inspector" width="260">
-</p>
-
-![Log con insignias de acciones](docs/capturas/log-acciones.png)
-
-**Añadir una acción** (detalle en [docs/decisiones/acciones.md](docs/decisiones/acciones.md#cómo-añadir-una-acción)):
-
-1. Esquema zod y su `ActionSpec` (parámetros y para qué) en `packages/shared/src/actions/catalog.ts`.
-2. Manejador en `apps/server/src/sim/actions/`: `registerAction({ type, available, check, describe, execute })`.
-3. Protección de menores (`minorMeetingRule`) y normas (`mayEnter`) si implica a alguien o un lugar.
-4. Regla del mock con `registerDecideRule` en `packages/agent-core/src/agent/mock/`.
-5. Icono en `apps/web/src/ui/icons.ts` y textos en `i18n`.
-6. Tests, dorado regenerado y explicado, y `cost:report 48` antes y después.
-
-## Arquitectura
-
-En producción (y en `pnpm dev` con Postgres) hay dos procesos: **api** (HTTP + WebSocket, sin
-estado de simulación) y uno o más **sim-worker** (ejecutan los mundos). Se reparten los mundos
-con _leases_ en Postgres y se hablan por `LISTEN/NOTIFY`. Sin Postgres, el api ejecuta los
-mundos en su propio proceso (modo todo en uno).
-
-```mermaid
-flowchart LR
-  subgraph web["apps/web (navegador)"]
-    Phaser["Phaser 4<br/>tilemap · sprites · retratos<br/>día/noche · clips"]
-    React["React<br/>modos Espectador / Director / Overlay<br/>dramas · jardín · Rashomon · i18n"]
-  end
-
-  Caddy["Caddy<br/>HTTPS · estáticos · proxy"]
-
-  subgraph api["proceso api (Fastify)"]
-    REST["REST + WS<br/>sesiones · roles · rate limit<br/>helmet · CORS · Origin"]
-    GW["WorldGateway<br/>(remoto)"]
-    Insp["Inspector · Rashomon<br/>(lecturas directas)"]
-  end
-
-  subgraph worker["proceso sim-worker (×N)"]
-    Lease["Leases"]
-    Sim["Simulation<br/>percepción · conversaciones<br/>rutinas · memoria · intervención"]
-    Drama["DramaDetector"]
-    Budget["BudgetGuard<br/>kill switch"]
-    LLMc["LLMClient → Batching → cola<br/>→ reintentos/breaker → API"]
-    Emb["Embeddings<br/>(worker_thread)"]
-  end
-
-  subgraph core["packages/agent-core (lógica pura)"]
-    Agent["Agent · MemorySystem<br/>human.ts · maintenance.ts<br/>moderación"]
-  end
-
-  DB[("Postgres 16 + pgvector<br/>worlds · memories · events<br/>snapshots · leases · users")]
-  Prov["Anthropic · OpenAI · Mock"]
-
-  React <-- "WS: snapshot · delta · event · drama<br/>thinking · memory_effect · status" --> Caddy
-  Caddy --> REST
-  REST --> GW
-  REST --> Insp --> DB
-  GW <-- "LISTEN/NOTIFY<br/>estado vivo · señales · órdenes" --> DB
-  Lease <--> DB
-  Sim --> Agent
-  Sim --> Drama
-  Agent --> LLMc --> Prov
-  LLMc --> Budget
-  Agent --> Emb
-  Sim <-- "NOTIFY" --> DB
-  Sim --> DB
-```
-
-| Paquete               | Qué contiene                                                                                                                                                                        |
-| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `packages/shared`     | Esquemas zod de los mensajes, parser del mapa Tiled (`.tmj` → `World`), A* determinista, interpolación del movimiento, manifest de assets y lógica pura de animación, emotes y luz. |
-| `packages/agent-core` | Lógica pura y testeable, sin red: agente, memoria, memoria humana completa, crónica y entrevistas. El LLM y los almacenes llegan por inyección.                                     |
-| `apps/server`         | Procesos `api` y `sim-worker` (o todo en uno): simulación, reloj, base de datos, embeddings, seguridad y **todas** las llamadas a la IA. Las API keys nunca llegan al navegador.    |
-| `apps/web`            | Vite + Phaser 4 para el mundo y React para los paneles.                                                                                                                             |
-
-### El mundo
-
-- **`seeds/town.tmj`** es la fuente única de verdad: un mapa [Tiled](https://www.mapeditor.org/) de 120×80 baldosas de 16 px con 20 vecinos, 16 casas, ocho edificios públicos (ayuntamiento, escuela, biblioteca, consultorio, café, panadería, ultramarinos y taberna), la plaza Mayor, el mercadillo, el parque con columpios, el lago Leteo, el Jardín del Recuerdo y el huerto comunitario. Tiene capas `ground`, `paths`, `buildings`, `decor`, `roofs` y `collision`, y objetos `places`, `spots` (con `pose` y dueño), `lights` y `windows`. Lo genera `pnpm map:generate` y se puede editar a mano en Tiled.
-- El servidor calcula la ruta A* (que prefiere los caminos) y su duración, y envía los waypoints. El cliente interpola la posición con el reloj de juego y elige el frame según la distancia recorrida, así a x360 se saltan frames en vez de ir a trompicones.
-- **Normas**: las casas son privadas (entran quienes viven allí y sus invitados) y los locales tienen horario (`private` y `hours` en el `.tmj`, desde `tools/generate-map.ts`); el tablón de anuncios es un spot de la plaza.
-- Los agentes van a **spots** concretos (dormir en su cama, sentarse en la barra) y su `activityKind` decide la animación y el emote.
-- **Época y lugar**: `config/world.json` es la biblia del mundo (Mallorca, 2002: tecnología, lo de
-  fuera, cultura, glosario, fiestas y clima por estación). Va compacta en el prompt fijo; la fecha
-  del calendario y la fiesta del día, en el plan. Cada semilla lleva su **perfil de conocimiento**
-  (estudios, oficio, idiomas, viajes, intereses) y la **gente de fuera** que conoce
-  (`offstagePeople`: familia lejos, difuntos, amigos de antes). El **registro de conocimiento
-  externo** apunta anacronismos y referencias que no encajan con quien habla, sin bloquear nada
-  (modo `log`). Ver
-  [mundo](docs/decisiones/mundo.md#mallorca-2002-la-biblia-del-mundo-y-lo-que-sabe-cada-uno).
-
-#### Por qué 2002 (y no 1996)
-
-En un principio el pueblo vivía en **1996**: se eligió para que hubiera poca tecnología (nada de
-internet en casa ni móviles corrientes), y así las conversaciones fueran en persona, por carta o
-por el fijo, y los agentes no se apoyaran en lo que no existía. Lo que no se tuvo en cuenta fue
-la **moneda**: en 1996 se pagaba en pesetas, y la siguiente fase es la **economía**. Con pesetas
-los precios son números grandes (un café, cien pesetas; un sueldo, más de cien mil) que el modelo
-y quien estudia las partidas tienen que convertir para compararlos con nada actual.
-
-Por eso se ha pasado a **abril de 2002**: el euro está en circulación desde el 1 de enero y es
-una moneda ya establecida (los precios son pequeños y comparables: un café, unos 90 céntimos;
-un menú, unos 7 euros), lo que hace la economía más fácil de calibrar y la investigación más
-sencilla (se leen los precios sin convertir, y entre partidas se comparan igual). Y casi todo lo
-que se buscaba con 1996 sigue ahí: el móvil es sencillo (llamadas y SMS), internet es lento, caro
-y de pocas casas, las fotos son de carrete y no hay redes sociales, mensajería instantánea en el
-teléfono ni nada de lo posterior. Como recién llegado el euro, más de uno aún lo pasa a pesetas en
-la cabeza («eso son mil pesetas»), que es natural en la época.
-
-Lo que cambió: la biblia (año, moneda, tecnología, lo de fuera, personajes y referencias de la
-época, anacronismos: el euro, el móvil, los SMS, internet o el DVD ya no lo son; IB3, Son Espases,
-los smartphones o las redes sociales, sí), un par de semillas (la libreta del fiado de Marta en
-euros; la música de Inés y los dibujos de Leo, de su edad en 2002) y los tests. El 15 de abril de
-2002 también cae en lunes, así que el calendario de partida es el mismo.
-
-- **Habilidades y saberes** (fase 3): 14 habilidades que suben con la práctica y se oxidan sin
-  ella, y 24 saberes del pueblo que cada uno sabe a su manera. Ver [habilidades](docs/decisiones/skills.md)
-  y [saberes](docs/decisiones/lore.md).
-- **Nadie inventa vecinos** («la Pepa» de la segunda partida de estudio): el `PersonGuard` cambia
-  por «alguien» el nombre de una persona que no existe (en la decisión, antes repite una vez con
-  el aviso; una intención así se descarta) y lo registra. Ver [personas](docs/decisiones/personas.md).
-
-### Memoria
-
-Cada recuerdo lleva: texto, esencia (`gist`), embedding, `createdAt` y `lastAccessedAt` (en tiempo de juego), `importance` (1-10), `emotionalValence` (-1..1), `strength`, `stability`, `source`, `type`, personas, lugar, `eventId` (para Rashomon), `links` (citas o episodios resumidos), `status` (`active` o `archived`) y `forgottenAt`.
-
-```
-total = media_ponderada(recencia, importancia, relevancia, coincidencia_de_ánimo) × fuerza_actual
-fuerza = strength · e^(−horas / stability)        olvidado < 0.05 ≤ vago < 0.3 ≤ nítido
-```
-
-Todos los parámetros (pesos, umbrales, probabilidades, presupuesto) están en `packages/agent-core/src/memory/config.ts`, con valores por defecto documentados. Se pueden sobrescribir con un `config/memory.json` opcional.
-
-| Mecanismo              | Cuándo                               | Qué hace                                                                                                                                                           |
-| ---------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Consolidación          | Al dormirse                          | Preguntas salientes, reflexiones con citas, hechos estables y fichas sociales; refuerza lo citado y debilita lo trivial.                                           |
-| Esencia                | Mantenimiento horario                | Al cruzar el umbral de vaguedad, el LLM resume el recuerdo; el texto completo solo lo ve el inspector.                                                             |
-| Reconsolidación        | Al recordar (10 %)                   | Reescritura sutil según el ánimo y las fichas sociales; guarda la versión anterior.                                                                                |
-| Confusión de fuente    | Mantenimiento (5 % al día)           | "contado por X" pasa a "vivido" o a otra persona.                                                                                                                  |
-| Olvido por presupuesto | Si se superan 4000 tokens por agente | 1) borra triviales viejos, 2) resume grupos de episodios en una reflexión enlazada, 3) descarta lo de menor importancia × fuerza. Nunca toca los planes recientes. |
-| Rumores                | Al hablar                            | Quien esté cerca capta fragmentos, con fuente difusa.                                                                                                              |
-| Fin de conversación    | Al recibir una frase                 | Cada agente decide si sigue; pasados 12 turnos, solo si aporta (máximo 30), y se corta si se repiten. Al terminar, fichas sociales y acuerdos hablados.            |
-
-### Tiempo, voz interior y cambios de planes
-
-- **Tiempo**: sol, nubes, lluvia, tormenta, nieve, niebla, viento y calor (`Weather`). Cada uno dice qué refugio
-  pide (`WEATHER_SHELTER`): techo de verdad (tormenta, nieve), techo o algo que cubra (lluvia) o sombra (calor).
-  Los lugares exteriores van marcados en el prompt y los objetos a cubierto (árboles, toldos del mercadillo,
-  invernadero) llevan `[refugio]`. En cada decisión el agente sabe si está bajo techo, a cubierto o
-  mojándose; al planificar sabe el tiempo de la mañana; y si con mal tiempo lo que toca en su plan es al aire
-  libre, se le avisa (una vez por hora) para que decida si va, se queda o cambia de sitio.
-- **Voz interior**: llega en una sección propia del prompt (`VOZ INTERIOR`) y el agente responde siempre con
-  un `reason` (por qué le hace caso o no). El inspector muestra «Lo que piensa» y el log, «le hace caso / no le
-  hace caso — «…»».
-- **Cambios de planes**: cada reacción reescribe el plan del día desde ese minuto (`replanAt`), así que el
-  inspector muestra lo que el agente hace de verdad (marcado como «cambio de planes»).
-- **Diario del día**: cada actividad que empieza se anota en `doneToday` (memoria a corto plazo, sin LLM ni
-  recuerdo por actividad; con poca energía se pierden o mezclan entradas). Al decidir ve «HOY YA HAS HECHO». Al
-  dormirse, el día se guarda como un único recuerdo («El día N: …») y las rutinas repetidas se vuelven hábitos;
-  al planificar recuerda ayer y sus costumbres desde la memoria (con olvido y vaguedad).
-
-### Conversaciones con ritmo
-
-- **Turnos reactivos**: quien recibe una frase contesta al minuto de juego (`SIM_REPLY_DELAY_MINUTES`), no a su siguiente tick de 10 minutos.
-- **Habla oral**: réplicas cortas, a veces de una a tres palabras, sin saludar en cada turno ni repetir lo dicho. Cada agente ve las 4 últimas frases de la charla (las suyas como «tú: …»). Lo que dice se recorta en código según su forma de hablar (90/160/240 caracteres; los menores, 120).
-- **Menos espera**: en una charla en curso, la importancia de lo que se oye sale de reglas y no de otra llamada; la reconsolidación de lo recordado se hace después de contestar; la cola del LLM atiende antes conversación y decisiones que esencias, fichas, resúmenes y crónicas.
-- **A más de x10**, mientras hay conversaciones el reloj va a x10 (`SIM_SLOWDOWN_IN_CONVERSATION`) para que se puedan seguir.
-- **Noche rápida** (`SIM_NIGHT_SPEED`, desactivada por defecto): con todo el pueblo dormido y nada pendiente del LLM, la noche pasa a ese ritmo y vuelve a `SIM_SPEED` antes de despertar (`SIM_WAKE_MARGIN_MINUTES`).
-
-Detalle y mediciones en [docs/decisiones/ritmo.md](docs/decisiones/ritmo.md).
-
-### Cognición en movimiento
-
-Quien camina ya no va a ciegas. Cada 2 minutos de juego, sin LLM, el motor mira quién se cruza
-con quién (también a quien ve venir por su ruta). Lo que le importa ese encuentro lo calcula el
-código (afinidad, familia, rivalidad, algo pendiente como el libro de Carmen, una deuda o una
-cita, el ánimo que se le ve, días sin verse); solo si importa de verdad se para a pensar, sin
-dejar de andar: seguir, saludar al pasar, pararse a charlar o cambiar de destino. Quien se para
-retoma luego su camino (y su plan). Los que van juntos hablan andando, nadie deja de cocinar o
-de atender el café por hablar, y pasar por un sitio o ver a alguien trae recuerdos («le viene a
-la cabeza…»), sin LLM. Se apaga por mundo (`worlds.cognition`, `SIM_COGNITION=off`) para un mundo
-de control. Ver [docs/decisiones/cognicion.md](docs/decisiones/cognicion.md).
-
-### Agentes y coste
-
-- **Sin llamadas extra por acción**: todas van en la misma decisión. Cómo se usa cada acción va en el prompt fijo (cacheado); en cada decisión solo «Posibles ahora: …».
-
-- La **identidad** del agente (rasgos, lugares, objetos y reglas) es un prefijo fijo del prompt, para el _prompt caching_.
-- **Rutinas sin LLM**: dormir, desplazarse y seguir el plan cuando no pasa nada nuevo.
-- Modelo `fast` para decidir, valorar importancia, esencia, reconsolidación, fichas y resúmenes; modelo `reflection` para el plan, la consolidación y la crónica. Qué modelo usa cada tarea (y la duración de su caché) se cambia en `config/llm-routing.json`.
-- El `CostTracker` registra tokens y coste por agente, tarea y modelo. Los precios están en `config/pricing.json`.
-
-### Sistemas
-
-Citas, inventario, objetos, invitar y acompañar, notas, normas, lugares conocidos y el puente de
-los acuerdos hablados son **sistemas** (`SimSystem`, en `apps/server/src/sim/systems/`): cada uno
-declara sus acciones, su parte de la instantánea (con su versión), su revisión periódica, sus
-secciones del prompt, su retención y sus métricas, y `simulation.ts` solo recorre el registro.
-Se pueden desactivar por mundo (`worlds.systems`, `{ "notes": false }`). El mundo de 2002
-(`world`), lo que sabe cada uno (`knowledge`) y las **metas** (`goals`: vital, proyectos y pasos
-medibles, motivación y frustración, conflictos, marcharse del pueblo; ver
-[metas](docs/decisiones/metas.md)) ya son sistemas. Los siguientes (economía, oficios,
-construcción, ciclo vital) entran igual: ver
-[Cómo añadir un sistema](docs/decisiones/sistemas.md#cómo-añadir-un-sistema).
-
-**Lo acordado hablando llega al motor**: la tarea `social` de fin de charla devuelve también los
-acuerdos («quedamos mañana a las cinco en el café», «te dejo el libro»), y cada uno pasa por el
-mismo manejador que la acción formal (normas, menores…). En el log llevan 🗣. Ver
-[acciones](docs/decisiones/acciones.md#puente-de-la-conversación-a-la-acción).
-
-### Psicología
-
-Toda la lógica es pura (agent-core, con tests), sin LLM salvo donde se dice, y todos los parámetros están en
-`MemoryConfig` (`packages/agent-core/src/memory/config.ts` y los esquemas que importa), sobrescribibles con
-`config/memory.json`. Detalle y decisiones: [docs/decisiones/psicologia.md](docs/decisiones/psicologia.md).
-
-| Fenómeno              | Qué hace                                                                                                                                                                                                                                                        | Parámetros                                                     |
-| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
-| Protección de menores | Regla fija en el prompt de todos con la lista de menores; `MinorGuard` revisa lo que escribe el LLM (léxico claro → descarte; ambiguo → moderación `fast`, fail-closed). Lo descartado va a `moderation_log`. Las relaciones con un menor nunca son románticas. | — (`isMinor` en la semilla)                                    |
-| Hábitos               | Las actividades no crean recuerdos; lo repetido en 3 de 7 días se vuelve «Suelo … por las mañanas» y se refuerza. Sin esencia del LLM para importancia ≤ 2.                                                                                                     | `diary`, `habits`, `gist.minImportance`                        |
-| Perfil de memoria     | Big Five + `memoryProfile` de la semilla + edad: los mayores olvidan antes lo vivido y conservan y evocan sus recuerdos de juventud (pico de reminiscencia); los niños confunden más la fuente y son más sugestionables.                                        | `profile`                                                      |
-| Ánimo                 | Valencia y activación con etiqueta circumpleja; nivel base por personalidad y vuelta con vida media; hambre → irritable, cansancio → apagado, soledad → triste. Necesidades según extraversión.                                                                 | `mood`, `needs`                                                |
-| Codificación y sueño  | Fuerza inicial por Yerkes-Dodson, energía, atención y deuda de sueño; con activación extrema solo queda la esencia. Dormir con tensión o preocupación recupera menos; el sueño consolida lo emocional.                                                          | `encoding`, `sleep`                                            |
-| Sesgos                | Negatividad (lo malo dura más), desvanecimiento afectivo (lo malo se suaviza antes), recuerdos intrusivos (vuelven sin buscarlos, con pistas), falsos recuerdos (rellenar huecos, tarea `confabulate`, marcados).                                               | `profile.negativityBias`, `biases`, `intrusive`, `falseMemory` |
-| Memoria prospectiva   | Intenciones con pistas (persona, lugar, hora); al aparecer la pista se acuerda o no según responsabilidad y perfil; si no, «¡vaya, se me olvidó!». Se detectan en charlas y decisiones.                                                                         | `prospective`                                                  |
-| Relaciones            | Afinidad, confianza, familiaridad y tipo (familia, amistad, vecindad, trabajo, rivalidad, pareja) con historial; credibilidad de los rumores, mera exposición, perdón y rencor. Estilo de habla propio por agente.                                              | `social`                                                       |
-
-En la web: pestaña «Relaciones» del inspector (con la relación recíproca y su evolución), «Red del pueblo»
-(grafo con deslizador de tiempo) y afinidad sobre el mapa.
+**La IA decide, el motor valida y ejecuta.** En cada decisión el modelo elige seguir con el plan o
+una acción del catálogo con su porqué: quedar (y dar plantón), explorar, conversar en grupo, usar
+objetos, prestar y devolver, invitar a casa, acompañar, dejar notas, practicar, enseñar y
+aprender, ayudar y contar un saber. Si algo no se puede (un sitio que no conoce, una casa ajena,
+un local cerrado), el agente lo percibe con el motivo y puede reconsiderarlo. Y pasa lo que nadie
+pide: plantones, préstamos vencidos, intrusos, locales que cierran, descubrimientos. Catálogo
+completo y cómo añadir una acción, en
+[Arquitectura](docs/arquitectura.md#qué-pueden-hacer-los-habitantes).
 
 ![Relaciones en el inspector](docs/capturas/relaciones-escritorio.png)
-![Red del pueblo](docs/capturas/red-del-pueblo.png)
 
 ## Cómo arrancar
 
-Requisitos: Node 20+, pnpm 9 y, si quieres persistencia, Docker.
+Requisitos: Node 20+ y pnpm 9 (Docker, solo para Postgres).
 
 ```bash
-pnpm install        # sin red también: onnxruntime no descarga nada (ver «Embeddings sin red»)
-pnpm dev            # crea .env si falta; api + sim-worker (http://127.0.0.1:3001) + web (http://localhost:5173)
+pnpm install
+pnpm dev     # mock y en RAM, sin claves: web en http://localhost:5173
 ```
 
-Funciona en **modo mock** con almacén en RAM (el api corre los mundos y el worker sale avisando).
-Para que el mapa se vea en pixel art necesitas un pack de assets (ver abajo); sin él, el cliente
-pinta formas simples.
-
-Con persistencia en Postgres + pgvector (solo escucha en `127.0.0.1`; credenciales en `.env`):
-
-```bash
-docker compose up -d   # Postgres en el puerto 5433 del host (POSTGRES_PORT para cambiarlo)
-pnpm db:migrate
-pnpm user:create admin admin   # pide la contraseña sin eco
-pnpm dev
-```
-
-`pnpm seed` borra memorias, costes, auditoría, fichas, eventos, crónicas e instantáneas de todos
-los mundos (los mundos se conservan) y vuelve a sembrar. En RAM no hay `user:create`: define
-`DEV_ADMIN_PASSWORD` en `.env` y entra como `admin`.
-
-Producción en un VPS (Caddy con HTTPS, api, workers y Postgres): **[docs/despliegue.md](docs/despliegue.md)**.
-
-### Modos y roles
-
-| Modo           | Quién                    | Qué ve y qué puede hacer                                                                                                                                                  |
-| -------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Espectador** | Cualquiera, sin cuenta   | Mapa, feed de **dramas** con «Ir a verlo», inspector y jardín de recuerdos, Rashomon, línea de tiempo y crónicas. Sin costes ni depuración. Crear clip y enlaces.         |
-| **Director**   | Rol `director` o `admin` | Además: velocidad, pausa, voz interior, objetos, clima, escribir la crónica y métricas. El `admin` ve también costes, el kill switch y el aviso de assets no comerciales. |
-| **Overlay**    | `/overlay?world=…` (OBS) | Fondo transparente con el mapa, el reloj y los últimos dramas.                                                                                                            |
-
-- **Mapa**: rueda o pellizco para zoom (×1–×4), arrastrar para desplazar, flechas y `+`/`−` con el
-  mapa enfocado, clic o el selector «Elegir agente» para inspeccionar. Los tejados se desvanecen
-  si hay alguien dentro.
-- **Dramas**: rumores, escuchas a escondidas, discusiones y amistades (cambios de afinidad),
-  reconsolidaciones y olvidos importantes, puntuados por interés.
-- **Compartir**: «Crear clip» graba la vista en vertical 9:16 (10–30 s) con la marca de agua;
-  la vista Rashomon se exporta como PNG; `?event=…`, `?drama=…` y `?agent=…` son enlaces permanentes.
-- En móvil el mapa ocupa la pantalla y los paneles van en una hoja inferior con pestañas.
-- Primera visita: onboarding de 3 pasos (botón «Ayuda» para verlo otra vez). Textos en es/en.
-
-### Seguridad y gasto
-
-- Sesiones con cookie `httpOnly` + `SameSite=Lax` (+ `Secure` en producción), contraseñas con
-  argon2id, `pnpm user:create`. Las peticiones que mutan exigen rol y un `Origin` permitido.
-- Rate limit global y más estricto en intervención (`RATE_LIMIT_INTERVENTION_PER_MINUTE`) y
-  crónicas; WebSocket con comprobación de Origin, `maxPayload`, heartbeat y límite por IP.
-- El texto de los jugadores se sanea, se limita (`USER_TEXT_MAX`), se modera con el modelo `fast`
-  y entra en los prompts entre `⟦ ⟧` como dato no confiable. Los rechazos quedan en
-  `moderation_log`.
-- **Gasto**: el servidor lo suma (por mundo, día y mes) para verlo, pero no lo limita: eso se
-  controla con el saldo de la API key. Kill switch para admin.
-- LLM con timeout propio, reintentos con backoff y jitter en 429/5xx y circuit breaker; Batch API
-  (activa por defecto, `LLM_BATCH=on`; solo Anthropic) para la consolidación nocturna y las
-  crónicas: la mitad de precio en casi la mitad del gasto. **Solo se usa mientras ningún mundo va
-  más rápido que `LLM_BATCH_MAX_SPEED` (x10)**: para aprovecharla, las noches tienen que ir a x10
-  o menos (a más velocidad, esas llamadas van por la vía normal, a precio completo). Si un lote
-  tarda más de `LLM_BATCH_MAX_WAIT_MINUTES`, se repite por la vía normal.
-
-### Partidas de estudio largas
-
-[`.env.study.example`](.env.study.example) es una capa sobre `.env` (sin secretos) para grabar
-partidas de 7 días con el LLM real: x10, Batch activa, sin pausar cuando nadie mira y una
-semilla por base de datos. Lleva los comandos para dos semillas (7 y 13): crear la base, migrar,
-`pnpm dev`, `record --hours 168`, `world:export` y `pnpm study:analyze` para compararlas.
-Para medir la fase 3.6, un mundo de control con `SIM_COGNITION=off` (`COGNITION_CONTROL=on` en
-`scripts/estudio-semana.sh`): `study:analyze` compara los dos (encuentros, saludos, charlas en
-el camino, asociaciones, red y coste).
-
-Todas las variables, con su explicación, están en [`.env.example`](.env.example).
-
-### Repetición y modo cine
-
-Una partida grabada se ve en la web sin servidor, sin LLM y sin coste: `pnpm replay:pack
-<grabación>` hace un `.replay.json.gz` (solo lo publicable: lista blanca) y `/replay` lo
-reproduce (arrastrándolo o con `?src=/replays/<nombre>`, de `apps/web/public/replays/`). Play,
-velocidades de x1 a x360, saltar a un día y hora y una lista de **momentos** (dramas, crónicas,
-conversaciones largas, recuerdos que cambian, metas…) con atajos de teclado. El **modo cine**
-(`?cine=1`) deja solo el mapa en un marco 9:16, 4:5 o 16:9 con zona segura, cámara que encuadra
-a quien habla, subtítulos grandes, tarjetas (jardín de recuerdos, Rashomon, red, metas, maestro y
-alumno) y la marca «Repetición de una partida real», y graba clips a 30 fps.
-`pnpm replay:moments <grabación> [<otra>]` saca los candidatos a clip a `moments.md`, con los
-arcos largos aparte (y, con dos semillas, cómo acabó en cada una lo mismo). También: la tarjeta
-«así muere un recuerdo» (`&memory=<id>`), la pantalla partida con dos semillas
-(`&src2=…&split=1`), el contador de días y las escenas de los guiones
-([`docs/videos/escenas.json`](docs/videos/README.md), `?scene=<id>`). Ver
-[repetición](docs/decisiones/repeticion.md).
-
-### Comandos
-
-| Comando                                           | Qué hace                                                                                                                                                     |
-| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `pnpm test` / `lint` / `typecheck` / `format`     | Vitest, ESLint, TypeScript y Prettier.                                                                                                                       |
-| `pnpm map:generate [--pack nombre]`               | Regenera `seeds/town.tmj` con los sellos del pack indicado (por defecto, `activePack`).                                                                      |
-| `pnpm assets:placeholder`                         | Genera el set placeholder propio en `apps/web/public/assets/placeholder/`.                                                                                   |
-| `pnpm assets:check [--strict]`                    | Lista los assets en uso con su licencia y marca los no comerciales (`--strict` falla si hay alguno).                                                         |
-| `pnpm portraits:compose`                          | Compone los retratos animados de los agentes con las capas del Portrait Generator ([docs/personajes.md](docs/personajes.md)).                                |
-| `pnpm user:create <usuario> [rol]`                | Crea un usuario (viewer, director o admin) en Postgres.                                                                                                      |
-| `pnpm test:e2e`                                   | Smoke tests de la interfaz con Playwright (escritorio y 375 px), con su propio servidor mock.                                                                |
-| `pnpm interview [--advance horas]`                | Entrevista a cada agente con una batería fija de preguntas y guarda las respuestas en `interviews/`. Sirve como test de regresión de la memoria.             |
-| `pnpm --filter @lethetown/server sim:text 16`     | Simulación en modo texto, sin servidor: 16 horas de juego con eventos y costes.                                                                              |
-| `pnpm --filter @lethetown/server cost:report 48`  | Llamadas y tokens por tarea en 48 h de mock reproducible (tabla Markdown) y espera media de las respuestas.                                                  |
-| `pnpm --filter @lethetown/server latency:probe`   | Prueba corta en tiempo real con el proveedor de `.env`: espera entre mensajes (s reales) y espera en la cola del LLM por tarea.                              |
-| `pnpm --filter @lethetown/server record <dir>`    | Con `pnpm dev` en marcha, graba una partida (mensajes del WebSocket y estado de los agentes); `world:export <dir>` vuelca la BD del mundo.                   |
-| `pnpm replay:pack <dir> [--out f.replay.json.gz]` | Empaqueta una partida grabada (y su `world:export`) para verla en `/replay`, sin servidor ni coste.                                                          |
-| `pnpm replay:moments <dir> [<otro dir>]`          | Momentos destacados (candidatos a clip) y arcos largos en `moments.md` y `moments.json`; con dos semillas, cómo acabó en cada una la misma intención o meta. |
-| `pnpm replay:scenes`                              | Comprueba las escenas de `docs/videos/escenas.json` contra sus paquetes (la frase y el minuto).                                                              |
-| `pnpm study:analyze <dir> [<otro dir>]`           | Analiza una partida grabada (o compara dos): `analysis.json` y `analysis.md` con coste, espera, frases, intenciones, acciones, red y memoria.                |
-| `pnpm personality:derive [--write]`               | Propone personalidad y perfil de memoria a partir de rasgos, edad y descripción de `seeds/agents.json`.                                                      |
-| `pnpm knowledge:derive [--write]`                 | Propone el perfil de conocimiento (estudios, oficio, idiomas, viajes, intereses) de cada semilla.                                                            |
-| `pnpm goals:derive [--write]`                     | Propone una meta vital y proyectos medibles por semilla (las del repo están revisadas a mano).                                                               |
-| `pnpm skills:derive [--write]`                    | Propone los niveles de partida de las habilidades por oficio, intereses, idiomas y edad (los del repo están revisados a mano).                               |
-| `pnpm db:generate`                                | Genera una migración de Drizzle tras cambiar el esquema.                                                                                                     |
-
-`SIM_SEED` en `.env` fija el azar de la memoria (rumores, reconsolidación…) para tener simulaciones reproducibles. El test dorado (`apps/server/src/sim/golden.test.ts`) compara 3 días de simulación en mock con una línea de tiempo guardada.
-
-`SIM_DEMO=on` activa el **modo demostración**: cada `SIM_DEMO_EVERY_MINUTES` minutos de juego (de media) llueve o sale el sol, se avería un objeto de un lugar público (y luego se arregla) o un vecino tiene una ocurrencia de la voz interior. Con el proveedor mock sirve para ver reacciones, rumores y confidencias sin intervenir.
-
-Con `TEST_DATABASE_URL` se ejecutan también los tests de integración con Postgres (la CI levanta uno).
-
-### Embeddings sin red
-
-En linux/x64, el `postinstall` de onnxruntime-node descargaría de NuGet los binarios CUDA; está
-desactivado (`pnpm.neverBuiltDependencies`) porque los de CPU vienen en el paquete. Si aun así el
-modelo no carga (p. ej. sin red la primera vez, para descargarlo), el servidor cae solo a
-`EMBEDDINGS=hash`. Los embeddings locales se calculan en un `worker_thread`.
-
-### API
-
-Todas las rutas de un mundo cuelgan de `/api/worlds/:worldId/…`; `/api/…` es un alias del mundo
-`default`. 👁 = público, 🎬 = director, 🔑 = admin.
-
-| Método  | Ruta (dentro del mundo)                             | Descripción                                                        |
-| ------- | --------------------------------------------------- | ------------------------------------------------------------------ |
-| 👁 GET   | `/state` · `/map`                                   | Estado del mundo (con su estado de pausa) y mapa `.tmj`.           |
-| 👁 GET   | `/agents/:id/memory?q=&limit=&offset=`              | Jardín de recuerdos paginado (sin embeddings), auditoría y fichas. |
-| 👁 GET   | `/rashomon/:eventId`                                | Versiones de un evento según cada implicado, con historial.        |
-| 👁 GET   | `/agents/:id/relationships?q=&type=&limit=&offset=` | Relaciones con la recíproca y su tendencia, y quién no conoce.     |
-| 👁 GET   | `/agents/:id/relationships/:other/history`          | Evolución de una relación en los dos sentidos.                     |
-| 👁 GET   | `/social/graph` · `/social/history?since=&limit=`   | Red del pueblo ahora y su historial (paginado).                    |
-| 👁 GET   | `/events?day=` · `?from=&to=`                       | Línea de tiempo.                                                   |
-| 👁 GET   | `/dramas?limit=` · `/chronicles`                    | Feed de dramas y crónicas.                                         |
-| 👁 GET   | `/agents/:id/commitments?limit=`                    | Agenda: citas del agente y cómo acabaron.                          |
-| 👁 GET   | `/agents/:id/inventory` · `/agents/:id/places`      | Inventario (con préstamos) y lugares que conoce.                   |
-| 👁 GET   | `/notes`                                            | Notas vivas (tablón y privadas).                                   |
-| 👁 GET   | `/agents/:id/goals` · `/departures`                 | Metas del agente (con su historial) y vecinos que se fueron.       |
-| 🎬 POST | `/agents/:id/thought`                               | Voz interior `{ text }` (moderada).                                |
-| 🎬 POST | `/world/spots/:id` · `/world/weather`               | Estado de un objeto `{ state }` (moderado) y clima.                |
-| 🎬 POST | `/speed` · `/pause` · `/resume`                     | Velocidad (0, 1, 10, 60, 360) y pausa.                             |
-| 🎬 POST | `/chronicles/:day`                                  | Genera ya la crónica de un día.                                    |
-| 🔑 GET  | `/costs`                                            | Costes acumulados.                                                 |
-
-| Método      | Ruta general                                            | Descripción                                                                                                                             |
-| ----------- | ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| 👁 GET       | `/api/health` · `/api/worlds`                           | Health mínimo y lista de mundos.                                                                                                        |
-| 👁 POST      | `/api/auth/login` · `/api/auth/logout` · GET `/me`      | Sesión por cookie.                                                                                                                      |
-| 🔑 GET      | `/api/admin/health` · `/api/admin/budget`               | Health detallado (leases, cola LLM, breaker) y gasto.                                                                                   |
-| 🔑 POST     | `/api/admin/kill` `{ on }`                              | Kill switch.                                                                                                                            |
-| 🔑 GET/POST | `/api/admin/worlds` · `/:id/status` · `/:id/moderation` | Gestión de mundos (crear con `language`) y textos rechazados.                                                                           |
-| 🔑 GET      | `/metrics`                                              | Prometheus (o `Authorization: Bearer METRICS_TOKEN`).                                                                                   |
-| WS          | `/ws?world=`                                            | `snapshot` al conectar y luego `delta`, `event`, `drama`, `thinking`, `memory_effect`, `chronicle`, `world`, `status` y (admin) `cost`. |
-
-## Evaluación y coste
-
-Medido con el proveedor simulado (`pnpm --filter @lethetown/server cost:report 48`: 48 h de juego,
-20 agentes, `SIM_SEED=7`, en RAM). Es reproducible, pero el mock solo ejercita los caminos del
-programa: **no es una medida del coste ni del comportamiento con un modelo real**.
-
-| Fase                           | Llamadas | Decidir | Entrada no cacheada | Por decisión | Lectura de caché |
-| ------------------------------ | -------: | ------: | ------------------: | -----------: | ---------------: |
-| Antes de las acciones (`main`) |     3613 |     963 |             854 232 |          481 |        5 349 411 |
-| Con todas las acciones         |     3289 |    1054 |           1 070 873 |          600 |        5 734 538 |
-
-Ninguna acción añade llamadas: van en la misma decisión. Se decide algo más (hay más con quién
-hablar y qué hacer) y cada decisión lleva más contexto (agenda, inventario, invitaciones, lugares
-descubiertos), aunque el catálogo vive en el prompt fijo cacheado. Bajaron las esencias
-(`gist.minImportance` = 4: 847 → 261). Por fases, en [PROGRESS-ACCIONES.md](PROGRESS-ACCIONES.md).
-
-Otros registros: en 72 h de mock hubo 74 intenciones nuevas, 41 cumplidas, 4 olvidadas y 2
-recordadas tarde (antes de las acciones); con las citas, alrededor de una de cada cuatro se olvida.
-Las entrevistas (`pnpm interview --advance 48`) muestran qué recuerda cada uno: tras las acciones,
-Carmen recuerda que Lucía le debía el libro de poemas, Lucía que quiere volver a quedar con
-Tomás y Hugo conversaciones con varios vecinos (los rumores de Aurora, los planes de Valentina, la
-cita de Samuel con Ernesto); antes, cada uno repetía casi siempre el mismo recuerdo.
-
-Qué falta para afirmar algo: comparar configuraciones con los mismos personajes y semillas (A sin
-memoria imperfecta, B con olvido y vaguedad, C con personalidad y ánimo, D completa), con varias
-semillas y al menos dos modelos reales, y una evaluación humana ciega de verosimilitud,
-diversidad y coherencia. Las cinco familias de métricas propuestas: precisión y degradación de
-los recuerdos frente a lo que pasó, consistencia de decisiones y compromisos, evolución de los
-vínculos, coste y latencia por día de juego, y juicio humano.
-
-### Métricas de evolución
-
-La pestaña de admin **Evolución** (`GET /api/worlds/:id/evolution`) da, por día de juego: parejas
-que han hablado (y % de las posibles), concentración de la red y diversidad de interlocutores,
-conversaciones (grupo o pareja, turnos, cómo acaban), intenciones, acciones formales frente a
-acordadas hablando, cambios de tipo de relación, memoria (reconsolidaciones, olvidos,
-archivados), errores del LLM, coste por tarea y por sistema, metas (activas, conseguidas,
-abandonadas, progreso y frustración, también por agente) y conocimiento externo (anacronismos y
-referencias, con ejemplos), más las cifras de cada sistema.
-`pnpm study:analyze` calcula lo mismo con una partida grabada. Ver
-[evolución](docs/decisiones/evolucion.md).
-
-Fase de cimientos (`cost:report 48`, mock; coste estimado con los tokens del mock a precios de
-Haiku 5.5 y Sonnet 5.5): de 4.420 llamadas y ≈ 0,94 $ a 3.791 y ≈ 0,65 $, con el puente de los
-acuerdos ya puesto. Detalle por paso en [PROGRESS-CIMIENTOS.md](PROGRESS-CIMIENTOS.md).
-
-Mundo de la época y metas (entonces, 1996; mismo método): de 3.791 llamadas y ≈ 0,65 $ a 4.131 y ≈ 0,79 $. No hay
-tareas nuevas: el prompt fijo crece con la biblia y el perfil (casi todo leído de caché), el plan
-y la consolidación llevan las metas, y el mock cambia de trayectoria con las semillas nuevas.
-Detalle en [PROGRESS-MUNDO-METAS.md](PROGRESS-MUNDO-METAS.md).
-
-Desarrollo y aprendizaje (mismo método): de 3.525 llamadas y ≈ 0,74 $ a 3.442 y ≈ 0,79 $. Más
-contexto por decisión (lo que sabe hacer, con quién aprender, los saberes que puede contar, y las
-acciones nuevas en el prompt fijo): 623 → 684 tokens no cacheados por decisión. Los saberes en
-cada decisión con alguien delante lo subían a ≈ 0,92 $: van como mucho cada 3 h. Detalle en
-[PROGRESS-APRENDIZAJE.md](PROGRESS-APRENDIZAJE.md).
-
-Corrección 2.5 (de la segunda partida de estudio; mismo método): de 4.131 llamadas y ≈ 0,79 $ a
-3.525 y ≈ 0,74 $. Las fichas suben menos por charla (rendimientos decrecientes) y en el mock eso
-deja menos charlas (524 → 384 respuestas), y por tanto menos decisiones, importancias y fichas;
-la consolidación y el plan, igual. Las metas conseguidas en 48 h bajan de 9 a 3: con tema, el
-mock ya no cumple proyectos con cualquier charla. Detalle en
-[PROGRESS-CORRECCION-2-5.md](PROGRESS-CORRECCION-2-5.md).
-
-Corrección 3.5 (de la tercera partida de estudio; mismo método): de 4.028 llamadas y ≈ 0,85 $ a
-3.632 y ≈ 0,80 $. El efecto de espaciado deja estabilidades menores (más esencias, muchos menos
-resúmenes por presupuesto: 77 → 3) y la enseñanza repetida deja menos vínculo, así que hay algo
-menos de charla (533 → 434 respuestas). El prefijo común del prompt fijo, con su propio punto de
-caché, no se ve en el mock: hay que medirlo con el LLM real. Detalle en
-[PROGRESS-CORRECCION-3-5.md](PROGRESS-CORRECCION-3-5.md).
-
-### Limitaciones
-
-- No reproduce la memoria humana: son analogías computacionales con parámetros de diseño
-  (configurables en `MemoryConfig`), no valores clínicos validados.
-- La calibración con el mock puede no trasladarse a modelos reales; el resultado depende de los
-  personajes, los prompts, el modelo y la escala de tiempo.
-- Rumores, reconstrucciones y falsos recuerdos implican atribuciones erróneas a propósito: por eso
-  todo se audita y el inspector separa lo que pasó de lo que cada uno cree recordar.
-- Es una simulación experimental, no una representación de personas, poblaciones o trastornos.
-  La protección de menores y la moderación necesitan pruebas continuas; no son una garantía
-  universal frente a todos los fallos de los modelos.
-
-## Cambiar de proveedor
-
-En `.env`:
-
-```bash
-LLM_PROVIDER=anthropic        # o openai, o mock
-ANTHROPIC_API_KEY=sk-ant-...
-ANTHROPIC_MODEL_FAST=claude-haiku-5-5
-ANTHROPIC_MODEL_REFLECTION=claude-sonnet-5-5
-OPENAI_MODEL_FAST=gpt-6-luna
-OPENAI_MODEL_REFLECTION=gpt-6-sol
-LLM_CONCURRENCY=8
-```
-
-- **Anthropic**: Messages API con `cache_control` en el prompt de sistema y `output_config.effort`. En Sonnet 5.5 se activa el fallback del lado servidor (`fallbacks: "default"`).
-- **OpenAI**: Responses API con `reasoning.effort` y `prompt_cache_key` por agente.
-
-Antes de dejarlo corriendo, empieza en pausa (`SIM_SPEED=0`) y mira el contador de coste. Con la memoria humana activa hay unas 2.000 llamadas por día de juego con los 20 agentes (la mayoría con el modelo `fast`): el servidor no limita el gasto, así que controla el saldo de la API key antes de usar un proveedor real.
-
-## Decisiones de diseño
-
-El porqué de lo que no se deduce del código está en [docs/decisiones/](docs/decisiones/README.md)
-(un archivo por área: mundo, simulación, memoria, psicología, relaciones, menores, LLM,
-producción, interfaz y acciones).
-
-## Assets y créditos
-
-### Créditos (obligatorio)
-
-El pixel art del juego es obra de **LimeZu**:
-
-- [Modern Exteriors](https://limezu.itch.io/modernexteriors)
-- [Modern Interiors](https://limezu.itch.io/moderninteriors) (versión gratuita)
-- [Modern User Interface](https://limezu.itch.io/modernuserinterface) (incluye el Portrait Generator, herramienta de [MrSwordsman](https://legendaryswordsman2.itch.io/portrait-generator))
-- Página del autor: [limezu.itch.io](https://limezu.itch.io/)
-
-La pantalla de **Créditos** del juego muestra lo que exige cada licencia (sale del campo
-`credits` del manifest). Cada asset del manifest lleva `license: "commercial" | "non-commercial"`;
-`pnpm assets:check` lista los que están en uso y la web avisa en modo Director si alguno no es
-comercial. Inventario y licencias: `apps/web/public/assets/vendor/LICENSES.md` (ignorado por git).
-
-Las licencias de LimeZu **prohíben redistribuir** los assets. Por eso no están en el repositorio: cada desarrollador los descarga de itch.io y los descomprime en `apps/web/public/assets/vendor/`, que está en `.gitignore`. La versión gratuita de Modern Interiors además solo permite uso **no comercial**.
-
-Las fuentes [Pixelify Sans](https://github.com/eifetx/Pixelify-Sans) (títulos y botones) y [Atkinson Hyperlegible](https://github.com/googlefonts/atkinson-hyperlegible) (textos largos) se distribuyen bajo la SIL Open Font License 1.1 y están incluidas en `apps/web/public/assets/fonts/` con sus licencias.
-
-### Instalar los packs
-
-Descomprime las versiones de 16×16 en `apps/web/public/assets/vendor/limezu/`, manteniendo la estructura de los zip:
-
-```
-apps/web/public/assets/vendor/limezu/
-├── exteriors/Modern_Exteriors_16x16/...           # modernexteriors-win.zip
-├── interiors_free/Modern tiles_Free/...           # Modern_Interiors_Free_v2.2.zip
-├── ui/16x16/...                                   # modernuserinterface-win.zip
-└── portraits/Portrait_Generator - 16x16|32x32|48x48 # «Portrait Pieces» del Portrait Generator
-```
-
-Luego `pnpm portraits:compose` para generar los retratos (ver [docs/personajes.md](docs/personajes.md)).
-
-Compruébalo con `git check-ignore -v apps/web/public/assets/vendor/limezu`.
-
-### Manifest y packs
-
-`apps/web/public/assets/manifest.json` (esquema zod en `packages/shared/src/assets/manifest.ts`) define, para cada pack:
-
-- `tilesets`: imagen y tamaño de cada tileset.
-- `stamps`: los "sellos" con los que el generador compone el mapa. Cada sello es un trozo del tileset (`x`, `y`, `w`, `h`) en modo `fixed`, `pattern` o `nineslice`, con su ancla respecto al spot y las baldosas que bloquean el paso.
-- `characters`: hojas de personaje con sus animaciones (`walk_down`, `sit_left`…). Las del placeholder son recoloreables con el `appearance` de cada agente.
-- `agentCharacters`: qué personaje usa cada agente.
-- `ui`: hoja de Modern User Interface y las piezas (panel, botón…) que el cliente recorta para la piel de la interfaz; sin ella, estilo pixel propio.
-- `portraits`: retratos compuestos (64 px para el inspector, 32 px junto a los bocadillos).
-
-Hay dos packs: `limezu` (el que usa el `.tmj` del repo) y `placeholder`, un set propio generado por código que sí se commitea. Para cambiar de pack:
-
-```bash
-pnpm assets:placeholder              # solo para el placeholder
-pnpm map:generate --pack placeholder # o --pack limezu
-```
-
-El cliente elige automáticamente el pack con el que se generó el mapa (propiedad `assetPack` del `.tmj`). Si regeneras el mapa, perderás los retoques que hayas hecho a mano en Tiled.
-
-## Roadmap
-
-1. **MVP en modo texto** ✅
-2. **Memoria humana completa** ✅ consolidación, esencia, reconsolidación, confusión de fuente, fichas sociales, rumores y olvido por presupuesto.
-3. **Motor y acelerador** ✅ LOD sin espectadores, Batch API, presupuestos de coste. Pendiente: una conversación completa por llamada.
-4. **Mundo visual 2D** ✅ (en gran parte). Pendiente: colisión de muebles y animaciones con el Character Generator completo (cuando se compre Modern Interiors).
-5. **Producción** ✅ multi-mundo con instantáneas, seguridad, api + workers, observabilidad, Docker con Caddy e interfaz para espectadores, directores y streaming.
-6. **Psicología** ✅ protección de menores, hábitos, perfiles, ánimo, sueño, sesgos, memoria prospectiva y relaciones visibles.
-7. **Acciones** ✅ catálogo validado por el motor: citas, explorar, grupos, objetos e inventario, invitar y acompañar, notas, normas del mundo; agenda, inventario y lugares en el inspector.
-8. **Mundo y metas** ✅ Mallorca en 2002 (al principio, 1996) (biblia, calendario, clima, perfil de conocimiento, registro de anacronismos) y metas medibles con psicología, conflictos y marcharse del pueblo.
-   - **Desarrollo y aprendizaje** ✅ habilidades que se practican, se enseñan y se oxidan; saberes del pueblo que se cuentan, se deforman y se pierden; deriva lenta de la personalidad; pestaña «Habilidades y saberes» y «Saberes del pueblo».
-   - **Corrección 2.5** ✅ (de la segunda partida de estudio): pasos que no se pierden y siguiente proyecto, metas cualitativas comprobadas de noche, frustración que lleva a abandonos en una semana, intenciones sin inflación, nadie inventa vecinos (`PersonGuard`) y menos ruido en los registros.
-   - **Corrección 3.5** ✅ (de la tercera partida de estudio): menos ruido en el `PersonGuard` (apodos, siglas, listas, conocidos por otros) y en familia para la protección de menores, efecto de espaciado en la memoria, metas vitales confirmadas de noche, habilidades con histéresis y práctica rutinaria, enseñanza sin encadenar, deriva de la personalidad con lo malo y respecto al pueblo, saberes que no se repiten y se deforman, comer lo hecho, caché del prefijo común, rangos en la base de datos y partidas de estudio con desfase, control en ablación y manifiesto.
-   - **Repetición y modo cine** ✅ partidas grabadas en la web sin servidor ni coste, momentos destacados, cámara, subtítulos, marcos de redes y clips.
-   - **Cognición en movimiento (3.6)** ✅ encuentros por el camino con saliencia calculada, saludar y pararse a charlar (y retomar el camino), hablar andando y sin dejar la actividad, asociaciones sin LLM, presencia por proximidad, dramas y métricas; con interruptores por mundo para el mundo de control.
-9. **Siguiente**: economía (`buy_item` / `sell_item`, ya preparada con `Item.value`; en euros), mensajes a distancia (teléfonos fijos y cabinas, cartas), ciclo vital (las metas aplazadas de los menores), la evaluación comparativa con modelos reales, OAuth, editor de mundos y agentes desde la web, traducción de los prompts (hoy se pide al modelo que responda en el idioma del mundo).
+Sin el pack de assets, el mapa se pinta con formas simples. Postgres, modos y roles, comandos,
+API, proveedores y partidas de estudio: [docs/desarrollo.md](docs/desarrollo.md).
+
+## Créditos
+
+El pixel art es obra de **LimeZu**: [Modern Exteriors](https://limezu.itch.io/modernexteriors),
+[Modern Interiors](https://limezu.itch.io/moderninteriors) (versión gratuita) y
+[Modern User Interface](https://limezu.itch.io/modernuserinterface) (con el Portrait Generator,
+de [MrSwordsman](https://legendaryswordsman2.itch.io/portrait-generator)); página del autor:
+[limezu.itch.io](https://limezu.itch.io/). Sus licencias **prohíben redistribuirlo**: no está en
+el repositorio (cada uno lo descarga en `apps/web/public/assets/vendor/`). Fuentes
+[Pixelify Sans](https://github.com/eifetx/Pixelify-Sans) y
+[Atkinson Hyperlegible](https://github.com/googlefonts/atkinson-hyperlegible) (SIL OFL 1.1).
+Instalación, manifest y retratos: [docs/assets.md](docs/assets.md).
+
+---
+
+[Investigación](docs/investigacion/README.md) · [Colabora](CONTRIBUTING.md) ·
+[Hoja de ruta](docs/roadmap.md) · [Decisiones](docs/decisiones/README.md) ·
+[Documentación](docs/README.md) · [English](docs/en/README.md)

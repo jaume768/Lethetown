@@ -2,6 +2,8 @@
 
 Juego de navegador con agentes LLM, memoria de tipo humano y psicología. Monorepo pnpm,
 TypeScript estricto. El porqué de cada decisión está en [docs/decisiones/](docs/decisiones/README.md).
+La documentación tiene un sitio para cada cosa, con su índice en [docs/README.md](docs/README.md):
+en la raíz solo `README.md`, este fichero, `CONTRIBUTING.md` y la configuración.
 
 ## Estructura y límites
 
@@ -118,16 +120,17 @@ TypeScript estricto. El porqué de cada decisión está en [docs/decisiones/](do
 
 - `pnpm dev` (funciona sin Postgres ni API keys) · `pnpm test:e2e` · `TEST_DATABASE_URL=… pnpm test`.
   Si `.env` apunta a Anthropic o a Postgres, para probar en mock: `LLM_PROVIDER=mock DATABASE_URL=`.
-- Antes de cada commit: `pnpm typecheck && pnpm lint && pnpm format:check && pnpm test` (lo que
-  ejecuta la CI). `pnpm -s typecheck` puede esconder errores de tsc: mira el código de salida.
+- Antes de cada commit: `pnpm typecheck && pnpm lint && pnpm format:check && pnpm test &&
+pnpm docs:check` (lo que ejecuta la CI; `docs:check`, enlaces y anclas de los `.md`).
+  `pnpm -s typecheck` puede esconder errores de tsc: mira el código de salida.
 - `pnpm --filter @lethetown/server cost:report 48` (coste reproducible y espera de respuesta) ·
   `latency:probe [min] [x]` (prueba real corta) · `record <dir>` / `world:export <dir>` (grabar
   una partida) · `pnpm study:analyze <dir> [<otro> …]` (analizarla) · `sim:text <horas>` ·
   `pnpm replay:pack <dir>` (paquete de repetición) · `pnpm replay:moments <dir> [<otro>]` ·
   `pnpm replay:scenes` ·
   `pnpm --filter @lethetown/server replay:demo` (paquete corto en mock, sin servidor) ·
-  `pnpm interview [--advance h]` · `pnpm personality:derive` · `pnpm knowledge:derive` ·
-  `pnpm goals:derive` · `pnpm skills:derive` · `pnpm map:generate` ·
+  `pnpm interview [--advance h]` ·
+  `pnpm seeds:derive <personality|knowledge|goals|skills|all>` · `pnpm map:generate` ·
   `pnpm assets:check` · `pnpm portraits:compose` · `pnpm user:create <usuario> [rol]`.
 - Postgres de docker-compose en el puerto **5433**. Retención de datos: `config/retention.json`.
 - Partidas de estudio largas: `.env.study.example` (capa sobre `.env`; la Batch API solo a ≤ x10);
@@ -141,3 +144,5 @@ TypeScript estricto. El porqué de cada decisión está en [docs/decisiones/](do
 - Prettier (ancho 100, comillas dobles); ESLint con `consistent-type-imports`.
 - Tests con Vitest junto a la lógica.
 - Commits pequeños, en español y con prefijo convencional (`feat(agent-core): …`).
+- Una fase en curso lleva su avance en `PROGRESS.md` en la raíz; al fusionar, se condensa en
+  `docs/historial.md`, lo pendiente pasa a `docs/roadmap.md` y `PROGRESS.md` se borra.

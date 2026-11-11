@@ -24,7 +24,7 @@ export interface PromptSection {
 }
 
 /** Su parte de la instantánea: versión propia (no hace falta subir `SIM_SNAPSHOT_VERSION`). */
-export interface SystemSnapshot<T> {
+interface SystemSnapshot<T> {
   /** Si la guardada es de otra versión (o no valida), el sistema arranca limpio. */
   version: number;
   schema: z.ZodType<T>;
@@ -33,7 +33,7 @@ export interface SystemSnapshot<T> {
 }
 
 /** Revisión periódica sin LLM. Las del mismo intervalo corren juntas, en orden de registro. */
-export interface SystemTick {
+interface SystemTick {
   /** Minutos de juego entre revisiones (alineadas: múltiplos del intervalo). */
   every: number;
   run(ctx: SimContext, now: number): void | Promise<void>;
@@ -49,7 +49,7 @@ export interface ResolvedAgreement extends Agreement {
 }
 
 /** Un paso de un acuerdo: quién hace qué acción del catálogo (se construye al llegar a él). */
-export interface AgreementStep {
+interface AgreementStep {
   actorId: string;
   action: () => AgentAction | string;
 }
@@ -81,7 +81,7 @@ export interface ConsolidationPart {
 }
 
 /** Qué política de `config/retention.json` cubre su tabla (o por qué no hace falta). */
-export type SystemRetention =
+type SystemRetention =
   { table: string; policy: keyof RetentionConfig } | { table: string; keep: string };
 
 export interface SimSystem<S = unknown> {

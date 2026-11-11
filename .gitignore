@@ -21,9 +21,9 @@ interviews/
 test-results/
 playwright-report/
 backups/
-estudio/**
-!estudio/**/
-!estudio/**/ESTUDIO.md
-!estudio/**/estudio2.md
-!estudio/**/vigilancia.md
+# Datos de las partidas de estudio (en git, solo los informes y su vigilancia)
+docs/investigacion/estudios/**
+!docs/investigacion/estudios/**/
+!docs/investigacion/estudios/**/ESTUDIO.md
+!docs/investigacion/estudios/**/vigilancia.md
 apps/web/public/replays/

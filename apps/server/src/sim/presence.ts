@@ -66,7 +66,7 @@ export function walkingTogether(ctx: SimContext, a: Agent, b: Agent): boolean {
 }
 
 /** Presencia clásica: el mismo sitio, quieto y despierto. */
-export function sameSpot(ctx: SimContext, agent: Agent, other: Agent): boolean {
+function sameSpot(ctx: SimContext, agent: Agent, other: Agent): boolean {
   return (
     other.id !== agent.id &&
     other.state.locationId === agent.state.locationId &&

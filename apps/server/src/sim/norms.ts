@@ -32,7 +32,7 @@ export const normsState = (ctx: SimContext) =>
   ctx.state<NormsState>("norms", () => ({ guests: new Map(), openPlaces: new Map() }));
 
 /** Quienes viven en una casa. */
-export function residentsOf(ctx: SimContext, placeId: string): Agent[] {
+function residentsOf(ctx: SimContext, placeId: string): Agent[] {
   return [...ctx.agents.values()].filter((a) => a.seed.homeId === placeId);
 }
 

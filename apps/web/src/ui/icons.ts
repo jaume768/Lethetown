@@ -57,7 +57,7 @@ export const ACTION_ICONS: Record<string, string> = {
 };
 
 /** Lo acordado hablando (puente de la conversación a la acción), sea cual sea la acción. */
-export const AGREED_ICON = "🗣";
+const AGREED_ICON = "🗣";
 
 const ITEM_ICONS: Record<string, string> = {
   libro: "📕",

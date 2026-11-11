@@ -11,8 +11,6 @@ import { attachWorlds, MAP_FILE, openWorld, startRetention } from "./factories/w
 export type { App, Services, WorldRuntime } from "./factories/types";
 export { createServices } from "./factories/services";
 export { attachWorlds, MAP_FILE, openWorld, safeMapPath, startRetention } from "./factories/worlds";
-export { createProvider, loadPricing } from "./factories/llm";
-export { loadMemoryConfig } from "./factories/memory";
 
 /**
  * Arranca los servicios y los mundos. `worldIds` limita qué mundos se abren (por defecto,

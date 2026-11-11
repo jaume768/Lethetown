@@ -1,5 +1,5 @@
 /**
- * Análisis reproducible de una partida grabada (sustituye a estudio/…/analiza.py): a partir de
+ * Análisis reproducible de una partida grabada (sustituye a docs/investigacion/estudios/e1-partida-2dias/analiza.py): a partir de
  * lo que graban `record` y `world:export`, escribe <carpeta>/analysis.json y analysis.md (el
  * resumen de ESTUDIO.md: coste por tarea, espera de respuesta, longitud de las frases por estilo,
  * intenciones, acciones, red social, memoria y errores) y lo muestra. Con dos carpetas, la tabla

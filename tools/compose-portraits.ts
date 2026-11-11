@@ -36,7 +36,7 @@ const missing = VARIANTS.map((v) => piecesDir(v.size)).find((d) => !existsSync(d
 if (missing) {
   console.error(
     `No encuentro ${path.relative(ROOT, missing)}.\n` +
-      "Extrae la carpeta «Portrait Pieces» del zip del Portrait Generator ahí (ver docs/personajes.md).",
+      "Extrae la carpeta «Portrait Pieces» del zip del Portrait Generator ahí (ver docs/assets.md).",
   );
   process.exit(1);
 }

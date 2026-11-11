@@ -15,7 +15,7 @@ export interface ItemStore {
 }
 
 /** "i12" → 12. */
-export const itemSeqOf = (id: string) => Number(/^i(\d+)$/.exec(id)?.[1] ?? 0);
+const itemSeqOf = (id: string) => Number(/^i(\d+)$/.exec(id)?.[1] ?? 0);
 const byId = (a: Item, b: Item) => itemSeqOf(a.id) - itemSeqOf(b.id);
 
 export class InMemoryItemStore implements ItemStore {

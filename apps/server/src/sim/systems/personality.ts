@@ -66,7 +66,7 @@ function note(ctx: SimContext, agentId: string | null | undefined, e: Experience
 }
 
 /** Lo que pasa y cuenta para la personalidad (de los eventos con `meta.action`). */
-export function personalityOnEvent(ctx: SimContext, e: SimEvent): void {
+function personalityOnEvent(ctx: SimContext, e: SimEvent): void {
   const action = e.meta?.action;
   const ok = e.meta?.ok === true;
   const [a, b] = e.participants;

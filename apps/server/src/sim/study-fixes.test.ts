@@ -1,4 +1,4 @@
-/** Correcciones que salieron de la partida de estudio de 48 h (estudio/partida-2dias). */
+/** Correcciones que salieron de la partida de estudio de 48 h (docs/investigacion/estudios/e1-partida-2dias). */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { bootstrap, type App } from "../bootstrap";
 import { loadConfig } from "../config";

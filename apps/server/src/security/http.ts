@@ -15,7 +15,7 @@ import {
   type UserStore,
 } from "./auth";
 
-export const SESSION_COOKIE = "lt_session";
+const SESSION_COOKIE = "lt_session";
 
 declare module "fastify" {
   interface FastifyRequest {

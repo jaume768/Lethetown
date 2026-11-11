@@ -297,10 +297,6 @@ function remove<T>(list: T[], item: T): void {
   if (i >= 0) list.splice(i, 1);
 }
 
-export function clamp01(x: number): number {
-  return Math.min(1, Math.max(0, x));
-}
-
 export function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }

@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Cómo plantearlo, con un ejemplo completo: [COLABORA.md](https://github.com/jaume768/Lethetown/blob/main/COLABORA.md#proponer-un-experimento).
+        Cómo plantearlo, con un ejemplo completo: [CONTRIBUTING.md](https://github.com/jaume768/Lethetown/blob/main/CONTRIBUTING.md#proponer-un-experimento).
         En inglés también vale. / English is fine too.
   - type: textarea
     id: hipotesis

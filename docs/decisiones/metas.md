@@ -102,7 +102,7 @@ llegar y pasos concretos) sin que el LLM se invente el progreso. Sistema `goals`
   edad»: puede avanzar, pero al conseguirla queda **aplazada** (no se puede retomar mientras sea
   menor; lo resolverá el ciclo vital). Ningún criterio de un menor puede ser estar en una casa
   ajena; las citas ya pasan por `minorMeetingRule`; el texto de toda meta pasa por `MinorGuard`.
-- **Metas de partida**: `pnpm goals:derive` propone una vital y 1–2 proyectos por reglas (trabajo,
+- **Metas de partida**: `pnpm seeds:derive goals` propone una vital y 1–2 proyectos por reglas (trabajo,
   temas, relaciones); las 20 de `seeds/agents.json` están revisadas a mano (coherentes con la época y
   cada personaje; sin conflictos nuevos). Los objetivos de relación se calibran por encima de lo
   que hay al empezar: una meta que ya se cumple al crearla se descarta.
@@ -117,7 +117,7 @@ llegar y pasos concretos) sin que el LLM se invente el progreso. Sistema `goals`
   frustración tardaba unos 6 días en llegar a 0,7), progreso medio 0,33 y 2 conflictos. Con la
   corrección 2.5: 3 conseguidos en 48 h (los proyectos con tema no cuentan cualquier charla del
   mock), progreso medio 0,22 y frustración media 0,09. Lo que pase
-  con el LLM real hay que medirlo en una partida (ver PROGRESS-MUNDO-METAS.md).
+  con el LLM real hay que medirlo en una partida (ver [pendiente de validar](../roadmap.md#metas-e-intenciones)).
 
 ## Interfaz y métricas
 

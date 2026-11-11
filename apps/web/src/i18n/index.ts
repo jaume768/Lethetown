@@ -20,7 +20,7 @@ function initialLang(): Lang {
 let lang: Lang = initialLang();
 const listeners = new Set<() => void>();
 
-export function setLang(next: Lang) {
+function setLang(next: Lang) {
   lang = next;
   if (typeof document !== "undefined") document.documentElement.lang = next;
   try {

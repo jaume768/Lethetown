@@ -116,7 +116,7 @@ export interface CineOverlay {
 
 /** Cuánto (ms reales) se ve el contador de días, y cuánto tarda en apagarse al final. */
 export const DAY_CARD_MS = 2600;
-export const DAY_FADE_MS = 600;
+const DAY_FADE_MS = 600;
 
 /** Opacidad del contador de días: entero hasta el final, y se apaga en `DAY_FADE_MS`. */
 export function dayAlpha(until: number, now: number): number {

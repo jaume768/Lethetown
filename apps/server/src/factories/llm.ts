@@ -42,7 +42,7 @@ export async function loadPricing(): Promise<PricingTable> {
 }
 
 /** `config/llm-routing.json`: tipo de modelo y caché por tarea. */
-export const LlmRouting = z.object({
+const LlmRouting = z.object({
   tasks: z
     .record(
       z.string(),
@@ -63,7 +63,7 @@ export async function loadRouting(): Promise<TaskRouting> {
   return (await readJson(LlmRouting, file)).tasks;
 }
 
-export function createProvider(config: AppConfig): LLMProvider {
+function createProvider(config: AppConfig): LLMProvider {
   switch (config.LLM_PROVIDER) {
     case "mock":
       return new MockProvider(agentMockResponder);
