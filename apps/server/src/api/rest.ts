@@ -40,7 +40,7 @@ import { taskSystems } from "../sim/systems/registry";
 import type { CommandResult, WorldCommand, WorldGateway } from "../worlds/gateway";
 
 /** Operaciones de administración (en modo separado las ejecuta el worker vía bus). */
-export interface AdminOps {
+interface AdminOps {
   /** Health detallado: proceso, BD, proveedor, mundos. */
   health(): Promise<Record<string, unknown>>;
   budget(): Promise<unknown>;
@@ -131,7 +131,7 @@ const EventsQuery = z.object({
   limit: z.coerce.number().int().positive().max(5000).default(1000),
 });
 
-export function toView(m: MemoryRecord): MemoryView {
+function toView(m: MemoryRecord): MemoryView {
   const { embedding: _e, stability: _s, accessCount: _a, ...view } = m;
   return view;
 }
@@ -139,11 +139,7 @@ export function toView(m: MemoryRecord): MemoryView {
 type WorldParams = { worldId?: string };
 
 /** Mundo de la ruta (`/api/worlds/:worldId/...`) o el mundo por defecto (alias `/api/...`). */
-export function worldOf(
-  ctx: ApiContext,
-  req: FastifyRequest,
-  reply: FastifyReply,
-): WorldGateway | null {
+function worldOf(ctx: ApiContext, req: FastifyRequest, reply: FastifyReply): WorldGateway | null {
   const id = (req.params as WorldParams).worldId ?? ctx.defaultWorldId;
   const w = ctx.worlds.get(id);
   if (!w) {
@@ -165,7 +161,7 @@ const director = { preHandler: requireRole("director") };
 const admin = { preHandler: requireRole("admin") };
 
 /** Rutas generales (fuera de cualquier mundo). */
-export function registerGlobalRest(server: FastifyInstance, ctx: ApiContext): void {
+function registerGlobalRest(server: FastifyInstance, ctx: ApiContext): void {
   /** Health público mínimo (para el balanceador); el detallado es de admin. */
   server.get("/api/health", async () => ({ ok: true }));
 
@@ -217,7 +213,7 @@ export function registerGlobalRest(server: FastifyInstance, ctx: ApiContext): vo
  * Rutas de un mundo. Se registran dos veces: bajo `/api/worlds/:worldId` y, como alias
  * temporal del mundo por defecto, bajo `/api` (las rutas que ya usaba el cliente).
  */
-export function registerWorldRest(server: FastifyInstance, ctx: ApiContext): void {
+function registerWorldRest(server: FastifyInstance, ctx: ApiContext): void {
   const { config } = ctx;
   /** Intervención (voz interior, objetos): gasta LLM en moderación y en la reacción. */
   const intervention = {

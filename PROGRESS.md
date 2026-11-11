@@ -13,5 +13,5 @@ Antes: 47 `.md` versionados.
 - [x] 4. Enlaces de todo lo movido (docs, plantillas, comentarios)
 - [x] 5. Capturas sin uso
 - [x] 6a. `tools/derive-seeds.ts` (`pnpm seeds:derive <tipo>`), igual byte a byte
-- [ ] 6b. Código muerto (knip) y alias de scripts duplicados
+- [x] 6b. Código muerto (knip) y alias de scripts duplicados
 - [ ] Final: comprobaciones, `docs/README.md`, fusionar

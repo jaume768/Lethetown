@@ -36,7 +36,7 @@ export function registeredSystems(): readonly SimSystem[] {
 }
 
 /** Los activos en este mundo. */
-export function activeSystems(ctx: SimContext): SimSystem[] {
+function activeSystems(ctx: SimContext): SimSystem[] {
   return SYSTEMS.filter((s) => ctx.enabled(s.id));
 }
 
@@ -53,11 +53,6 @@ export function agreementKind(type: string): { kind: AgreementKind; system: stri
 /** De qué sistema es cada tarea del LLM (las que no aparecen son del núcleo). */
 export function taskSystems(): Record<string, string> {
   return Object.fromEntries(SYSTEMS.flatMap((s) => (s.llmTasks ?? []).map((t) => [t, s.id])));
-}
-
-/** Tipos de acuerdo que saben llevar a cabo los sistemas registrados. */
-export function agreementTypes(): string[] {
-  return [...AGREEMENTS.keys()];
 }
 
 /** ¿Se puede usar la acción en este mundo? (su sistema, si lo tiene, está activo). */

@@ -6,7 +6,7 @@ import type { Db } from "../db/client";
 import { sessions, users } from "../db/schema";
 
 /** Roles de menor a mayor: cada uno puede todo lo del anterior. */
-export const ROLES = ["viewer", "director", "admin"] as const;
+const ROLES = ["viewer", "director", "admin"] as const;
 export const Role = z.enum(ROLES);
 export type Role = z.infer<typeof Role>;
 
@@ -53,7 +53,7 @@ export interface SessionStore {
 /** Parámetros argon2id (OWASP: m=19 MiB, t=2, p=1). */
 const ARGON2 = { algorithm: 2, memoryCost: 19_456, timeCost: 2, parallelism: 1 } as const;
 
-export const hashPassword = (password: string) => hash(password, ARGON2);
+const hashPassword = (password: string) => hash(password, ARGON2);
 /**
  * Hash con el que se compara cuando el usuario no existe, para que la respuesta tarde lo mismo
  * (no revela qué usuarios existen).
@@ -67,7 +67,7 @@ async function checkPassword(stored: string | null | undefined, password: string
   return ok && Boolean(stored);
 }
 
-export const tokenHash = (token: string) => createHash("sha256").update(token).digest("hex");
+const tokenHash = (token: string) => createHash("sha256").update(token).digest("hex");
 const newToken = () => randomBytes(32).toString("base64url");
 
 const toUser = (r: { id: string; username: string; role: string; provider: string }): User => ({

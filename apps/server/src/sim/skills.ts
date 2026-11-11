@@ -41,13 +41,13 @@ const DECIDE_COOLDOWN = 180;
 const LEARNING_DAYS = 3;
 
 /** Lo que alguien hace a propósito para practicar (acción `practice`) hasta una hora. */
-export interface Practicing {
+interface Practicing {
   skill: string;
   until: number;
 }
 
 /** Quién le enseña o a quién ayuda ahora (lo ponen las sesiones y las ayudas). */
-export interface Coached {
+interface Coached {
   skill: string;
   /** El maestro (o a quien ayuda, que hace de maestro si sabe más). */
   masterId: string | null;
@@ -84,7 +84,7 @@ export interface SkillsState {
   pairDay: Map<string, number>;
 }
 
-export type SessionStatus = "proposed" | "active" | "declined" | "done" | "expired";
+type SessionStatus = "proposed" | "active" | "declined" | "done" | "expired";
 
 /** Una sesión de enseñanza: quién enseña a quién qué, dónde y hasta cuándo. */
 export interface TeachingSession {
@@ -101,7 +101,7 @@ export interface TeachingSession {
   until: number;
 }
 
-export interface SkillResult {
+interface SkillResult {
   quality: number;
   makerId: string;
   skill: string;
@@ -174,7 +174,7 @@ export function levelOf(ctx: SimContext, agentId: string, skill: string): number
   return skillsState(ctx).skills.get(key(agentId, skill))?.level ?? 0;
 }
 
-export function skillsOf(ctx: SimContext, agentId: string): SkillState[] {
+function skillsOf(ctx: SimContext, agentId: string): SkillState[] {
   return [...skillsState(ctx).skills.values()].filter((s) => s.agentId === agentId);
 }
 

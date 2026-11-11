@@ -2,7 +2,6 @@ import {
   ClockEstimator,
   ServerMessage,
   type Chronicle,
-  type ClientMessage,
   type Drama,
   type SimEvent,
 } from "@lethetown/shared";
@@ -53,10 +52,6 @@ export function startReplay(hooks: ReplayHooks) {
   socket?.close();
   state = { ...INITIAL_STATE, connected: true };
   for (const l of listeners) l();
-}
-
-export function inReplay(): boolean {
-  return replay !== null;
 }
 
 /**
@@ -137,10 +132,6 @@ function loadRecentEvents(now: number) {
 /** Vuelve a conectar (p. ej. tras iniciar o cerrar sesión: el WS lleva la cookie de sesión). */
 export function reconnect() {
   socket?.close();
-}
-
-export function send(msg: ClientMessage) {
-  if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify(msg));
 }
 
 /** Pequeño helper de fetch JSON contra la API del servidor. */

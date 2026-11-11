@@ -2,7 +2,7 @@
 import { WorldBible } from "@lethetown/agent-core";
 import { readJson } from "./files";
 
-export const WORLD_BIBLE_FILE = "config/world.json";
+const WORLD_BIBLE_FILE = "config/world.json";
 
 export async function loadWorldBible(log: (msg: string) => void): Promise<WorldBible> {
   const bible = await readJson(WorldBible, WORLD_BIBLE_FILE);

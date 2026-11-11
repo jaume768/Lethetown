@@ -32,11 +32,11 @@ const zero = (): Record<Counted, number> => ({
   forgotten: 0,
 });
 
-export const intentionsState = (ctx: SimContext) =>
+const intentionsState = (ctx: SimContext) =>
   ctx.state<IntentionsState>("intentions", () => ({ counts: zero(), listening: false }));
 
 /** Abiertas (pendientes u olvidadas que aún pueden volver) de cada agente. */
-export function openIntentions(ctx: SimContext): Map<string, number> {
+function openIntentions(ctx: SimContext): Map<string, number> {
   const out = new Map<string, number>();
   for (const a of ctx.agents.values()) {
     out.set(

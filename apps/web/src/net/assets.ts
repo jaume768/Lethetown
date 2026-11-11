@@ -92,7 +92,7 @@ async function load(): Promise<LoadedAssets> {
   };
 }
 
-export function loadAssets(): Promise<LoadedAssets> {
+function loadAssets(): Promise<LoadedAssets> {
   loading ??= load().catch((error: unknown) => {
     console.warn("No se pudo cargar el manifest de assets", error);
     return EMPTY;

@@ -49,7 +49,7 @@ export interface Recording {
 }
 
 /** Tablas de `world:export` que usa la repetición (las demás no se leen). */
-export const EXPORT_TABLES = [
+const EXPORT_TABLES = [
   "memories",
   "memory_audit",
   "memory_versions",
@@ -136,9 +136,9 @@ export function clockFrom(samples: { wallMs: number; time: number }[]): (ms: num
 /** Acciones de la auditoría que no cuentan nada (archivar, reforzar, debilitar, borrar). */
 const AUDIT_NOISE = new Set(["archived", "reinforced", "weakened", "deleted"]);
 /** Cada cuánto se muestrea la fuerza de un recuerdo (minutos de juego). */
-export const STRENGTH_SAMPLE_MINUTES = 360;
+const STRENGTH_SAMPLE_MINUTES = 360;
 /** Recuerdos que entran siempre (los demás, solo si son de un momento o cambiaron). */
-export const MIN_IMPORTANCE = 4;
+const MIN_IMPORTANCE = 4;
 
 export interface PackOptions {
   from?: number;
@@ -242,7 +242,7 @@ export function buildBundle(
 }
 
 /** Los datos de los paneles: recuerdos con su fuerza muestreada, fichas, metas, saberes… */
-export function buildData(
+function buildData(
   exp: ExportRows,
   opts: {
     from: number;

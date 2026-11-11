@@ -36,7 +36,7 @@ import { occupiedTiles, setAction, travel } from "./routines";
 import { stopFollowing } from "./company";
 
 /** Un viaje que se dejó a medias para pararse a charlar (se retoma al acabar la charla). */
-export interface Trip {
+interface Trip {
   destId: string;
   spotId: string | null;
   thenAction: string;
@@ -113,7 +113,7 @@ export const encountersState = (ctx: SimContext) =>
     byDay: new Map(),
   }));
 
-export const pairKey = (a: string, b: string) => (a < b ? `${a}|${b}` : `${b}|${a}`);
+const pairKey = (a: string, b: string) => (a < b ? `${a}|${b}` : `${b}|${a}`);
 
 /** Suma a una cifra (total y del día). */
 export function countStat(ctx: SimContext, stat: EncounterStat, n = 1): void {
@@ -368,7 +368,7 @@ async function leaveByDistance(ctx: SimContext): Promise<void> {
 }
 
 /** Minutos del bloque que se mete en el plan si el hueco al que iba ya pasó. */
-export const RESUME_MINUTES = 30;
+const RESUME_MINUTES = 30;
 
 /**
  * Retoma los viajes dejados a medias: al acabar su charla, sigue hacia donde iba (con una ruta

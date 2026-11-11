@@ -10,7 +10,6 @@ import type { AppConfig } from "./config";
 export function createLogger(config: AppConfig, name = "lethetown") {
   return pino({ name, level: config.LOG_LEVEL, base: { proc: name } });
 }
-export type Logger = ReturnType<typeof createLogger>;
 
 export class Metrics {
   readonly registry = new Registry();

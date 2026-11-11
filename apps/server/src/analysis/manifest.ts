@@ -7,7 +7,7 @@
 import { z } from "zod";
 
 /** Variables de entorno que se apuntan (sin secretos). */
-export const MANIFEST_ENV = [
+const MANIFEST_ENV = [
   "SIM_SEED",
   "SIM_SPEED",
   "SIM_NIGHT_SPEED",

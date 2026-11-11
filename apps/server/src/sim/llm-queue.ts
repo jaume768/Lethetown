@@ -5,7 +5,7 @@ import type { CompletionRequest, CompletionResult, LLMProvider } from "@lethetow
  * (y la moderación, que está en medio). El resto (esencias, fichas sociales, resúmenes,
  * crónicas, consolidación, reconsolidación) puede esperar.
  */
-export const URGENT_TASKS: ReadonlySet<string> = new Set([
+const URGENT_TASKS: ReadonlySet<string> = new Set([
   "decide",
   "decide_walking",
   "importance",
@@ -18,7 +18,7 @@ export const URGENT_TASKS: ReadonlySet<string> = new Set([
 
 export type Priority = "high" | "low";
 
-export const priorityOf = (task: string): Priority => (URGENT_TASKS.has(task) ? "high" : "low");
+const priorityOf = (task: string): Priority => (URGENT_TASKS.has(task) ? "high" : "low");
 
 /** Espera en cola por tarea (ms reales). */
 export interface QueueWait {

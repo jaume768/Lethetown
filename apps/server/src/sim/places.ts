@@ -8,7 +8,7 @@ import type { KnownPlaceSource, Place, TilePoint, TileRect } from "@lethetown/sh
 import type { SimContext } from "./context";
 
 /** Radio por defecto (baldosas) en que se ven los lugares al pasar. */
-export const DEFAULT_DISCOVERY_RADIUS = 4;
+const DEFAULT_DISCOVERY_RADIUS = 4;
 /** Confianza mínima en quien te lo cuenta para creerte dónde está un sitio. */
 const TOLD_MIN_TRUST = 0.35;
 /** Con un chismoso, hace falta más confianza. */

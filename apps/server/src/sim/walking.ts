@@ -31,7 +31,7 @@ const WALKING_ACTIONS: ReadonlySet<ActionType> = new Set([
 ]);
 
 /** Orden de la sección DE CAMINO (antes de los lugares descubiertos y del resto). */
-export const WALKING_SECTION_ORDER = 1;
+const WALKING_SECTION_ORDER = 1;
 
 export interface WalkingTurn {
   /** Lo que le dicen andando (va a la memoria como siempre). */
@@ -56,7 +56,7 @@ export interface Revalidated {
 }
 
 /** Quién tiene al alcance de la voz (o ve venir) y se ve, en el formato de PRESENTES. */
-export function nearbyPresent(ctx: SimContext, agent: Agent, now: number): Present[] {
+function nearbyPresent(ctx: SimContext, agent: Agent, now: number): Present[] {
   return [...ctx.agents.values()]
     .filter(
       (o) =>

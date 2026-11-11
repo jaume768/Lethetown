@@ -26,7 +26,7 @@ const LEVEL_KEYS: MessageKey[] = [
  * «principiante», «se defiende», «bien», «con maestría» (como en el motor): el escalón que da el
  * motor (con histéresis) o, sin él, el de su nivel.
  */
-export function levelKey(level: number, tier?: number | null): MessageKey {
+function levelKey(level: number, tier?: number | null): MessageKey {
   const plain = level < 0.2 ? 0 : level < 0.45 ? 1 : level < 0.7 ? 2 : 3;
   return LEVEL_KEYS[tier ?? plain]!;
 }

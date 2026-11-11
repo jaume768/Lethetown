@@ -34,10 +34,10 @@ export interface NightSpeedOptions {
   notify: (text: string) => void;
 }
 
-export const NIGHT_QUIET_MINUTES = 15;
+const NIGHT_QUIET_MINUTES = 15;
 
 /** Mantenimiento de la memoria que no frena una noche rápida ya en marcha. */
-export const BACKGROUND_TASKS: ReadonlySet<string> = new Set([
+const BACKGROUND_TASKS: ReadonlySet<string> = new Set([
   "gist",
   "summarize",
   "confabulate",
