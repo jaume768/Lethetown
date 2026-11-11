@@ -184,7 +184,6 @@ Límites conocidos, para tenerlos en cuenta al grabar:
 
 - Falta `LICENSE`: lo decide el autor.
 - `<CONTACTO>` en [CONTRIBUTING.md](../CONTRIBUTING.md#apoyar-el-proyecto).
-- `docs/investigacion/paper/Lethetown-paper.pdf` (el enlace ya está).
 - `.github/FUNDING.yml`: las cuentas reales, y descomentar.
 - Activar **Discussions** en GitHub (lo enlaza `.github/ISSUE_TEMPLATE/config.yml`) y crear las
   etiquetas `experimento`, `resultado`, `idea` y `error` (las plantillas las ponen si existen).

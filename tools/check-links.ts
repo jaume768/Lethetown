@@ -14,7 +14,7 @@ import { fileURLToPath } from "node:url";
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const CAPTURES = "docs/capturas/";
 /** Ficheros que se enlazan pero los pone el autor a mano (solo avisa). */
-const PENDING = new Set(["docs/investigacion/paper/Lethetown-paper.pdf"]);
+const PENDING = new Set<string>();
 
 function gitFiles(...patterns: string[]): string[] {
   const out = execFileSync(
